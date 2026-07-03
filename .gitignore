@@ -78,7 +78,6 @@ temp/
 .agents/**/tmp/
 .agents/**/temp/
 .agents/**/logs/
-
 !.agents/
 !.agents/skills/
 !.agents/skills/**
