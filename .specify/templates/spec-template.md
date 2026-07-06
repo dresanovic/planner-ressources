@@ -1,12 +1,16 @@
 # Feature Specification: [FEATURE NAME]
 
-**Feature Branch**: `[###-feature-name]`
+**Working Branch**: `[###-feature-name or main/master for clean verified solo change]`
 
 **Created**: [DATE]
 
 **Status**: Draft
 
 **Input**: User description: "$ARGUMENTS"
+
+**Constitution Requirements**: This spec MUST be updated before production
+implementation. All user stories require clear acceptance criteria and
+independent test paths.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -97,6 +101,13 @@
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+
+### Test Requirements *(mandatory)*
+
+- **TR-001**: Tests MUST be created or updated before production code for each implemented user story where automated testing is practical.
+- **TR-002**: Backend behavior MUST be verified with FastAPI-compatible tests, normally using `pytest`.
+- **TR-003**: Frontend behavior MUST be verified through React/Vite-appropriate checks, such as build, lint, component, or UI tests.
+- **TR-004**: Any exception to automated test-first work MUST document the reason and manual verification path in the plan.
 
 ### Key Entities *(include if feature involves data)*
 

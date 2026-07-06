@@ -1,6 +1,6 @@
 # Implementation Plan: [FEATURE]
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Working Branch**: `[branch-name or main/master for clean verified solo change]` | **Date**: [DATE] | **Spec**: [link]
 
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
@@ -18,29 +18,35 @@
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Language/Version**: [e.g., Python 3.11 for backend, TypeScript for frontend or NEEDS CLARIFICATION]
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**Primary Dependencies**: [FastAPI for backend, React with Vite for frontend, or NEEDS CLARIFICATION]
 
 **Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**Testing**: [pytest for backend, frontend lint/build/UI tests for client, or NEEDS CLARIFICATION]
 
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Target Platform**: [e.g., Linux server, browser, or NEEDS CLARIFICATION]
 
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]
+**Project Type**: [web application, API, or NEEDS CLARIFICATION]
 
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+**Performance Goals**: [domain-specific, e.g., <200ms p95 API response, fast route transitions, or NEEDS CLARIFICATION]
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
+**Constraints**: [domain-specific, e.g., avoid new dependencies, offline-capable, accessibility, or NEEDS CLARIFICATION]
 
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Scale/Scope**: [domain-specific, e.g., number of users, resources, screens, or NEEDS CLARIFICATION]
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Spec-first**: Feature spec exists/updated, with scope, requirements, and acceptance criteria before production implementation.
+- **Acceptance criteria**: User stories are independently testable and acceptance scenarios use Given/When/Then.
+- **Test-first**: Plan identifies tests to create/update before production code, or documents a justified exception with manual verification.
+- **Simplicity**: New dependencies, services, abstractions, or infrastructure are justified with simpler alternatives considered.
+- **Technology fit**: Backend work uses FastAPI; frontend work uses React with Vite; cross-stack contracts are documented.
+- **Delivery workflow**: Work is on a feature branch for larger/risky/customer-facing changes, or on `main`/`master` only for clean verified solo changes.
+- **Verification before commit**: Relevant test commands and expected verification evidence are listed.
 
 ## Project Structure
 
@@ -48,56 +54,47 @@
 
 ```text
 specs/[###-feature]/
-├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
-└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
+|-- plan.md              # This file (/speckit-plan command output)
+|-- research.md          # Phase 0 output (/speckit-plan command)
+|-- data-model.md        # Phase 1 output (/speckit-plan command)
+|-- quickstart.md        # Phase 1 output (/speckit-plan command)
+|-- contracts/           # Phase 1 output (/speckit-plan command)
+`-- tasks.md             # Phase 2 output (/speckit-tasks command)
 ```
 
 ### Source Code (repository root)
+
 <!--
   ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
   for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
+  real paths. The delivered plan must not include Option labels.
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
+# [REMOVE IF UNUSED] Option 1: Resource Planner web application
 backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+|-- app/
+|   |-- models/
+|   |-- services/
+|   `-- api/
+`-- tests/
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+client/
+|-- src/
+|   |-- components/
+|   |-- pages/
+|   `-- services/
+`-- tests/
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
+# [REMOVE IF UNUSED] Option 2: Backend-only change
+backend/
+|-- app/
+`-- tests/
 
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+# [REMOVE IF UNUSED] Option 3: Frontend-only change
+client/
+|-- src/
+`-- tests/
 ```
 
 **Structure Decision**: [Document the selected structure and reference the real
@@ -109,5 +106,11 @@ directories captured above]
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| [e.g., new dependency] | [current need] | [why existing code or standard library is insufficient] |
+| [e.g., new abstraction] | [specific problem] | [why direct implementation is insufficient] |
+
+## Verification Plan
+
+List the concrete commands that MUST pass before commit, such as backend
+`pytest`, client `npm run build`, client `npm run lint`, or feature-specific
+tests. If a command cannot be run, record the reason and residual risk.
