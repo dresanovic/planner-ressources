@@ -1,0 +1,150 @@
+openapi: 3.1.0
+info:
+  title: Draft Course Schedule API
+  version: 0.1.0
+  description: Minimal contract for explicit draft schedule generation for one course.
+paths:
+  /api/courses/{courseId}/draft-schedule/generate:
+    post:
+      summary: Generate or replace the draft schedule for one course
+      operationId: generateDraftSchedule
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateDraftScheduleRequest'
+      responses:
+        '201':
+          description: Draft schedule generated and previous generated draft replaced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftScheduleResponse'
+        '422':
+          description: Generation rejected with all detected failure reasons
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationFailureResponse'
+  /api/courses/{courseId}/draft-schedule:
+    get:
+      summary: Get the current generated draft schedule for one course
+      operationId: getDraftSchedule
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current generated draft schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftScheduleResponse'
+        '404':
+          description: No generated draft schedule exists for the course
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    GenerateDraftScheduleRequest:
+      type: object
+      required:
+        - semesterId
+        - selectedTimeWindowId
+      properties:
+        semesterId:
+          type: string
+        selectedTimeWindowId:
+          type: string
+          description: Admin-selected preferred Study Type Time Window.
+    DraftScheduleResponse:
+      type: object
+      required:
+        - draftScheduleId
+        - courseId
+        - semesterId
+        - selectedTimeWindowId
+        - sessions
+      properties:
+        draftScheduleId:
+          type: string
+        courseId:
+          type: string
+        semesterId:
+          type: string
+        selectedTimeWindowId:
+          type: string
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftSession'
+    DraftSession:
+      type: object
+      required:
+        - id
+        - date
+        - startTime
+        - endTime
+        - units
+        - timeWindowId
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+        endTime:
+          type: string
+          pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$'
+        units:
+          type: integer
+          minimum: 1
+        timeWindowId:
+          type: string
+    GenerationFailureResponse:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/GenerationFailure'
+    GenerationFailure:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - INSUFFICIENT_ROOM_CAPACITY
+            - INVALID_SESSION_PREFERENCE
+            - NO_FITTING_TIME_WINDOW
+            - INSUFFICIENT_SEMESTER_CAPACITY
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
