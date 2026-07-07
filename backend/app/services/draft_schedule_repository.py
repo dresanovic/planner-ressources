@@ -115,7 +115,13 @@ def get_draft_schedule(db: Session, course_id: int) -> DraftSchedule | None:
         db.execute(
             select(DraftSchedule)
             .where(DraftSchedule.course_id == course_id)
-            .options(selectinload(DraftSchedule.sessions))
+            .options(
+                selectinload(DraftSchedule.sessions),
+                selectinload(DraftSchedule.course).selectinload(Course.lecturer),
+                selectinload(DraftSchedule.course).selectinload(Course.cohort),
+                selectinload(DraftSchedule.course).selectinload(Course.room),
+                selectinload(DraftSchedule.course).selectinload(Course.study_type),
+            )
         )
         .scalars()
         .one_or_none()

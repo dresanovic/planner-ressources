@@ -106,6 +106,33 @@ dt,
   margin: 18px 0 0;
 }
 
+.planning-selectors {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.selector-field {
+  display: grid;
+  gap: 4px;
+}
+
+.selector-field span {
+  color: #526071;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.selector-field select {
+  min-width: 0;
+  border: 1px solid #cfd7e3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172033;
+  padding: 9px 10px;
+}
+
 .input-summary dl div {
   display: grid;
   gap: 2px;
@@ -152,6 +179,58 @@ button:disabled {
   cursor: progress;
 }
 
+.review-controls {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.review-controls button {
+  background: #edf2f8;
+  color: #314154;
+  padding: 8px 12px;
+}
+
+.review-controls button.active {
+  background: #075fc4;
+  color: #ffffff;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.filter-field {
+  display: grid;
+  gap: 4px;
+}
+
+.filter-field span {
+  color: #526071;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.filter-field select {
+  min-width: 0;
+  border: 1px solid #cfd7e3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172033;
+  padding: 9px 10px;
+}
+
+.filter-bar button:disabled {
+  background: #dbe3ed;
+  color: #7a8899;
+  cursor: not-allowed;
+}
+
 .alert-list {
   display: grid;
   gap: 8px;
@@ -176,11 +255,17 @@ button:disabled {
 
 .session-row {
   display: grid;
-  grid-template-columns: 1.2fr 1fr 80px 90px;
+  grid-template-columns: minmax(96px, 1fr) minmax(110px, 1fr) 64px repeat(5, minmax(96px, 1fr));
   gap: 12px;
   padding: 12px 14px;
   border-top: 1px solid #edf0f5;
   font-size: 14px;
+  align-items: center;
+}
+
+.session-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .session-row:first-child {
@@ -198,6 +283,59 @@ button:disabled {
   border-radius: 8px;
   padding: 28px;
   text-align: center;
+}
+
+.weekly-review {
+  display: grid;
+  gap: 14px;
+}
+
+.week-group {
+  border: 1px solid #dfe4eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.week-group h3,
+.week-day h4 {
+  margin: 0;
+}
+
+.week-group h3 {
+  background: #f2f5f9;
+  color: #314154;
+  font-size: 14px;
+  padding: 10px 12px;
+}
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 12px;
+}
+
+.week-day {
+  display: grid;
+  gap: 8px;
+}
+
+.week-day h4 {
+  color: #526071;
+  font-size: 13px;
+}
+
+.week-session {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #dfe4eb;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.week-session span {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 820px) {

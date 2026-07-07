@@ -94,6 +94,7 @@ class DraftSchedule(Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="generated")
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
+    course: Mapped[Course] = relationship()
     sessions: Mapped[list["DraftSession"]] = relationship(
         back_populates="draft_schedule",
         cascade="all, delete-orphan",

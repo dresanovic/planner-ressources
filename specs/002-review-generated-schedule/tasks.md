@@ -18,9 +18,9 @@
 
 **Purpose**: Prepare verification and shared frontend test support without changing feature behavior.
 
-- [ ] T001 [P] Add a `test` script and Vitest/jsdom dev dependencies for client behavior tests in `client/package.json`
-- [ ] T002 [P] Create frontend test setup file `client/src/test/setup.ts`
-- [ ] T003 [P] Document Slice 2 verification commands in `client/README.md`
+- [X] T001 [P] Add a `test` script and Vitest/jsdom dev dependencies for client behavior tests in `client/package.json`
+- [X] T002 [P] Create frontend test setup file `client/src/test/setup.ts`
+- [X] T003 [P] Document Slice 2 verification commands in `client/README.md`
 
 ---
 
@@ -30,10 +30,10 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 [P] Add review context and filterable session fields to Pydantic response schemas in `backend/app/schemas/draft_schedule.py`
-- [ ] T005 [P] Add Draft Schedule review TypeScript types for context, filters, and view mode in `client/src/api/draftSchedule.ts`
-- [ ] T006 [P] Create pure schedule review helper stubs for filtering and weekly grouping in `client/src/components/scheduleReviewUtils.ts`
-- [ ] T007 [P] Add shared test fixtures for enriched Draft Schedule responses in `client/src/test/draftScheduleFixtures.ts`
+- [X] T004 [P] Add review context and filterable session fields to Pydantic response schemas in `backend/app/schemas/draft_schedule.py`
+- [X] T005 [P] Add Draft Schedule review TypeScript types for context, filters, and view mode in `client/src/api/draftSchedule.ts`
+- [X] T006 [P] Create pure schedule review helper stubs for filtering and weekly grouping in `client/src/components/scheduleReviewUtils.ts`
+- [X] T007 [P] Add shared test fixtures for enriched Draft Schedule responses in `client/src/test/draftScheduleFixtures.ts`
 
 **Checkpoint**: Shared contracts and frontend helper seams are ready for story work.
 
@@ -47,21 +47,21 @@
 
 ### Tests for User Story 1 (write before implementation)
 
-- [ ] T008 [P] [US1] Add backend API contract assertions for enriched schedule context and filterable session IDs in `backend/tests/api/test_draft_schedule.py`
-- [ ] T009 [P] [US1] Add frontend component test for chronological list rendering and required context labels in `client/src/components/DraftSchedulePanel.test.tsx`
-- [ ] T010 [P] [US1] Add frontend component test for no-schedule empty state in `client/src/components/DraftSchedulePanel.test.tsx`
-- [ ] T011 [P] [US1] Add frontend component test for a generated schedule with zero sessions in `client/src/components/DraftSchedulePanel.test.tsx`
+- [X] T008 [P] [US1] Add backend API contract assertions for enriched schedule context and filterable session IDs in `backend/tests/api/test_draft_schedule.py`
+- [X] T009 [P] [US1] Add frontend component test for chronological list rendering and required context labels in `client/src/components/DraftSchedulePanel.test.tsx`
+- [X] T010 [P] [US1] Add frontend component test for no-schedule empty state in `client/src/components/DraftSchedulePanel.test.tsx`
+- [X] T011 [P] [US1] Add frontend component test for a generated schedule with zero sessions in `client/src/components/DraftSchedulePanel.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Load Course relationships needed for review context in `backend/app/services/draft_schedule_repository.py`
-- [ ] T013 [US1] Populate enriched Draft Schedule response context and session IDs in `backend/app/api/draft_schedule.py`
-- [ ] T014 [US1] Update client API parsing types for enriched schedule responses in `client/src/api/draftSchedule.ts`
-- [ ] T015 [US1] Load the current generated draft schedule on page open using `getDraftSchedule` and handle loading/not-found states in `client/src/pages/CourseSchedulePage.tsx`
-- [ ] T016 [US1] Replace hard-coded mock session context with enriched schedule context in `client/src/pages/CourseSchedulePage.tsx`
-- [ ] T017 [US1] Render chronological list review with date, time, units, course, Cohort, lecturer, room, and study type in `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T018 [US1] Render a distinct empty state when a generated Draft Schedule exists but contains zero sessions in `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T019 [US1] Style the richer list review and empty states in `client/src/App.css`
+- [X] T012 [US1] Load Course relationships needed for review context in `backend/app/services/draft_schedule_repository.py`
+- [X] T013 [US1] Populate enriched Draft Schedule response context and session IDs in `backend/app/api/draft_schedule.py`
+- [X] T014 [US1] Update client API parsing types for enriched schedule responses in `client/src/api/draftSchedule.ts`
+- [X] T015 [US1] Load the current generated draft schedule on page open using `getDraftSchedule` and handle loading/not-found states in `client/src/pages/CourseSchedulePage.tsx`
+- [X] T016 [US1] Replace hard-coded mock session context with enriched schedule context in `client/src/pages/CourseSchedulePage.tsx`
+- [X] T017 [US1] Render chronological list review with date, time, units, course, Cohort, lecturer, room, and study type in `client/src/components/DraftSchedulePanel.tsx`
+- [X] T018 [US1] Render a distinct empty state when a generated Draft Schedule exists but contains zero sessions in `client/src/components/DraftSchedulePanel.tsx`
+- [X] T019 [US1] Style the richer list review and empty states in `client/src/App.css`
 
 **Checkpoint**: User Story 1 is independently functional and testable as the MVP.
 
@@ -75,15 +75,15 @@
 
 ### Tests for User Story 2 (write before implementation)
 
-- [ ] T020 [P] [US2] Add unit tests for weekly grouping by week and day in `client/src/components/scheduleReviewUtils.test.ts`
-- [ ] T021 [P] [US2] Add frontend component test for switching list and weekly modes in `client/src/components/DraftSchedulePanel.test.tsx`
+- [X] T020 [P] [US2] Add unit tests for weekly grouping by week and day in `client/src/components/scheduleReviewUtils.test.ts`
+- [X] T021 [P] [US2] Add frontend component test for switching list and weekly modes in `client/src/components/DraftSchedulePanel.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Implement weekly grouping helpers in `client/src/components/scheduleReviewUtils.ts`
-- [ ] T023 [US2] Add view mode state and segmented list/weekly controls in `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T024 [US2] Render weekly calendar-style grouped sessions in `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T025 [US2] Style list/weekly mode controls and weekly grouped layout in `client/src/App.css`
+- [X] T022 [US2] Implement weekly grouping helpers in `client/src/components/scheduleReviewUtils.ts`
+- [X] T023 [US2] Add view mode state and segmented list/weekly controls in `client/src/components/DraftSchedulePanel.tsx`
+- [X] T024 [US2] Render weekly calendar-style grouped sessions in `client/src/components/DraftSchedulePanel.tsx`
+- [X] T025 [US2] Style list/weekly mode controls and weekly grouped layout in `client/src/App.css`
 
 **Checkpoint**: User Stories 1 and 2 work independently.
 
@@ -97,16 +97,16 @@
 
 ### Tests for User Story 3 (write before implementation)
 
-- [ ] T026 [P] [US3] Add unit tests for match-all filter behavior and clear-filter behavior in `client/src/components/scheduleReviewUtils.test.ts`
-- [ ] T027 [P] [US3] Add frontend component test for filter controls and no-results state in `client/src/components/DraftSchedulePanel.test.tsx`
+- [X] T026 [P] [US3] Add unit tests for match-all filter behavior and clear-filter behavior in `client/src/components/scheduleReviewUtils.test.ts`
+- [X] T027 [P] [US3] Add frontend component test for filter controls and no-results state in `client/src/components/DraftSchedulePanel.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Implement schedule filter helpers in `client/src/components/scheduleReviewUtils.ts`
-- [ ] T029 [US3] Add filter state and clear-filter behavior in `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T030 [US3] Render course, Cohort, lecturer, room, and study type filter controls in `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T031 [US3] Apply filtered sessions consistently to list and weekly modes in `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T032 [US3] Add no-results state styling and filter control styling in `client/src/App.css`
+- [X] T028 [US3] Implement schedule filter helpers in `client/src/components/scheduleReviewUtils.ts`
+- [X] T029 [US3] Add filter state and clear-filter behavior in `client/src/components/DraftSchedulePanel.tsx`
+- [X] T030 [US3] Render course, Cohort, lecturer, room, and study type filter controls in `client/src/components/DraftSchedulePanel.tsx`
+- [X] T031 [US3] Apply filtered sessions consistently to list and weekly modes in `client/src/components/DraftSchedulePanel.tsx`
+- [X] T032 [US3] Add no-results state styling and filter control styling in `client/src/App.css`
 
 **Checkpoint**: All Slice 2 user stories are independently functional.
 
@@ -116,12 +116,12 @@
 
 **Purpose**: Final verification, documentation alignment, and cleanup across the slice.
 
-- [ ] T033 [P] Update backend draft schedule API documentation with enriched review response in `backend/README.md`
-- [ ] T034 [P] Update client draft schedule page documentation with list/weekly/filter review behavior in `client/README.md`
-- [ ] T035 Run backend verification with `python -m pytest` from `backend/`
-- [ ] T036 Run frontend verification with `npm run lint`, `npm run test`, and `npm run build` from `client/`
-- [ ] T037 Execute the manual review scenario from `specs/002-review-generated-schedule/quickstart.md`
-- [ ] T038 Confirm no manual session edit controls, conflict warnings, holiday warnings, exam controls, dashboard summaries, or multi-course review controls are present in `client/src/components/DraftSchedulePanel.tsx`
+- [X] T033 [P] Update backend draft schedule API documentation with enriched review response in `backend/README.md`
+- [X] T034 [P] Update client draft schedule page documentation with list/weekly/filter review behavior in `client/README.md`
+- [X] T035 Run backend verification with `python -m pytest` from `backend/`
+- [X] T036 Run frontend verification with `npm run lint`, `npm run test`, and `npm run build` from `client/`
+- [X] T037 Execute the manual review scenario from `specs/002-review-generated-schedule/quickstart.md`
+- [X] T038 Confirm no manual session edit controls, conflict warnings, holiday warnings, exam controls, dashboard summaries, or multi-course review controls are present in `client/src/components/DraftSchedulePanel.tsx`
 
 ---
 

@@ -1,28 +1,142 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   generateDraftSchedule,
+  getDraftSchedule,
   type DraftSchedule,
   type GenerationFailure,
 } from '../api/draftSchedule'
+import {
+  getPlanningOptions,
+  type CourseOption,
+  type PlanningOptions,
+  type SemesterOption,
+  type TimeWindowOption,
+} from '../api/planningOptions'
 import { DraftSchedulePanel } from '../components/DraftSchedulePanel'
 
-const COURSE_ID = 1
-const SEMESTER_ID = 1
-const SELECTED_TIME_WINDOW_ID = 1
+const WEEKDAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export function CourseSchedulePage() {
-  const [schedule, setSchedule] = useState<DraftSchedule | null>(mockSchedule)
+  const [planningOptions, setPlanningOptions] = useState<PlanningOptions | null>(null)
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
+  const [selectedSemesterId, setSelectedSemesterId] = useState<number | null>(null)
+  const [selectedTimeWindowId, setSelectedTimeWindowId] = useState<number | null>(null)
+  const [schedule, setSchedule] = useState<DraftSchedule | null>(null)
   const [errors, setErrors] = useState<GenerationFailure[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
+  const selectedCourse = useMemo(
+    () => planningOptions?.courses.find((course) => course.id === selectedCourseId) ?? null,
+    [planningOptions, selectedCourseId],
+  )
+  const selectedSemester = useMemo(
+    () => planningOptions?.semesters.find((semester) => semester.id === selectedSemesterId) ?? null,
+    [planningOptions, selectedSemesterId],
+  )
+  const availableTimeWindows = useMemo(() => {
+    if (!selectedCourse || !planningOptions) {
+      return []
+    }
+    return planningOptions.timeWindows.filter(
+      (window) => window.studyTypeId === selectedCourse.studyType.id,
+    )
+  }, [planningOptions, selectedCourse])
+  const selectedTimeWindow = useMemo(
+    () => availableTimeWindows.find((window) => window.id === selectedTimeWindowId) ?? null,
+    [availableTimeWindows, selectedTimeWindowId],
+  )
+
+  useEffect(() => {
+    let isCurrent = true
+
+    async function loadPlanningOptions() {
+      setIsLoading(true)
+      setErrors([])
+      try {
+        const options = await getPlanningOptions()
+        const firstCourse = options.courses[0]
+        const firstWindow = firstCourse
+          ? options.timeWindows.find((window) => window.studyTypeId === firstCourse.studyType.id)
+          : undefined
+
+        if (isCurrent) {
+          setPlanningOptions(options)
+          setSelectedCourseId(firstCourse?.id ?? null)
+          setSelectedSemesterId(options.semesters[0]?.id ?? null)
+          setSelectedTimeWindowId(firstWindow?.id ?? null)
+          setSchedule(null)
+        }
+      } catch {
+        if (isCurrent) {
+          setErrors([{ code: 'REQUEST_FAILED', message: 'Could not load planning options.' }])
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadPlanningOptions()
+
+    return () => {
+      isCurrent = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selectedCourseId) {
+      return
+    }
+
+    let isCurrent = true
+
+    async function loadDraftSchedule() {
+      setIsLoading(true)
+      setErrors([])
+      try {
+        const current = await getDraftSchedule(selectedCourseId as number)
+        if (isCurrent) {
+          setSchedule(current)
+        }
+      } catch (error) {
+        if (!isCurrent) {
+          return
+        }
+        setSchedule(null)
+        const failures = Array.isArray(error)
+          ? error
+          : [{ code: 'UNKNOWN', message: 'Could not load draft schedule.' }]
+        if (!failures.some((failure) => failure.code === 'NOT_FOUND')) {
+          setErrors(failures)
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadDraftSchedule()
+
+    return () => {
+      isCurrent = false
+    }
+  }, [selectedCourseId])
+
   async function handleGenerate() {
+    if (!selectedCourseId || !selectedSemesterId || !selectedTimeWindowId) {
+      setErrors([{ code: 'MISSING_SELECTION', message: 'Select a course, semester, and time window.' }])
+      return
+    }
+
     setIsLoading(true)
     setErrors([])
     try {
       const generated = await generateDraftSchedule(
-        COURSE_ID,
-        SEMESTER_ID,
-        SELECTED_TIME_WINDOW_ID,
+        selectedCourseId,
+        selectedSemesterId,
+        selectedTimeWindowId,
       )
       setSchedule(generated)
     } catch (error) {
@@ -31,6 +145,16 @@ export function CourseSchedulePage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  function handleCourseChange(courseId: number) {
+    setSelectedCourseId(courseId)
+    setSchedule(null)
+    const course = planningOptions?.courses.find((option) => option.id === courseId)
+    const nextWindow = course
+      ? planningOptions?.timeWindows.find((window) => window.studyTypeId === course.studyType.id)
+      : undefined
+    setSelectedTimeWindowId(nextWindow?.id ?? null)
   }
 
   return (
@@ -54,38 +178,47 @@ export function CourseSchedulePage() {
             <h1>Resource Planner</h1>
             <p>Draft schedule generation for one course</p>
           </div>
-          <div className="metadata-pill">Fall semester</div>
+          <div className="metadata-pill">{selectedSemester?.name ?? 'No semester selected'}</div>
         </header>
 
         <div className="planner-grid">
           <section className="input-summary" aria-labelledby="input-summary-title">
             <h2 id="input-summary-title">Planning inputs</h2>
-            <dl>
-              <div>
-                <dt>Course</dt>
-                <dd>Planning 101</dd>
-              </div>
-              <div>
-                <dt>Units</dt>
-                <dd>20</dd>
-              </div>
-              <div>
-                <dt>Session preference</dt>
-                <dd>2-4 units</dd>
-              </div>
-              <div>
-                <dt>Cohort</dt>
-                <dd>AI 1, 30 students</dd>
-              </div>
-              <div>
-                <dt>Room</dt>
-                <dd>R1, capacity 40</dd>
-              </div>
-              <div>
-                <dt>Selected window</dt>
-                <dd>Monday 08:00-12:00</dd>
-              </div>
-            </dl>
+            {planningOptions ? (
+              <>
+                <div className="planning-selectors">
+                  <SelectField
+                    label="Course"
+                    value={selectedCourseId ?? ''}
+                    options={planningOptions.courses}
+                    getLabel={(course) => course.name}
+                    onChange={(value) => handleCourseChange(Number(value))}
+                  />
+                  <SelectField
+                    label="Semester"
+                    value={selectedSemesterId ?? ''}
+                    options={planningOptions.semesters}
+                    getLabel={(semester) => semester.name}
+                    onChange={(value) => setSelectedSemesterId(Number(value))}
+                  />
+                  <SelectField
+                    label="Selected window"
+                    value={selectedTimeWindowId ?? ''}
+                    options={availableTimeWindows}
+                    getLabel={formatTimeWindow}
+                    onChange={(value) => setSelectedTimeWindowId(Number(value))}
+                  />
+                </div>
+
+                <PlanningSummary
+                  course={selectedCourse}
+                  semester={selectedSemester}
+                  timeWindow={selectedTimeWindow}
+                />
+              </>
+            ) : (
+              <p className="empty-state">Loading planning options...</p>
+            )}
           </section>
 
           <DraftSchedulePanel
@@ -100,27 +233,96 @@ export function CourseSchedulePage() {
   )
 }
 
-const mockSchedule: DraftSchedule = {
-  draftScheduleId: 1,
-  courseId: COURSE_ID,
-  semesterId: SEMESTER_ID,
-  selectedTimeWindowId: SELECTED_TIME_WINDOW_ID,
-  sessions: [
-    {
-      id: 1,
-      date: '2026-09-07',
-      startTime: '08:00',
-      endTime: '11:30',
-      units: 4,
-      timeWindowId: 1,
-    },
-    {
-      id: 2,
-      date: '2026-09-14',
-      startTime: '08:00',
-      endTime: '11:30',
-      units: 4,
-      timeWindowId: 1,
-    },
-  ],
+type Selectable = {
+  id: number
+}
+
+type SelectFieldProps<T extends Selectable> = {
+  label: string
+  value: number | ''
+  options: T[]
+  getLabel: (option: T) => string
+  onChange: (value: string) => void
+}
+
+function SelectField<T extends Selectable>({
+  label,
+  value,
+  options,
+  getLabel,
+  onChange,
+}: SelectFieldProps<T>) {
+  return (
+    <label className="selector-field">
+      <span>{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={options.length === 0}
+      >
+        {options.map((option) => (
+          <option value={option.id} key={option.id}>
+            {getLabel(option)}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function PlanningSummary({
+  course,
+  semester,
+  timeWindow,
+}: {
+  course: CourseOption | null
+  semester: SemesterOption | null
+  timeWindow: TimeWindowOption | null
+}) {
+  if (!course) {
+    return <p className="empty-state">No courses are available.</p>
+  }
+
+  return (
+    <dl>
+      <div>
+        <dt>Units</dt>
+        <dd>{course.totalUnits}</dd>
+      </div>
+      <div>
+        <dt>Session preference</dt>
+        <dd>
+          {course.minSessionUnits}-{course.maxSessionUnits} units
+        </dd>
+      </div>
+      <div>
+        <dt>Cohort</dt>
+        <dd>{course.cohort.name}</dd>
+      </div>
+      <div>
+        <dt>Lecturer</dt>
+        <dd>{course.lecturer.name}</dd>
+      </div>
+      <div>
+        <dt>Room</dt>
+        <dd>{course.room.name}</dd>
+      </div>
+      <div>
+        <dt>Study type</dt>
+        <dd>{course.studyType.name}</dd>
+      </div>
+      <div>
+        <dt>Semester dates</dt>
+        <dd>{semester ? `${semester.startDate} - ${semester.endDate}` : 'No semester selected'}</dd>
+      </div>
+      <div>
+        <dt>Selected window</dt>
+        <dd>{timeWindow ? formatTimeWindow(timeWindow) : 'No valid window for this study type'}</dd>
+      </div>
+    </dl>
+  )
+}
+
+function formatTimeWindow(window: TimeWindowOption): string {
+  return `${WEEKDAY_LABELS[window.weekday] ?? `Day ${window.weekday}`} ${window.startTime}-${window.endTime}`
 }

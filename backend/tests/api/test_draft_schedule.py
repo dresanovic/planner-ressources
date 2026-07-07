@@ -87,6 +87,63 @@ def seed_valid_course(db, *, total_units=20, room_capacity=40, cohort_size=30, m
     db.commit()
 
 
+def seed_second_course(db):
+    db.add_all(
+        [
+            Lecturer(id=2, name="Grace Hopper"),
+            Cohort(id=2, name="AI 2", student_count=24),
+            Room(id=2, name="R2", capacity=30),
+            Course(
+                id=2,
+                name="Scheduling 201",
+                total_units=16,
+                min_session_units=2,
+                max_session_units=4,
+                lecturer_id=2,
+                cohort_id=2,
+                room_id=2,
+                study_type_id=1,
+            ),
+        ]
+    )
+    db.commit()
+
+
+def test_read_planning_options_returns_database_courses_and_windows(client, db_session):
+    seed_valid_course(db_session)
+    seed_second_course(db_session)
+
+    response = client.get("/api/planning-options")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert [course["name"] for course in payload["courses"]] == ["Planning 101", "Scheduling 201"]
+    assert payload["courses"][0]["cohort"] == {"id": 1, "name": "AI 1"}
+    assert payload["courses"][1]["lecturer"] == {"id": 2, "name": "Grace Hopper"}
+    assert payload["courses"][1]["room"] == {"id": 2, "name": "R2"}
+    assert payload["semesters"] == [
+        {
+            "id": 1,
+            "name": "Fall",
+            "startDate": "2026-09-07",
+            "endDate": "2026-12-20",
+        }
+    ]
+    assert [
+        {
+            "id": window["id"],
+            "studyTypeId": window["studyTypeId"],
+            "weekday": window["weekday"],
+            "startTime": window["startTime"],
+            "endTime": window["endTime"],
+        }
+        for window in payload["timeWindows"]
+    ] == [
+        {"id": 1, "studyTypeId": 1, "weekday": 0, "startTime": "08:00", "endTime": "12:00"},
+        {"id": 2, "studyTypeId": 1, "weekday": 2, "startTime": "08:00", "endTime": "12:00"},
+    ]
+
+
 def test_generate_and_read_current_draft_schedule(client, db_session):
     seed_valid_course(db_session)
 
@@ -99,9 +156,29 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
     payload = response.json()
     assert payload["courseId"] == 1
     assert payload["selectedTimeWindowId"] == 1
+    assert payload["context"] == {
+        "course": {"id": 1, "name": "Planning 101"},
+        "cohort": {"id": 1, "name": "AI 1"},
+        "lecturer": {"id": 1, "name": "Ada Lovelace"},
+        "room": {"id": 1, "name": "R1"},
+        "studyType": {"id": 1, "name": "Full-time"},
+    }
     assert [session["units"] for session in payload["sessions"]] == [4, 4, 4, 4, 4]
     assert payload["sessions"][0]["startTime"] == "08:00"
     assert payload["sessions"][0]["endTime"] == "11:30"
+    assert payload["sessions"][0] == {
+        "id": payload["sessions"][0]["id"],
+        "date": "2026-09-07",
+        "startTime": "08:00",
+        "endTime": "11:30",
+        "units": 4,
+        "courseId": 1,
+        "lecturerId": 1,
+        "cohortId": 1,
+        "roomId": 1,
+        "studyTypeId": 1,
+        "timeWindowId": 1,
+    }
 
     read_response = client.get("/api/courses/1/draft-schedule")
     assert read_response.status_code == 200

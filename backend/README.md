@@ -22,10 +22,18 @@ Set `DATABASE_URL` to a different SQLAlchemy URL when running against another da
 
 The draft schedule API supports explicit generation for one course:
 
+- `GET /api/planning-options`
 - `POST /api/courses/{course_id}/draft-schedule/generate`
 - `GET /api/courses/{course_id}/draft-schedule`
 
-Generation requires existing planning data for one course, lecturer, room, Cohort, semester, study type, and study type time windows. Invalid requests return a `422` response with all detected generation errors in an `errors` array. Successful generation replaces the previous generated draft for that course.
+The planning options endpoint returns the database-backed courses, semesters, and study type time windows that the UI can select from. Generation requires existing planning data for one course, lecturer, room, Cohort, semester, study type, and study type time windows. Invalid requests return a `422` response with all detected generation errors in an `errors` array. Successful generation replaces the previous generated draft for that course.
+
+The draft schedule response includes review context for the selected course:
+
+- course, Cohort, lecturer, room, and study type names and IDs
+- generated session date, start/end time, units, and filterable planning IDs
+
+The response remains scoped to the current selected course. Semester-wide multi-course review, manual editing, conflict detection, holidays, exams, and dashboard alerts are handled by later slices.
 
 ## Migrations
 
@@ -38,3 +46,13 @@ Run backend tests from this directory:
 ```text
 python -m pytest
 ```
+
+## Dummy Planning Data
+
+Seed local test data from the backend directory:
+
+```text
+python scripts/seed_dummy_planning_data.py
+```
+
+The script is idempotent: it updates or reuses records by name, so it can be run more than once without creating duplicate dummy courses. It adds three courses across two lecturers, with cohorts, rooms, study types, time windows, and a Fall 2026 semester.

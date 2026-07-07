@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.draft_schedule import router as draft_schedule_router
+from app.api.planning_options import router as planning_options_router
 
 app = FastAPI(title="Planner Resource API")
 app.add_middleware(
@@ -15,6 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(draft_schedule_router)
+app.include_router(planning_options_router)
 
 
 @app.get("/health")

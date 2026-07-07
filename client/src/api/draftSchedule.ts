@@ -4,7 +4,25 @@ export type DraftSession = {
   startTime: string
   endTime: string
   units: number
+  courseId: number
+  lecturerId: number
+  cohortId: number
+  roomId: number
+  studyTypeId: number
   timeWindowId: number
+}
+
+export type PlanningEntity = {
+  id: number
+  name: string
+}
+
+export type DraftScheduleContext = {
+  course: PlanningEntity
+  cohort: PlanningEntity
+  lecturer: PlanningEntity
+  room: PlanningEntity
+  studyType: PlanningEntity
 }
 
 export type DraftSchedule = {
@@ -12,8 +30,19 @@ export type DraftSchedule = {
   courseId: number
   semesterId: number
   selectedTimeWindowId: number
+  context: DraftScheduleContext
   sessions: DraftSession[]
 }
+
+export type ReviewFilters = {
+  courseId?: number
+  cohortId?: number
+  lecturerId?: number
+  roomId?: number
+  studyTypeId?: number
+}
+
+export type ViewMode = 'list' | 'weekly'
 
 export type GenerationFailure = {
   code: string

@@ -4,10 +4,12 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.draft_schedule import (
+    DraftScheduleContextResponse,
     DraftScheduleResponse,
     DraftSessionResponse,
     GenerateDraftScheduleRequest,
     GenerationFailureResponse,
+    PlanningEntityResponse,
 )
 from app.services.draft_schedule_repository import (
     PlanningInputNotFoundError,
@@ -70,11 +72,19 @@ def read_draft_schedule(course_id: int, db: Session = Depends(get_db)) -> DraftS
 
 
 def _to_response(draft) -> DraftScheduleResponse:
+    course = draft.course
     return DraftScheduleResponse(
         draftScheduleId=draft.id,
         courseId=draft.course_id,
         semesterId=draft.semester_id,
         selectedTimeWindowId=draft.selected_time_window_id,
+        context=DraftScheduleContextResponse(
+            course=PlanningEntityResponse(id=course.id, name=course.name),
+            cohort=PlanningEntityResponse(id=course.cohort.id, name=course.cohort.name),
+            lecturer=PlanningEntityResponse(id=course.lecturer.id, name=course.lecturer.name),
+            room=PlanningEntityResponse(id=course.room.id, name=course.room.name),
+            studyType=PlanningEntityResponse(id=course.study_type.id, name=course.study_type.name),
+        ),
         sessions=[
             DraftSessionResponse(
                 id=session.id,
@@ -82,6 +92,11 @@ def _to_response(draft) -> DraftScheduleResponse:
                 startTime=session.start_time.strftime("%H:%M"),
                 endTime=session.end_time.strftime("%H:%M"),
                 units=session.units,
+                courseId=session.course_id,
+                lecturerId=session.lecturer_id,
+                cohortId=session.cohort_id,
+                roomId=session.room_id,
+                studyTypeId=course.study_type_id,
                 timeWindowId=session.time_window_id,
             )
             for session in draft.sessions

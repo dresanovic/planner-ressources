@@ -26,7 +26,25 @@ class DraftSessionResponse(BaseModel):
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
     units: int
+    course_id: int = Field(alias="courseId")
+    lecturer_id: int = Field(alias="lecturerId")
+    cohort_id: int = Field(alias="cohortId")
+    room_id: int = Field(alias="roomId")
+    study_type_id: int = Field(alias="studyTypeId")
     time_window_id: int = Field(alias="timeWindowId")
+
+
+class PlanningEntityResponse(BaseModel):
+    id: int
+    name: str
+
+
+class DraftScheduleContextResponse(BaseModel):
+    course: PlanningEntityResponse
+    cohort: PlanningEntityResponse
+    lecturer: PlanningEntityResponse
+    room: PlanningEntityResponse
+    study_type: PlanningEntityResponse = Field(alias="studyType")
 
 
 class DraftScheduleResponse(BaseModel):
@@ -36,6 +54,7 @@ class DraftScheduleResponse(BaseModel):
     course_id: int = Field(alias="courseId")
     semester_id: int = Field(alias="semesterId")
     selected_time_window_id: int = Field(alias="selectedTimeWindowId")
+    context: DraftScheduleContextResponse
     sessions: list[DraftSessionResponse]
 
 

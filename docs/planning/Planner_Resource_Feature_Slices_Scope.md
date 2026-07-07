@@ -16,13 +16,29 @@ Show generated Draft Sessions in a simple weekly/list calendar view, with filter
 
 Value: lets office staff inspect the generated result before editing.
 
-Slice 3: Manual Session Editing
+Slice 3: Configurable Generation Constraints
+
+Let office staff control the generation inputs before creating a draft schedule:
+
+planning period defaults to the selected semester dates
+
+optional custom start date and end date
+
+allowed weekly teaching windows by weekday and hour range
+
+system-selected defaults when no custom constraints are provided
+
+The current single selected window should evolve into a clearer generation constraint model. Office staff should be able to say, for example, that sessions may be planned between Monday 08:00-12:00 and Wednesday 09:00-13:00, while still allowing the system to use sensible defaults from the semester and study type.
+
+Value: gives office staff control over when units may be planned while preserving automatic defaults.
+
+Slice 4: Manual Session Editing
 
 Allow admins to change date, start time, room, or session length for generated Draft Sessions.
 
 Value: turns the tool from generator into planner workflow.
 
-Slice 4: Conflict Detection
+Slice 5: Conflict Detection
 
 Detect conflicts after generation or manual edits:
 
@@ -38,37 +54,37 @@ session outside Study Type Time Window
 
 Value: makes manual changes safe.
 
-Slice 5: Multi-Course Draft Generation
+Slice 6: Multi-Course Draft Generation
 
 Generate schedules for multiple courses in one semester, initially without full optimization.
 
 Value: moves from proof-of-concept to real semester planning.
 
-Slice 6: Conflict-Aware Multi-Course Scheduling
+Slice 7: Conflict-Aware Multi-Course Scheduling
 
 Improve multi-course generation so it avoids known lecturer, room, and Cohort conflicts during generation.
 
 Value: reduces manual correction work.
 
-Slice 7: Public Holiday Avoidance
+Slice 8: Public Holiday Avoidance
 
 Add holiday calendars and prevent generated sessions from landing on holidays.
 
 Value: removes a common real-world planning error.
 
-Slice 8: Exam Scheduling
+Slice 9: Exam Scheduling
 
 Generate and manage exams separately from teaching sessions, usually at least one week after the last teaching session.
 
 Value: covers the full academic planning lifecycle.
 
-Slice 9: Multiple Lecturers And Rooms Per Course
+Slice 10: Multiple Lecturers And Rooms Per Course
 
 Support courses taught by two or more lecturers and courses that can use multiple eligible rooms.
 
 Value: handles real-world exceptions without forcing manual workarounds.
 
-Slice 10: Planning Dashboard And Validation Alerts
+Slice 11: Planning Dashboard And Validation Alerts
 
 Add the left-panel style overview:
 
@@ -84,5 +100,4 @@ generation failures
 
 Value: gives office staff an operational control center.
 
-My recommendation: after Slice 1, do Slice 2 then Slice 3 then Slice 4. That gives you the core loop: generate, inspect, adjust, validate.
-
+My recommendation: after Slice 1, do Slice 2 then Slice 3 then Slice 4 then Slice 5. That gives you the core loop: generate, inspect, constrain, adjust, validate.
