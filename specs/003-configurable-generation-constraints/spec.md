@@ -12,21 +12,31 @@
 implementation. All user stories require clear acceptance criteria and
 independent test paths.
 
+## Clarifications
+
+### Session 2026-07-07
+
+- Q: Should custom constraints be saved after generation? -> A: Save custom constraints for the selected course and selected semester and reload them the next time staff generate for that course-semester combination.
+- Q: What scope should saved custom constraints use? -> A: Save custom constraints per selected course and selected semester.
+- Q: When should custom constraints be saved? -> A: Save custom constraints only after draft schedule generation succeeds.
+- Q: What should clearing custom constraints do? -> A: Delete saved constraints for that course and semester and restore semester and study type defaults.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Generate With Default Constraints (Priority: P1)
 
-Office staff generate a draft schedule for a selected course without customizing constraints, relying on the system to use the selected semester dates and the course study type's default teaching windows.
+Office staff generate a draft schedule for a selected course without customizing constraints, relying on the system to use the selected semester dates and the course study type's default teaching windows unless saved course-semester-specific constraints already exist.
 
 **Why this priority**: Defaults preserve the existing single-course generation workflow while making the constraint model explicit. Office staff should not have to enter dates and weekly windows for routine generation cases.
 
-**Independent Test**: Can be fully tested by selecting a course with a semester and study type defaults, leaving generation constraints unchanged, generating a draft schedule, and confirming every Draft Session uses the semester date range and one of the study type's default weekly teaching windows.
+**Independent Test**: Can be fully tested by selecting a course with no saved custom constraints, a semester, and study type defaults, leaving generation constraints unchanged, generating a draft schedule, and confirming every Draft Session uses the semester date range and one of the study type's default weekly teaching windows.
 
 **Acceptance Scenarios**:
 
 1. **Given** a selected course has a selected semester with start and end dates and a study type with default teaching windows, **When** office staff open the generation controls, **Then** the planning period is prefilled with the semester start and end dates and the allowed teaching windows are prefilled from the study type defaults.
 2. **Given** office staff leave the default generation constraints unchanged, **When** they generate a draft schedule, **Then** every Draft Session occurs within the semester planning period and inside one of the default study type teaching windows.
 3. **Given** default constraints are visible before generation, **When** office staff review the controls, **Then** the UI labels them as generation constraints used for creating the draft schedule, not as filters for hiding or showing already generated sessions.
+4. **Given** saved custom constraints exist for the selected course and selected semester, **When** office staff open the generation controls for that course and semester again, **Then** the saved custom constraints are loaded instead of the semester and study type defaults.
 
 ---
 
@@ -42,7 +52,7 @@ Office staff override the default semester planning period for a selected course
 
 1. **Given** the generation controls show semester defaults, **When** office staff enter a custom planning start date and custom planning end date, **Then** the custom dates are shown as the active planning period for the next generation request.
 2. **Given** a valid custom planning period is active, **When** office staff generate a draft schedule, **Then** every Draft Session occurs on or after the custom start date and on or before the custom end date.
-3. **Given** office staff clear their custom planning period, **When** the generation controls return to defaults, **Then** the selected semester start and end dates become the active planning period again.
+3. **Given** office staff clear their custom planning period, **When** the generation controls return to defaults, **Then** the selected semester start and end dates become the active planning period again and any saved custom planning period for that course-semester combination is removed.
 
 ---
 
@@ -58,7 +68,7 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 
 1. **Given** generation controls are available for a selected course, **When** office staff add allowed teaching windows for Monday 08:00-12:00 and Wednesday 09:00-13:00, **Then** both windows are shown as active generation constraints.
 2. **Given** custom allowed teaching windows are active, **When** office staff generate a draft schedule, **Then** every Draft Session occurs only on one of the configured weekdays and within the configured time ranges.
-3. **Given** office staff remove all custom teaching windows, **When** the generation controls return to defaults, **Then** the course study type's default teaching windows become the active allowed windows again.
+3. **Given** office staff remove all custom teaching windows, **When** the generation controls return to defaults, **Then** the course study type's default teaching windows become the active allowed windows again and any saved custom teaching windows for that course-semester combination are removed.
 
 ### Edge Cases
 
@@ -67,6 +77,8 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - If no allowed weekly teaching window is available from either custom constraints or study type defaults, generation must be blocked with a clear message that at least one allowed teaching window is required.
 - If an allowed teaching window has an end time equal to or earlier than its start time, generation must be blocked and the invalid window must be identifiable to office staff.
 - If the configured planning period and allowed windows cannot fit all required sessions, generation must not create a partial draft schedule and must explain that the constraints are too restrictive.
+- If generation fails or is blocked, the attempted custom constraints must not replace the saved custom constraints for that course-semester combination.
+- If office staff clear custom constraints, saved custom constraints for that course-semester combination must be deleted and the semester and study type defaults must become active.
 - If custom constraints are changed after a draft schedule already exists, the existing Draft Sessions remain unchanged until office staff explicitly generate a new draft schedule.
 - Generation constraints must not hide already generated Draft Sessions in the review view; review filtering remains the responsibility of Slice 2.
 - Manual session editing, conflict detection, multi-course generation, holiday avoidance, exam scheduling, dashboards, validation alerts, multi-course optimization, multiple lecturers, and multiple rooms remain out of scope.
@@ -78,23 +90,25 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - **FR-001**: System MUST provide generation constraint controls for the currently selected course before draft schedule generation is triggered.
 - **FR-002**: System MUST default the active planning period to the selected semester start date and selected semester end date.
 - **FR-003**: Users MUST be able to override the active planning period with a custom start date and custom end date.
-- **FR-004**: System MUST allow users to clear custom planning period dates and return to the selected semester defaults.
-- **FR-005**: System MUST prevent generation when the active planning period start date is after the active planning period end date.
-- **FR-006**: System MUST prevent generation when a custom planning period falls outside the selected semester date range.
-- **FR-007**: System MUST default allowed weekly teaching windows to the selected course study type's default time windows when users have not customized windows.
-- **FR-008**: Users MUST be able to define one or more custom allowed weekly teaching windows for generation.
-- **FR-009**: Each allowed weekly teaching window MUST include a weekday, a start time, and an end time.
-- **FR-010**: System MUST prevent generation when any active allowed weekly teaching window has an end time that is equal to or earlier than its start time.
-- **FR-011**: System MUST prevent generation when there are no active allowed weekly teaching windows.
-- **FR-012**: Users MUST be able to remove custom allowed weekly teaching windows and return to the course study type's default time windows.
-- **FR-013**: System MUST clearly distinguish generation constraints from review filters in labels, grouping, and workflow placement.
-- **FR-014**: System MUST send the active planning period and active allowed weekly teaching windows into draft schedule generation for the selected course.
-- **FR-015**: System MUST create Draft Sessions only within the active planning period.
-- **FR-016**: System MUST create Draft Sessions only within the active allowed weekly teaching windows.
-- **FR-017**: System MUST not create a partial draft schedule when the configured constraints cannot accommodate all required sessions.
-- **FR-018**: System MUST leave existing Draft Sessions unchanged when users modify generation constraints without triggering generation.
-- **FR-019**: System MUST continue to support the single-course generation scope from Slice 1 and the review-only planner UI behavior from Slice 2.
-- **FR-020**: System MUST NOT include manual session editing, conflict detection, multi-course generation, holiday avoidance, exam scheduling, dashboards or validation alerts, optimization across multiple courses, or multiple lecturers or multiple rooms per course in this feature.
+- **FR-004**: System MUST allow users to clear custom planning period dates, delete the saved custom planning period for the selected course and selected semester, and return to the selected semester defaults.
+- **FR-005**: System MUST save custom generation constraints for the selected course and selected semester only after draft schedule generation succeeds.
+- **FR-006**: System MUST reload saved custom generation constraints the next time office staff open generation controls for the same selected course and selected semester.
+- **FR-007**: System MUST prevent generation when the active planning period start date is after the active planning period end date.
+- **FR-008**: System MUST prevent generation when a custom planning period falls outside the selected semester date range.
+- **FR-009**: System MUST default allowed weekly teaching windows to the selected course study type's default time windows when users have not customized windows and no saved custom windows exist for the selected course and selected semester.
+- **FR-010**: Users MUST be able to define one or more custom allowed weekly teaching windows for generation.
+- **FR-011**: Each allowed weekly teaching window MUST include a weekday, a start time, and an end time.
+- **FR-012**: System MUST prevent generation when any active allowed weekly teaching window has an end time that is equal to or earlier than its start time.
+- **FR-013**: System MUST prevent generation when there are no active allowed weekly teaching windows.
+- **FR-014**: Users MUST be able to remove custom allowed weekly teaching windows, delete saved custom teaching windows for the selected course and selected semester, and return to the course study type's default time windows.
+- **FR-015**: System MUST clearly distinguish generation constraints from review filters in labels, grouping, and workflow placement.
+- **FR-016**: System MUST send the active planning period and active allowed weekly teaching windows into draft schedule generation for the selected course.
+- **FR-017**: System MUST create Draft Sessions only within the active planning period.
+- **FR-018**: System MUST create Draft Sessions only within the active allowed weekly teaching windows.
+- **FR-019**: System MUST not create a partial draft schedule when the configured constraints cannot accommodate all required sessions.
+- **FR-020**: System MUST leave existing Draft Sessions unchanged when users modify generation constraints without triggering generation.
+- **FR-021**: System MUST continue to support the single-course generation scope from Slice 1 and the review-only planner UI behavior from Slice 2.
+- **FR-022**: System MUST NOT include manual session editing, conflict detection, multi-course generation, holiday avoidance, exam scheduling, dashboards or validation alerts, optimization across multiple courses, or multiple lecturers or multiple rooms per course in this feature.
 
 ### Test Requirements *(mandatory)*
 
@@ -109,7 +123,7 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - **Course**: The selected teaching offering for which office staff configure generation constraints and generate Draft Sessions.
 - **Semester**: The academic date range that provides the default planning period and bounds any custom planning period.
 - **Study Type**: The course's study organization category that provides default allowed weekly teaching windows.
-- **Generation Constraints**: The active planning period and active allowed weekly teaching windows used by the generator for the next draft schedule creation.
+- **Generation Constraints**: The active planning period and active allowed weekly teaching windows used by the generator for the next draft schedule creation. Custom generation constraints are saved for the selected course and selected semester after successful generation, reloaded for later generation of the same course-semester combination, and deleted when office staff clear them.
 - **Planning Period**: The start date and end date within which generated Draft Sessions may be placed.
 - **Allowed Weekly Teaching Window**: A weekday and time interval during which generated Draft Sessions may be placed.
 - **Draft Schedule**: The generated schedule for the selected course, created from the active generation constraints when office staff trigger generation.
@@ -127,6 +141,9 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - **SC-006**: 100% of invalid planning periods, invalid teaching windows, and missing teaching windows are blocked before Draft Sessions are created.
 - **SC-007**: At least 90% of office staff in review or usability checks can correctly identify that the controls affect future generation, not the currently visible review results.
 - **SC-008**: In impossible scheduling examples caused by restrictive constraints, the system creates no partial draft schedule and provides an actionable explanation.
+- **SC-009**: 100% of saved custom constraints in validation examples reload when office staff return to generation controls for the same selected course and selected semester.
+- **SC-010**: 100% of failed or blocked generation attempts in validation examples leave previously saved custom constraints unchanged.
+- **SC-011**: 100% of cleared saved constraints in validation examples are absent the next time office staff open generation controls for the same selected course and selected semester.
 
 ## Assumptions
 
@@ -136,4 +153,5 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - A custom planning period may narrow or match the selected semester period but may not extend outside it.
 - Time values are interpreted in the institution's local time.
 - Allowed weekly teaching windows describe recurring weekly availability and do not account for public holidays in this slice.
-- Changes to generation constraints affect only the next explicit generation request and do not automatically edit or regenerate existing Draft Sessions.
+- Saved custom constraints affect later generation requests for the same selected course and selected semester but do not automatically edit or regenerate existing Draft Sessions.
+- Clearing custom constraints is a deliberate reset to selected semester and study type defaults for the same course-semester combination.
