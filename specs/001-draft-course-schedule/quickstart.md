@@ -114,6 +114,15 @@ npm run lint
 npm run build
 ```
 
+## Implementation Verification
+
+Verified on 2026-07-06:
+
+- Backend: `python -m pytest` completed 14 tests in about 1 second.
+- Frontend: `npm run lint` passed.
+- Frontend: `npm run build` passed after rerunning with elevated process permissions because Vite helper process spawning was blocked by the sandbox.
+- The service-level valid single-course scenarios complete well under the 1-minute goal.
+
 ## API Contract
 
 See [contracts/draft-schedule.openapi.yaml](./contracts/draft-schedule.openapi.yaml).

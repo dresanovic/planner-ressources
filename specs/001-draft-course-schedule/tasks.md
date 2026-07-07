@@ -18,10 +18,10 @@
 
 **Purpose**: Add the minimal project structure and dependency declarations needed for the feature.
 
-- [ ] T001 Add SQLAlchemy and Alembic dependencies to backend/requirements.txt
-- [ ] T002 [P] Create backend package directories and __init__.py files in backend/app/api/, backend/app/db/, backend/app/models/, backend/app/schemas/, backend/app/services/
-- [ ] T003 [P] Create backend test directories and __init__.py files in backend/tests/api/ and backend/tests/services/
-- [ ] T004 [P] Create frontend feature directories in client/src/api/, client/src/components/, and client/src/pages/
+- [X] T001 Add SQLAlchemy and Alembic dependencies to backend/requirements.txt
+- [X] T002 [P] Create backend package directories and __init__.py files in backend/app/api/, backend/app/db/, backend/app/models/, backend/app/schemas/, backend/app/services/
+- [X] T003 [P] Create backend test directories and __init__.py files in backend/tests/api/ and backend/tests/services/
+- [X] T004 [P] Create frontend feature directories in client/src/api/, client/src/components/, and client/src/pages/
 
 ---
 
@@ -31,13 +31,13 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Create database engine/session configuration for SQLite in backend/app/db/session.py
-- [ ] T006 Create SQLAlchemy declarative base metadata in backend/app/db/base.py
-- [ ] T007 Define planning SQLAlchemy models for Course, Lecturer, Cohort, Room, Semester, StudyType, StudyTypeTimeWindow, DraftSchedule, and DraftSession in backend/app/models/planning.py
-- [ ] T008 Create Alembic configuration and initial migration for planning tables in backend/app/db/migrations/
-- [ ] T009 Create shared Pydantic schemas for draft sessions, draft schedules, generation requests, and generation failures in backend/app/schemas/draft_schedule.py
-- [ ] T010 Create repository module skeleton and planning input loader placeholders in backend/app/services/draft_schedule_repository.py
-- [ ] T011 Create placeholder draft schedule API router in backend/app/api/draft_schedule.py and register it in backend/app/main.py
+- [X] T005 Create database engine/session configuration for SQLite in backend/app/db/session.py
+- [X] T006 Create SQLAlchemy declarative base metadata in backend/app/db/base.py
+- [X] T007 Define planning SQLAlchemy models for Course, Lecturer, Cohort, Room, Semester, StudyType, StudyTypeTimeWindow, DraftSchedule, and DraftSession in backend/app/models/planning.py
+- [X] T008 Create Alembic configuration and initial migration for planning tables in backend/app/db/migrations/
+- [X] T009 Create shared Pydantic schemas for draft sessions, draft schedules, generation requests, and generation failures in backend/app/schemas/draft_schedule.py
+- [X] T010 Create repository module skeleton and planning input loader placeholders in backend/app/services/draft_schedule_repository.py
+- [X] T011 Create placeholder draft schedule API router in backend/app/api/draft_schedule.py and register it in backend/app/main.py
 
 **Checkpoint**: Foundation ready. User story implementation can now begin.
 
@@ -51,23 +51,23 @@
 
 ### Tests for User Story 1 (write before implementation)
 
-- [ ] T012 [P] [US1] Add service tests for splitting 20 units into five 4-unit sessions and 18 units into 4,4,4,3,3 in backend/tests/services/test_schedule_generation.py
-- [ ] T013 [US1] Add service tests for 45-minute units, 10-minute breaks, generated end times, and total scheduled units in backend/tests/services/test_schedule_generation.py
-- [ ] T014 [P] [US1] Add API tests for successful POST /api/courses/{courseId}/draft-schedule/generate and GET /api/courses/{courseId}/draft-schedule in backend/tests/api/test_draft_schedule.py
-- [ ] T015 [P] [US1] Add API test that a second successful generation replaces previous generated draft sessions in backend/tests/api/test_draft_schedule.py
-- [ ] T016 [US1] Add repository test that successful regeneration replaces prior draft sessions in backend/tests/services/test_draft_schedule_repository.py
-- [ ] T017 [US1] Add frontend component fixture or build-verified mock state for displaying generated sessions in client/src/components/DraftSchedulePanel.tsx
+- [X] T012 [P] [US1] Add service tests for splitting 20 units into five 4-unit sessions and 18 units into 4,4,4,3,3 in backend/tests/services/test_schedule_generation.py
+- [X] T013 [US1] Add service tests for 45-minute units, 10-minute breaks, generated end times, and total scheduled units in backend/tests/services/test_schedule_generation.py
+- [X] T014 [P] [US1] Add API tests for successful POST /api/courses/{courseId}/draft-schedule/generate and GET /api/courses/{courseId}/draft-schedule in backend/tests/api/test_draft_schedule.py
+- [X] T015 [P] [US1] Add API test that a second successful generation replaces previous generated draft sessions in backend/tests/api/test_draft_schedule.py
+- [X] T016 [US1] Add repository test that successful regeneration replaces prior draft sessions in backend/tests/services/test_draft_schedule_repository.py
+- [X] T017 [US1] Add frontend component fixture or build-verified mock state for displaying generated sessions in client/src/components/DraftSchedulePanel.tsx
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Implement unit distribution and session duration helpers in backend/app/services/schedule_generation.py
-- [ ] T019 [US1] Implement default once-per-week generation using the selected Study Type Time Window in backend/app/services/schedule_generation.py
-- [ ] T020 [US1] Implement successful draft persistence and replacement of previous generated drafts in backend/app/services/draft_schedule_repository.py
-- [ ] T021 [US1] Implement POST /api/courses/{courseId}/draft-schedule/generate success path in the placeholder router in backend/app/api/draft_schedule.py
-- [ ] T022 [US1] Implement GET /api/courses/{courseId}/draft-schedule readback path in backend/app/api/draft_schedule.py
-- [ ] T023 [P] [US1] Implement typed client functions for generate and readback requests in client/src/api/draftSchedule.ts
-- [ ] T024 [US1] Implement DraftSchedulePanel session display and generate action wiring in client/src/components/DraftSchedulePanel.tsx
-- [ ] T025 [US1] Mount the draft schedule page in client/src/pages/CourseSchedulePage.tsx and client/src/App.tsx
+- [X] T018 [US1] Implement unit distribution and session duration helpers in backend/app/services/schedule_generation.py
+- [X] T019 [US1] Implement default once-per-week generation using the selected Study Type Time Window in backend/app/services/schedule_generation.py
+- [X] T020 [US1] Implement successful draft persistence and replacement of previous generated drafts in backend/app/services/draft_schedule_repository.py
+- [X] T021 [US1] Implement POST /api/courses/{courseId}/draft-schedule/generate success path in the placeholder router in backend/app/api/draft_schedule.py
+- [X] T022 [US1] Implement GET /api/courses/{courseId}/draft-schedule readback path in backend/app/api/draft_schedule.py
+- [X] T023 [P] [US1] Implement typed client functions for generate and readback requests in client/src/api/draftSchedule.ts
+- [X] T024 [US1] Implement DraftSchedulePanel session display and generate action wiring in client/src/components/DraftSchedulePanel.tsx
+- [X] T025 [US1] Mount the draft schedule page in client/src/pages/CourseSchedulePage.tsx and client/src/App.tsx
 
 **Checkpoint**: MVP complete. US1 can be validated independently with a valid single-course generation case.
 
@@ -81,16 +81,16 @@
 
 ### Tests for User Story 2 (write before implementation)
 
-- [ ] T026 [P] [US2] Add service tests for selected-window preference and fallback to another allowed window in backend/tests/services/test_schedule_generation.py
-- [ ] T027 [US2] Add service tests for multiple sessions in one week with at most one generated session per day in backend/tests/services/test_schedule_generation.py
-- [ ] T028 [P] [US2] Add API test that generated sessions never exceed allowed Study Type Time Windows in backend/tests/api/test_draft_schedule.py
+- [X] T026 [P] [US2] Add service tests for selected-window preference and fallback to another allowed window in backend/tests/services/test_schedule_generation.py
+- [X] T027 [US2] Add service tests for multiple sessions in one week with at most one generated session per day in backend/tests/services/test_schedule_generation.py
+- [X] T028 [P] [US2] Add API test that generated sessions never exceed allowed Study Type Time Windows in backend/tests/api/test_draft_schedule.py
 
 ### Implementation for User Story 2
 
-- [ ] T029 [US2] Implement allowed-window placement validation and fallback-window selection in backend/app/services/schedule_generation.py
-- [ ] T030 [US2] Implement insufficient-weeks fallback to multiple sessions per week with one-session-per-day enforcement in backend/app/services/schedule_generation.py
-- [ ] T031 [US2] Include selectedTimeWindowId and session timeWindowId consistently in API responses in backend/app/api/draft_schedule.py
-- [ ] T032 [US2] Display each generated session's date, time range, units, and window reference in client/src/components/DraftSchedulePanel.tsx
+- [X] T029 [US2] Implement allowed-window placement validation and fallback-window selection in backend/app/services/schedule_generation.py
+- [X] T030 [US2] Implement insufficient-weeks fallback to multiple sessions per week with one-session-per-day enforcement in backend/app/services/schedule_generation.py
+- [X] T031 [US2] Include selectedTimeWindowId and session timeWindowId consistently in API responses in backend/app/api/draft_schedule.py
+- [X] T032 [US2] Display each generated session's date, time range, units, and window reference in client/src/components/DraftSchedulePanel.tsx
 
 **Checkpoint**: US1 and US2 both work independently and preserve all time-window constraints.
 
@@ -104,17 +104,17 @@
 
 ### Tests for User Story 3 (write before implementation)
 
-- [ ] T033 [P] [US3] Add service tests for insufficient room capacity and invalid session preference failures in backend/tests/services/test_schedule_generation.py
-- [ ] T034 [US3] Add service tests for no fitting time window and insufficient semester capacity failures in backend/tests/services/test_schedule_generation.py
-- [ ] T035 [P] [US3] Add API test that multiple detected failure reasons are returned together with no partial draft creation in backend/tests/api/test_draft_schedule.py
-- [ ] T036 [US3] Add frontend component fixture or build-verified mock state for rendering all generation failure reasons in client/src/components/DraftSchedulePanel.tsx
+- [X] T033 [P] [US3] Add service tests for insufficient room capacity and invalid session preference failures in backend/tests/services/test_schedule_generation.py
+- [X] T034 [US3] Add service tests for no fitting time window and insufficient semester capacity failures in backend/tests/services/test_schedule_generation.py
+- [X] T035 [P] [US3] Add API test that multiple detected failure reasons are returned together with no partial draft creation in backend/tests/api/test_draft_schedule.py
+- [X] T036 [US3] Add frontend component fixture or build-verified mock state for rendering all generation failure reasons in client/src/components/DraftSchedulePanel.tsx
 
 ### Implementation for User Story 3
 
-- [ ] T037 [US3] Implement failure reason accumulation for capacity, preference, no-window, and insufficient-capacity cases in backend/app/services/schedule_generation.py
-- [ ] T038 [US3] Ensure failed generation does not create or replace draft records in backend/app/services/draft_schedule_repository.py
-- [ ] T039 [US3] Return 422 GenerationFailureResponse with all detected errors in backend/app/api/draft_schedule.py
-- [ ] T040 [US3] Render all returned generation failure messages in client/src/components/DraftSchedulePanel.tsx
+- [X] T037 [US3] Implement failure reason accumulation for capacity, preference, no-window, and insufficient-capacity cases in backend/app/services/schedule_generation.py
+- [X] T038 [US3] Ensure failed generation does not create or replace draft records in backend/app/services/draft_schedule_repository.py
+- [X] T039 [US3] Return 422 GenerationFailureResponse with all detected errors in backend/app/api/draft_schedule.py
+- [X] T040 [US3] Render all returned generation failure messages in client/src/components/DraftSchedulePanel.tsx
 
 **Checkpoint**: All user stories are independently functional and invalid generation requests are safely blocked.
 
@@ -124,12 +124,12 @@
 
 **Purpose**: Final verification, documentation alignment, and cleanup across stories.
 
-- [ ] T041 [P] Update backend setup notes for SQLite, SQLAlchemy, and Alembic usage in backend/README.md
-- [ ] T042 [P] Update frontend usage notes for the draft schedule page in client/README.md
-- [ ] T043 Run backend pytest verification from quickstart in backend/
-- [ ] T044 Run frontend lint and build verification from quickstart in client/
-- [ ] T045 Verify and record that the valid single-course generation scenario completes in under 1 minute in specs/001-draft-course-schedule/quickstart.md
-- [ ] T046 Review specs/001-draft-course-schedule/quickstart.md against implemented behavior and update it if implementation changed approved behavior
+- [X] T041 [P] Update backend setup notes for SQLite, SQLAlchemy, and Alembic usage in backend/README.md
+- [X] T042 [P] Update frontend usage notes for the draft schedule page in client/README.md
+- [X] T043 Run backend pytest verification from quickstart in backend/
+- [X] T044 Run frontend lint and build verification from quickstart in client/
+- [X] T045 Verify and record that the valid single-course generation scenario completes in under 1 minute in specs/001-draft-course-schedule/quickstart.md
+- [X] T046 Review specs/001-draft-course-schedule/quickstart.md against implemented behavior and update it if implementation changed approved behavior
 
 ---
 
