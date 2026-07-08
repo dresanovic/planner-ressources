@@ -1,0 +1,235 @@
+openapi: 3.1.0
+info:
+  title: Resource Planner - Configurable Generation Constraints
+  version: 0.1.0
+paths:
+  /api/courses/{courseId}/generation-constraints:
+    get:
+      summary: Read active generation constraints for a course and semester
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: semesterId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Saved constraints if present, otherwise semester and study type defaults
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationConstraintsResponse"
+        "404":
+          description: Course or semester not found
+    delete:
+      summary: Clear saved generation constraints for a course and semester
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: semesterId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Saved custom constraints deleted or already absent
+        "404":
+          description: Course or semester not found
+  /api/courses/{courseId}/draft-schedule/generate:
+    post:
+      summary: Generate a draft schedule with active generation constraints
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateDraftScheduleRequest"
+      responses:
+        "201":
+          description: Draft schedule generated and submitted constraints saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftScheduleResponse"
+        "404":
+          description: Course or semester not found
+        "422":
+          description: Generation rejected; saved constraints remain unchanged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationFailureResponse"
+components:
+  schemas:
+    GenerationConstraintsResponse:
+      type: object
+      required:
+        - courseId
+        - semesterId
+        - source
+        - planningPeriod
+        - allowedTeachingWindows
+      properties:
+        courseId:
+          type: integer
+        semesterId:
+          type: integer
+        source:
+          type: string
+          enum: [default, saved]
+        planningPeriod:
+          $ref: "#/components/schemas/PlanningPeriod"
+        allowedTeachingWindows:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllowedTeachingWindow"
+    GenerateDraftScheduleRequest:
+      type: object
+      required:
+        - semesterId
+        - planningPeriod
+        - allowedTeachingWindows
+      properties:
+        semesterId:
+          type: integer
+        planningPeriod:
+          $ref: "#/components/schemas/PlanningPeriod"
+        allowedTeachingWindows:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/AllowedTeachingWindow"
+    PlanningPeriod:
+      type: object
+      required: [startDate, endDate]
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+    AllowedTeachingWindow:
+      type: object
+      required: [weekday, startTime, endTime]
+      properties:
+        weekday:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: Monday is 0 and Sunday is 6.
+        startTime:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        endTime:
+          type: string
+          pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        sourceTimeWindowId:
+          type: integer
+          nullable: true
+          description: Present when the window originated from a Study Type Time Window.
+    DraftScheduleResponse:
+      type: object
+      description: Existing Slice 1/2 draft schedule response, extended so custom-window sessions do not require a Study Type Time Window ID.
+      required:
+        - draftScheduleId
+        - courseId
+        - semesterId
+        - context
+        - sessions
+      properties:
+        draftScheduleId:
+          type: integer
+        courseId:
+          type: integer
+        semesterId:
+          type: integer
+        context:
+          type: object
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/DraftSessionResponse"
+    DraftSessionResponse:
+      type: object
+      required:
+        - id
+        - date
+        - startTime
+        - endTime
+        - units
+        - courseId
+        - lecturerId
+        - cohortId
+        - roomId
+        - studyTypeId
+        - constraintWindowIndex
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        units:
+          type: integer
+        courseId:
+          type: integer
+        lecturerId:
+          type: integer
+        cohortId:
+          type: integer
+        roomId:
+          type: integer
+        studyTypeId:
+          type: integer
+        timeWindowId:
+          type: integer
+          nullable: true
+          description: Present only when generated from a Study Type Time Window.
+        constraintWindowIndex:
+          type: integer
+          minimum: 0
+          description: Index of the active allowed teaching window used for this session.
+    GenerationFailureResponse:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/GenerationFailure"
+    GenerationFailure:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - INSUFFICIENT_ROOM_CAPACITY
+            - INVALID_SESSION_PREFERENCE
+            - NO_FITTING_TIME_WINDOW
+            - INSUFFICIENT_SEMESTER_CAPACITY
+            - INVALID_PLANNING_PERIOD
+            - INVALID_TEACHING_WINDOW
+            - MISSING_TEACHING_WINDOW
+        message:
+          type: string
