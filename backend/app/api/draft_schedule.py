@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import time
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -8,20 +10,30 @@ from app.schemas.draft_schedule import (
     DraftScheduleResponse,
     DraftSessionResponse,
     GenerateDraftScheduleRequest,
+    GenerationConstraintsResponse,
     GenerationFailureResponse,
     PlanningEntityResponse,
+    PlanningPeriodResponse,
+    AllowedTeachingWindowResponse,
 )
 from app.services.draft_schedule_repository import (
+    GenerationConstraints,
     PlanningInputNotFoundError,
+    clear_generation_constraints,
     get_draft_schedule,
+    load_generation_constraints,
     load_course_plan,
     load_semester_plan,
-    load_time_windows,
     replace_draft_schedule,
+    save_generation_constraints,
 )
-from app.services.schedule_generation import generate_schedule
+from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan, generate_schedule
 
 router = APIRouter(prefix="/api/courses/{course_id}/draft-schedule", tags=["draft schedule"])
+constraints_router = APIRouter(
+    prefix="/api/courses/{course_id}/generation-constraints",
+    tags=["draft schedule"],
+)
 
 
 @router.post(
@@ -38,15 +50,19 @@ def generate_draft_schedule(
     try:
         course = load_course_plan(db, course_id)
         semester = load_semester_plan(db, request.semester_id)
-        time_windows = load_time_windows(db, course.study_type_id)
     except PlanningInputNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    planning_period = PlanningPeriodPlan(
+        start_date=request.planning_period.start_date,
+        end_date=request.planning_period.end_date,
+    )
+    time_windows = [_request_window_to_plan(index, window) for index, window in enumerate(request.allowed_teaching_windows)]
 
     result = generate_schedule(
         course=course,
         semester=semester,
+        planning_period=planning_period,
         time_windows=time_windows,
-        selected_time_window_id=request.selected_time_window_id,
     )
     if not result.ok:
         return JSONResponse(
@@ -57,8 +73,14 @@ def generate_draft_schedule(
         db,
         course_plan=course,
         semester_id=semester.id,
-        selected_time_window_id=request.selected_time_window_id,
         generated_sessions=result.sessions,
+    )
+    save_generation_constraints(
+        db,
+        course_plan=course,
+        semester_plan=semester,
+        planning_period=planning_period,
+        allowed_windows=time_windows,
     )
     return _to_response(draft)
 
@@ -71,13 +93,41 @@ def read_draft_schedule(course_id: int, db: Session = Depends(get_db)) -> DraftS
     return _to_response(draft)
 
 
+@constraints_router.get("", response_model=GenerationConstraintsResponse)
+def read_generation_constraints(
+    course_id: int,
+    semesterId: int,
+    db: Session = Depends(get_db),
+) -> GenerationConstraintsResponse:
+    try:
+        course = load_course_plan(db, course_id)
+        semester = load_semester_plan(db, semesterId)
+    except PlanningInputNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return _constraints_to_response(load_generation_constraints(db, course, semester))
+
+
+@constraints_router.delete("", status_code=status.HTTP_204_NO_CONTENT)
+def delete_generation_constraints(
+    course_id: int,
+    semesterId: int,
+    db: Session = Depends(get_db),
+) -> Response:
+    try:
+        load_course_plan(db, course_id)
+        load_semester_plan(db, semesterId)
+    except PlanningInputNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    clear_generation_constraints(db, course_id=course_id, semester_id=semesterId)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 def _to_response(draft) -> DraftScheduleResponse:
     course = draft.course
     return DraftScheduleResponse(
         draftScheduleId=draft.id,
         courseId=draft.course_id,
         semesterId=draft.semester_id,
-        selectedTimeWindowId=draft.selected_time_window_id,
         context=DraftScheduleContextResponse(
             course=PlanningEntityResponse(id=course.id, name=course.name),
             cohort=PlanningEntityResponse(id=course.cohort.id, name=course.cohort.name),
@@ -98,7 +148,47 @@ def _to_response(draft) -> DraftScheduleResponse:
                 roomId=session.room_id,
                 studyTypeId=course.study_type_id,
                 timeWindowId=session.time_window_id,
+                constraintWindowIndex=session.constraint_window_index,
             )
             for session in draft.sessions
+        ],
+    )
+
+
+def _request_window_to_plan(index: int, window) -> TimeWindowPlan:
+    return TimeWindowPlan(
+        id=window.source_time_window_id,
+        weekday=window.weekday,
+        start_time=_parse_time(window.start_time),
+        end_time=_parse_time(window.end_time),
+        sort_order=index,
+        constraint_window_index=index,
+    )
+
+
+def _parse_time(value: str) -> time:
+    try:
+        return time.fromisoformat(value)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid time value: {value}") from exc
+
+
+def _constraints_to_response(constraints: GenerationConstraints) -> GenerationConstraintsResponse:
+    return GenerationConstraintsResponse(
+        courseId=constraints.course_id,
+        semesterId=constraints.semester_id,
+        isCustom=constraints.is_custom,
+        planningPeriod=PlanningPeriodResponse(
+            startDate=constraints.planning_period.start_date,
+            endDate=constraints.planning_period.end_date,
+        ),
+        allowedTeachingWindows=[
+            AllowedTeachingWindowResponse(
+                weekday=window.weekday,
+                startTime=window.start_time.strftime("%H:%M"),
+                endTime=window.end_time.strftime("%H:%M"),
+                sourceTimeWindowId=window.id,
+            )
+            for window in constraints.allowed_windows
         ],
     )

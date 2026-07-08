@@ -1,28 +1,59 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { DraftSchedulePanel } from './DraftSchedulePanel'
 import {
   draftScheduleFixture,
   emptyDraftScheduleFixture,
+  generationConstraintsFixture,
 } from '../test/draftScheduleFixtures'
+import type { GenerationConstraints } from '../api/draftSchedule'
 
-function renderPanel(schedule: typeof draftScheduleFixture | null = draftScheduleFixture): Root {
+function renderPanel({
+  schedule = draftScheduleFixture,
+  constraints = generationConstraintsFixture,
+  onConstraintsChange = vi.fn(),
+  onClear = vi.fn(),
+  onGenerate = vi.fn(),
+}: {
+  schedule?: typeof draftScheduleFixture | null
+  constraints?: GenerationConstraints | null
+  onConstraintsChange?: (constraints: GenerationConstraints) => void
+  onClear?: () => void
+  onGenerate?: () => void
+} = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
   act(() => {
     root.render(
       <DraftSchedulePanel
         schedule={schedule}
+        generationConstraints={constraints}
         errors={[]}
         isLoading={false}
-        onGenerate={vi.fn()}
+        onGenerationConstraintsChange={onConstraintsChange}
+        onClearGenerationConstraints={onClear}
+        onGenerate={onGenerate}
       />,
     )
   })
 
   return root
+}
+
+afterEach(() => {
+  document.body.innerHTML = ''
+})
+
+function setInputValue(input: HTMLInputElement, value: string) {
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, value)
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+function setSelectValue(select: HTMLSelectElement, value: string) {
+  Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(select, value)
+  select.dispatchEvent(new Event('change', { bubbles: true }))
 }
 
 describe('DraftSchedulePanel', () => {
@@ -42,13 +73,13 @@ describe('DraftSchedulePanel', () => {
   })
 
   it('shows a no-schedule empty state', () => {
-    renderPanel(null)
+    renderPanel({ schedule: null })
 
     expect(document.body.textContent).toContain('No generated draft schedule yet.')
   })
 
   it('shows a distinct empty state when a generated schedule has zero sessions', () => {
-    renderPanel(emptyDraftScheduleFixture)
+    renderPanel({ schedule: emptyDraftScheduleFixture })
 
     expect(document.body.textContent).toContain('Generated draft schedule has no sessions.')
   })
@@ -82,13 +113,15 @@ describe('DraftSchedulePanel', () => {
 
   it('filters visible sessions and shows a no-results state', () => {
     renderPanel({
-      ...draftScheduleFixture,
-      sessions: [
-        {
-          ...draftScheduleFixture.sessions[0],
-          cohortId: 99,
-        },
-      ],
+      schedule: {
+        ...draftScheduleFixture,
+        sessions: [
+          {
+            ...draftScheduleFixture.sessions[0],
+            cohortId: 99,
+          },
+        ],
+      },
     })
 
     const cohortFilter = document.querySelector<HTMLSelectElement>('select[name="cohortId"]')
@@ -110,6 +143,106 @@ describe('DraftSchedulePanel', () => {
       clearButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
+    expect(document.body.textContent).toContain('2026-09-14')
+  })
+
+  it('shows generation constraints separately from review filters', () => {
+    renderPanel()
+
+    const constraintSection = document.querySelector('.generation-constraints')
+    const filterBar = document.querySelector('.filter-bar')
+
+    expect(constraintSection?.textContent).toContain('Inputs for the next draft')
+    expect(constraintSection?.textContent).toContain('Start date')
+    expect(filterBar?.textContent).toContain('Course')
+    expect(filterBar?.textContent).not.toContain('Start date')
+  })
+
+  it('emits planning period edits and generation action separately', () => {
+    const onConstraintsChange = vi.fn()
+    const onGenerate = vi.fn()
+    renderPanel({ onConstraintsChange, onGenerate })
+
+    const startInput = document.querySelector<HTMLInputElement>('input[type="date"]')
+    const generateButton = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Generate',
+    )
+
+    act(() => {
+      if (startInput) {
+        setInputValue(startInput, '2026-09-14')
+      }
+    })
+
+    expect(onConstraintsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        planningPeriod: expect.objectContaining({ startDate: '2026-09-14' }),
+      }),
+    )
+
+    act(() => {
+      generateButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(onGenerate).toHaveBeenCalledOnce()
+  })
+
+  it('adds, removes, and submits weekly teaching window edits', () => {
+    const onConstraintsChange = vi.fn()
+    renderPanel({ onConstraintsChange })
+
+    const addButton = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Add window',
+    )
+
+    act(() => {
+      addButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(onConstraintsChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        allowedTeachingWindows: expect.arrayContaining([
+          expect.objectContaining({ weekday: 0, startTime: '08:00', endTime: '12:00' }),
+        ]),
+      }),
+    )
+    onConstraintsChange.mockClear()
+
+    const weekdaySelect = document.querySelector<HTMLSelectElement>('.constraint-window-row select')
+
+    act(() => {
+      if (weekdaySelect) {
+        setSelectValue(weekdaySelect, '3')
+      }
+    })
+
+    expect(onConstraintsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allowedTeachingWindows: expect.arrayContaining([expect.objectContaining({ weekday: 3 })]),
+      }),
+    )
+  })
+
+  it('clears the full saved constraint set without changing existing draft sessions', () => {
+    const onClear = vi.fn()
+    renderPanel({
+      constraints: {
+        ...generationConstraintsFixture,
+        isCustom: true,
+      },
+      onClear,
+    })
+
+    const clearButton = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Clear custom constraints',
+    )
+
+    act(() => {
+      clearButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(onClear).toHaveBeenCalledOnce()
+    expect(document.body.textContent).toContain('2026-09-07')
     expect(document.body.textContent).toContain('2026-09-14')
   })
 })

@@ -231,6 +231,73 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.generation-constraints {
+  border: 1px solid #dfe4eb;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.secondary-button {
+  background: #edf2f8;
+  color: #314154;
+}
+
+.secondary-button:disabled {
+  background: #e6ebf2;
+  color: #8a96a6;
+  cursor: not-allowed;
+}
+
+.constraint-grid,
+.constraint-window-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.constraint-window-list {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.constraint-field {
+  display: grid;
+  gap: 4px;
+}
+
+.constraint-field span {
+  color: #526071;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.constraint-field input,
+.constraint-field select {
+  min-width: 0;
+  border: 1px solid #cfd7e3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172033;
+  padding: 9px 10px;
+}
+
 .alert-list {
   display: grid;
   gap: 8px;

@@ -1,6 +1,13 @@
 import { useState } from 'react'
 
-import type { DraftSchedule, GenerationFailure, ReviewFilters, ViewMode } from '../api/draftSchedule'
+import type {
+  AllowedTeachingWindow,
+  DraftSchedule,
+  GenerationConstraints,
+  GenerationFailure,
+  ReviewFilters,
+  ViewMode,
+} from '../api/draftSchedule'
 import {
   filterSessions,
   groupSessionsByWeek,
@@ -9,15 +16,21 @@ import {
 
 type DraftSchedulePanelProps = {
   schedule: DraftSchedule | null
+  generationConstraints: GenerationConstraints | null
   errors: GenerationFailure[]
   isLoading: boolean
+  onGenerationConstraintsChange: (constraints: GenerationConstraints) => void
+  onClearGenerationConstraints: () => void
   onGenerate: () => void
 }
 
 export function DraftSchedulePanel({
   schedule,
+  generationConstraints,
   errors,
   isLoading,
+  onGenerationConstraintsChange,
+  onClearGenerationConstraints,
   onGenerate,
 }: DraftSchedulePanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
@@ -38,6 +51,15 @@ export function DraftSchedulePanel({
           {isLoading ? 'Generating...' : 'Generate'}
         </button>
       </div>
+
+      {generationConstraints && (
+        <GenerationConstraintEditor
+          constraints={generationConstraints}
+          isLoading={isLoading}
+          onChange={onGenerationConstraintsChange}
+          onClear={onClearGenerationConstraints}
+        />
+      )}
 
       {errors.length > 0 && (
         <div className="alert-list" role="alert">
@@ -209,4 +231,174 @@ function FilterSelect({ label, name, value, option, onChange }: FilterSelectProp
       </select>
     </label>
   )
+}
+
+type GenerationConstraintEditorProps = {
+  constraints: GenerationConstraints
+  isLoading: boolean
+  onChange: (constraints: GenerationConstraints) => void
+  onClear: () => void
+}
+
+const WEEKDAY_OPTIONS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+]
+
+function GenerationConstraintEditor({
+  constraints,
+  isLoading,
+  onChange,
+  onClear,
+}: GenerationConstraintEditorProps) {
+  return (
+    <section className="generation-constraints" aria-labelledby="generation-constraints-title">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Generation constraints</p>
+          <h3 id="generation-constraints-title">Inputs for the next draft</h3>
+        </div>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onClear}
+          disabled={isLoading || !constraints.isCustom}
+        >
+          Clear custom constraints
+        </button>
+      </div>
+
+      <div className="constraint-grid">
+        <label className="constraint-field">
+          <span>Start date</span>
+          <input
+            type="date"
+            value={constraints.planningPeriod.startDate}
+            onChange={(event) =>
+              onChange({
+                ...constraints,
+                planningPeriod: {
+                  ...constraints.planningPeriod,
+                  startDate: event.target.value,
+                },
+              })
+            }
+          />
+        </label>
+        <label className="constraint-field">
+          <span>End date</span>
+          <input
+            type="date"
+            value={constraints.planningPeriod.endDate}
+            onChange={(event) =>
+              onChange({
+                ...constraints,
+                planningPeriod: {
+                  ...constraints.planningPeriod,
+                  endDate: event.target.value,
+                },
+              })
+            }
+          />
+        </label>
+      </div>
+
+      <div className="constraint-window-list" aria-label="Allowed weekly teaching windows">
+        {constraints.allowedTeachingWindows.map((window, index) => (
+          <div className="constraint-window-row" key={`${window.weekday}-${index}`}>
+            <label className="constraint-field">
+              <span>Weekday</span>
+              <select
+                value={window.weekday}
+                onChange={(event) =>
+                  onChange(updateWindow(constraints, index, { weekday: Number(event.target.value) }))
+                }
+              >
+                {WEEKDAY_OPTIONS.map((label, weekday) => (
+                  <option value={weekday} key={label}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="constraint-field">
+              <span>Start</span>
+              <input
+                type="time"
+                value={window.startTime}
+                onChange={(event) =>
+                  onChange(updateWindow(constraints, index, { startTime: event.target.value }))
+                }
+              />
+            </label>
+            <label className="constraint-field">
+              <span>End</span>
+              <input
+                type="time"
+                value={window.endTime}
+                onChange={(event) =>
+                  onChange(updateWindow(constraints, index, { endTime: event.target.value }))
+                }
+              />
+            </label>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => onChange(removeWindow(constraints, index))}
+              disabled={constraints.allowedTeachingWindows.length <= 1}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={() =>
+          onChange({
+            ...constraints,
+            allowedTeachingWindows: [
+              ...constraints.allowedTeachingWindows,
+              { weekday: 0, startTime: '08:00', endTime: '12:00' },
+            ],
+          })
+        }
+      >
+        Add window
+      </button>
+    </section>
+  )
+}
+
+function updateWindow(
+  constraints: GenerationConstraints,
+  index: number,
+  patch: Partial<AllowedTeachingWindow>,
+): GenerationConstraints {
+  return {
+    ...constraints,
+    allowedTeachingWindows: constraints.allowedTeachingWindows.map((window, currentIndex) =>
+      currentIndex === index
+        ? {
+            ...window,
+            ...patch,
+            sourceTimeWindowId: patch.weekday === undefined ? window.sourceTimeWindowId : null,
+          }
+        : window,
+    ),
+  }
+}
+
+function removeWindow(constraints: GenerationConstraints, index: number): GenerationConstraints {
+  return {
+    ...constraints,
+    allowedTeachingWindows: constraints.allowedTeachingWindows.filter((_, currentIndex) => currentIndex !== index),
+  }
 }

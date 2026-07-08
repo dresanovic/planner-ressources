@@ -82,14 +82,58 @@ class Course(Base):
     study_type: Mapped[StudyType] = relationship()
 
 
+class GenerationConstraintSet(Base):
+    __tablename__ = "generation_constraint_sets"
+    __table_args__ = (UniqueConstraint("course_id", "semester_id", name="uq_generation_constraint_course_semester"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False)
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
+    planning_start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    planning_end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+    course: Mapped[Course] = relationship()
+    semester: Mapped[Semester] = relationship()
+    windows: Mapped[list["GenerationConstraintWindow"]] = relationship(
+        back_populates="constraint_set",
+        cascade="all, delete-orphan",
+        order_by="GenerationConstraintWindow.sort_order",
+    )
+
+
+class GenerationConstraintWindow(Base):
+    __tablename__ = "generation_constraint_windows"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    constraint_set_id: Mapped[int] = mapped_column(
+        ForeignKey("generation_constraint_sets.id"), nullable=False
+    )
+    source_time_window_id: Mapped[int | None] = mapped_column(
+        ForeignKey("study_type_time_windows.id"), nullable=True
+    )
+    weekday: Mapped[int] = mapped_column(Integer, nullable=False)
+    start_time: Mapped[time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(Time, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    constraint_set: Mapped[GenerationConstraintSet] = relationship(back_populates="windows")
+
+
 class DraftSchedule(Base):
     __tablename__ = "draft_schedules"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False, unique=True)
     semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
-    selected_time_window_id: Mapped[int] = mapped_column(
-        ForeignKey("study_type_time_windows.id"), nullable=False
+    selected_time_window_id: Mapped[int | None] = mapped_column(
+        ForeignKey("study_type_time_windows.id"), nullable=True
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="generated")
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
@@ -118,8 +162,9 @@ class DraftSession(Base):
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     units: Mapped[int] = mapped_column(Integer, nullable=False)
-    time_window_id: Mapped[int] = mapped_column(
-        ForeignKey("study_type_time_windows.id"), nullable=False
+    time_window_id: Mapped[int | None] = mapped_column(
+        ForeignKey("study_type_time_windows.id"), nullable=True
     )
+    constraint_window_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     draft_schedule: Mapped[DraftSchedule] = relationship(back_populates="sessions")

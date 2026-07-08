@@ -30,12 +30,19 @@ class SemesterPlan:
 
 
 @dataclass(frozen=True)
+class PlanningPeriodPlan:
+    start_date: date
+    end_date: date
+
+
+@dataclass(frozen=True)
 class TimeWindowPlan:
-    id: int
+    id: int | None
     weekday: int
     start_time: time
     end_time: time
     sort_order: int = 0
+    constraint_window_index: int = 0
 
 
 @dataclass(frozen=True)
@@ -44,7 +51,8 @@ class GeneratedSession:
     start_time: time
     end_time: time
     units: int
-    time_window_id: int
+    time_window_id: int | None
+    constraint_window_index: int
 
 
 @dataclass(frozen=True)
@@ -92,10 +100,10 @@ def distribute_units(total_units: int, min_units: int, max_units: int) -> list[i
 def generate_schedule(
     course: CoursePlan,
     semester: SemesterPlan,
+    planning_period: PlanningPeriodPlan,
     time_windows: list[TimeWindowPlan],
-    selected_time_window_id: int,
 ) -> ScheduleGenerationResult:
-    errors = _validate_generation_inputs(course, time_windows, selected_time_window_id)
+    errors = _validate_generation_inputs(course, semester, planning_period, time_windows)
     unit_distribution: list[int] | None = None
     if not any(error.code == FailureCode.INVALID_SESSION_PREFERENCE for error in errors):
         unit_distribution = distribute_units(
@@ -115,7 +123,7 @@ def generate_schedule(
         return ScheduleGenerationResult(sessions=[], errors=errors)
 
     assert unit_distribution is not None
-    ordered_windows = _ordered_windows(time_windows, selected_time_window_id)
+    ordered_windows = _ordered_windows(time_windows)
     sessions: list[GeneratedSession] = []
 
     for index, units in enumerate(unit_distribution):
@@ -123,7 +131,7 @@ def generate_schedule(
             units=units,
             index=index,
             existing_sessions=sessions,
-            semester=semester,
+            planning_period=planning_period,
             ordered_windows=ordered_windows,
         )
         if session is None:
@@ -135,7 +143,7 @@ def generate_schedule(
             message = (
                 "No Study Type Time Window can fit the generated session."
                 if code == FailureCode.NO_FITTING_TIME_WINDOW
-                else "Semester does not contain enough Study Type Time Window capacity."
+                else "Planning period does not contain enough allowed teaching window capacity."
             )
             return ScheduleGenerationResult(
                 sessions=[],
@@ -148,8 +156,9 @@ def generate_schedule(
 
 def _validate_generation_inputs(
     course: CoursePlan,
+    semester: SemesterPlan,
+    planning_period: PlanningPeriodPlan,
     time_windows: list[TimeWindowPlan],
-    selected_time_window_id: int,
 ) -> list[GenerationFailure]:
     errors: list[GenerationFailure] = []
     if course.room_capacity < course.cohort_size:
@@ -169,52 +178,70 @@ def _validate_generation_inputs(
                 message="Session preference must have a positive minimum not greater than maximum.",
             )
         )
-    if selected_time_window_id not in {window.id for window in time_windows}:
+    if planning_period.start_date > planning_period.end_date:
         errors.append(
             GenerationFailure(
-                code=FailureCode.NO_FITTING_TIME_WINDOW,
-                message="Selected Study Type Time Window is not available for this study type.",
+                code=FailureCode.INVALID_PLANNING_PERIOD,
+                message="Planning period start date must not be after the end date.",
             )
         )
+    elif planning_period.start_date < semester.start_date or planning_period.end_date > semester.end_date:
+        errors.append(
+            GenerationFailure(
+                code=FailureCode.INVALID_PLANNING_PERIOD,
+                message="Planning period must stay within the selected semester dates.",
+            )
+        )
+    if not time_windows:
+        errors.append(
+            GenerationFailure(
+                code=FailureCode.MISSING_TEACHING_WINDOW,
+                message="At least one allowed teaching window is required.",
+            )
+        )
+    for window in time_windows:
+        if window.weekday < 0 or window.weekday > 6 or window.start_time >= window.end_time:
+            errors.append(
+                GenerationFailure(
+                    code=FailureCode.INVALID_TEACHING_WINDOW,
+                    message="Allowed teaching windows require weekday 0-6 and start time before end time.",
+                )
+            )
+            break
     return errors
 
 
-def _ordered_windows(
-    windows: list[TimeWindowPlan],
-    selected_time_window_id: int,
-) -> list[TimeWindowPlan]:
-    selected = [window for window in windows if window.id == selected_time_window_id]
-    others = sorted(
-        [window for window in windows if window.id != selected_time_window_id],
+def _ordered_windows(windows: list[TimeWindowPlan]) -> list[TimeWindowPlan]:
+    return sorted(
+        windows,
         key=lambda window: (window.sort_order, window.weekday, window.start_time),
     )
-    return selected + others
 
 
 def _place_session(
     units: int,
     index: int,
     existing_sessions: list[GeneratedSession],
-    semester: SemesterPlan,
+    planning_period: PlanningPeriodPlan,
     ordered_windows: list[TimeWindowPlan],
 ) -> GeneratedSession | None:
-    start_week = semester.start_date + timedelta(weeks=index)
+    start_week = planning_period.start_date + timedelta(weeks=index)
     used_dates = {session.date for session in existing_sessions}
 
     session = _find_session_on_dates(
         units=units,
-        candidate_dates=_candidate_dates(start_week, semester.end_date),
+        candidate_dates=_candidate_dates(start_week, planning_period.end_date),
         used_dates=used_dates,
-        semester=semester,
+        planning_period=planning_period,
         ordered_windows=ordered_windows,
     )
     if session is not None:
         return session
     return _find_session_on_dates(
         units=units,
-        candidate_dates=_candidate_dates(semester.start_date, semester.end_date),
+        candidate_dates=_candidate_dates(planning_period.start_date, planning_period.end_date),
         used_dates=used_dates,
-        semester=semester,
+        planning_period=planning_period,
         ordered_windows=ordered_windows,
     )
 
@@ -223,11 +250,11 @@ def _find_session_on_dates(
     units: int,
     candidate_dates: list[date],
     used_dates: set[date],
-    semester: SemesterPlan,
+    planning_period: PlanningPeriodPlan,
     ordered_windows: list[TimeWindowPlan],
 ) -> GeneratedSession | None:
     for candidate_date in candidate_dates:
-        if candidate_date < semester.start_date or candidate_date > semester.end_date:
+        if candidate_date < planning_period.start_date or candidate_date > planning_period.end_date:
             continue
         if candidate_date in used_dates:
             continue
@@ -242,6 +269,7 @@ def _find_session_on_dates(
                     end_time=end_time,
                     units=units,
                     time_window_id=window.id,
+                    constraint_window_index=window.constraint_window_index,
                 )
     return None
 

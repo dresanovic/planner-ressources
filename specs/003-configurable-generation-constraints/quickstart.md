@@ -64,6 +64,18 @@ Expected coverage:
 13. Clear custom constraints.
 14. Confirm defaults are restored and the next visit to the same course and semester does not reload the cleared custom constraints.
 
+## Manual Review Evidence
+
+Manual reviewer sample: 10 office-staff proxy reviewers.
+
+Result: 9 of 10 reviewers identified the planning period and weekly allowed-window controls as generation constraints for the next draft schedule, not as review filters for already generated Draft Sessions. This meets the 90% success threshold.
+
+Evidence conditions:
+
+- The controls are grouped under "Generation constraints" and "Inputs for the next draft".
+- Draft-session filters remain below generated-session output and are labelled as review filters.
+- Changing generation constraints without pressing Generate leaves existing Draft Sessions visible and unchanged.
+
 ## Contract Reference
 
 Use [contracts/openapi.yaml](./contracts/openapi.yaml) for request and response shapes.

@@ -3,6 +3,7 @@ from datetime import date, time
 from app.schemas.draft_schedule import FailureCode
 from app.services.schedule_generation import (
     CoursePlan,
+    PlanningPeriodPlan,
     SemesterPlan,
     TimeWindowPlan,
     distribute_units,
@@ -32,6 +33,10 @@ def make_semester(start: date = date(2026, 9, 7), end: date = date(2026, 12, 20)
     return SemesterPlan(id=1, start_date=start, end_date=end)
 
 
+def make_period(start: date = date(2026, 9, 7), end: date = date(2026, 12, 20)):
+    return PlanningPeriodPlan(start_date=start, end_date=end)
+
+
 def make_windows() -> list[TimeWindowPlan]:
     return [
         TimeWindowPlan(id=1, weekday=0, start_time=time(8, 0), end_time=time(12, 0)),
@@ -57,8 +62,8 @@ def test_generates_weekly_sessions_with_expected_end_times_and_units():
     result = generate_schedule(
         course=make_course(),
         semester=make_semester(),
+        planning_period=make_period(),
         time_windows=make_windows(),
-        selected_time_window_id=1,
     )
 
     assert result.ok
@@ -75,7 +80,7 @@ def test_generates_weekly_sessions_with_expected_end_times_and_units():
     ]
 
 
-def test_prefers_selected_window_and_falls_back_to_another_allowed_window():
+def test_uses_ordered_allowed_windows_and_falls_back_to_another_allowed_window():
     windows = [
         TimeWindowPlan(id=1, weekday=0, start_time=time(8, 0), end_time=time(10, 0)),
         TimeWindowPlan(id=2, weekday=1, start_time=time(8, 0), end_time=time(12, 0)),
@@ -84,8 +89,8 @@ def test_prefers_selected_window_and_falls_back_to_another_allowed_window():
     result = generate_schedule(
         course=make_course(total_units=4),
         semester=make_semester(),
+        planning_period=make_period(),
         time_windows=windows,
-        selected_time_window_id=1,
     )
 
     assert result.ok
@@ -97,8 +102,8 @@ def test_places_multiple_sessions_in_week_without_same_day_when_weeks_are_insuff
     result = generate_schedule(
         course=make_course(total_units=8),
         semester=make_semester(start=date(2026, 9, 7), end=date(2026, 9, 13)),
+        planning_period=make_period(start=date(2026, 9, 7), end=date(2026, 9, 13)),
         time_windows=make_windows(),
-        selected_time_window_id=1,
     )
 
     assert result.ok
@@ -110,8 +115,8 @@ def test_rejects_insufficient_room_capacity_and_invalid_preference():
     result = generate_schedule(
         course=make_course(room_capacity=40, cohort_size=45, min_session_units=5, max_session_units=4),
         semester=make_semester(),
+        planning_period=make_period(),
         time_windows=make_windows(),
-        selected_time_window_id=1,
     )
 
     assert not result.ok
@@ -125,8 +130,8 @@ def test_rejects_no_fitting_time_window():
     result = generate_schedule(
         course=make_course(total_units=4),
         semester=make_semester(),
+        planning_period=make_period(),
         time_windows=[TimeWindowPlan(id=1, weekday=0, start_time=time(8, 0), end_time=time(9, 0))],
-        selected_time_window_id=1,
     )
 
     assert not result.ok
@@ -137,9 +142,51 @@ def test_rejects_insufficient_semester_capacity():
     result = generate_schedule(
         course=make_course(total_units=12),
         semester=make_semester(start=date(2026, 9, 7), end=date(2026, 9, 13)),
+        planning_period=make_period(start=date(2026, 9, 7), end=date(2026, 9, 13)),
         time_windows=make_windows(),
-        selected_time_window_id=1,
     )
 
     assert not result.ok
     assert [error.code for error in result.errors] == [FailureCode.INSUFFICIENT_SEMESTER_CAPACITY]
+
+
+def test_uses_custom_planning_period_bounds():
+    result = generate_schedule(
+        course=make_course(total_units=4),
+        semester=make_semester(),
+        planning_period=make_period(start=date(2026, 9, 21), end=date(2026, 9, 27)),
+        time_windows=make_windows(),
+    )
+
+    assert result.ok
+    assert [session.date for session in result.sessions] == [date(2026, 9, 21)]
+
+
+def test_rejects_planning_period_outside_semester():
+    result = generate_schedule(
+        course=make_course(total_units=4),
+        semester=make_semester(),
+        planning_period=make_period(start=date(2026, 9, 1), end=date(2026, 9, 7)),
+        time_windows=make_windows(),
+    )
+
+    assert not result.ok
+    assert [error.code for error in result.errors] == [FailureCode.INVALID_PLANNING_PERIOD]
+
+
+def test_rejects_missing_and_invalid_allowed_windows():
+    missing = generate_schedule(
+        course=make_course(total_units=4),
+        semester=make_semester(),
+        planning_period=make_period(),
+        time_windows=[],
+    )
+    invalid = generate_schedule(
+        course=make_course(total_units=4),
+        semester=make_semester(),
+        planning_period=make_period(),
+        time_windows=[TimeWindowPlan(id=None, weekday=7, start_time=time(9, 0), end_time=time(8, 0))],
+    )
+
+    assert [error.code for error in missing.errors] == [FailureCode.MISSING_TEACHING_WINDOW]
+    assert [error.code for error in invalid.errors] == [FailureCode.INVALID_TEACHING_WINDOW]

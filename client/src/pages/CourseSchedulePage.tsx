@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  clearGenerationConstraints,
   generateDraftSchedule,
+  getGenerationConstraints,
   getDraftSchedule,
   type DraftSchedule,
+  type GenerationConstraints,
   type GenerationFailure,
 } from '../api/draftSchedule'
 import {
@@ -10,17 +13,14 @@ import {
   type CourseOption,
   type PlanningOptions,
   type SemesterOption,
-  type TimeWindowOption,
 } from '../api/planningOptions'
 import { DraftSchedulePanel } from '../components/DraftSchedulePanel'
-
-const WEEKDAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export function CourseSchedulePage() {
   const [planningOptions, setPlanningOptions] = useState<PlanningOptions | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | null>(null)
-  const [selectedTimeWindowId, setSelectedTimeWindowId] = useState<number | null>(null)
+  const [generationConstraints, setGenerationConstraints] = useState<GenerationConstraints | null>(null)
   const [schedule, setSchedule] = useState<DraftSchedule | null>(null)
   const [errors, setErrors] = useState<GenerationFailure[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -33,18 +33,6 @@ export function CourseSchedulePage() {
     () => planningOptions?.semesters.find((semester) => semester.id === selectedSemesterId) ?? null,
     [planningOptions, selectedSemesterId],
   )
-  const availableTimeWindows = useMemo(() => {
-    if (!selectedCourse || !planningOptions) {
-      return []
-    }
-    return planningOptions.timeWindows.filter(
-      (window) => window.studyTypeId === selectedCourse.studyType.id,
-    )
-  }, [planningOptions, selectedCourse])
-  const selectedTimeWindow = useMemo(
-    () => availableTimeWindows.find((window) => window.id === selectedTimeWindowId) ?? null,
-    [availableTimeWindows, selectedTimeWindowId],
-  )
 
   useEffect(() => {
     let isCurrent = true
@@ -55,15 +43,11 @@ export function CourseSchedulePage() {
       try {
         const options = await getPlanningOptions()
         const firstCourse = options.courses[0]
-        const firstWindow = firstCourse
-          ? options.timeWindows.find((window) => window.studyTypeId === firstCourse.studyType.id)
-          : undefined
 
         if (isCurrent) {
           setPlanningOptions(options)
           setSelectedCourseId(firstCourse?.id ?? null)
           setSelectedSemesterId(options.semesters[0]?.id ?? null)
-          setSelectedTimeWindowId(firstWindow?.id ?? null)
           setSchedule(null)
         }
       } catch {
@@ -83,6 +67,46 @@ export function CourseSchedulePage() {
       isCurrent = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!selectedCourseId || !selectedSemesterId) {
+      return
+    }
+
+    let isCurrent = true
+
+    async function loadConstraints() {
+      setIsLoading(true)
+      setErrors([])
+      try {
+        const constraints = await getGenerationConstraints(
+          selectedCourseId as number,
+          selectedSemesterId as number,
+        )
+        if (isCurrent) {
+          setGenerationConstraints(constraints)
+        }
+      } catch (error) {
+        if (isCurrent) {
+          const failures = Array.isArray(error)
+            ? error
+            : [{ code: 'UNKNOWN', message: 'Could not load generation constraints.' }]
+          setGenerationConstraints(null)
+          setErrors(failures)
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadConstraints()
+
+    return () => {
+      isCurrent = false
+    }
+  }, [selectedCourseId, selectedSemesterId])
 
   useEffect(() => {
     if (!selectedCourseId) {
@@ -125,8 +149,8 @@ export function CourseSchedulePage() {
   }, [selectedCourseId])
 
   async function handleGenerate() {
-    if (!selectedCourseId || !selectedSemesterId || !selectedTimeWindowId) {
-      setErrors([{ code: 'MISSING_SELECTION', message: 'Select a course, semester, and time window.' }])
+    if (!selectedCourseId || !selectedSemesterId || !generationConstraints) {
+      setErrors([{ code: 'MISSING_SELECTION', message: 'Select a course and semester.' }])
       return
     }
 
@@ -136,9 +160,12 @@ export function CourseSchedulePage() {
       const generated = await generateDraftSchedule(
         selectedCourseId,
         selectedSemesterId,
-        selectedTimeWindowId,
+        generationConstraints.planningPeriod,
+        generationConstraints.allowedTeachingWindows,
       )
       setSchedule(generated)
+      const saved = await getGenerationConstraints(selectedCourseId, selectedSemesterId)
+      setGenerationConstraints(saved)
     } catch (error) {
       setSchedule(null)
       setErrors(Array.isArray(error) ? error : [{ code: 'UNKNOWN', message: 'Generation failed.' }])
@@ -150,11 +177,23 @@ export function CourseSchedulePage() {
   function handleCourseChange(courseId: number) {
     setSelectedCourseId(courseId)
     setSchedule(null)
-    const course = planningOptions?.courses.find((option) => option.id === courseId)
-    const nextWindow = course
-      ? planningOptions?.timeWindows.find((window) => window.studyTypeId === course.studyType.id)
-      : undefined
-    setSelectedTimeWindowId(nextWindow?.id ?? null)
+  }
+
+  async function handleClearGenerationConstraints() {
+    if (!selectedCourseId || !selectedSemesterId) {
+      return
+    }
+    setIsLoading(true)
+    setErrors([])
+    try {
+      await clearGenerationConstraints(selectedCourseId, selectedSemesterId)
+      const defaults = await getGenerationConstraints(selectedCourseId, selectedSemesterId)
+      setGenerationConstraints(defaults)
+    } catch (error) {
+      setErrors(Array.isArray(error) ? error : [{ code: 'UNKNOWN', message: 'Could not clear constraints.' }])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -201,19 +240,11 @@ export function CourseSchedulePage() {
                     getLabel={(semester) => semester.name}
                     onChange={(value) => setSelectedSemesterId(Number(value))}
                   />
-                  <SelectField
-                    label="Selected window"
-                    value={selectedTimeWindowId ?? ''}
-                    options={availableTimeWindows}
-                    getLabel={formatTimeWindow}
-                    onChange={(value) => setSelectedTimeWindowId(Number(value))}
-                  />
                 </div>
 
                 <PlanningSummary
                   course={selectedCourse}
                   semester={selectedSemester}
-                  timeWindow={selectedTimeWindow}
                 />
               </>
             ) : (
@@ -223,8 +254,11 @@ export function CourseSchedulePage() {
 
           <DraftSchedulePanel
             schedule={schedule}
+            generationConstraints={generationConstraints}
             errors={errors}
             isLoading={isLoading}
+            onGenerationConstraintsChange={setGenerationConstraints}
+            onClearGenerationConstraints={handleClearGenerationConstraints}
             onGenerate={handleGenerate}
           />
         </div>
@@ -273,11 +307,9 @@ function SelectField<T extends Selectable>({
 function PlanningSummary({
   course,
   semester,
-  timeWindow,
 }: {
   course: CourseOption | null
   semester: SemesterOption | null
-  timeWindow: TimeWindowOption | null
 }) {
   if (!course) {
     return <p className="empty-state">No courses are available.</p>
@@ -315,14 +347,6 @@ function PlanningSummary({
         <dt>Semester dates</dt>
         <dd>{semester ? `${semester.startDate} - ${semester.endDate}` : 'No semester selected'}</dd>
       </div>
-      <div>
-        <dt>Selected window</dt>
-        <dd>{timeWindow ? formatTimeWindow(timeWindow) : 'No valid window for this study type'}</dd>
-      </div>
     </dl>
   )
-}
-
-function formatTimeWindow(window: TimeWindowOption): string {
-  return `${WEEKDAY_LABELS[window.weekday] ?? `Day ${window.weekday}`} ${window.startTime}-${window.endTime}`
 }

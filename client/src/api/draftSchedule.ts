@@ -9,7 +9,28 @@ export type DraftSession = {
   cohortId: number
   roomId: number
   studyTypeId: number
-  timeWindowId: number
+  timeWindowId: number | null
+  constraintWindowIndex: number
+}
+
+export type PlanningPeriod = {
+  startDate: string
+  endDate: string
+}
+
+export type AllowedTeachingWindow = {
+  weekday: number
+  startTime: string
+  endTime: string
+  sourceTimeWindowId?: number | null
+}
+
+export type GenerationConstraints = {
+  courseId: number
+  semesterId: number
+  isCustom: boolean
+  planningPeriod: PlanningPeriod
+  allowedTeachingWindows: AllowedTeachingWindow[]
 }
 
 export type PlanningEntity = {
@@ -29,7 +50,6 @@ export type DraftSchedule = {
   draftScheduleId: number
   courseId: number
   semesterId: number
-  selectedTimeWindowId: number
   context: DraftScheduleContext
   sessions: DraftSession[]
 }
@@ -54,14 +74,15 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 export async function generateDraftSchedule(
   courseId: number,
   semesterId: number,
-  selectedTimeWindowId: number,
+  planningPeriod: PlanningPeriod,
+  allowedTeachingWindows: AllowedTeachingWindow[],
 ): Promise<DraftSchedule> {
   const response = await request(
     `${API_BASE}/api/courses/${courseId}/draft-schedule/generate`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ semesterId, selectedTimeWindowId }),
+      body: JSON.stringify({ semesterId, planningPeriod, allowedTeachingWindows }),
     },
   )
   if (response.status === 422) {
@@ -72,6 +93,29 @@ export async function generateDraftSchedule(
     throw [{ code: 'REQUEST_FAILED', message: await response.text() }]
   }
   return response.json()
+}
+
+export async function getGenerationConstraints(
+  courseId: number,
+  semesterId: number,
+): Promise<GenerationConstraints> {
+  const response = await request(
+    `${API_BASE}/api/courses/${courseId}/generation-constraints?semesterId=${semesterId}`,
+  )
+  if (!response.ok) {
+    throw [{ code: 'REQUEST_FAILED', message: 'Could not load generation constraints.' }]
+  }
+  return response.json()
+}
+
+export async function clearGenerationConstraints(courseId: number, semesterId: number): Promise<void> {
+  const response = await request(
+    `${API_BASE}/api/courses/${courseId}/generation-constraints?semesterId=${semesterId}`,
+    { method: 'DELETE' },
+  )
+  if (!response.ok) {
+    throw [{ code: 'REQUEST_FAILED', message: 'Could not clear generation constraints.' }]
+  }
 }
 
 export async function getDraftSchedule(courseId: number): Promise<DraftSchedule> {
