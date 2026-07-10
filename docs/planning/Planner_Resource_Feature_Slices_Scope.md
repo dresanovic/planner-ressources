@@ -1,103 +1,118 @@
-Planner Resource Scope
+# Planner Resource Scope
 
-Here is the clean slice roadmap I’d use for this resource planner.
+This is the current slice roadmap for the resource planner after the Slice 3 feedback update.
 
-Slice 1: Single-Course Draft Schedule Generation
+## Slice 1: Single-Course Draft Schedule Generation
 
-Status: specified, planned, task-ready.
+**Status**: Implemented.
 
 Admin generates a draft schedule for one course using total units, lecturer session preference, one Cohort, one room, one semester, and Study Type Time Windows.
 
-Value: proves the core scheduling engine.
+**Value**: Proves the core scheduling engine.
 
-Slice 2: Review Generated Schedule In Planner UI
+## Slice 2: Review Generated Schedule In Planner UI
+
+**Status**: Implemented, then refined by Slice 3.
 
 Show generated Draft Sessions in a simple weekly/list calendar view, with filters for course, Cohort, lecturer, room, and study type.
 
-Value: lets office staff inspect the generated result before editing.
+Slice 2 originally reviewed only the currently selected course. Slice 3 refined the review surface into a semester-scoped Courses overview so those filters are useful across all generated plans in the selected semester.
 
-Slice 3: Configurable Generation Constraints
+**Value**: Lets office staff inspect the generated result before editing.
 
-Let office staff control the generation inputs before creating a draft schedule:
+## Slice 3: Configurable Generation Constraints And Courses Overview
 
-planning period defaults to the selected semester dates
+**Status**: Implemented.
 
-optional custom start date and end date
+Let office staff control generation inputs for the currently selected course before creating a draft schedule:
 
-allowed weekly teaching windows by weekday and hour range
+- planning period defaults to the selected semester dates
+- optional custom start date and end date
+- one or more allowed weekly teaching windows by weekday and hour range
+- system-selected defaults when no custom constraints are provided
+- custom constraints saved per selected course and semester after successful generation
 
-system-selected defaults when no custom constraints are provided
+The generation controls and Generate button live with the left-side planning inputs. The central panel is now a Courses overview that shows generated plans for the selected semester, independent from the selected planning input. Overview filters are compact dropdowns derived from all generated plans in that semester.
 
-The current single selected window should evolve into a clearer generation constraint model. Office staff should be able to say, for example, that sessions may be planned between Monday 08:00-12:00 and Wednesday 09:00-13:00, while still allowing the system to use sensible defaults from the semester and study type.
+This slice still does not generate multiple courses in one action. It only lets staff browse generated single-course drafts together in one semester overview.
 
-Value: gives office staff control over when units may be planned while preserving automatic defaults.
+**Value**: Gives office staff control over when units may be planned and makes the review filters useful across generated plans.
 
-Slice 4: Manual Session Editing
+## Slice 4: Manual Session Editing
+
+**Status**: Next recommended slice.
 
 Allow admins to change date, start time, room, or session length for generated Draft Sessions.
 
-Value: turns the tool from generator into planner workflow.
+**Value**: Turns the tool from generator into planner workflow.
 
-Slice 5: Conflict Detection
+## Slice 5: Conflict Detection
 
 Detect conflicts after generation or manual edits:
 
-lecturer overlap
+- lecturer overlap
+- room overlap
+- Cohort overlap
+- room capacity violation
+- session outside allowed generation or Study Type Time Window
 
-room overlap
+**Value**: Makes manual changes safe.
 
-Cohort overlap
-
-room capacity violation
-
-session outside Study Type Time Window
-
-Value: makes manual changes safe.
-
-Slice 6: Multi-Course Draft Generation
+## Slice 6: Multi-Course Draft Generation
 
 Generate schedules for multiple courses in one semester, initially without full optimization.
 
-Value: moves from proof-of-concept to real semester planning.
+This is distinct from the Slice 3 Courses overview. Slice 3 can display multiple already-generated course plans, but each Generate action still targets one selected course.
 
-Slice 7: Conflict-Aware Multi-Course Scheduling
+**Value**: Moves from proof-of-concept to real semester planning.
+
+## Slice 7: Conflict-Aware Multi-Course Scheduling
 
 Improve multi-course generation so it avoids known lecturer, room, and Cohort conflicts during generation.
 
-Value: reduces manual correction work.
+**Value**: Reduces manual correction work.
 
-Slice 8: Public Holiday Avoidance
+## Slice 8: Public Holiday Avoidance
 
 Add holiday calendars and prevent generated sessions from landing on holidays.
 
-Value: removes a common real-world planning error.
+**Value**: Removes a common real-world planning error.
 
-Slice 9: Exam Scheduling
+## Slice 9: Exam Scheduling
 
 Generate and manage exams separately from teaching sessions, usually at least one week after the last teaching session.
 
-Value: covers the full academic planning lifecycle.
+**Value**: Covers the full academic planning lifecycle.
 
-Slice 10: Multiple Lecturers And Rooms Per Course
+## Slice 10: Multiple Lecturers And Rooms Per Course
 
 Support courses taught by two or more lecturers and courses that can use multiple eligible rooms.
 
-Value: handles real-world exceptions without forcing manual workarounds.
+**Value**: Handles real-world exceptions without forcing manual workarounds.
 
-Slice 11: Planning Dashboard And Validation Alerts
+## Slice 11: Planning Dashboard And Validation Alerts
 
-Add the left-panel style overview:
+Add an operational overview for:
 
-unscheduled units
+- unscheduled units
+- courses with conflicts
+- room capacity issues
+- hours remaining
+- generation failures
+- schedules that need review
 
-courses with conflicts
+The dashboard should not replace the left-side planning input panel. It should be a separate overview/control-center surface or a clearly separated dashboard section.
 
-room capacity issues
+**Value**: Gives office staff an operational control center.
 
-hours remaining
+## Recommended Order
 
-generation failures
+The current core loop is now:
 
-Value: gives office staff an operational control center.
+1. Generate one course.
+2. Inspect generated plans in the semester Courses overview.
+3. Constrain future generation inputs.
+4. Adjust sessions manually.
+5. Validate conflicts.
 
-My recommendation: after Slice 1, do Slice 2 then Slice 3 then Slice 4 then Slice 5. That gives you the core loop: generate, inspect, constrain, adjust, validate.
+Next recommended slices: Slice 4, then Slice 5. After that, move to Slice 6 and Slice 7 for multi-course generation and conflict-aware scheduling.

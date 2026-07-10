@@ -3,7 +3,7 @@ import {
   clearGenerationConstraints,
   generateDraftSchedule,
   getGenerationConstraints,
-  getDraftSchedule,
+  getDraftSchedules,
   type DraftSchedule,
   type GenerationConstraints,
   type GenerationFailure,
@@ -14,14 +14,14 @@ import {
   type PlanningOptions,
   type SemesterOption,
 } from '../api/planningOptions'
-import { DraftSchedulePanel } from '../components/DraftSchedulePanel'
+import { DraftSchedulePanel, GenerationConstraintEditor } from '../components/DraftSchedulePanel'
 
 export function CourseSchedulePage() {
   const [planningOptions, setPlanningOptions] = useState<PlanningOptions | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | null>(null)
   const [generationConstraints, setGenerationConstraints] = useState<GenerationConstraints | null>(null)
-  const [schedule, setSchedule] = useState<DraftSchedule | null>(null)
+  const [schedules, setSchedules] = useState<DraftSchedule[]>([])
   const [errors, setErrors] = useState<GenerationFailure[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -48,7 +48,7 @@ export function CourseSchedulePage() {
           setPlanningOptions(options)
           setSelectedCourseId(firstCourse?.id ?? null)
           setSelectedSemesterId(options.semesters[0]?.id ?? null)
-          setSchedule(null)
+          setSchedules([])
         }
       } catch {
         if (isCurrent) {
@@ -109,31 +109,29 @@ export function CourseSchedulePage() {
   }, [selectedCourseId, selectedSemesterId])
 
   useEffect(() => {
-    if (!selectedCourseId) {
+    if (!selectedSemesterId) {
       return
     }
 
     let isCurrent = true
 
-    async function loadDraftSchedule() {
+    async function loadDraftSchedules() {
       setIsLoading(true)
       setErrors([])
       try {
-        const current = await getDraftSchedule(selectedCourseId as number)
+        const current = await getDraftSchedules(selectedSemesterId as number)
         if (isCurrent) {
-          setSchedule(current)
+          setSchedules(current)
         }
       } catch (error) {
         if (!isCurrent) {
           return
         }
-        setSchedule(null)
+        setSchedules([])
         const failures = Array.isArray(error)
           ? error
-          : [{ code: 'UNKNOWN', message: 'Could not load draft schedule.' }]
-        if (!failures.some((failure) => failure.code === 'NOT_FOUND')) {
-          setErrors(failures)
-        }
+          : [{ code: 'UNKNOWN', message: 'Could not load generated draft schedules.' }]
+        setErrors(failures)
       } finally {
         if (isCurrent) {
           setIsLoading(false)
@@ -141,12 +139,12 @@ export function CourseSchedulePage() {
       }
     }
 
-    void loadDraftSchedule()
+    void loadDraftSchedules()
 
     return () => {
       isCurrent = false
     }
-  }, [selectedCourseId])
+  }, [selectedSemesterId])
 
   async function handleGenerate() {
     if (!selectedCourseId || !selectedSemesterId || !generationConstraints) {
@@ -163,11 +161,13 @@ export function CourseSchedulePage() {
         generationConstraints.planningPeriod,
         generationConstraints.allowedTeachingWindows,
       )
-      setSchedule(generated)
+      setSchedules((current) => [
+        ...current.filter((schedule) => schedule.courseId !== generated.courseId),
+        generated,
+      ])
       const saved = await getGenerationConstraints(selectedCourseId, selectedSemesterId)
       setGenerationConstraints(saved)
     } catch (error) {
-      setSchedule(null)
       setErrors(Array.isArray(error) ? error : [{ code: 'UNKNOWN', message: 'Generation failed.' }])
     } finally {
       setIsLoading(false)
@@ -176,7 +176,6 @@ export function CourseSchedulePage() {
 
   function handleCourseChange(courseId: number) {
     setSelectedCourseId(courseId)
-    setSchedule(null)
   }
 
   async function handleClearGenerationConstraints() {
@@ -246,6 +245,35 @@ export function CourseSchedulePage() {
                   course={selectedCourse}
                   semester={selectedSemester}
                 />
+
+                {generationConstraints && (
+                  <GenerationConstraintEditor
+                    constraints={generationConstraints}
+                    isLoading={isLoading}
+                    onChange={setGenerationConstraints}
+                    onClear={handleClearGenerationConstraints}
+                  />
+                )}
+
+                {errors.length > 0 && (
+                  <div className="alert-list" role="alert">
+                    {errors.map((error) => (
+                      <div className="alert-item" key={error.code}>
+                        <strong>{error.code.replaceAll('_', ' ')}</strong>
+                        <span>{error.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="generate-button"
+                  onClick={handleGenerate}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Generating...' : 'Generate'}
+                </button>
               </>
             ) : (
               <p className="empty-state">Loading planning options...</p>
@@ -253,13 +281,7 @@ export function CourseSchedulePage() {
           </section>
 
           <DraftSchedulePanel
-            schedule={schedule}
-            generationConstraints={generationConstraints}
-            errors={errors}
-            isLoading={isLoading}
-            onGenerationConstraintsChange={setGenerationConstraints}
-            onClearGenerationConstraints={handleClearGenerationConstraints}
-            onGenerate={handleGenerate}
+            schedules={schedules}
           />
         </div>
       </section>

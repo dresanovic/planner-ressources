@@ -72,3 +72,32 @@ export const emptyDraftScheduleFixture: DraftSchedule = {
   draftScheduleId: 2,
   sessions: [],
 }
+
+export const secondDraftScheduleFixture: DraftSchedule = {
+  draftScheduleId: 3,
+  courseId: 2,
+  semesterId: 1,
+  context: {
+    course: { id: 2, name: 'Scheduling 201' },
+    cohort: { id: 2, name: 'AI 2' },
+    lecturer: { id: 2, name: 'Grace Hopper' },
+    room: { id: 2, name: 'R2' },
+    studyType: { id: 1, name: 'Full-time' },
+  },
+  sessions: [
+    {
+      id: 3,
+      date: '2026-09-21',
+      startTime: '09:00',
+      endTime: '12:30',
+      units: 4,
+      courseId: 2,
+      lecturerId: 2,
+      cohortId: 2,
+      roomId: 2,
+      studyTypeId: 1,
+      timeWindowId: 1,
+      constraintWindowIndex: 0,
+    },
+  ],
+}

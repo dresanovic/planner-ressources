@@ -126,6 +126,14 @@ export async function getDraftSchedule(courseId: number): Promise<DraftSchedule>
   return response.json()
 }
 
+export async function getDraftSchedules(semesterId: number): Promise<DraftSchedule[]> {
+  const response = await request(`${API_BASE}/api/draft-schedules?semesterId=${semesterId}`)
+  if (!response.ok) {
+    throw [{ code: 'REQUEST_FAILED', message: 'Could not load generated draft schedules.' }]
+  }
+  return response.json()
+}
+
 async function request(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   try {
     return await fetch(input, init)

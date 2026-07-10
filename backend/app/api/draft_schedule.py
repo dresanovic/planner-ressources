@@ -21,6 +21,7 @@ from app.services.draft_schedule_repository import (
     PlanningInputNotFoundError,
     clear_generation_constraints,
     get_draft_schedule,
+    list_draft_schedules_by_semester,
     load_generation_constraints,
     load_course_plan,
     load_semester_plan,
@@ -34,6 +35,7 @@ constraints_router = APIRouter(
     prefix="/api/courses/{course_id}/generation-constraints",
     tags=["draft schedule"],
 )
+overview_router = APIRouter(prefix="/api/draft-schedules", tags=["draft schedule"])
 
 
 @router.post(
@@ -91,6 +93,15 @@ def read_draft_schedule(course_id: int, db: Session = Depends(get_db)) -> DraftS
     if draft is None:
         raise HTTPException(status_code=404, detail="No generated draft schedule exists.")
     return _to_response(draft)
+
+
+@overview_router.get("", response_model=list[DraftScheduleResponse])
+def read_draft_schedules(semesterId: int, db: Session = Depends(get_db)) -> list[DraftScheduleResponse]:
+    try:
+        load_semester_plan(db, semesterId)
+    except PlanningInputNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return [_to_response(draft) for draft in list_draft_schedules_by_semester(db, semesterId)]
 
 
 @constraints_router.get("", response_model=GenerationConstraintsResponse)

@@ -1,113 +1,81 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import type {
   AllowedTeachingWindow,
+  DraftScheduleContext,
+  DraftSession,
   DraftSchedule,
   GenerationConstraints,
-  GenerationFailure,
+  PlanningEntity,
   ReviewFilters,
   ViewMode,
 } from '../api/draftSchedule'
 import {
-  filterSessions,
   groupSessionsByWeek,
   sortSessionsChronologically,
 } from './scheduleReviewUtils'
 
 type DraftSchedulePanelProps = {
-  schedule: DraftSchedule | null
-  generationConstraints: GenerationConstraints | null
-  errors: GenerationFailure[]
-  isLoading: boolean
-  onGenerationConstraintsChange: (constraints: GenerationConstraints) => void
-  onClearGenerationConstraints: () => void
-  onGenerate: () => void
+  schedules: DraftSchedule[]
 }
 
 export function DraftSchedulePanel({
-  schedule,
-  generationConstraints,
-  errors,
-  isLoading,
-  onGenerationConstraintsChange,
-  onClearGenerationConstraints,
-  onGenerate,
+  schedules,
 }: DraftSchedulePanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [filters, setFilters] = useState<ReviewFilters>({})
-  const visibleSessions = schedule
-    ? sortSessionsChronologically(filterSessions(schedule.sessions, filters))
-    : []
+  const overviewSessions = useMemo(() => flattenSchedules(schedules), [schedules])
+  const filterOptions = useMemo(() => buildFilterOptions(schedules), [schedules])
+  const visibleSessions = sortSessionsChronologically(
+    overviewSessions.filter((session) => matchesFilters(session, filters)),
+  )
   const hasActiveFilters = Object.values(filters).some((value) => value !== undefined)
 
   return (
-    <section className="planner-panel" aria-labelledby="draft-schedule-title">
+    <section className="planner-panel" aria-labelledby="courses-overview-title">
       <div className="panel-toolbar">
         <div>
-          <p className="eyebrow">Draft generation</p>
-          <h2 id="draft-schedule-title">Single-course schedule</h2>
+          <p className="eyebrow">Generated plans</p>
+          <h2 id="courses-overview-title">Courses overview</h2>
         </div>
-        <button type="button" onClick={onGenerate} disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate'}
-        </button>
       </div>
 
-      {generationConstraints && (
-        <GenerationConstraintEditor
-          constraints={generationConstraints}
-          isLoading={isLoading}
-          onChange={onGenerationConstraintsChange}
-          onClear={onClearGenerationConstraints}
-        />
-      )}
-
-      {errors.length > 0 && (
-        <div className="alert-list" role="alert">
-          {errors.map((error) => (
-            <div className="alert-item" key={error.code}>
-              <strong>{error.code.replaceAll('_', ' ')}</strong>
-              <span>{error.message}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {schedule && schedule.sessions.length > 0 ? (
+      {overviewSessions.length > 0 ? (
         <>
           <div className="filter-bar" aria-label="Draft session filters">
             <FilterSelect
               label="Course"
               name="courseId"
               value={filters.courseId}
-              option={schedule.context.course}
+              options={filterOptions.courses}
               onChange={setFilter}
             />
             <FilterSelect
               label="Cohort"
               name="cohortId"
               value={filters.cohortId}
-              option={schedule.context.cohort}
+              options={filterOptions.cohorts}
               onChange={setFilter}
             />
             <FilterSelect
               label="Lecturer"
               name="lecturerId"
               value={filters.lecturerId}
-              option={schedule.context.lecturer}
+              options={filterOptions.lecturers}
               onChange={setFilter}
             />
             <FilterSelect
               label="Room"
               name="roomId"
               value={filters.roomId}
-              option={schedule.context.room}
+              options={filterOptions.rooms}
               onChange={setFilter}
             />
             <FilterSelect
               label="Study type"
               name="studyTypeId"
               value={filters.studyTypeId}
-              option={schedule.context.studyType}
+              options={filterOptions.studyTypes}
               onChange={setFilter}
             />
             <button type="button" onClick={() => setFilters({})} disabled={!hasActiveFilters}>
@@ -147,17 +115,17 @@ export function DraftSchedulePanel({
                 <span>Study type</span>
               </div>
               {visibleSessions.map((session) => (
-                <div className="session-row" key={session.id}>
+                <div className="session-row" key={`${session.draftScheduleId}-${session.id}`}>
                   <span>{session.date}</span>
                   <span>
                     {session.startTime}-{session.endTime}
                   </span>
                   <span>{session.units}</span>
-                  <span>{schedule.context.course.name}</span>
-                  <span>{schedule.context.cohort.name}</span>
-                  <span>{schedule.context.lecturer.name}</span>
-                  <span>{schedule.context.room.name}</span>
-                  <span>{schedule.context.studyType.name}</span>
+                  <span>{session.context.course.name}</span>
+                  <span>{session.context.cohort.name}</span>
+                  <span>{session.context.lecturer.name}</span>
+                  <span>{session.context.room.name}</span>
+                  <span>{session.context.studyType.name}</span>
                 </div>
               ))}
             </div>
@@ -171,16 +139,16 @@ export function DraftSchedulePanel({
                       <div className="week-day" key={day.date}>
                         <h4>{day.date}</h4>
                         {day.sessions.map((session) => (
-                          <article className="week-session" key={session.id}>
+                          <article className="week-session" key={`${session.draftScheduleId}-${session.id}`}>
                             <strong>
                               {session.startTime}-{session.endTime}
                             </strong>
                             <span>{session.units} units</span>
-                            <span>{schedule.context.course.name}</span>
-                            <span>{schedule.context.cohort.name}</span>
-                            <span>{schedule.context.lecturer.name}</span>
-                            <span>{schedule.context.room.name}</span>
-                            <span>{schedule.context.studyType.name}</span>
+                            <span>{session.context.course.name}</span>
+                            <span>{session.context.cohort.name}</span>
+                            <span>{session.context.lecturer.name}</span>
+                            <span>{session.context.room.name}</span>
+                            <span>{session.context.studyType.name}</span>
                           </article>
                         ))}
                       </div>
@@ -191,10 +159,8 @@ export function DraftSchedulePanel({
             </div>
           )}
         </>
-      ) : schedule ? (
-        <p className="empty-state">Generated draft schedule has no sessions.</p>
       ) : (
-        <p className="empty-state">No generated draft schedule yet.</p>
+        <p className="empty-state">No generated draft schedules for this semester yet.</p>
       )}
     </section>
   )
@@ -211,11 +177,11 @@ type FilterSelectProps = {
   label: string
   name: keyof ReviewFilters
   value?: number
-  option: { id: number; name: string }
+  options: PlanningEntity[]
   onChange: (name: keyof ReviewFilters, value?: number) => void
 }
 
-function FilterSelect({ label, name, value, option, onChange }: FilterSelectProps) {
+function FilterSelect({ label, name, value, options, onChange }: FilterSelectProps) {
   return (
     <label className="filter-field">
       <span>{label}</span>
@@ -227,7 +193,11 @@ function FilterSelect({ label, name, value, option, onChange }: FilterSelectProp
         }
       >
         <option value="">All</option>
-        <option value={option.id}>{option.name}</option>
+        {options.map((option) => (
+          <option value={option.id} key={option.id}>
+            {option.name}
+          </option>
+        ))}
       </select>
     </label>
   )
@@ -250,7 +220,7 @@ const WEEKDAY_OPTIONS = [
   'Sunday',
 ]
 
-function GenerationConstraintEditor({
+export function GenerationConstraintEditor({
   constraints,
   isLoading,
   onChange,
@@ -401,4 +371,53 @@ function removeWindow(constraints: GenerationConstraints, index: number): Genera
     ...constraints,
     allowedTeachingWindows: constraints.allowedTeachingWindows.filter((_, currentIndex) => currentIndex !== index),
   }
+}
+
+type OverviewSession = DraftSession & {
+  draftScheduleId: number
+  context: DraftScheduleContext
+}
+
+type FilterOptions = {
+  courses: PlanningEntity[]
+  cohorts: PlanningEntity[]
+  lecturers: PlanningEntity[]
+  rooms: PlanningEntity[]
+  studyTypes: PlanningEntity[]
+}
+
+function flattenSchedules(schedules: DraftSchedule[]): OverviewSession[] {
+  return schedules.flatMap((schedule) =>
+    schedule.sessions.map((session) => ({
+      ...session,
+      draftScheduleId: schedule.draftScheduleId,
+      context: schedule.context,
+    })),
+  )
+}
+
+function buildFilterOptions(schedules: DraftSchedule[]): FilterOptions {
+  return {
+    courses: uniqueEntities(schedules.map((schedule) => schedule.context.course)),
+    cohorts: uniqueEntities(schedules.map((schedule) => schedule.context.cohort)),
+    lecturers: uniqueEntities(schedules.map((schedule) => schedule.context.lecturer)),
+    rooms: uniqueEntities(schedules.map((schedule) => schedule.context.room)),
+    studyTypes: uniqueEntities(schedules.map((schedule) => schedule.context.studyType)),
+  }
+}
+
+function uniqueEntities(entities: PlanningEntity[]): PlanningEntity[] {
+  return [...new Map(entities.map((entity) => [entity.id, entity])).values()].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  )
+}
+
+function matchesFilters(session: OverviewSession, filters: ReviewFilters): boolean {
+  return (
+    (filters.courseId === undefined || session.courseId === filters.courseId) &&
+    (filters.cohortId === undefined || session.cohortId === filters.cohortId) &&
+    (filters.lecturerId === undefined || session.lecturerId === filters.lecturerId) &&
+    (filters.roomId === undefined || session.roomId === filters.roomId) &&
+    (filters.studyTypeId === undefined || session.studyTypeId === filters.studyTypeId)
+  )
 }

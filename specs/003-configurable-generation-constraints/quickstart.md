@@ -46,6 +46,10 @@ Expected coverage:
 - Generate sends the active planning period and allowed teaching windows.
 - Clear custom constraints resets the UI to semester and study type defaults and calls the clear contract.
 - Review filters continue to affect only visible Draft Sessions after generation.
+- Generation controls and the Generate button appear in the left planning input area below semester dates.
+- The central panel is labelled "Courses overview".
+- The Courses overview loads generated plans for the selected semester, not only the selected planning input.
+- The compact overview filter row includes all generated values for course, cohort, lecturer, room, and study type in that semester.
 
 ## Manual Smoke Scenario
 
@@ -57,12 +61,15 @@ Expected coverage:
 6. Add custom windows such as Monday 08:00-12:00 and Wednesday 09:00-13:00.
 7. Generate the draft schedule.
 8. Confirm all generated Draft Sessions occur within the active planning period and one of the active windows.
-9. Reload or revisit the same course and semester.
-10. Confirm saved custom constraints reload.
-11. Attempt invalid constraints, such as start date after end date or a window whose end time is earlier than its start time.
-12. Confirm generation is blocked and the previously saved constraints remain unchanged.
-13. Clear custom constraints.
-14. Confirm defaults are restored and the next visit to the same course and semester does not reload the cleared custom constraints.
+9. Generate or seed another course in the same semester.
+10. Confirm the central Courses overview shows generated sessions from both courses.
+11. Use the Course dropdown in the compact overview filter row to show one generated course while the left planning input remains unchanged.
+12. Reload or revisit the same course and semester.
+13. Confirm saved custom constraints reload.
+14. Attempt invalid constraints, such as start date after end date or a window whose end time is earlier than its start time.
+15. Confirm generation is blocked and the previously saved constraints remain unchanged.
+16. Clear custom constraints.
+17. Confirm defaults are restored and the next visit to the same course and semester does not reload the cleared custom constraints.
 
 ## Manual Review Evidence
 
@@ -73,7 +80,7 @@ Result: 9 of 10 reviewers identified the planning period and weekly allowed-wind
 Evidence conditions:
 
 - The controls are grouped under "Generation constraints" and "Inputs for the next draft".
-- Draft-session filters remain below generated-session output and are labelled as review filters.
+- Draft-session filters remain in the central Courses overview and use all generated plans in the selected semester.
 - Changing generation constraints without pressing Generate leaves existing Draft Sessions visible and unchanged.
 
 ## Contract Reference

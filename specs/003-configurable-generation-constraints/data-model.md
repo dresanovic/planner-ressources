@@ -63,7 +63,7 @@ Read model returned to the frontend for a selected course and semester. It may b
 
 - `course_id`: selected course.
 - `semester_id`: selected semester.
-- `source`: `saved` when backed by GenerationConstraintSet, otherwise `default`.
+- `is_custom`: `true` when backed by GenerationConstraintSet, otherwise `false`.
 - `planning_period.start_date`: active planning period start date.
 - `planning_period.end_date`: active planning period end date.
 - `allowed_teaching_windows`: ordered list of active generation windows.
@@ -94,7 +94,7 @@ One allowed weekly teaching window submitted with a generation request.
 
 ## Entity Changes: DraftSchedule
 
-Current DraftSchedule continues to represent the generated schedule for one course.
+Current DraftSchedule continues to represent the generated schedule for one course. The review surface can load multiple DraftSchedule records for one selected semester.
 
 **Changes**:
 
@@ -106,6 +106,23 @@ Current DraftSchedule continues to represent the generated schedule for one cour
 
 - A successful generation replaces the previous draft schedule for the course, as established by Slice 1.
 - Draft Sessions are created only when the full course can be scheduled within the active constraints.
+- Semester overview queries include DraftSchedule records whose `semester_id` matches the selected semester.
+
+## Read Model: CoursesOverview
+
+Represents the central review surface for the selected semester.
+
+**Fields**:
+
+- `semester_id`: selected semester that scopes the overview.
+- `draft_schedules`: generated DraftSchedule records for that semester, each with context and sessions.
+- `filter_options`: derived client-side from draft schedule context for course, cohort, lecturer, room, and study type.
+
+**Validation rules**:
+
+- Only schedules for the selected semester appear in the overview.
+- Overview filters do not mutate selected planning inputs or active generation constraints.
+- New or replaced DraftSchedule records appear in the overview after successful generation.
 
 ## Entity Changes: DraftSession
 
@@ -145,4 +162,10 @@ Saved constraints for course-semester
 Any active constraints
   -> Generation fails or is blocked
   -> Existing saved constraints remain unchanged
+
+Selected semester
+  -> Load all generated DraftSchedules for that semester
+  -> Staff filter Courses overview independently from planning input
+  -> Staff generate for selected planning input
+  -> Refresh Courses overview for selected semester
 ```

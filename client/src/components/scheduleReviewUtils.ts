@@ -1,10 +1,10 @@
 import type { DraftSession, ReviewFilters } from '../api/draftSchedule'
 
-export type WeeklySessionGroup = {
+export type WeeklySessionGroup<T extends DraftSession = DraftSession> = {
   weekStart: string
   days: Array<{
     date: string
-    sessions: DraftSession[]
+    sessions: T[]
   }>
 }
 
@@ -20,12 +20,12 @@ export function filterSessions(sessions: DraftSession[], filters: ReviewFilters)
   })
 }
 
-export function groupSessionsByWeek(sessions: DraftSession[]): WeeklySessionGroup[] {
-  const groups = new Map<string, Map<string, DraftSession[]>>()
+export function groupSessionsByWeek<T extends DraftSession>(sessions: T[]): WeeklySessionGroup<T>[] {
+  const groups = new Map<string, Map<string, T[]>>()
 
   for (const session of sessions) {
     const weekStart = getWeekStart(session.date)
-    const week = groups.get(weekStart) ?? new Map<string, DraftSession[]>()
+    const week = groups.get(weekStart) ?? new Map<string, T[]>()
     const day = week.get(session.date) ?? []
 
     day.push(session)
@@ -46,7 +46,7 @@ export function groupSessionsByWeek(sessions: DraftSession[]): WeeklySessionGrou
     }))
 }
 
-export function sortSessionsChronologically(sessions: DraftSession[]): DraftSession[] {
+export function sortSessionsChronologically<T extends DraftSession>(sessions: T[]): T[] {
   return [...sessions].sort(compareSessions)
 }
 

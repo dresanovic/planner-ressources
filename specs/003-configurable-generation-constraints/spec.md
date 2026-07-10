@@ -21,6 +21,12 @@ independent test paths.
 - Q: When should custom constraints be saved? -> A: Save custom constraints only after draft schedule generation succeeds.
 - Q: What should clearing custom constraints do? -> A: Delete saved constraints for that course and semester and restore semester and study type defaults.
 
+### Session 2026-07-10
+
+- Q: Should the central review area stay bound to the selected planning input? -> A: No. The central area is a semester-scoped Courses overview that shows all generated plans for the selected semester.
+- Q: Should selecting or filtering generated plans update the left planning input selection? -> A: No. The planning input selection remains independent from overview filters and displayed schedules.
+- Q: What should the Generate action use? -> A: Generate only for the currently selected course and semester in the left planning input area; the newly generated plan becomes available in the Courses overview and can be found with the overview filters.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Generate With Default Constraints (Priority: P1)
@@ -70,6 +76,23 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 2. **Given** custom allowed teaching windows are active, **When** office staff generate a draft schedule, **Then** every Draft Session occurs only on one of the configured weekdays and within the configured time ranges.
 3. **Given** office staff remove all custom teaching windows, **When** the generation controls return to defaults, **Then** the course study type's default teaching windows become the active allowed windows again and the saved custom constraint set for that course-semester combination is deleted.
 
+---
+
+### User Story 4 - Browse Generated Semester Plans (Priority: P2)
+
+Office staff browse all generated draft schedules for the selected semester in a central Courses overview that is independent from the left-side planning input selection.
+
+**Why this priority**: The review filters only become useful when the overview contains more than the currently selected planning input. Staff need a semester-wide review surface to find generated plans by course, cohort, lecturer, room, or study type.
+
+**Independent Test**: Can be tested by generating draft schedules for at least two courses in the same semester, selecting one course in the left planning input area, and confirming the Courses overview can display and filter sessions for both generated courses without changing the left selection.
+
+**Acceptance Scenarios**:
+
+1. **Given** generated draft schedules exist for multiple courses in the selected semester, **When** office staff open the planner, **Then** the central section is labelled "Courses overview" and shows generated sessions from all generated schedules in that semester.
+2. **Given** the left planning input is set to one course, **When** office staff use overview filters to display another generated course, **Then** the left planning input remains unchanged.
+3. **Given** office staff generate a draft schedule for the selected left-side course, **When** generation succeeds, **Then** the generated plan is included in the selected semester's Courses overview and can be found by selecting that course in the overview filters.
+4. **Given** overview filters are visible, **When** office staff review the filter controls, **Then** course, cohort, lecturer, room, and study type filters fit in one compact row where each dropdown contains all values available in the selected semester's generated plans.
+
 ### Edge Cases
 
 - If office staff enter a custom planning start date after the custom end date, generation must be blocked and the staff member must see a clear message explaining that the planning period is invalid.
@@ -81,6 +104,8 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - If office staff clear custom constraints, saved custom constraints for that course-semester combination must be deleted and the semester and study type defaults must become active.
 - If custom constraints are changed after a draft schedule already exists, the existing Draft Sessions remain unchanged until office staff explicitly generate a new draft schedule.
 - Generation constraints must not hide already generated Draft Sessions in the review view; review filtering remains the responsibility of Slice 2.
+- The Courses overview must show only generated schedules whose draft schedule belongs to the selected semester.
+- Overview filtering must not change the selected planning input or the active generation constraints.
 - Manual session editing, conflict detection, multi-course generation, holiday avoidance, exam scheduling, dashboards, validation alerts, multi-course optimization, multiple lecturers, and multiple rooms remain out of scope.
 
 ## Requirements *(mandatory)*
@@ -107,8 +132,14 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - **FR-018**: System MUST create Draft Sessions only within the active allowed weekly teaching windows.
 - **FR-019**: System MUST not create a partial draft schedule when the configured constraints cannot accommodate all required sessions.
 - **FR-020**: System MUST leave existing Draft Sessions unchanged when users modify generation constraints without triggering generation.
-- **FR-021**: System MUST continue to support the single-course generation scope from Slice 1 and the review-only planner UI behavior from Slice 2.
-- **FR-022**: System MUST NOT include manual session editing, conflict detection, multi-course generation, holiday avoidance, exam scheduling, dashboards or validation alerts, optimization across multiple courses, or multiple lecturers or multiple rooms per course in this feature.
+- **FR-021**: System MUST place the Generate action and generation constraint controls in the planning input area for the selected course and semester.
+- **FR-022**: System MUST label the central review area "Courses overview" and use it to browse generated plans for the selected semester.
+- **FR-023**: System MUST load generated draft schedules for all courses in the selected semester into the Courses overview.
+- **FR-024**: System MUST keep Courses overview filters independent from the selected planning input, active generation constraints, and Generate action.
+- **FR-025**: System MUST provide compact one-row overview filters for course, cohort, lecturer, room, and study type, where dropdown options are derived from all generated plans in the selected semester.
+- **FR-026**: System MUST include a newly generated draft schedule in the Courses overview after generation succeeds.
+- **FR-027**: System MUST continue to support single-course generation scope from Slice 1 while allowing semester-scoped review of generated plans from Slice 2.
+- **FR-028**: System MUST NOT include manual session editing, conflict detection, multi-course generation, holiday avoidance, exam scheduling, dashboards or validation alerts, optimization across multiple courses, or multiple lecturers or multiple rooms per course in this feature.
 
 ### Test Requirements *(mandatory)*
 
@@ -128,6 +159,7 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - **Allowed Weekly Teaching Window**: A weekday and time interval during which generated Draft Sessions may be placed.
 - **Draft Schedule**: The generated schedule for the selected course, created from the active generation constraints when office staff trigger generation.
 - **Draft Session**: A generated teaching block with a date, start time, end time, and teaching units that must satisfy the active generation constraints.
+- **Courses Overview**: The central semester-scoped review surface containing all generated Draft Schedules for the selected semester, filtered independently from the left-side planning input selection.
 
 ## Success Criteria *(mandatory)*
 
@@ -144,6 +176,9 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - **SC-009**: 100% of saved custom constraints in validation examples reload when office staff return to generation controls for the same selected course and selected semester.
 - **SC-010**: 100% of failed or blocked generation attempts in validation examples leave previously saved custom constraints unchanged.
 - **SC-011**: 100% of cleared saved constraints in validation examples are absent the next time office staff open generation controls for the same selected course and selected semester.
+- **SC-012**: In validation examples with at least two generated courses in one semester, the Courses overview displays sessions from both courses while the left planning input remains on a single selected course.
+- **SC-013**: 100% of overview filter options in validation examples are derived from all generated plans in the selected semester, not only the selected planning input.
+- **SC-014**: After successful generation, the new or replaced draft schedule is visible in the Courses overview without changing the selected planning input.
 
 ## Assumptions
 
@@ -156,3 +191,4 @@ Office staff define one or more allowed weekly teaching windows for a selected c
 - Saved custom constraints affect later generation requests for the same selected course and selected semester but do not automatically edit or regenerate existing Draft Sessions.
 - Clearing custom constraints is a deliberate reset to selected semester and study type defaults for the same course-semester combination.
 - Clearing either custom planning dates or custom teaching windows resets the entire saved course-semester constraint set.
+- The selected semester controls both generation defaults for the selected planning input and the semester scope of the central Courses overview.

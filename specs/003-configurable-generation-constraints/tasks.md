@@ -134,6 +134,22 @@
 
 ---
 
+## Phase 7: Courses Overview Layout & Semester Scope
+
+**Purpose**: Keep generation controls with the planning input selection and make the central review surface useful across all generated plans in the selected semester.
+
+- [X] T048 [P] Add backend API test for listing generated draft schedules by selected semester in backend/tests/api/test_draft_schedule.py
+- [X] T049 [P] Add frontend tests for Courses overview title, compact all-plan filters, and left planning input independence in client/src/components/DraftSchedulePanel.test.tsx
+- [X] T050 Add repository query for generated draft schedules by semester in backend/app/services/draft_schedule_repository.py
+- [X] T051 Add GET `/api/draft-schedules?semesterId=` endpoint in backend/app/api/draft_schedule.py
+- [X] T052 Add client API call for semester-scoped draft schedules in client/src/api/draftSchedule.ts
+- [X] T053 Move generation constraints and Generate action into the planning input sidebar in client/src/pages/CourseSchedulePage.tsx
+- [X] T054 Convert DraftSchedulePanel into the central Courses overview over all selected-semester schedules in client/src/components/DraftSchedulePanel.tsx
+- [X] T055 Update layout styling for sidebar generation controls and compact one-row overview filters in client/src/App.css
+- [X] T056 Run backend and frontend verification commands from specs/003-configurable-generation-constraints/quickstart.md
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

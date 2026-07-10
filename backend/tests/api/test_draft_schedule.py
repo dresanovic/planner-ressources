@@ -213,6 +213,28 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
     assert read_response.json()["sessions"] == payload["sessions"]
 
 
+def test_read_draft_schedules_lists_generated_plans_for_selected_semester(client, db_session):
+    seed_valid_course(db_session)
+    seed_second_course(db_session)
+
+    first = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+    second = client.post("/api/courses/2/draft-schedule/generate", json=generation_payload())
+
+    assert first.status_code == 201
+    assert second.status_code == 201
+
+    response = client.get("/api/draft-schedules?semesterId=1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert [schedule["context"]["course"]["name"] for schedule in payload] == [
+        "Planning 101",
+        "Scheduling 201",
+    ]
+    assert all(schedule["semesterId"] == 1 for schedule in payload)
+    assert all(schedule["sessions"] for schedule in payload)
+
+
 def test_second_generation_replaces_previous_draft(client, db_session):
     seed_valid_course(db_session)
 

@@ -2,39 +2,51 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { DraftSchedulePanel } from './DraftSchedulePanel'
+import { DraftSchedulePanel, GenerationConstraintEditor } from './DraftSchedulePanel'
 import {
   draftScheduleFixture,
   emptyDraftScheduleFixture,
   generationConstraintsFixture,
+  secondDraftScheduleFixture,
 } from '../test/draftScheduleFixtures'
 import type { GenerationConstraints } from '../api/draftSchedule'
 
 function renderPanel({
-  schedule = draftScheduleFixture,
-  constraints = generationConstraintsFixture,
-  onConstraintsChange = vi.fn(),
-  onClear = vi.fn(),
-  onGenerate = vi.fn(),
+  schedules = [draftScheduleFixture],
 }: {
-  schedule?: typeof draftScheduleFixture | null
-  constraints?: GenerationConstraints | null
-  onConstraintsChange?: (constraints: GenerationConstraints) => void
-  onClear?: () => void
-  onGenerate?: () => void
+  schedules?: typeof draftScheduleFixture[]
 } = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
   act(() => {
     root.render(
       <DraftSchedulePanel
-        schedule={schedule}
-        generationConstraints={constraints}
-        errors={[]}
+        schedules={schedules}
+      />,
+    )
+  })
+
+  return root
+}
+
+function renderConstraintEditor({
+  constraints = generationConstraintsFixture,
+  onConstraintsChange = vi.fn(),
+  onClear = vi.fn(),
+}: {
+  constraints?: GenerationConstraints
+  onConstraintsChange?: (constraints: GenerationConstraints) => void
+  onClear?: () => void
+} = {}): Root {
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+
+  act(() => {
+    root.render(
+      <GenerationConstraintEditor
+        constraints={constraints}
         isLoading={false}
-        onGenerationConstraintsChange={onConstraintsChange}
-        onClearGenerationConstraints={onClear}
-        onGenerate={onGenerate}
+        onChange={onConstraintsChange}
+        onClear={onClear}
       />,
     )
   })
@@ -62,6 +74,7 @@ describe('DraftSchedulePanel', () => {
 
     const rows = [...document.querySelectorAll('.session-row:not(.session-header)')]
 
+    expect(document.body.textContent).toContain('Courses overview')
     expect(rows).toHaveLength(2)
     expect(rows[0].textContent).toContain('2026-09-07')
     expect(rows[1].textContent).toContain('2026-09-14')
@@ -73,15 +86,15 @@ describe('DraftSchedulePanel', () => {
   })
 
   it('shows a no-schedule empty state', () => {
-    renderPanel({ schedule: null })
+    renderPanel({ schedules: [] })
 
-    expect(document.body.textContent).toContain('No generated draft schedule yet.')
+    expect(document.body.textContent).toContain('No generated draft schedules for this semester yet.')
   })
 
   it('shows a distinct empty state when a generated schedule has zero sessions', () => {
-    renderPanel({ schedule: emptyDraftScheduleFixture })
+    renderPanel({ schedules: [emptyDraftScheduleFixture] })
 
-    expect(document.body.textContent).toContain('Generated draft schedule has no sessions.')
+    expect(document.body.textContent).toContain('No generated draft schedules for this semester yet.')
   })
 
   it('switches between list and weekly review modes', () => {
@@ -113,7 +126,7 @@ describe('DraftSchedulePanel', () => {
 
   it('filters visible sessions and shows a no-results state', () => {
     renderPanel({
-      schedule: {
+      schedules: [{
         ...draftScheduleFixture,
         sessions: [
           {
@@ -121,7 +134,7 @@ describe('DraftSchedulePanel', () => {
             cohortId: 99,
           },
         ],
-      },
+      }],
     })
 
     const cohortFilter = document.querySelector<HTMLSelectElement>('select[name="cohortId"]')
@@ -146,7 +159,32 @@ describe('DraftSchedulePanel', () => {
     expect(document.body.textContent).toContain('2026-09-14')
   })
 
+  it('builds compact overview filters from all generated plans', () => {
+    renderPanel({ schedules: [draftScheduleFixture, secondDraftScheduleFixture] })
+
+    const courseFilter = document.querySelector<HTMLSelectElement>('select[name="courseId"]')
+    const cohortFilter = document.querySelector<HTMLSelectElement>('select[name="cohortId"]')
+
+    expect(courseFilter?.textContent).toContain('Planning 101')
+    expect(courseFilter?.textContent).toContain('Scheduling 201')
+    expect(cohortFilter?.textContent).toContain('AI 1')
+    expect(cohortFilter?.textContent).toContain('AI 2')
+
+    act(() => {
+      if (courseFilter) {
+        setSelectValue(courseFilter, '2')
+      }
+    })
+
+    const rows = [...document.querySelectorAll('.session-row:not(.session-header)')]
+    expect(rows).toHaveLength(1)
+    expect(rows[0].textContent).not.toContain('Planning 101')
+    expect(rows[0].textContent).toContain('Scheduling 201')
+    expect(rows[0].textContent).toContain('2026-09-21')
+  })
+
   it('shows generation constraints separately from review filters', () => {
+    renderConstraintEditor()
     renderPanel()
 
     const constraintSection = document.querySelector('.generation-constraints')
@@ -160,13 +198,9 @@ describe('DraftSchedulePanel', () => {
 
   it('emits planning period edits and generation action separately', () => {
     const onConstraintsChange = vi.fn()
-    const onGenerate = vi.fn()
-    renderPanel({ onConstraintsChange, onGenerate })
+    renderConstraintEditor({ onConstraintsChange })
 
     const startInput = document.querySelector<HTMLInputElement>('input[type="date"]')
-    const generateButton = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Generate',
-    )
 
     act(() => {
       if (startInput) {
@@ -179,17 +213,11 @@ describe('DraftSchedulePanel', () => {
         planningPeriod: expect.objectContaining({ startDate: '2026-09-14' }),
       }),
     )
-
-    act(() => {
-      generateButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    })
-
-    expect(onGenerate).toHaveBeenCalledOnce()
   })
 
   it('adds, removes, and submits weekly teaching window edits', () => {
     const onConstraintsChange = vi.fn()
-    renderPanel({ onConstraintsChange })
+    renderConstraintEditor({ onConstraintsChange })
 
     const addButton = [...document.querySelectorAll('button')].find(
       (button) => button.textContent === 'Add window',
@@ -225,13 +253,15 @@ describe('DraftSchedulePanel', () => {
 
   it('clears the full saved constraint set without changing existing draft sessions', () => {
     const onClear = vi.fn()
-    renderPanel({
+    renderConstraintEditor({
       constraints: {
         ...generationConstraintsFixture,
         isCustom: true,
       },
       onClear,
     })
+
+    renderPanel()
 
     const clearButton = [...document.querySelectorAll('button')].find(
       (button) => button.textContent === 'Clear custom constraints',

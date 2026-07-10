@@ -257,3 +257,22 @@ def get_draft_schedule(db: Session, course_id: int) -> DraftSchedule | None:
         .scalars()
         .one_or_none()
     )
+
+
+def list_draft_schedules_by_semester(db: Session, semester_id: int) -> list[DraftSchedule]:
+    return list(
+        db.execute(
+            select(DraftSchedule)
+            .where(DraftSchedule.semester_id == semester_id)
+            .options(
+                selectinload(DraftSchedule.sessions),
+                selectinload(DraftSchedule.course).selectinload(Course.lecturer),
+                selectinload(DraftSchedule.course).selectinload(Course.cohort),
+                selectinload(DraftSchedule.course).selectinload(Course.room),
+                selectinload(DraftSchedule.course).selectinload(Course.study_type),
+            )
+            .order_by(DraftSchedule.course_id)
+        )
+        .scalars()
+        .all()
+    )

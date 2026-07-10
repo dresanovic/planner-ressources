@@ -6,7 +6,7 @@
 
 ## Summary
 
-Slice 3 adds configurable generation constraints before single-course draft schedule generation. Office staff can use semester and study type defaults, override the planning period, define multiple weekly teaching windows, save successful custom constraints per course and semester, clear saved constraints back to defaults, and generate Draft Sessions only within the active constraints. The implementation extends the existing FastAPI generation endpoint, SQLAlchemy planning model, service-level scheduler input model, and React/Vite planner controls while keeping Slice 2 review filters separate from generation constraints.
+Slice 3 adds configurable generation constraints before single-course draft schedule generation. Office staff can use semester and study type defaults, override the planning period, define multiple weekly teaching windows, save successful custom constraints per course and semester, clear saved constraints back to defaults, and generate Draft Sessions only within the active constraints. The implementation extends the existing FastAPI generation endpoint, SQLAlchemy planning model, service-level scheduler input model, and React/Vite planner controls while keeping Slice 2 review filters separate from generation constraints. The planner review surface is also changed from a selected-course schedule to a semester-scoped Courses overview that lists all generated plans for the selected semester while keeping the left planning input independent.
 
 ## Technical Context
 
@@ -24,9 +24,9 @@ Slice 3 adds configurable generation constraints before single-course draft sche
 
 **Performance Goals**: Loading active generation constraints should feel part of the existing planning-options workflow; schedule generation for the single selected course should remain comfortably under the spec goal of 1 minute and should not add extra user-visible waiting beyond one backend request per generate action.
 
-**Constraints**: Keep scope to one selected course, one semester, one lecturer, one room, and one Cohort. Custom planning periods must stay within the selected semester. Custom constraints save only after successful generation. Failed or blocked generation must not overwrite saved constraints. Clearing constraints deletes saved constraints for the course-semester combination and restores defaults. Generation constraints must be visually and functionally distinct from Slice 2 review filters.
+**Constraints**: Keep generation scope to one selected course, one semester, one lecturer, one room, and one Cohort. Custom planning periods must stay within the selected semester. Custom constraints save only after successful generation. Failed or blocked generation must not overwrite saved constraints. Clearing constraints deletes saved constraints for the course-semester combination and restores defaults. Generation constraints must be visually and functionally distinct from Slice 2 review filters. The central Courses overview is scoped to the selected semester and must not be driven by the selected course in the left planning input area.
 
-**Scale/Scope**: Single-course generation and review workflow. Expected data volume is a small set of courses, semesters, study type windows, saved constraint records, and generated sessions suitable for interactive office-staff planning.
+**Scale/Scope**: Single-course generation with semester-scoped review of generated plans. Expected data volume is a small set of courses, semesters, study type windows, saved constraint records, and generated sessions suitable for interactive office-staff planning.
 
 ## Constitution Check
 
@@ -92,7 +92,7 @@ client/
 |       `-- CourseSchedulePage.tsx
 ```
 
-**Structure Decision**: Implement Slice 3 as a full-stack change in the existing resource planner application. Backend model, schema, repository, and generator changes live beside the existing draft schedule code. Frontend generation constraint controls live in the current planner page/panel flow, with review filters remaining inside the review panel.
+**Structure Decision**: Implement Slice 3 as a full-stack change in the existing resource planner application. Backend model, schema, repository, and generator changes live beside the existing draft schedule code. Frontend generation constraint controls live in the planning input sidebar below semester dates, while the review panel becomes a semester-scoped Courses overview with compact one-row filters.
 
 ## Complexity Tracking
 
@@ -112,6 +112,7 @@ Design artifacts:
 - [data-model.md](./data-model.md)
 - [contracts/openapi.yaml](./contracts/openapi.yaml)
 - [quickstart.md](./quickstart.md)
+- Semester-scoped draft schedule list contract in [contracts/openapi.yaml](./contracts/openapi.yaml)
 
 Agent context update: skipped because this repository has no `.specify/scripts/powershell/update-agent-context.ps1` or equivalent agent-context script.
 
@@ -150,3 +151,5 @@ Feature-specific verification should prove:
 - failed generation does not replace saved constraints;
 - clearing constraints deletes saved course-semester constraints and restores defaults;
 - generation constraint controls remain distinct from review filters.
+- generation controls live with the planning input selection;
+- Courses overview shows all generated plans for the selected semester and overview filters use all generated plan values rather than only the selected planning input.
