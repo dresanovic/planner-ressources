@@ -41,6 +41,7 @@ export type PlanningEntity = {
 export type DraftScheduleContext = {
   course: PlanningEntity
   cohort: PlanningEntity
+  cohortSize: number
   lecturer: PlanningEntity
   room: PlanningEntity
   studyType: PlanningEntity
@@ -65,6 +66,18 @@ export type ReviewFilters = {
 export type ViewMode = 'list' | 'weekly'
 
 export type GenerationFailure = {
+  code: string
+  message: string
+}
+
+export type UpdateDraftSessionRequest = {
+  date: string
+  startTime: string
+  endTime: string
+  roomId: number
+}
+
+export type SessionEditFailure = {
   code: string
   message: string
 }
@@ -130,6 +143,25 @@ export async function getDraftSchedules(semesterId: number): Promise<DraftSchedu
   const response = await request(`${API_BASE}/api/draft-schedules?semesterId=${semesterId}`)
   if (!response.ok) {
     throw [{ code: 'REQUEST_FAILED', message: 'Could not load generated draft schedules.' }]
+  }
+  return response.json()
+}
+
+export async function updateDraftSession(
+  sessionId: number,
+  payload: UpdateDraftSessionRequest,
+): Promise<DraftSchedule> {
+  const response = await request(`${API_BASE}/api/draft-sessions/${sessionId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (response.status === 422) {
+    const body = await response.json()
+    throw body.errors as SessionEditFailure[]
+  }
+  if (!response.ok) {
+    throw [{ code: 'REQUEST_FAILED', message: await response.text() }]
   }
   return response.json()
 }

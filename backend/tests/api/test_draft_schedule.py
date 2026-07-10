@@ -81,6 +81,8 @@ def seed_valid_course(db, *, total_units=20, room_capacity=40, cohort_size=30, m
             Lecturer(id=1, name="Ada Lovelace"),
             Cohort(id=1, name="AI 1", student_count=cohort_size),
             Room(id=1, name="R1", capacity=room_capacity),
+            Room(id=3, name="R3", capacity=60),
+            Room(id=4, name="Tiny", capacity=20),
             StudyType(id=1, name="Full-time"),
             Semester(id=1, name="Fall", start_date=date(2026, 9, 7), end_date=date(2026, 12, 20)),
             StudyTypeTimeWindow(
@@ -149,6 +151,12 @@ def test_read_planning_options_returns_database_courses_and_windows(client, db_s
     assert payload["courses"][0]["cohort"] == {"id": 1, "name": "AI 1"}
     assert payload["courses"][1]["lecturer"] == {"id": 2, "name": "Grace Hopper"}
     assert payload["courses"][1]["room"] == {"id": 2, "name": "R2"}
+    assert payload["rooms"] == [
+        {"id": 1, "name": "R1", "capacity": 40},
+        {"id": 2, "name": "R2", "capacity": 30},
+        {"id": 3, "name": "R3", "capacity": 60},
+        {"id": 4, "name": "Tiny", "capacity": 20},
+    ]
     assert payload["semesters"] == [
         {
             "id": 1,
@@ -186,6 +194,7 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
     assert payload["context"] == {
         "course": {"id": 1, "name": "Planning 101"},
         "cohort": {"id": 1, "name": "AI 1"},
+        "cohortSize": 30,
         "lecturer": {"id": 1, "name": "Ada Lovelace"},
         "room": {"id": 1, "name": "R1"},
         "studyType": {"id": 1, "name": "Full-time"},
@@ -362,3 +371,98 @@ def test_empty_or_invalid_teaching_windows_return_constraint_failures(client, db
     assert missing.json()["errors"][0]["code"] == "MISSING_TEACHING_WINDOW"
     assert invalid.status_code == 422
     assert invalid.json()["errors"][0]["code"] == "INVALID_TEACHING_WINDOW"
+
+
+def test_update_draft_session_edits_time_and_rejects_invalid_values(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    session_id = generated["sessions"][0]["id"]
+
+    response = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "roomId": 1},
+    )
+
+    assert response.status_code == 200
+    edited = response.json()["sessions"][-1]
+    assert edited["id"] == session_id
+    assert edited["date"] == "2026-12-14"
+    assert edited["startTime"] == "09:00"
+    assert edited["endTime"] == "10:30"
+
+    invalid = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-09-01", "startTime": "09:00", "endTime": "10:30", "roomId": 1},
+    )
+    assert invalid.status_code == 422
+    assert invalid.json()["errors"][0]["code"] == "INVALID_SESSION_DATE"
+
+    duplicate = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-09-14", "startTime": "09:00", "endTime": "10:30", "roomId": 1},
+    )
+    assert duplicate.status_code == 422
+    assert duplicate.json()["errors"][0]["code"] == "DUPLICATE_SESSION_DATE"
+
+    invalid_date = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "not-a-date", "startTime": "09:00", "endTime": "10:30", "roomId": 1},
+    )
+    assert invalid_date.status_code == 422
+    assert invalid_date.json()["errors"][0]["code"] == "INVALID_SESSION_DATE"
+
+    invalid_time = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "", "endTime": "10:30", "roomId": 1},
+    )
+    assert invalid_time.status_code == 422
+    assert invalid_time.json()["errors"][0]["code"] == "INVALID_SESSION_TIME_RANGE"
+
+
+def test_update_draft_session_room_capacity_and_missing_room(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    session_id = generated["sessions"][0]["id"]
+
+    room_response = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "roomId": 3},
+    )
+    assert room_response.status_code == 200
+    assert room_response.json()["sessions"][-1]["roomId"] == 3
+
+    capacity_response = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "roomId": 4},
+    )
+    assert capacity_response.status_code == 422
+    assert capacity_response.json()["errors"][0]["code"] == "INSUFFICIENT_ROOM_CAPACITY"
+
+    missing_response = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "roomId": 999},
+    )
+    assert missing_response.status_code == 404
+
+
+def test_read_draft_schedules_returns_saved_manual_edit_values_and_regeneration_replaces_them(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    session_id = generated["sessions"][0]["id"]
+
+    client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "roomId": 3},
+    )
+
+    schedules = client.get("/api/draft-schedules?semesterId=1").json()
+    edited = schedules[0]["sessions"][-1]
+    assert edited["id"] == session_id
+    assert edited["date"] == "2026-12-14"
+    assert edited["roomId"] == 3
+
+    regenerated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+    assert regenerated.status_code == 201
+    regenerated_sessions = client.get("/api/draft-schedules?semesterId=1").json()[0]["sessions"]
+    assert all(session["date"] != "2026-12-14" for session in regenerated_sessions)
+    assert all(session["roomId"] == 1 for session in regenerated_sessions)

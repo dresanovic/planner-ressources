@@ -76,6 +76,7 @@ Office staff continue reviewing generated plans after manual edits without losin
 
 - If a Draft Session no longer exists when office staff try to save an edit, the system must explain that the session cannot be updated and must not create a new session from the stale edit.
 - If office staff enter an invalid date, a date outside the selected semester, invalid time, or an end time equal to or earlier than the start time, the edit must be blocked with a clear message and the existing Draft Session must remain unchanged.
+- If office staff edit a Draft Session date to a date already used by another Draft Session in the same Draft Schedule, the edit must be blocked with a clear message and the existing Draft Session must remain unchanged.
 - If the edited end time changes the derived session length, the Courses overview must show the updated length consistently with the saved start and end times.
 - If a valid manual edit places a session outside the active generation constraints or teaching windows, the edit is still saved in this slice because conflict and window validation belongs to Slice 5.
 - If a replacement room does not have enough capacity for the session's cohort, the room edit must be blocked and the existing Draft Session room must remain unchanged.
@@ -106,12 +107,13 @@ Office staff continue reviewing generated plans after manual edits without losin
 - **FR-014**: System MUST preserve saved manual edits when office staff leave and reopen the same selected semester's Courses overview.
 - **FR-015**: System MUST continue to use the existing regeneration replacement behavior when office staff generate a replacement draft schedule for the same course.
 - **FR-016**: System MUST block manual date edits that fall outside the selected semester.
-- **FR-017**: System MUST allow otherwise valid manual edits even if the edited session falls outside active generation constraints or teaching windows.
-- **FR-018**: System MUST block manual room edits when the replacement room capacity is below the session cohort size.
-- **FR-019**: System MUST allow otherwise valid manual room edits even if the replacement room is occupied at the edited date and time.
-- **FR-020**: System MUST NOT add conflict detection, conflict warnings, public holiday handling, exam scheduling, multi-course generation, dashboard summaries, validation alert workflows, multiple lecturers per course, or multiple eligible rooms per course in this feature.
-- **FR-021**: System MUST NOT add creating, deleting, splitting, or merging Draft Sessions as part of this feature.
-- **FR-022**: System MUST NOT edit source planning records such as Course, Cohort, Lecturer, Room catalog details, Semester, Study Type, or generation constraints as part of a Draft Session edit.
+- **FR-017**: System MUST block manual date edits that duplicate another Draft Session date in the same Draft Schedule.
+- **FR-018**: System MUST allow otherwise valid manual edits even if the edited session falls outside active generation constraints or teaching windows.
+- **FR-019**: System MUST block manual room edits when the replacement room capacity is below the session cohort size.
+- **FR-020**: System MUST allow otherwise valid manual room edits even if the replacement room is occupied at the edited date and time.
+- **FR-021**: System MUST NOT add conflict detection, conflict warnings, public holiday handling, exam scheduling, multi-course generation, dashboard summaries, validation alert workflows, multiple lecturers per course, or multiple eligible rooms per course in this feature.
+- **FR-022**: System MUST NOT add creating, deleting, splitting, or merging Draft Sessions as part of this feature.
+- **FR-023**: System MUST NOT edit source planning records such as Course, Cohort, Lecturer, Room catalog details, Semester, Study Type, or generation constraints as part of a Draft Session edit.
 
 ### Test Requirements *(mandatory)*
 

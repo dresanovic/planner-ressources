@@ -4,7 +4,7 @@ React/Vite frontend for the resource planner.
 
 ## Draft Schedule Page
 
-The schedule page lets an admin trigger draft schedule generation for one selected course and review generated sessions across the selected semester before editing is introduced in a later slice.
+The schedule page lets an admin trigger draft schedule generation for one selected course, review generated sessions across the selected semester, and manually correct already generated Draft Sessions.
 
 The page calls the backend draft schedule endpoints:
 
@@ -14,6 +14,7 @@ The page calls the backend draft schedule endpoints:
 - `DELETE /api/courses/{course_id}/generation-constraints?semesterId={semester_id}`
 - `GET /api/courses/{course_id}/draft-schedule`
 - `GET /api/draft-schedules?semesterId={semester_id}`
+- `PATCH /api/draft-sessions/{sessionId}`
 
 Course and semester controls are loaded from backend planning data instead of being hardcoded in the client. The generation constraints panel lives in the planning input sidebar, loads defaults from the selected semester and course study type, then lets office staff override the planning period and allowed weekly teaching windows before generation. Those controls affect the next generated draft for the selected planning input; they are separate from overview filters.
 
@@ -25,9 +26,12 @@ The review panel supports:
 - chronological list review with date, time, units, course, Cohort, lecturer, room, and study type context
 - weekly grouped review mode
 - compact filters derived from all generated course, Cohort, lecturer, room, and study type values in the selected semester
+- manual editing of an existing Draft Session's date, start time, end time, and room
+- derived session length display from the edited start and end time
+- room choices with capacity metadata, with insufficient-capacity room edits rejected by the backend
 - distinct no-semester-schedules and no-results states
 
-Manual session editing, conflict warnings, holiday warnings, exam controls, dashboard summaries, and multi-course generation are intentionally not available in this slice.
+Manual edits update the saved draft schedule returned to the overview, so changed sessions remain visible while switching filters or list/weekly review modes. Conflict warnings, room occupancy blocking, holiday warnings, exam controls, dashboard summaries, source planning-record editing, session creation/deletion/splitting/merging, and multi-course generation are intentionally not available in this slice.
 
 ## Development
 

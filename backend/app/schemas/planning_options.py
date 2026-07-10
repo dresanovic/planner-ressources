@@ -39,9 +39,16 @@ class TimeWindowOptionResponse(BaseModel):
     sort_order: int = Field(alias="sortOrder")
 
 
+class RoomOptionResponse(BaseModel):
+    id: int
+    name: str
+    capacity: int
+
+
 class PlanningOptionsResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     courses: list[CourseOptionResponse]
     semesters: list[SemesterOptionResponse]
     time_windows: list[TimeWindowOptionResponse] = Field(alias="timeWindows")
+    rooms: list[RoomOptionResponse]

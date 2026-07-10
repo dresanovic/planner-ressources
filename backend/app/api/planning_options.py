@@ -3,11 +3,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.models.planning import Course, Semester, StudyTypeTimeWindow
+from app.models.planning import Course, Room, Semester, StudyTypeTimeWindow
 from app.schemas.draft_schedule import PlanningEntityResponse
 from app.schemas.planning_options import (
     CourseOptionResponse,
     PlanningOptionsResponse,
+    RoomOptionResponse,
     SemesterOptionResponse,
     TimeWindowOptionResponse,
 )
@@ -32,6 +33,7 @@ def read_planning_options(db: Session = Depends(get_db)) -> PlanningOptionsRespo
         .all()
     )
     semesters = db.execute(select(Semester).order_by(Semester.start_date, Semester.name)).scalars().all()
+    rooms = db.execute(select(Room).order_by(Room.name)).scalars().all()
     time_windows = (
         db.execute(
             select(StudyTypeTimeWindow).order_by(
@@ -67,6 +69,14 @@ def read_planning_options(db: Session = Depends(get_db)) -> PlanningOptionsRespo
                 endDate=semester.end_date,
             )
             for semester in semesters
+        ],
+        rooms=[
+            RoomOptionResponse(
+                id=room.id,
+                name=room.name,
+                capacity=room.capacity,
+            )
+            for room in rooms
         ],
         timeWindows=[
             TimeWindowOptionResponse(

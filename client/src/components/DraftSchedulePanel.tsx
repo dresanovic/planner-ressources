@@ -8,8 +8,11 @@ import type {
   GenerationConstraints,
   PlanningEntity,
   ReviewFilters,
+  SessionEditFailure,
+  UpdateDraftSessionRequest,
   ViewMode,
 } from '../api/draftSchedule'
+import type { RoomOption } from '../api/planningOptions'
 import {
   groupSessionsByWeek,
   sortSessionsChronologically,
@@ -17,15 +20,23 @@ import {
 
 type DraftSchedulePanelProps = {
   schedules: DraftSchedule[]
+  rooms?: RoomOption[]
+  onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
 }
 
 export function DraftSchedulePanel({
   schedules,
+  rooms = [],
+  onUpdateSession,
 }: DraftSchedulePanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [filters, setFilters] = useState<ReviewFilters>({})
-  const overviewSessions = useMemo(() => flattenSchedules(schedules), [schedules])
-  const filterOptions = useMemo(() => buildFilterOptions(schedules), [schedules])
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null)
+  const [editDraft, setEditDraft] = useState<UpdateDraftSessionRequest | null>(null)
+  const [editErrors, setEditErrors] = useState<SessionEditFailure[]>([])
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const overviewSessions = useMemo(() => flattenSchedules(schedules, rooms), [schedules, rooms])
+  const filterOptions = useMemo(() => buildFilterOptions(schedules, rooms), [schedules, rooms])
   const visibleSessions = sortSessionsChronologically(
     overviewSessions.filter((session) => matchesFilters(session, filters)),
   )
@@ -107,25 +118,46 @@ export function DraftSchedulePanel({
               <div className="session-row session-header">
                 <span>Date</span>
                 <span>Time</span>
-                <span>Units</span>
+                <span>Length</span>
                 <span>Course</span>
                 <span>Cohort</span>
                 <span>Lecturer</span>
                 <span>Room</span>
                 <span>Study type</span>
+                <span>Actions</span>
               </div>
               {visibleSessions.map((session) => (
                 <div className="session-row" key={`${session.draftScheduleId}-${session.id}`}>
-                  <span>{session.date}</span>
-                  <span>
-                    {session.startTime}-{session.endTime}
-                  </span>
-                  <span>{session.units}</span>
-                  <span>{session.context.course.name}</span>
-                  <span>{session.context.cohort.name}</span>
-                  <span>{session.context.lecturer.name}</span>
-                  <span>{session.context.room.name}</span>
-                  <span>{session.context.studyType.name}</span>
+                  {editingSessionId === session.id && editDraft ? (
+                    <SessionEditFields
+                      session={session}
+                      draft={editDraft}
+                      rooms={rooms}
+                      isSaving={isSavingEdit}
+                      errors={editErrors}
+                      onChange={setEditDraft}
+                      onCancel={closeEdit}
+                      onSave={saveEdit}
+                    />
+                  ) : (
+                    <>
+                      <span>{session.date}</span>
+                      <span>
+                        {session.startTime}-{session.endTime}
+                      </span>
+                      <span>{derivedLengthLabel(session.startTime, session.endTime)}</span>
+                      <span>{session.context.course.name}</span>
+                      <span>{session.context.cohort.name}</span>
+                      <span>{session.context.lecturer.name}</span>
+                      <span>{session.roomName}</span>
+                      <span>{session.context.studyType.name}</span>
+                      <span>
+                        <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)}>
+                          Edit
+                        </button>
+                      </span>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -143,12 +175,15 @@ export function DraftSchedulePanel({
                             <strong>
                               {session.startTime}-{session.endTime}
                             </strong>
-                            <span>{session.units} units</span>
+                            <span>{derivedLengthLabel(session.startTime, session.endTime)}</span>
                             <span>{session.context.course.name}</span>
                             <span>{session.context.cohort.name}</span>
                             <span>{session.context.lecturer.name}</span>
-                            <span>{session.context.room.name}</span>
+                            <span>{session.roomName}</span>
                             <span>{session.context.studyType.name}</span>
+                            <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)}>
+                              Edit
+                            </button>
                           </article>
                         ))}
                       </div>
@@ -171,6 +206,131 @@ export function DraftSchedulePanel({
       [name]: value,
     }))
   }
+
+  function openEdit(session: OverviewSession) {
+    setViewMode('list')
+    setEditingSessionId(session.id)
+    setEditDraft({
+      date: session.date,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      roomId: session.roomId,
+    })
+    setEditErrors([])
+  }
+
+  function closeEdit() {
+    setEditingSessionId(null)
+    setEditDraft(null)
+    setEditErrors([])
+    setIsSavingEdit(false)
+  }
+
+  async function saveEdit() {
+    if (!editingSessionId || !editDraft || !onUpdateSession) {
+      return
+    }
+    setIsSavingEdit(true)
+    setEditErrors([])
+    try {
+      await onUpdateSession(editingSessionId, editDraft)
+      closeEdit()
+    } catch (error) {
+      setEditErrors(Array.isArray(error) ? error : [{ code: 'REQUEST_FAILED', message: 'Could not save edit.' }])
+      setIsSavingEdit(false)
+    }
+  }
+}
+
+type SessionEditFieldsProps = {
+  session: OverviewSession
+  draft: UpdateDraftSessionRequest
+  rooms: RoomOption[]
+  isSaving: boolean
+  errors: SessionEditFailure[]
+  onChange: (draft: UpdateDraftSessionRequest) => void
+  onCancel: () => void
+  onSave: () => void
+}
+
+function SessionEditFields({
+  session,
+  draft,
+  rooms,
+  isSaving,
+  errors,
+  onChange,
+  onCancel,
+  onSave,
+}: SessionEditFieldsProps) {
+  const eligibleRooms = rooms.filter(
+    (room) => room.capacity >= session.context.cohortSize || room.id === session.roomId,
+  )
+  const availableRooms = eligibleRooms.length > 0
+    ? eligibleRooms
+    : [{ id: session.roomId, name: session.roomName, capacity: session.context.cohortSize }]
+
+  return (
+    <>
+      <label className="inline-edit-field">
+        <span>Date</span>
+        <input
+          type="date"
+          value={draft.date}
+          onChange={(event) => onChange({ ...draft, date: event.target.value })}
+        />
+      </label>
+      <label className="inline-edit-field">
+        <span>Start</span>
+        <input
+          type="time"
+          value={draft.startTime}
+          onChange={(event) => onChange({ ...draft, startTime: event.target.value })}
+        />
+      </label>
+      <label className="inline-edit-field">
+        <span>End</span>
+        <input
+          type="time"
+          value={draft.endTime}
+          onChange={(event) => onChange({ ...draft, endTime: event.target.value })}
+        />
+      </label>
+      <span>{derivedLengthLabel(draft.startTime, draft.endTime)}</span>
+      <span>{session.context.course.name}</span>
+      <span>{session.context.cohort.name}</span>
+      <span>{session.context.lecturer.name}</span>
+      <label className="inline-edit-field">
+        <span>Room</span>
+        <select
+          value={draft.roomId}
+          onChange={(event) => onChange({ ...draft, roomId: Number(event.target.value) })}
+        >
+          {availableRooms.map((room) => (
+            <option value={room.id} key={room.id}>
+              {room.name}
+              {room.capacity ? ` (${room.capacity} seats)` : ''}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="edit-actions">
+        <button type="button" onClick={onSave} disabled={isSaving}>
+          Save
+        </button>
+        <button type="button" className="secondary-button" onClick={onCancel} disabled={isSaving}>
+          Cancel
+        </button>
+        {errors.length > 0 && (
+          <div className="inline-error" role="alert">
+            {errors.map((error) => (
+              <span key={error.code}>{error.message}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  )
 }
 
 type FilterSelectProps = {
@@ -376,6 +536,7 @@ function removeWindow(constraints: GenerationConstraints, index: number): Genera
 type OverviewSession = DraftSession & {
   draftScheduleId: number
   context: DraftScheduleContext
+  roomName: string
 }
 
 type FilterOptions = {
@@ -386,24 +547,30 @@ type FilterOptions = {
   studyTypes: PlanningEntity[]
 }
 
-function flattenSchedules(schedules: DraftSchedule[]): OverviewSession[] {
+function flattenSchedules(schedules: DraftSchedule[], rooms: RoomOption[]): OverviewSession[] {
   return schedules.flatMap((schedule) =>
     schedule.sessions.map((session) => ({
       ...session,
       draftScheduleId: schedule.draftScheduleId,
       context: schedule.context,
+      roomName: getRoomName(session.roomId, rooms, schedule.context.room),
     })),
   )
 }
 
-function buildFilterOptions(schedules: DraftSchedule[]): FilterOptions {
+function buildFilterOptions(schedules: DraftSchedule[], rooms: RoomOption[]): FilterOptions {
+  const sessions = flattenSchedules(schedules, rooms)
   return {
     courses: uniqueEntities(schedules.map((schedule) => schedule.context.course)),
     cohorts: uniqueEntities(schedules.map((schedule) => schedule.context.cohort)),
     lecturers: uniqueEntities(schedules.map((schedule) => schedule.context.lecturer)),
-    rooms: uniqueEntities(schedules.map((schedule) => schedule.context.room)),
+    rooms: uniqueEntities(sessions.map((session) => ({ id: session.roomId, name: session.roomName }))),
     studyTypes: uniqueEntities(schedules.map((schedule) => schedule.context.studyType)),
   }
+}
+
+function getRoomName(roomId: number, rooms: RoomOption[], fallback: PlanningEntity): string {
+  return rooms.find((room) => room.id === roomId)?.name ?? (fallback.id === roomId ? fallback.name : `Room ${roomId}`)
 }
 
 function uniqueEntities(entities: PlanningEntity[]): PlanningEntity[] {
@@ -420,4 +587,27 @@ function matchesFilters(session: OverviewSession, filters: ReviewFilters): boole
     (filters.roomId === undefined || session.roomId === filters.roomId) &&
     (filters.studyTypeId === undefined || session.studyTypeId === filters.studyTypeId)
   )
+}
+
+function derivedLengthLabel(startTime: string, endTime: string): string {
+  const minutes = minutesBetween(startTime, endTime)
+  if (minutes === null) {
+    return 'Invalid'
+  }
+  if (minutes < 60) {
+    return `${minutes} min`
+  }
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  return remainder === 0 ? `${hours} h` : `${hours} h ${remainder} min`
+}
+
+function minutesBetween(startTime: string, endTime: string): number | null {
+  const [startHour, startMinute] = startTime.split(':').map(Number)
+  const [endHour, endMinute] = endTime.split(':').map(Number)
+  if ([startHour, startMinute, endHour, endMinute].some((value) => Number.isNaN(value))) {
+    return null
+  }
+  const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute)
+  return minutes > 0 ? minutes : null
 }

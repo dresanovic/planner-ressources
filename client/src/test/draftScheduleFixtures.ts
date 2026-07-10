@@ -1,4 +1,5 @@
 import type { DraftSchedule, GenerationConstraints } from '../api/draftSchedule'
+import type { RoomOption } from '../api/planningOptions'
 
 export const generationConstraintsFixture: GenerationConstraints = {
   courseId: 1,
@@ -31,6 +32,7 @@ export const draftScheduleFixture: DraftSchedule = {
   context: {
     course: { id: 1, name: 'Planning 101' },
     cohort: { id: 1, name: 'AI 1' },
+    cohortSize: 30,
     lecturer: { id: 1, name: 'Ada Lovelace' },
     room: { id: 1, name: 'R1' },
     studyType: { id: 1, name: 'Full-time' },
@@ -80,6 +82,7 @@ export const secondDraftScheduleFixture: DraftSchedule = {
   context: {
     course: { id: 2, name: 'Scheduling 201' },
     cohort: { id: 2, name: 'AI 2' },
+    cohortSize: 30,
     lecturer: { id: 2, name: 'Grace Hopper' },
     room: { id: 2, name: 'R2' },
     studyType: { id: 1, name: 'Full-time' },
@@ -101,3 +104,10 @@ export const secondDraftScheduleFixture: DraftSchedule = {
     },
   ],
 }
+
+export const roomOptionsFixture: RoomOption[] = [
+  { id: 1, name: 'R1', capacity: 40 },
+  { id: 2, name: 'R2', capacity: 32 },
+  { id: 3, name: 'Auditorium', capacity: 80 },
+  { id: 4, name: 'Tiny', capacity: 20 },
+]

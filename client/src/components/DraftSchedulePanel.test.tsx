@@ -7,14 +7,17 @@ import {
   draftScheduleFixture,
   emptyDraftScheduleFixture,
   generationConstraintsFixture,
+  roomOptionsFixture,
   secondDraftScheduleFixture,
 } from '../test/draftScheduleFixtures'
-import type { GenerationConstraints } from '../api/draftSchedule'
+import type { DraftSchedule, GenerationConstraints, UpdateDraftSessionRequest } from '../api/draftSchedule'
 
 function renderPanel({
   schedules = [draftScheduleFixture],
+  onUpdateSession = vi.fn(),
 }: {
-  schedules?: typeof draftScheduleFixture[]
+  schedules?: DraftSchedule[]
+  onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
 } = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
@@ -22,6 +25,8 @@ function renderPanel({
     root.render(
       <DraftSchedulePanel
         schedules={schedules}
+        rooms={roomOptionsFixture}
+        onUpdateSession={onUpdateSession}
       />,
     )
   })
@@ -274,5 +279,136 @@ describe('DraftSchedulePanel', () => {
     expect(onClear).toHaveBeenCalledOnce()
     expect(document.body.textContent).toContain('2026-09-07')
     expect(document.body.textContent).toContain('2026-09-14')
+  })
+
+  it('opens manual edit controls and cancels without saving', () => {
+    const onUpdateSession = vi.fn()
+    renderPanel({ onUpdateSession })
+
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+
+    act(() => {
+      editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(document.querySelector<HTMLInputElement>('input[type="date"]')?.value).toBe('2026-09-07')
+    expect(document.body.textContent).toContain('3 h 30 min')
+
+    const cancelButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Cancel')
+
+    act(() => {
+      cancelButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(document.querySelector<HTMLInputElement>('input[type="date"]')).toBeNull()
+    expect(onUpdateSession).not.toHaveBeenCalled()
+  })
+
+  it('submits date, start, end, and room edits', async () => {
+    const onUpdateSession = vi.fn().mockResolvedValue(undefined)
+    renderPanel({ onUpdateSession })
+
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+
+    await act(async () => {
+      editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    const dateInput = document.querySelector<HTMLInputElement>('input[type="date"]')
+    const timeInputs = [...document.querySelectorAll<HTMLInputElement>('input[type="time"]')]
+    const roomSelect = document.querySelector<HTMLSelectElement>('.inline-edit-field select')
+
+    act(() => {
+      if (dateInput) {
+        setInputValue(dateInput, '2026-12-14')
+      }
+      if (timeInputs[0]) {
+        setInputValue(timeInputs[0], '09:00')
+      }
+      if (timeInputs[1]) {
+        setInputValue(timeInputs[1], '10:30')
+      }
+      if (roomSelect) {
+        setSelectValue(roomSelect, '3')
+      }
+    })
+
+    const saveButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Save')
+
+    await act(async () => {
+      saveButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(onUpdateSession).toHaveBeenCalledWith(1, {
+      date: '2026-12-14',
+      startTime: '09:00',
+      endTime: '10:30',
+      roomId: 3,
+    })
+  })
+
+  it('limits room choices to rooms with enough capacity', async () => {
+    renderPanel()
+
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+    await act(async () => {
+      editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    const roomSelect = document.querySelector<HTMLSelectElement>('.inline-edit-field select')
+    const optionLabels = [...(roomSelect?.options ?? [])].map((option) => option.textContent)
+
+    expect(optionLabels).toContain('R1 (40 seats)')
+    expect(optionLabels).toContain('Auditorium (80 seats)')
+    expect(optionLabels).not.toContain('Tiny (20 seats)')
+  })
+
+  it('shows edit failures without falsely saving', async () => {
+    const onUpdateSession = vi.fn().mockRejectedValue([
+      { code: 'INSUFFICIENT_ROOM_CAPACITY', message: 'Room capacity is too low.' },
+    ])
+    renderPanel({ onUpdateSession })
+
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+    await act(async () => {
+      editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    const saveButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Save')
+    await act(async () => {
+      saveButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(document.body.textContent).toContain('Room capacity is too low.')
+    expect(document.querySelector<HTMLInputElement>('input[type="date"]')).not.toBeNull()
+  })
+
+  it('uses edited room values for display and filters', () => {
+    renderPanel({
+      schedules: [
+        {
+          ...draftScheduleFixture,
+          sessions: [
+            {
+              ...draftScheduleFixture.sessions[1],
+              roomId: 3,
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(document.body.textContent).toContain('Auditorium')
+
+    const roomFilter = document.querySelector<HTMLSelectElement>('select[name="roomId"]')
+    expect(roomFilter?.textContent).toContain('Auditorium')
+
+    act(() => {
+      if (roomFilter) {
+        setSelectValue(roomFilter, '3')
+      }
+    })
+
+    expect(document.body.textContent).toContain('2026-09-07')
   })
 })

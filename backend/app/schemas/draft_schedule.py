@@ -14,6 +14,22 @@ class FailureCode(StrEnum):
     MISSING_TEACHING_WINDOW = "MISSING_TEACHING_WINDOW"
 
 
+class SessionEditFailureCode(StrEnum):
+    INVALID_SESSION_DATE = "INVALID_SESSION_DATE"
+    INVALID_SESSION_TIME_RANGE = "INVALID_SESSION_TIME_RANGE"
+    INSUFFICIENT_ROOM_CAPACITY = "INSUFFICIENT_ROOM_CAPACITY"
+    DUPLICATE_SESSION_DATE = "DUPLICATE_SESSION_DATE"
+
+
+class UpdateDraftSessionRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    date: str
+    start_time: str = Field(alias="startTime")
+    end_time: str = Field(alias="endTime")
+    room_id: int = Field(alias="roomId")
+
+
 class PlanningPeriodInput(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -89,6 +105,7 @@ class PlanningEntityResponse(BaseModel):
 class DraftScheduleContextResponse(BaseModel):
     course: PlanningEntityResponse
     cohort: PlanningEntityResponse
+    cohort_size: int = Field(alias="cohortSize")
     lecturer: PlanningEntityResponse
     room: PlanningEntityResponse
     study_type: PlanningEntityResponse = Field(alias="studyType")
@@ -111,6 +128,15 @@ class GenerationFailure(BaseModel):
 
 class GenerationFailureResponse(BaseModel):
     errors: list[GenerationFailure]
+
+
+class SessionEditFailure(BaseModel):
+    code: SessionEditFailureCode
+    message: str
+
+
+class SessionEditFailureResponse(BaseModel):
+    errors: list[SessionEditFailure]
 
 
 class ErrorResponse(BaseModel):

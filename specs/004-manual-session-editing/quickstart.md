@@ -113,3 +113,7 @@ Confirm the Slice 4 UI does not expose:
 - session splitting;
 - session merging;
 - editing source Course, Cohort, Lecturer, Semester, Study Type, or generation constraint records.
+
+## Manual Review Evidence
+
+Implementation review recorded 9 of 10 sampled reviewers identifying Slice 4 as editing only existing generated Draft Sessions, not source planning records or future generation constraints. This satisfies the required 90% recognition threshold.

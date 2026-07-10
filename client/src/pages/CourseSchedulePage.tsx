@@ -7,6 +7,8 @@ import {
   type DraftSchedule,
   type GenerationConstraints,
   type GenerationFailure,
+  type UpdateDraftSessionRequest,
+  updateDraftSession,
 } from '../api/draftSchedule'
 import {
   getPlanningOptions,
@@ -195,6 +197,14 @@ export function CourseSchedulePage() {
     }
   }
 
+  async function handleUpdateSession(sessionId: number, payload: UpdateDraftSessionRequest) {
+    const updated = await updateDraftSession(sessionId, payload)
+    setSchedules((current) => [
+      ...current.filter((schedule) => schedule.draftScheduleId !== updated.draftScheduleId),
+      updated,
+    ])
+  }
+
   return (
     <main className="planner-shell">
       <aside className="sidebar">
@@ -282,6 +292,8 @@ export function CourseSchedulePage() {
 
           <DraftSchedulePanel
             schedules={schedules}
+            rooms={planningOptions?.rooms ?? []}
+            onUpdateSession={handleUpdateSession}
           />
         </div>
       </section>

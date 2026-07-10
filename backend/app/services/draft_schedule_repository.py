@@ -25,6 +25,13 @@ class PlanningInputNotFoundError(ValueError):
     pass
 
 
+class DraftSessionEditValidationError(ValueError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+
 class GenerationConstraints:
     def __init__(
         self,
@@ -257,6 +264,80 @@ def get_draft_schedule(db: Session, course_id: int) -> DraftSchedule | None:
         .scalars()
         .one_or_none()
     )
+
+
+def update_draft_session(
+    db: Session,
+    session_id: int,
+    *,
+    date,
+    start_time,
+    end_time,
+    room_id: int,
+) -> DraftSchedule:
+    session = db.get(DraftSession, session_id)
+    if session is None:
+        raise PlanningInputNotFoundError("Draft Session not found.")
+
+    draft = db.get(DraftSchedule, session.draft_schedule_id)
+    if draft is None:
+        raise PlanningInputNotFoundError("Draft Schedule not found.")
+
+    semester = db.get(Semester, draft.semester_id)
+    if semester is None:
+        raise PlanningInputNotFoundError("Semester not found.")
+
+    if date < semester.start_date or date > semester.end_date:
+        raise DraftSessionEditValidationError(
+            "INVALID_SESSION_DATE",
+            "Session date must be inside the selected semester.",
+        )
+    if end_time <= start_time:
+        raise DraftSessionEditValidationError(
+            "INVALID_SESSION_TIME_RANGE",
+            "Session end time must be later than start time.",
+        )
+
+    duplicate = (
+        db.execute(
+            select(DraftSession).where(
+                DraftSession.draft_schedule_id == session.draft_schedule_id,
+                DraftSession.date == date,
+                DraftSession.id != session.id,
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if duplicate is not None:
+        raise DraftSessionEditValidationError(
+            "DUPLICATE_SESSION_DATE",
+            "Another Draft Session in this draft schedule already uses that date.",
+        )
+
+    room = db.get(Room, room_id)
+    if room is None:
+        raise PlanningInputNotFoundError("Room not found.")
+    cohort = db.get(Cohort, session.cohort_id)
+    if cohort is None:
+        raise PlanningInputNotFoundError("Cohort not found.")
+    if room.capacity < cohort.student_count:
+        raise DraftSessionEditValidationError(
+            "INSUFFICIENT_ROOM_CAPACITY",
+            f"Room capacity {room.capacity} is lower than Cohort size {cohort.student_count}.",
+        )
+
+    session.date = date
+    session.start_time = start_time
+    session.end_time = end_time
+    session.room_id = room_id
+    db.commit()
+    db.expire_all()
+
+    updated = get_draft_schedule(db, session.course_id)
+    if updated is None:
+        raise PlanningInputNotFoundError("Draft Schedule not found.")
+    return updated
 
 
 def list_draft_schedules_by_semester(db: Session, semester_id: int) -> list[DraftSchedule]:

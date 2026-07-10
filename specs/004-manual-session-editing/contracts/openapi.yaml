@@ -177,6 +177,27 @@ components:
           type: integer
         context:
           type: object
+          required:
+            - course
+            - cohort
+            - cohortSize
+            - lecturer
+            - room
+            - studyType
+          properties:
+            course:
+              type: object
+            cohort:
+              type: object
+            cohortSize:
+              type: integer
+              description: Number of students in the session Cohort, used to filter eligible room choices.
+            lecturer:
+              type: object
+            room:
+              type: object
+            studyType:
+              type: object
         sessions:
           type: array
           items:

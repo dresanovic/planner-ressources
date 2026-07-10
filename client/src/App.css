@@ -331,7 +331,12 @@ button:disabled {
 
 .session-row {
   display: grid;
-  grid-template-columns: minmax(96px, 1fr) minmax(110px, 1fr) 64px repeat(5, minmax(96px, 1fr));
+  grid-template-columns:
+    minmax(96px, 1fr)
+    minmax(110px, 1fr)
+    minmax(74px, 0.8fr)
+    repeat(5, minmax(96px, 1fr))
+    minmax(86px, 0.8fr);
   gap: 12px;
   padding: 12px 14px;
   border-top: 1px solid #edf0f5;
@@ -342,6 +347,49 @@ button:disabled {
 .session-row span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.inline-edit-field {
+  display: grid;
+  gap: 4px;
+}
+
+.inline-edit-field span {
+  color: #526071;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.inline-edit-field input,
+.inline-edit-field select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid #cfd7e3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172033;
+  padding: 8px 9px;
+}
+
+.compact-button {
+  padding: 7px 10px;
+}
+
+.edit-actions {
+  display: grid;
+  gap: 6px;
+}
+
+.edit-actions button {
+  width: 100%;
+}
+
+.inline-error {
+  display: grid;
+  gap: 2px;
+  color: #9b1c13;
+  font-size: 12px;
 }
 
 .session-row:first-child {

@@ -28,10 +28,17 @@ export type TimeWindowOption = {
   sortOrder: number
 }
 
+export type RoomOption = {
+  id: number
+  name: string
+  capacity: number
+}
+
 export type PlanningOptions = {
   courses: CourseOption[]
   semesters: SemesterOption[]
   timeWindows: TimeWindowOption[]
+  rooms: RoomOption[]
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''

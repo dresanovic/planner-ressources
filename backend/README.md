@@ -28,6 +28,7 @@ The draft schedule API supports explicit generation for one course:
 - `DELETE /api/courses/{course_id}/generation-constraints?semesterId={semester_id}`
 - `GET /api/courses/{course_id}/draft-schedule`
 - `GET /api/draft-schedules?semesterId={semester_id}`
+- `PATCH /api/draft-sessions/{session_id}`
 
 The planning options endpoint returns the database-backed courses, semesters, and study type time windows that the UI can select from. The generation-constraints endpoint returns the active course-semester constraints: semester dates and study type time windows by default, or the last successfully generated custom planning period and weekly windows.
 
@@ -38,7 +39,9 @@ The single-course draft schedule response includes review context for the select
 - course, Cohort, lecturer, room, and study type names and IDs
 - generated session date, start/end time, units, filterable planning IDs, optional source `timeWindowId`, and `constraintWindowIndex`
 
-The semester-scoped draft schedule endpoint returns all generated schedules for the selected semester so the planner UI can power the Courses overview filters. Manual editing, conflict detection, holidays, exams, and dashboard alerts are handled by later slices.
+The semester-scoped draft schedule endpoint returns all generated schedules for the selected semester so the planner UI can power the Courses overview filters.
+
+Manual Draft Session editing is available through `PATCH /api/draft-sessions/{session_id}`. The request body accepts `date`, `startTime`, `endTime`, and `roomId`; a successful edit returns the refreshed parent Draft Schedule so the Courses overview can replace its saved schedule data. The endpoint rejects out-of-semester dates, end times that are not after start times, duplicate session dates within the same Draft Schedule, missing rooms, and rooms whose capacity is below the session Cohort size. Room occupancy conflicts, conflict warnings, public holidays, exams, dashboard alerts, and source planning-record edits remain deferred to later slices.
 
 ## Migrations
 
