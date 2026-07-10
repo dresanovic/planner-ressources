@@ -74,10 +74,31 @@ def upgrade() -> None:
             "selected_time_window_id",
             sa.Integer(),
             sa.ForeignKey("study_type_time_windows.id"),
-            nullable=False,
+            nullable=True,
         ),
         sa.Column("status", sa.String(length=50), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
+    )
+    op.create_table(
+        "generation_constraint_sets",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("course_id", sa.Integer(), sa.ForeignKey("courses.id"), nullable=False),
+        sa.Column("semester_id", sa.Integer(), sa.ForeignKey("semesters.id"), nullable=False),
+        sa.Column("planning_start_date", sa.Date(), nullable=False),
+        sa.Column("planning_end_date", sa.Date(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
+        sa.Column("updated_at", sa.DateTime(), nullable=False),
+        sa.UniqueConstraint("course_id", "semester_id", name="uq_generation_constraint_course_semester"),
+    )
+    op.create_table(
+        "generation_constraint_windows",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("constraint_set_id", sa.Integer(), sa.ForeignKey("generation_constraint_sets.id"), nullable=False),
+        sa.Column("source_time_window_id", sa.Integer(), sa.ForeignKey("study_type_time_windows.id"), nullable=True),
+        sa.Column("weekday", sa.Integer(), nullable=False),
+        sa.Column("start_time", sa.Time(), nullable=False),
+        sa.Column("end_time", sa.Time(), nullable=False),
+        sa.Column("sort_order", sa.Integer(), nullable=False),
     )
     op.create_table(
         "draft_sessions",
@@ -91,7 +112,8 @@ def upgrade() -> None:
         sa.Column("start_time", sa.Time(), nullable=False),
         sa.Column("end_time", sa.Time(), nullable=False),
         sa.Column("units", sa.Integer(), nullable=False),
-        sa.Column("time_window_id", sa.Integer(), sa.ForeignKey("study_type_time_windows.id"), nullable=False),
+        sa.Column("time_window_id", sa.Integer(), sa.ForeignKey("study_type_time_windows.id"), nullable=True),
+        sa.Column("constraint_window_index", sa.Integer(), nullable=False, server_default="0"),
         sa.UniqueConstraint("draft_schedule_id", "date", name="uq_draft_session_day"),
     )
 
@@ -99,6 +121,8 @@ def upgrade() -> None:
 def downgrade() -> None:
     for table_name in (
         "draft_sessions",
+        "generation_constraint_windows",
+        "generation_constraint_sets",
         "draft_schedules",
         "study_type_time_windows",
         "courses",
