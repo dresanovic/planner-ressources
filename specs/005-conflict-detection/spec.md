@@ -18,6 +18,7 @@ independent test paths.
 
 - Q: How much related-session detail should each validation alert expose? -> A: Each alert identifies every related conflicting session available in the selected semester.
 - Q: Which generation constraints are authoritative for window validation alerts after constraints change? -> A: Validate against the currently active constraints for that course and semester.
+- Q: Should Study Type Time Window alerts appear when custom active generation constraints exist? -> A: No; custom active generation constraints replace Study Type window validation for that course-semester.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -50,7 +51,7 @@ Office staff see validation alerts when generated Draft Sessions violate room ca
 
 1. **Given** a generated Draft Session is assigned to a room whose capacity is below the session Cohort size, **When** office staff view or inspect that session, **Then** the session shows a room capacity violation alert.
 2. **Given** a generated Draft Session falls outside the currently active allowed generation constraints for its course and semester, **When** office staff view or inspect that session, **Then** the session shows an allowed generation constraint violation alert.
-3. **Given** a generated Draft Session falls outside the Study Type Time Window for the course's study type, **When** office staff view or inspect that session, **Then** the session shows a Study Type Time Window violation alert.
+3. **Given** no custom active generation constraints exist and a generated Draft Session falls outside the Study Type Time Window for the course's study type, **When** office staff view or inspect that session, **Then** the session shows a Study Type Time Window violation alert.
 4. **Given** a Draft Session has multiple validation problems, **When** office staff inspect it, **Then** all relevant conflict or violation reasons are available without hiding one behind another.
 
 ---
@@ -79,7 +80,7 @@ Office staff continue generating and manually editing Draft Sessions while valid
 - If a conflict involves more than two sessions, each affected session must identify every related conflicting session available in the selected semester.
 - If active filters hide one side of a conflict, the visible affected session must still show that it has a conflict in the selected semester.
 - If a session has missing or stale reference data needed for validation, the system must show a clear validation-data issue instead of silently declaring the session safe.
-- If manual editing moves a session outside currently active allowed generation constraints or Study Type Time Windows, the edit must be saved when it is otherwise valid and then shown with the appropriate alert.
+- If manual editing moves a session outside currently active allowed generation constraints, the edit must be saved when it is otherwise valid and then shown with a generation-constraint alert. Study Type Time Window alerts apply only when no custom active generation constraints exist.
 - If regenerating a course replaces its prior draft sessions, validation alerts must reflect the replacement schedule and must not keep alerts for sessions that no longer exist.
 - Conflict detection must not create, delete, split, merge, or automatically move Draft Sessions.
 - Conflict detection must not add public holiday alerts, exam scheduling alerts, dashboard summaries, multi-course generation controls, conflict-aware generation, automatic conflict resolution, or support for multiple lecturers or rooms per course.
@@ -97,7 +98,7 @@ Office staff continue generating and manually editing Draft Sessions while valid
 - **FR-007**: System MUST NOT treat two sessions as overlapping when one ends exactly when the other begins.
 - **FR-008**: System MUST detect room capacity violations when a Draft Session's assigned room capacity is below the session Cohort size.
 - **FR-009**: System MUST detect Draft Sessions outside the currently active allowed generation constraints for the related course and semester.
-- **FR-010**: System MUST detect Draft Sessions outside the Study Type Time Window for the related course study type.
+- **FR-010**: System MUST detect Draft Sessions outside the Study Type Time Window for the related course study type only when no custom active generation constraints exist for the course-semester.
 - **FR-011**: System MUST display validation alerts in the Courses overview so office staff can identify affected Draft Sessions.
 - **FR-012**: System MUST provide an inspectable conflict reason for each affected Draft Session.
 - **FR-013**: System MUST identify every related conflicting session available in the selected semester for each lecturer, room, or Cohort overlap alert, using readable context such as course, Cohort, lecturer, room, date, or time information available from the schedule.
@@ -140,7 +141,7 @@ Office staff continue generating and manually editing Draft Sessions while valid
 - **SC-001**: 100% of lecturer, room, and Cohort overlap examples in validation data show alerts on all affected Draft Sessions.
 - **SC-002**: 100% of non-overlapping back-to-back session examples show no overlap alert.
 - **SC-003**: 100% of room capacity violation examples show a capacity alert on the affected Draft Session.
-- **SC-004**: 100% of currently active generation-constraint and Study Type Time Window violation examples show the correct window alert on the affected Draft Session.
+- **SC-004**: 100% of currently active generation-constraint and applicable Study Type Time Window violation examples show the correct window alert on the affected Draft Session.
 - **SC-005**: 100% of validation examples with multiple issues on one Draft Session expose every applicable conflict reason.
 - **SC-006**: After a saved manual edit creates or resolves a validation issue, the Courses overview reflects the changed alert state before office staff need to leave and reopen the semester.
 - **SC-007**: Office staff can identify the affected session and reason for a validation alert within two interactions after seeing the alert indicator.
@@ -155,6 +156,6 @@ Office staff continue generating and manually editing Draft Sessions while valid
 - A Draft Session has one lecturer, one room, and one Cohort for this slice.
 - Conflict detection is scoped to generated Draft Sessions in the selected semester Courses overview.
 - Validation alerts are non-blocking warnings; they do not change the rules for whether generation or manual edits may be saved.
-- Currently active allowed generation constraints and Study Type Time Windows already exist from prior slices and are available for evaluating generated Draft Sessions.
+- Currently active allowed generation constraints and Study Type Time Windows already exist from prior slices and are available for evaluating generated Draft Sessions. Custom active generation constraints replace default Study Type Time Window validation for the course-semester.
 - Room capacity and Cohort size are available from existing planning data.
 - Manual edits remain responsible for their existing validation rules from Slice 4; this slice only adds post-save alerting for unsafe schedules.

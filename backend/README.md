@@ -38,10 +38,13 @@ The single-course draft schedule response includes review context for the select
 
 - course, Cohort, lecturer, room, and study type names and IDs
 - generated session date, start/end time, units, filterable planning IDs, optional source `timeWindowId`, and `constraintWindowIndex`
+- non-blocking `validationAlerts` on each session, including alert code, message, and related conflicting sessions for overlap alerts
 
 The semester-scoped draft schedule endpoint returns all generated schedules for the selected semester so the planner UI can power the Courses overview filters.
 
-Manual Draft Session editing is available through `PATCH /api/draft-sessions/{session_id}`. The request body accepts `date`, `startTime`, `endTime`, and `roomId`; a successful edit returns the refreshed parent Draft Schedule so the Courses overview can replace its saved schedule data. The endpoint rejects out-of-semester dates, end times that are not after start times, duplicate session dates within the same Draft Schedule, missing rooms, and rooms whose capacity is below the session Cohort size. Room occupancy conflicts, conflict warnings, public holidays, exams, dashboard alerts, and source planning-record edits remain deferred to later slices.
+Manual Draft Session editing is available through `PATCH /api/draft-sessions/{session_id}`. The request body accepts `date`, `startTime`, `endTime`, and `roomId`; a successful edit returns the refreshed parent Draft Schedule so the Courses overview can replace its saved schedule data. The endpoint rejects out-of-semester dates, end times that are not after start times, duplicate session dates within the same Draft Schedule, missing rooms, and rooms whose capacity is below the session Cohort size. Room occupancy conflicts are reported as non-blocking validation alerts after save; public holidays, exams, dashboard alerts, and source planning-record edits remain deferred to later slices.
+
+Conflict detection adds non-blocking validation alerts to generated Draft Sessions returned by generation, single-course reads, semester overview reads, and manual edit responses. Alerts are derived at read time from the selected-semester schedule set and planning data. They currently cover lecturer, room, and Cohort overlaps; room capacity violations; sessions outside the currently active course-semester generation constraints; sessions outside Study Type Time Windows when no custom active generation constraints exist; and missing validation reference data. Alerts never block generation or otherwise valid manual edits.
 
 ## Migrations
 

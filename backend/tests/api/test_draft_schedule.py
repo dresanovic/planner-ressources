@@ -215,6 +215,7 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
         "studyTypeId": 1,
         "timeWindowId": 1,
         "constraintWindowIndex": 0,
+        "validationAlerts": [],
     }
 
     read_response = client.get("/api/courses/1/draft-schedule")
@@ -244,6 +245,144 @@ def test_read_draft_schedules_lists_generated_plans_for_selected_semester(client
     assert all(schedule["sessions"] for schedule in payload)
 
 
+def test_read_draft_schedules_returns_overlap_validation_alerts(client, db_session):
+    seed_valid_course(db_session)
+    seed_second_course(db_session)
+    second_course = db_session.get(Course, 2)
+    second_course.lecturer_id = 1
+    second_course.room_id = 1
+    second_course.cohort_id = 1
+    db_session.commit()
+
+    assert client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).status_code == 201
+    assert client.post("/api/courses/2/draft-schedule/generate", json=generation_payload()).status_code == 201
+
+    response = client.get("/api/draft-schedules?semesterId=1")
+
+    assert response.status_code == 200
+    first_session = response.json()[0]["sessions"][0]
+    codes = {alert["code"] for alert in first_session["validationAlerts"]}
+    assert {"LECTURER_OVERLAP", "ROOM_OVERLAP", "COHORT_OVERLAP"}.issubset(codes)
+    lecturer_alert = next(alert for alert in first_session["validationAlerts"] if alert["code"] == "LECTURER_OVERLAP")
+    assert lecturer_alert["relatedSessions"][0]["courseName"] == "Scheduling 201"
+
+
+def test_read_single_draft_schedule_returns_validation_alerts(client, db_session):
+    seed_valid_course(db_session)
+    seed_second_course(db_session)
+    second_course = db_session.get(Course, 2)
+    second_course.lecturer_id = 1
+    db_session.commit()
+    client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+    client.post("/api/courses/2/draft-schedule/generate", json=generation_payload())
+
+    response = client.get("/api/courses/1/draft-schedule")
+
+    assert response.status_code == 200
+    alerts = response.json()["sessions"][0]["validationAlerts"]
+    assert any(alert["code"] == "LECTURER_OVERLAP" for alert in alerts)
+
+
+def test_validation_alerts_include_capacity_window_and_missing_data_codes(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    session_id = generated["sessions"][0]["id"]
+    db_session.get(Room, 1).capacity = 20
+    db_session.commit()
+
+    capacity_payload = client.get("/api/courses/1/draft-schedule").json()
+    capacity_session = next(session for session in capacity_payload["sessions"] if session["id"] == session_id)
+    assert any(alert["code"] == "ROOM_CAPACITY" for alert in capacity_session["validationAlerts"])
+    db_session.get(Room, 1).capacity = 40
+    db_session.commit()
+
+    edit_response = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-09-08", "startTime": "13:00", "endTime": "15:00", "roomId": 3},
+    )
+
+    assert edit_response.status_code == 200
+    edited = next(session for session in edit_response.json()["sessions"] if session["id"] == session_id)
+    codes = {alert["code"] for alert in edited["validationAlerts"]}
+    assert "GENERATION_CONSTRAINT_VIOLATION" in codes
+    assert "STUDY_TYPE_WINDOW_VIOLATION" not in codes
+
+
+def test_default_study_type_window_violation_is_reported_without_custom_constraints(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    session_id = generated["sessions"][0]["id"]
+    client.delete("/api/courses/1/generation-constraints?semesterId=1")
+
+    edit_response = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-09-08", "startTime": "13:00", "endTime": "15:00", "roomId": 1},
+    )
+
+    assert edit_response.status_code == 200
+    edited = next(session for session in edit_response.json()["sessions"] if session["id"] == session_id)
+    codes = {alert["code"] for alert in edited["validationAlerts"]}
+    assert "STUDY_TYPE_WINDOW_VIOLATION" in codes
+
+
+def test_custom_friday_evening_constraint_does_not_return_study_type_window_alert(client, db_session):
+    seed_valid_course(db_session)
+
+    response = client.post(
+        "/api/courses/1/draft-schedule/generate",
+        json=generation_payload(
+            windows=[
+                {
+                    "weekday": 4,
+                    "startTime": "18:00",
+                    "endTime": "22:00",
+                    "sourceTimeWindowId": None,
+                }
+            ]
+        ),
+    )
+
+    assert response.status_code == 201
+    overview = client.get("/api/draft-schedules?semesterId=1").json()
+    assert overview[0]["sessions"][0]["date"] == "2026-09-11"
+    assert overview[0]["sessions"][0]["startTime"] == "18:00"
+    assert overview[0]["sessions"][0]["endTime"] == "21:30"
+    assert all(
+        alert["code"] != "STUDY_TYPE_WINDOW_VIOLATION"
+        for session in overview[0]["sessions"]
+        for alert in session["validationAlerts"]
+    )
+
+
+def test_custom_constraint_violation_does_not_duplicate_study_type_window_alert(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post(
+        "/api/courses/1/draft-schedule/generate",
+        json=generation_payload(
+            windows=[
+                {
+                    "weekday": 4,
+                    "startTime": "18:00",
+                    "endTime": "22:00",
+                    "sourceTimeWindowId": None,
+                }
+            ]
+        ),
+    ).json()
+    session_id = generated["sessions"][0]["id"]
+
+    edit_response = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-09-11", "startTime": "17:01", "endTime": "21:30", "roomId": 1},
+    )
+
+    assert edit_response.status_code == 200
+    edited = next(session for session in edit_response.json()["sessions"] if session["id"] == session_id)
+    codes = {alert["code"] for alert in edited["validationAlerts"]}
+    assert "GENERATION_CONSTRAINT_VIOLATION" in codes
+    assert "STUDY_TYPE_WINDOW_VIOLATION" not in codes
+
+
 def test_second_generation_replaces_previous_draft(client, db_session):
     seed_valid_course(db_session)
 
@@ -269,6 +408,24 @@ def test_second_generation_replaces_previous_draft(client, db_session):
     read_payload = client.get("/api/courses/1/draft-schedule").json()
     assert len(read_payload["sessions"]) == 5
     assert read_payload["sessions"][0]["date"] == "2026-09-09"
+
+
+def test_generation_returns_non_blocking_validation_alerts(client, db_session):
+    seed_valid_course(db_session)
+    seed_second_course(db_session)
+    second_course = db_session.get(Course, 2)
+    second_course.lecturer_id = 1
+    db_session.commit()
+    client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+
+    response = client.post("/api/courses/2/draft-schedule/generate", json=generation_payload())
+
+    assert response.status_code == 201
+    assert any(
+        alert["code"] == "LECTURER_OVERLAP"
+        for session in response.json()["sessions"]
+        for alert in session["validationAlerts"]
+    )
 
 
 def test_generated_sessions_never_exceed_allowed_windows(client, db_session):

@@ -186,4 +186,4 @@ The standard teaching availability window for a course's Study Type.
 
 ### Rules
 
-- A session violates Study Type Time Windows when its weekday/time range is not contained by any Study Type Time Window for the related course study type.
+- A session violates Study Type Time Windows when no custom active generation constraints exist and its weekday/time range is not contained by any Study Type Time Window for the related course study type.

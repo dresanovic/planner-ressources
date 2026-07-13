@@ -141,7 +141,10 @@ export function DraftSchedulePanel({
                     />
                   ) : (
                     <>
-                      <span>{session.date}</span>
+                      <span>
+                        {session.date}
+                        <SessionAlerts alerts={session.validationAlerts} />
+                      </span>
                       <span>
                         {session.startTime}-{session.endTime}
                       </span>
@@ -181,6 +184,7 @@ export function DraftSchedulePanel({
                             <span>{session.context.lecturer.name}</span>
                             <span>{session.roomName}</span>
                             <span>{session.context.studyType.name}</span>
+                            <SessionAlerts alerts={session.validationAlerts} />
                             <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)}>
                               Edit
                             </button>
@@ -240,6 +244,33 @@ export function DraftSchedulePanel({
       setIsSavingEdit(false)
     }
   }
+}
+
+function SessionAlerts({ alerts }: { alerts: DraftSession['validationAlerts'] }) {
+  if (alerts.length === 0) {
+    return null
+  }
+  return (
+    <div className="validation-alerts">
+      {alerts.map((alert) => (
+        <details className="validation-alert" key={`${alert.code}-${alert.message}`}>
+          <summary>
+            <span className="validation-alert-code">{alert.code.replaceAll('_', ' ')}</span>
+            <span>{alert.message}</span>
+          </summary>
+          {alert.relatedSessions.length > 0 && (
+            <ul>
+              {alert.relatedSessions.map((related) => (
+                <li key={related.sessionId}>
+                  {related.courseName} | {related.date} {related.startTime}-{related.endTime} | {related.cohortName} | {related.lecturerName} | {related.roomName}
+                </li>
+              ))}
+            </ul>
+          )}
+        </details>
+      ))}
+    </div>
+  )
 }
 
 type SessionEditFieldsProps = {

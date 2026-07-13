@@ -21,6 +21,16 @@ class SessionEditFailureCode(StrEnum):
     DUPLICATE_SESSION_DATE = "DUPLICATE_SESSION_DATE"
 
 
+class ValidationAlertCode(StrEnum):
+    LECTURER_OVERLAP = "LECTURER_OVERLAP"
+    ROOM_OVERLAP = "ROOM_OVERLAP"
+    COHORT_OVERLAP = "COHORT_OVERLAP"
+    ROOM_CAPACITY = "ROOM_CAPACITY"
+    GENERATION_CONSTRAINT_VIOLATION = "GENERATION_CONSTRAINT_VIOLATION"
+    STUDY_TYPE_WINDOW_VIOLATION = "STUDY_TYPE_WINDOW_VIOLATION"
+    VALIDATION_DATA_MISSING = "VALIDATION_DATA_MISSING"
+
+
 class UpdateDraftSessionRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -80,6 +90,29 @@ class GenerationConstraintsResponse(BaseModel):
     allowed_teaching_windows: list[AllowedTeachingWindowResponse] = Field(alias="allowedTeachingWindows")
 
 
+class RelatedSessionResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    session_id: int = Field(alias="sessionId")
+    draft_schedule_id: int = Field(alias="draftScheduleId")
+    course_id: int = Field(alias="courseId")
+    course_name: str = Field(alias="courseName")
+    date: date
+    start_time: str = Field(alias="startTime")
+    end_time: str = Field(alias="endTime")
+    cohort_name: str = Field(alias="cohortName")
+    lecturer_name: str = Field(alias="lecturerName")
+    room_name: str = Field(alias="roomName")
+
+
+class ValidationAlertResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    code: ValidationAlertCode
+    message: str
+    related_sessions: list[RelatedSessionResponse] = Field(alias="relatedSessions")
+
+
 class DraftSessionResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -95,6 +128,10 @@ class DraftSessionResponse(BaseModel):
     study_type_id: int = Field(alias="studyTypeId")
     time_window_id: int | None = Field(alias="timeWindowId")
     constraint_window_index: int = Field(alias="constraintWindowIndex")
+    validation_alerts: list[ValidationAlertResponse] = Field(
+        default_factory=list,
+        alias="validationAlerts",
+    )
 
 
 class PlanningEntityResponse(BaseModel):

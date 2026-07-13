@@ -72,6 +72,17 @@ Generation-window violation alerts will compare Draft Sessions to the currently 
 - Validate against constraints captured at generation time. Rejected by clarification.
 - Validate against both generated-time and current constraints. Rejected as more complex than requested and likely to produce duplicate alert categories.
 
+## Decision: Custom Active Constraints Replace Study Type Window Validation
+
+When currently active custom generation constraints exist for a course-semester, Study Type Time Window validation is skipped for that course-semester. Sessions outside the custom constraints receive a generation-constraint alert, not a duplicate Study Type alert.
+
+**Rationale**: Custom generation constraints are the office staff's active planning rule for the course-semester. If staff configure Friday 18:00-22:00, validation should judge sessions against that active rule and avoid duplicate alerts from the default Study Type definition.
+
+**Alternatives considered**:
+
+- Always validate Study Type Time Windows independently. Rejected because it creates duplicate or misleading warnings when custom planning windows are the active rule.
+- Remove Study Type Time Window alerts entirely. Rejected because default-window violations are still useful when no custom active constraint authorizes the session.
+
 ## Decision: Keep Alerts Non-Blocking
 
 Generation and otherwise valid manual edits will continue to save even when the resulting schedule has validation alerts.

@@ -32,7 +32,7 @@ Expected coverage:
 - back-to-back sessions where one ends exactly when another starts do not produce overlap alerts;
 - room capacity violations produce room capacity alerts;
 - sessions outside currently active generation constraints produce generation-constraint alerts;
-- sessions outside Study Type Time Windows produce Study Type Time Window alerts;
+- sessions outside Study Type Time Windows produce Study Type Time Window alerts only when no custom active generation constraints exist;
 - sessions with multiple issues expose every applicable alert;
 - missing validation reference data produces a validation-data issue;
 - generation and otherwise valid manual edits remain non-blocking when alerts are present;
@@ -89,6 +89,10 @@ Expected coverage:
 4. Confirm the session shows a generation-constraint alert.
 5. Use or create a Draft Session outside its Study Type Time Window.
 6. Confirm the session shows a Study Type Time Window alert.
+7. Add or use a custom active Friday 18:00-22:00 generation constraint.
+8. Confirm a Friday 18:00-21:30 session does not show a Study Type Time Window alert.
+9. Change that session to 17:01-21:30.
+10. Confirm it shows a generation-constraint alert but not a Study Type Time Window alert.
 
 ## Non-Blocking Behavior Checks
 

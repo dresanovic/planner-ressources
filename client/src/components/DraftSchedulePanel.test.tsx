@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { DraftSchedulePanel, GenerationConstraintEditor } from './DraftSchedulePanel'
 import {
+  alertDraftScheduleFixture,
   draftScheduleFixture,
   emptyDraftScheduleFixture,
   generationConstraintsFixture,
@@ -411,4 +412,100 @@ describe('DraftSchedulePanel', () => {
 
     expect(document.body.textContent).toContain('2026-09-07')
   })
+
+  it('shows list-mode alert reasons and related session details within two interactions', () => {
+    renderPanel({ schedules: [alertDraftScheduleFixture] })
+
+    const alert = document.querySelector<HTMLDetailsElement>('.validation-alert')
+    const summary = alert?.querySelector('summary')
+
+    expect(summary?.textContent).toContain('LECTURER OVERLAP')
+    expect(summary?.textContent).toContain('Lecturer overlaps with 1 session.')
+    expect(alert?.open).toBe(false)
+
+    act(() => {
+      summary?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(alert?.open).toBe(true)
+    expect(alert?.textContent).toContain('Scheduling 201')
+    expect(alert?.textContent).toContain('2026-09-07 09:00-12:30')
+  })
+
+  it('keeps overlap alerts visible when filters hide related sessions', () => {
+    renderPanel({ schedules: [alertDraftScheduleFixture, secondDraftScheduleFixture] })
+
+    const courseFilter = document.querySelector<HTMLSelectElement>('select[name="courseId"]')
+    act(() => {
+      if (courseFilter) {
+        setSelectValue(courseFilter, '1')
+      }
+    })
+
+    expect(document.body.textContent).toContain('LECTURER OVERLAP')
+    expect(document.body.textContent).toContain('Scheduling 201')
+    const rows = [...document.querySelectorAll('.session-row:not(.session-header)')]
+    expect(rows.every((row) => row.textContent?.includes('Planning 101'))).toBe(true)
+  })
+
+  it('shows multiple validation alert reasons on one session', () => {
+    renderPanel({ schedules: [alertDraftScheduleFixture] })
+
+    expect(document.body.textContent).toContain('ROOM CAPACITY')
+    expect(document.body.textContent).toContain('STUDY TYPE WINDOW VIOLATION')
+  })
+
+  it('updates visible alert state after session update changes schedules', () => {
+    const { rerender } = renderPanelWithRoot({ schedules: [draftScheduleFixture] })
+
+    expect(document.body.textContent).not.toContain('LECTURER OVERLAP')
+
+    act(() => {
+      rerender([alertDraftScheduleFixture])
+    })
+
+    expect(document.body.textContent).toContain('LECTURER OVERLAP')
+
+    act(() => {
+      rerender([draftScheduleFixture])
+    })
+
+    expect(document.body.textContent).not.toContain('LECTURER OVERLAP')
+  })
+
+  it('shows validation alerts in weekly mode', () => {
+    renderPanel({ schedules: [alertDraftScheduleFixture] })
+
+    const weeklyButton = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Weekly',
+    )
+
+    act(() => {
+      weeklyButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    expect(document.querySelector('.weekly-review')).not.toBeNull()
+    expect(document.body.textContent).toContain('LECTURER OVERLAP')
+  })
 })
+
+function renderPanelWithRoot({ schedules }: { schedules: DraftSchedule[] }) {
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  const onUpdateSession = vi.fn()
+
+  function rerender(nextSchedules: DraftSchedule[]) {
+    root.render(
+      <DraftSchedulePanel
+        schedules={nextSchedules}
+        rooms={roomOptionsFixture}
+        onUpdateSession={onUpdateSession}
+      />,
+    )
+  }
+
+  act(() => {
+    rerender(schedules)
+  })
+
+  return { root, rerender }
+}

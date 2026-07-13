@@ -157,17 +157,17 @@ export function CourseSchedulePage() {
     setIsLoading(true)
     setErrors([])
     try {
-      const generated = await generateDraftSchedule(
+      await generateDraftSchedule(
         selectedCourseId,
         selectedSemesterId,
         generationConstraints.planningPeriod,
         generationConstraints.allowedTeachingWindows,
       )
-      setSchedules((current) => [
-        ...current.filter((schedule) => schedule.courseId !== generated.courseId),
-        generated,
+      const [current, saved] = await Promise.all([
+        getDraftSchedules(selectedSemesterId),
+        getGenerationConstraints(selectedCourseId, selectedSemesterId),
       ])
-      const saved = await getGenerationConstraints(selectedCourseId, selectedSemesterId)
+      setSchedules(current)
       setGenerationConstraints(saved)
     } catch (error) {
       setErrors(Array.isArray(error) ? error : [{ code: 'UNKNOWN', message: 'Generation failed.' }])
@@ -198,11 +198,10 @@ export function CourseSchedulePage() {
   }
 
   async function handleUpdateSession(sessionId: number, payload: UpdateDraftSessionRequest) {
-    const updated = await updateDraftSession(sessionId, payload)
-    setSchedules((current) => [
-      ...current.filter((schedule) => schedule.draftScheduleId !== updated.draftScheduleId),
-      updated,
-    ])
+    await updateDraftSession(sessionId, payload)
+    if (selectedSemesterId) {
+      setSchedules(await getDraftSchedules(selectedSemesterId))
+    }
   }
 
   return (

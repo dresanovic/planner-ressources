@@ -11,6 +11,26 @@ export type DraftSession = {
   studyTypeId: number
   timeWindowId: number | null
   constraintWindowIndex: number
+  validationAlerts: ValidationAlert[]
+}
+
+export type RelatedSession = {
+  sessionId: number
+  draftScheduleId: number
+  courseId: number
+  courseName: string
+  date: string
+  startTime: string
+  endTime: string
+  cohortName: string
+  lecturerName: string
+  roomName: string
+}
+
+export type ValidationAlert = {
+  code: string
+  message: string
+  relatedSessions: RelatedSession[]
 }
 
 export type PlanningPeriod = {

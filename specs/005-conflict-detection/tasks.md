@@ -18,9 +18,9 @@
 
 **Purpose**: Prepare shared fixture data and test seams used by multiple conflict-detection stories.
 
-- [ ] T001 [P] Add backend fixture helpers for multi-course selected-semester Draft Schedules with overlapping lecturer, room, and Cohort scenarios in backend/tests/services/test_draft_schedule_validation.py
-- [ ] T002 [P] Add backend API fixture helpers for validation-alert response scenarios in backend/tests/api/test_draft_schedule.py
-- [ ] T003 [P] Add frontend fixture data for Draft Sessions with validationAlerts, relatedSessions, multiple alerts, and hidden-related-session filter scenarios in client/src/test/draftScheduleFixtures.ts
+- [X] T001 [P] Add backend fixture helpers for multi-course selected-semester Draft Schedules with overlapping lecturer, room, and Cohort scenarios in backend/tests/services/test_draft_schedule_validation.py
+- [X] T002 [P] Add backend API fixture helpers for validation-alert response scenarios in backend/tests/api/test_draft_schedule.py
+- [X] T003 [P] Add frontend fixture data for Draft Sessions with validationAlerts, relatedSessions, multiple alerts, and hidden-related-session filter scenarios in client/src/test/draftScheduleFixtures.ts
 
 ---
 
@@ -30,12 +30,12 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Add ValidationAlertCode, RelatedSessionResponse, and ValidationAlertResponse schemas to backend/app/schemas/draft_schedule.py
-- [ ] T005 Add validationAlerts to DraftSessionResponse in backend/app/schemas/draft_schedule.py
-- [ ] T006 Add ValidationAlert and RelatedSession client types plus validationAlerts on DraftSession in client/src/api/draftSchedule.ts
-- [ ] T007 Create draft schedule validation service dataclasses and function stubs in backend/app/services/draft_schedule_validation.py
-- [ ] T008 Update draft schedule API response mapping seams to accept per-session validation alerts in backend/app/api/draft_schedule.py
-- [ ] T009 Add shared alert rendering helper or component seam for session alerts in client/src/components/DraftSchedulePanel.tsx
+- [X] T004 Add ValidationAlertCode, RelatedSessionResponse, and ValidationAlertResponse schemas to backend/app/schemas/draft_schedule.py
+- [X] T005 Add validationAlerts to DraftSessionResponse in backend/app/schemas/draft_schedule.py
+- [X] T006 Add ValidationAlert and RelatedSession client types plus validationAlerts on DraftSession in client/src/api/draftSchedule.ts
+- [X] T007 Create draft schedule validation service dataclasses and function stubs in backend/app/services/draft_schedule_validation.py
+- [X] T008 Update draft schedule API response mapping seams to accept per-session validation alerts in backend/app/api/draft_schedule.py
+- [X] T009 Add shared alert rendering helper or component seam for session alerts in client/src/components/DraftSchedulePanel.tsx
 
 **Checkpoint**: Shared alert contracts, fixture seams, and validation service seams are ready for story work.
 
@@ -49,22 +49,22 @@
 
 ### Tests for User Story 1 (write before implementation)
 
-- [ ] T010 [P] [US1] Add validation service tests for lecturer, room, and Cohort overlap alerts on all affected sessions in backend/tests/services/test_draft_schedule_validation.py
-- [ ] T011 [P] [US1] Add validation service tests for back-to-back non-overlap, no self-conflict, and multi-session relatedSessions behavior in backend/tests/services/test_draft_schedule_validation.py
-- [ ] T012 [P] [US1] Add API tests that GET /api/draft-schedules?semesterId= returns validationAlerts with relatedSessions for cross-course overlaps in backend/tests/api/test_draft_schedule.py
-- [ ] T013 [P] [US1] Add API tests that GET /api/courses/{courseId}/draft-schedule returns validationAlerts for the generated course schedule in backend/tests/api/test_draft_schedule.py
-- [ ] T014 [P] [US1] Add frontend component tests that list-mode overlap alert indicators expose alert reasons and related session details within two interactions in client/src/components/DraftSchedulePanel.test.tsx
-- [ ] T015 [P] [US1] Add frontend component tests for overlap alerts remaining visible when filters hide related conflicting sessions in client/src/components/DraftSchedulePanel.test.tsx
+- [X] T010 [P] [US1] Add validation service tests for lecturer, room, and Cohort overlap alerts on all affected sessions in backend/tests/services/test_draft_schedule_validation.py
+- [X] T011 [P] [US1] Add validation service tests for back-to-back non-overlap, no self-conflict, and multi-session relatedSessions behavior in backend/tests/services/test_draft_schedule_validation.py
+- [X] T012 [P] [US1] Add API tests that GET /api/draft-schedules?semesterId= returns validationAlerts with relatedSessions for cross-course overlaps in backend/tests/api/test_draft_schedule.py
+- [X] T013 [P] [US1] Add API tests that GET /api/courses/{courseId}/draft-schedule returns validationAlerts for the generated course schedule in backend/tests/api/test_draft_schedule.py
+- [X] T014 [P] [US1] Add frontend component tests that list-mode overlap alert indicators expose alert reasons and related session details within two interactions in client/src/components/DraftSchedulePanel.test.tsx
+- [X] T015 [P] [US1] Add frontend component tests for overlap alerts remaining visible when filters hide related conflicting sessions in client/src/components/DraftSchedulePanel.test.tsx
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Implement positive-duration interval overlap detection helpers in backend/app/services/draft_schedule_validation.py
-- [ ] T017 [US1] Implement lecturer, room, and Cohort overlap alert generation with all available relatedSessions in backend/app/services/draft_schedule_validation.py
-- [ ] T018 [US1] Integrate selected-semester validation alert computation into GET /api/draft-schedules?semesterId= response mapping in backend/app/api/draft_schedule.py
-- [ ] T019 [US1] Serialize overlap validationAlerts and relatedSessions on DraftSessionResponse in backend/app/api/draft_schedule.py
-- [ ] T020 [US1] Parse overlap validationAlerts in client/src/api/draftSchedule.ts
-- [ ] T021 [US1] Render list-mode validation alert indicators, reasons, and related session details in client/src/components/DraftSchedulePanel.tsx
-- [ ] T022 [US1] Style validation alert indicators and related-session details in client/src/App.css
+- [X] T016 [US1] Implement positive-duration interval overlap detection helpers in backend/app/services/draft_schedule_validation.py
+- [X] T017 [US1] Implement lecturer, room, and Cohort overlap alert generation with all available relatedSessions in backend/app/services/draft_schedule_validation.py
+- [X] T018 [US1] Integrate selected-semester validation alert computation into GET /api/draft-schedules?semesterId= response mapping in backend/app/api/draft_schedule.py
+- [X] T019 [US1] Serialize overlap validationAlerts and relatedSessions on DraftSessionResponse in backend/app/api/draft_schedule.py
+- [X] T020 [US1] Parse overlap validationAlerts in client/src/api/draftSchedule.ts
+- [X] T021 [US1] Render list-mode validation alert indicators, reasons, and related session details in client/src/components/DraftSchedulePanel.tsx
+- [X] T022 [US1] Style validation alert indicators and related-session details in client/src/App.css
 
 **Checkpoint**: User Story 1 is independently functional and testable as the MVP.
 
@@ -78,21 +78,21 @@
 
 ### Tests for User Story 2 (write before implementation)
 
-- [ ] T023 [P] [US2] Add validation service tests for room capacity alerts, missing room/cohort validation-data issues, and non-blocking alert output in backend/tests/services/test_draft_schedule_validation.py
-- [ ] T024 [P] [US2] Add validation service tests for currently active generation-constraint date/window violations and default-constraint fallback in backend/tests/services/test_draft_schedule_validation.py
-- [ ] T025 [P] [US2] Add validation service tests for Study Type Time Window violations and sessions with multiple alert codes in backend/tests/services/test_draft_schedule_validation.py
-- [ ] T026 [P] [US2] Add API tests that validationAlerts include ROOM_CAPACITY, GENERATION_CONSTRAINT_VIOLATION, STUDY_TYPE_WINDOW_VIOLATION, and VALIDATION_DATA_MISSING codes in backend/tests/api/test_draft_schedule.py
-- [ ] T027 [P] [US2] Add frontend component tests for capacity/window alert display and multiple alert reasons on one session in client/src/components/DraftSchedulePanel.test.tsx
+- [X] T023 [P] [US2] Add validation service tests for room capacity alerts, missing room/cohort validation-data issues, and non-blocking alert output in backend/tests/services/test_draft_schedule_validation.py
+- [X] T024 [P] [US2] Add validation service tests for currently active generation-constraint date/window violations and default-constraint fallback in backend/tests/services/test_draft_schedule_validation.py
+- [X] T025 [P] [US2] Add validation service tests for Study Type Time Window violations and sessions with multiple alert codes in backend/tests/services/test_draft_schedule_validation.py
+- [X] T026 [P] [US2] Add API tests that validationAlerts include ROOM_CAPACITY, GENERATION_CONSTRAINT_VIOLATION, STUDY_TYPE_WINDOW_VIOLATION, and VALIDATION_DATA_MISSING codes in backend/tests/api/test_draft_schedule.py
+- [X] T027 [P] [US2] Add frontend component tests for capacity/window alert display and multiple alert reasons on one session in client/src/components/DraftSchedulePanel.test.tsx
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] Load or pass room, Cohort, active generation-constraint, and Study Type Time Window context needed by validation in backend/app/services/draft_schedule_repository.py
-- [ ] T029 [US2] Implement ROOM_CAPACITY and VALIDATION_DATA_MISSING alert generation in backend/app/services/draft_schedule_validation.py
-- [ ] T030 [US2] Implement currently active generation-constraint planning-period and allowed-window violation checks in backend/app/services/draft_schedule_validation.py
-- [ ] T031 [US2] Implement Study Type Time Window violation checks in backend/app/services/draft_schedule_validation.py
-- [ ] T032 [US2] Include capacity and window validation alerts in all DraftSessionResponse mappings in backend/app/api/draft_schedule.py
-- [ ] T033 [US2] Render multiple validation alert reasons for one session in client/src/components/DraftSchedulePanel.tsx
-- [ ] T034 [US2] Style multi-alert and validation-data issue states in client/src/App.css
+- [X] T028 [US2] Load or pass room, Cohort, active generation-constraint, and Study Type Time Window context needed by validation in backend/app/services/draft_schedule_repository.py
+- [X] T029 [US2] Implement ROOM_CAPACITY and VALIDATION_DATA_MISSING alert generation in backend/app/services/draft_schedule_validation.py
+- [X] T030 [US2] Implement currently active generation-constraint planning-period and allowed-window violation checks in backend/app/services/draft_schedule_validation.py
+- [X] T031 [US2] Implement Study Type Time Window violation checks in backend/app/services/draft_schedule_validation.py
+- [X] T032 [US2] Include capacity and window validation alerts in all DraftSessionResponse mappings in backend/app/api/draft_schedule.py
+- [X] T033 [US2] Render multiple validation alert reasons for one session in client/src/components/DraftSchedulePanel.tsx
+- [X] T034 [US2] Style multi-alert and validation-data issue states in client/src/App.css
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -106,20 +106,20 @@
 
 ### Tests for User Story 3 (write before implementation)
 
-- [ ] T035 [P] [US3] Add API tests that POST /api/courses/{courseId}/draft-schedule/generate returns non-blocking validationAlerts when generated sessions conflict in backend/tests/api/test_draft_schedule.py
-- [ ] T036 [P] [US3] Add API tests that PATCH /api/draft-sessions/{sessionId} returns refreshed validationAlerts after edits create and resolve alerts in backend/tests/api/test_draft_schedule.py
-- [ ] T037 [P] [US3] Add backend tests that regeneration replacement removes alerts for replaced Draft Sessions in backend/tests/services/test_draft_schedule_validation.py
-- [ ] T038 [P] [US3] Add frontend component tests that alert state updates after onUpdateSession creates or resolves alerts in client/src/components/DraftSchedulePanel.test.tsx
-- [ ] T039 [P] [US3] Add frontend component tests that weekly mode shows the same validationAlerts as list mode in client/src/components/DraftSchedulePanel.test.tsx
+- [X] T035 [P] [US3] Add API tests that POST /api/courses/{courseId}/draft-schedule/generate returns non-blocking validationAlerts when generated sessions conflict in backend/tests/api/test_draft_schedule.py
+- [X] T036 [P] [US3] Add API tests that PATCH /api/draft-sessions/{sessionId} returns refreshed validationAlerts after edits create and resolve alerts in backend/tests/api/test_draft_schedule.py
+- [X] T037 [P] [US3] Add backend tests that regeneration replacement removes alerts for replaced Draft Sessions in backend/tests/services/test_draft_schedule_validation.py
+- [X] T038 [P] [US3] Add frontend component tests that alert state updates after onUpdateSession creates or resolves alerts in client/src/components/DraftSchedulePanel.test.tsx
+- [X] T039 [P] [US3] Add frontend component tests that weekly mode shows the same validationAlerts as list mode in client/src/components/DraftSchedulePanel.test.tsx
 
 ### Implementation for User Story 3
 
-- [ ] T040 [US3] Ensure generation response validation uses the refreshed selected-semester schedule set after replacement in backend/app/api/draft_schedule.py
-- [ ] T041 [US3] Ensure manual edit response validation uses the refreshed selected-semester schedule set after save in backend/app/api/draft_schedule.py
-- [ ] T042 [US3] Ensure regenerated course schedules no longer contribute replaced-session validation alerts in backend/app/services/draft_schedule_validation.py
-- [ ] T043 [US3] Preserve validationAlerts during page-level schedule replacement after generation and manual edit saves in client/src/pages/CourseSchedulePage.tsx
-- [ ] T044 [US3] Render validation alerts in weekly review cards in client/src/components/DraftSchedulePanel.tsx
-- [ ] T045 [US3] Style weekly-mode validation alerts in client/src/App.css
+- [X] T040 [US3] Ensure generation response validation uses the refreshed selected-semester schedule set after replacement in backend/app/api/draft_schedule.py
+- [X] T041 [US3] Ensure manual edit response validation uses the refreshed selected-semester schedule set after save in backend/app/api/draft_schedule.py
+- [X] T042 [US3] Ensure regenerated course schedules no longer contribute replaced-session validation alerts in backend/app/services/draft_schedule_validation.py
+- [X] T043 [US3] Preserve validationAlerts during page-level schedule replacement after generation and manual edit saves in client/src/pages/CourseSchedulePage.tsx
+- [X] T044 [US3] Render validation alerts in weekly review cards in client/src/components/DraftSchedulePanel.tsx
+- [X] T045 [US3] Style weekly-mode validation alerts in client/src/App.css
 
 **Checkpoint**: All Slice 5 user stories are independently functional.
 
@@ -129,12 +129,12 @@
 
 **Purpose**: Final verification, documentation alignment, and scope checks across the slice.
 
-- [ ] T046 [P] Update backend README with validation alert response fields, non-blocking behavior, and current-generation-constraint rule in backend/README.md
-- [ ] T047 [P] Update client README with Courses overview validation alert behavior and non-blocking edit/generation workflow in client/README.md
-- [ ] T048 Run backend verification from quickstart in backend/tests/services/test_draft_schedule_validation.py, backend/tests/services/test_draft_schedule_repository.py, and backend/tests/api/test_draft_schedule.py
-- [ ] T049 Run frontend verification commands from quickstart using npm run test, npm run lint, and npm run build in client/package.json
+- [X] T046 [P] Update backend README with validation alert response fields, non-blocking behavior, and current-generation-constraint rule in backend/README.md
+- [X] T047 [P] Update client README with Courses overview validation alert behavior and non-blocking edit/generation workflow in client/README.md
+- [X] T048 Run backend verification from quickstart in backend/tests/services/test_draft_schedule_validation.py, backend/tests/services/test_draft_schedule_repository.py, and backend/tests/api/test_draft_schedule.py
+- [X] T049 Run frontend verification commands from quickstart using npm run test, npm run lint, and npm run build in client/package.json
 - [ ] T050 Execute manual smoke, manual edit refresh, capacity/window, and non-blocking scenarios from specs/005-conflict-detection/quickstart.md
-- [ ] T051 Confirm no automatic conflict resolution, conflict-aware generation, public holiday warnings, exam scheduling, dashboard summaries, multi-course generation, session creation/deletion/splitting/merging, or multiple lecturer/room behavior is present in client/src/components/DraftSchedulePanel.tsx
+- [X] T051 Confirm no automatic conflict resolution, conflict-aware generation, public holiday warnings, exam scheduling, dashboard summaries, multi-course generation, session creation/deletion/splitting/merging, or multiple lecturer/room behavior is present in client/src/components/DraftSchedulePanel.tsx
 
 ---
 

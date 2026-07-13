@@ -51,6 +51,7 @@ export const draftScheduleFixture: DraftSchedule = {
       studyTypeId: 1,
       timeWindowId: 1,
       constraintWindowIndex: 0,
+      validationAlerts: [],
     },
     {
       id: 1,
@@ -65,6 +66,7 @@ export const draftScheduleFixture: DraftSchedule = {
       studyTypeId: 1,
       timeWindowId: 1,
       constraintWindowIndex: 0,
+      validationAlerts: [],
     },
   ],
 }
@@ -101,6 +103,51 @@ export const secondDraftScheduleFixture: DraftSchedule = {
       studyTypeId: 1,
       timeWindowId: 1,
       constraintWindowIndex: 0,
+      validationAlerts: [],
+    },
+  ],
+}
+
+export const relatedSessionFixture = {
+  sessionId: 3,
+  draftScheduleId: 3,
+  courseId: 2,
+  courseName: 'Scheduling 201',
+  date: '2026-09-07',
+  startTime: '09:00',
+  endTime: '12:30',
+  cohortName: 'AI 2',
+  lecturerName: 'Grace Hopper',
+  roomName: 'R2',
+}
+
+export const alertDraftScheduleFixture: DraftSchedule = {
+  ...draftScheduleFixture,
+  sessions: [
+    {
+      ...draftScheduleFixture.sessions[1],
+      validationAlerts: [
+        {
+          code: 'LECTURER_OVERLAP',
+          message: 'Lecturer overlaps with 1 session.',
+          relatedSessions: [relatedSessionFixture],
+        },
+      ],
+    },
+    {
+      ...draftScheduleFixture.sessions[0],
+      validationAlerts: [
+        {
+          code: 'ROOM_CAPACITY',
+          message: 'Room capacity 20 is lower than Cohort size 30.',
+          relatedSessions: [],
+        },
+        {
+          code: 'STUDY_TYPE_WINDOW_VIOLATION',
+          message: 'Session is outside the Study Type Time Window.',
+          relatedSessions: [],
+        },
+      ],
     },
   ],
 }

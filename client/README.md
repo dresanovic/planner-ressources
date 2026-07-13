@@ -29,9 +29,11 @@ The review panel supports:
 - manual editing of an existing Draft Session's date, start time, end time, and room
 - derived session length display from the edited start and end time
 - room choices with capacity metadata, with insufficient-capacity room edits rejected by the backend
+- non-blocking validation alerts for lecturer, room, and Cohort overlaps, room capacity issues, active generation-constraint violations, and Study Type Time Window violations
+- alert details that identify related conflicting sessions when an overlap is detected
 - distinct no-semester-schedules and no-results states
 
-Manual edits update the saved draft schedule returned to the overview, so changed sessions remain visible while switching filters or list/weekly review modes. Conflict warnings, room occupancy blocking, holiday warnings, exam controls, dashboard summaries, source planning-record editing, session creation/deletion/splitting/merging, and multi-course generation are intentionally not available in this slice.
+Manual edits update the saved draft schedule returned to the overview, so changed sessions and validation alerts remain visible while switching filters or list/weekly review modes. Validation alerts do not block generation or otherwise valid manual edits. Automatic conflict resolution, conflict-aware generation, room occupancy blocking, holiday warnings, exam controls, dashboard summaries, source planning-record editing, session creation/deletion/splitting/merging, and multi-course generation are intentionally not available in this slice.
 
 ## Development
 
