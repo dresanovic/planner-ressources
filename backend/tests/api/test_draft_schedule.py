@@ -218,7 +218,7 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
         "validationAlerts": [],
     }
 
-    read_response = client.get("/api/courses/1/draft-schedule")
+    read_response = client.get("/api/courses/1/draft-schedule?semesterId=1")
     assert read_response.status_code == 200
     assert read_response.json()["sessions"] == payload["sessions"]
 
@@ -276,7 +276,7 @@ def test_read_single_draft_schedule_returns_validation_alerts(client, db_session
     client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
     client.post("/api/courses/2/draft-schedule/generate", json=generation_payload())
 
-    response = client.get("/api/courses/1/draft-schedule")
+    response = client.get("/api/courses/1/draft-schedule?semesterId=1")
 
     assert response.status_code == 200
     alerts = response.json()["sessions"][0]["validationAlerts"]
@@ -290,7 +290,7 @@ def test_validation_alerts_include_capacity_window_and_missing_data_codes(client
     db_session.get(Room, 1).capacity = 20
     db_session.commit()
 
-    capacity_payload = client.get("/api/courses/1/draft-schedule").json()
+    capacity_payload = client.get("/api/courses/1/draft-schedule?semesterId=1").json()
     capacity_session = next(session for session in capacity_payload["sessions"] if session["id"] == session_id)
     assert any(alert["code"] == "ROOM_CAPACITY" for alert in capacity_session["validationAlerts"])
     db_session.get(Room, 1).capacity = 40
@@ -405,7 +405,7 @@ def test_second_generation_replaces_previous_draft(client, db_session):
     )
 
     assert second.status_code == 201
-    read_payload = client.get("/api/courses/1/draft-schedule").json()
+    read_payload = client.get("/api/courses/1/draft-schedule?semesterId=1").json()
     assert len(read_payload["sessions"]) == 5
     assert read_payload["sessions"][0]["date"] == "2026-09-09"
 
@@ -453,7 +453,7 @@ def test_generation_returns_multiple_failure_reasons_without_partial_draft(clien
     assert response.status_code == 422
     codes = {error["code"] for error in response.json()["errors"]}
     assert codes == {"INSUFFICIENT_ROOM_CAPACITY", "INVALID_SESSION_PREFERENCE"}
-    assert client.get("/api/courses/1/draft-schedule").status_code == 404
+    assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
 
 
 def test_generation_constraints_default_load_save_reload_and_clear(client, db_session):
@@ -498,7 +498,7 @@ def test_invalid_generation_constraints_do_not_replace_saved_constraints_or_draf
 
     successful = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
     assert successful.status_code == 201
-    existing_sessions = client.get("/api/courses/1/draft-schedule").json()["sessions"]
+    existing_sessions = client.get("/api/courses/1/draft-schedule?semesterId=1").json()["sessions"]
 
     response = client.post(
         "/api/courses/1/draft-schedule/generate",
@@ -507,7 +507,7 @@ def test_invalid_generation_constraints_do_not_replace_saved_constraints_or_draf
 
     assert response.status_code == 422
     assert response.json()["errors"][0]["code"] == "INVALID_PLANNING_PERIOD"
-    assert client.get("/api/courses/1/draft-schedule").json()["sessions"] == existing_sessions
+    assert client.get("/api/courses/1/draft-schedule?semesterId=1").json()["sessions"] == existing_sessions
 
 
 def test_empty_or_invalid_teaching_windows_return_constraint_failures(client, db_session):
@@ -623,3 +623,32 @@ def test_read_draft_schedules_returns_saved_manual_edit_values_and_regeneration_
     regenerated_sessions = client.get("/api/draft-schedules?semesterId=1").json()[0]["sessions"]
     assert all(session["date"] != "2026-12-14" for session in regenerated_sessions)
     assert all(session["roomId"] == 1 for session in regenerated_sessions)
+
+
+def test_single_course_read_requires_semester_and_manual_edit_increments_revision(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    assert generated["revision"] == 1
+    assert client.get("/api/courses/1/draft-schedule").status_code == 422
+
+    session_id = generated["sessions"][0]["id"]
+    edited = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "roomId": 1},
+    ).json()
+    assert edited["revision"] == 2
+
+
+def test_single_course_generation_rolls_back_schedule_when_constraint_persistence_crashes(
+    client, db_session, monkeypatch
+):
+    seed_valid_course(db_session)
+    import app.api.draft_schedule as draft_api
+
+    def crash(*args, **kwargs):
+        raise RuntimeError("injected persistence error")
+
+    monkeypatch.setattr(draft_api, "save_generation_constraints", crash)
+    with pytest.raises(RuntimeError, match="injected persistence error"):
+        client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+    assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404

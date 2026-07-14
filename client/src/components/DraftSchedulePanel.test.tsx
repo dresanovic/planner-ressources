@@ -487,6 +487,22 @@ describe('DraftSchedulePanel', () => {
     expect(document.querySelector('.weekly-review')).not.toBeNull()
     expect(document.body.textContent).toContain('LECTURER OVERLAP')
   })
+
+  it('externally resets active overview filters while preserving schedules and alerts', () => {
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    act(() => root.render(
+      <DraftSchedulePanel resetKey={0} schedules={[alertDraftScheduleFixture, secondDraftScheduleFixture]} rooms={roomOptionsFixture} />,
+    ))
+    const courseFilter = document.querySelector<HTMLSelectElement>('select[name="courseId"]')
+    act(() => { if (courseFilter) setSelectValue(courseFilter, '1') })
+    expect(document.querySelectorAll('.session-row:not(.session-header)')).toHaveLength(2)
+
+    act(() => root.render(
+      <DraftSchedulePanel resetKey={1} schedules={[alertDraftScheduleFixture, secondDraftScheduleFixture]} rooms={roomOptionsFixture} />,
+    ))
+    expect(document.querySelectorAll('.session-row:not(.session-header)')).toHaveLength(3)
+    expect(document.body.textContent).toContain('LECTURER OVERLAP')
+  })
 })
 
 function renderPanelWithRoot({ schedules }: { schedules: DraftSchedule[] }) {

@@ -91,6 +91,7 @@ class GenerationConstraintSet(Base):
     semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
     planning_start_date: Mapped[date] = mapped_column(Date, nullable=False)
     planning_end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -128,10 +129,14 @@ class GenerationConstraintWindow(Base):
 
 class DraftSchedule(Base):
     __tablename__ = "draft_schedules"
+    __table_args__ = (
+        UniqueConstraint("course_id", "semester_id", name="uq_draft_schedule_course_semester"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False, unique=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False)
     semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     selected_time_window_id: Mapped[int | None] = mapped_column(
         ForeignKey("study_type_time_windows.id"), nullable=True
     )

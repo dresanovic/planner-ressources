@@ -26,9 +26,11 @@ The draft schedule API supports explicit generation for one course:
 - `GET /api/courses/{course_id}/generation-constraints?semesterId={semester_id}`
 - `POST /api/courses/{course_id}/draft-schedule/generate`
 - `DELETE /api/courses/{course_id}/generation-constraints?semesterId={semester_id}`
-- `GET /api/courses/{course_id}/draft-schedule`
+- `GET /api/courses/{course_id}/draft-schedule?semesterId={semester_id}`
 - `GET /api/draft-schedules?semesterId={semester_id}`
 - `PATCH /api/draft-sessions/{session_id}`
+- `POST /api/draft-schedules/batch/prepare`
+- `POST /api/draft-schedules/batch/generate`
 
 The planning options endpoint returns the database-backed courses, semesters, and study type time windows that the UI can select from. The generation-constraints endpoint returns the active course-semester constraints: semester dates and study type time windows by default, or the last successfully generated custom planning period and weekly windows.
 
@@ -46,9 +48,19 @@ Manual Draft Session editing is available through `PATCH /api/draft-sessions/{se
 
 Conflict detection adds non-blocking validation alerts to generated Draft Sessions returned by generation, single-course reads, semester overview reads, and manual edit responses. Alerts are derived at read time from the selected-semester schedule set and planning data. They currently cover lecturer, room, and Cohort overlaps; room capacity violations; sessions outside the currently active course-semester generation constraints; sessions outside Study Type Time Windows when no custom active generation constraints exist; and missing validation reference data. Alerts never block generation or otherwise valid manual edits.
 
+## Multi-Course Generation
+
+Multi-course generation is a two-step operation. Preparation validates an ordered `initial` selection of 2-50 distinct Course IDs or a `retry` selection of 1-50 IDs, returns canonical Course availability, and snapshots any same-semester Draft Schedule IDs and revisions. Preparation is read-only. Execution submits those immutable snapshots and requires explicit replacement confirmation whenever a prepared same-semester schedule exists.
+
+Every available Course is generated independently with its own saved Course-Semester constraint set or normalized Semester and Study Type defaults. Expected Course failures produce ordered, course-local outcomes and do not prevent other valid Courses from being saved. Failed Courses keep their existing Draft Schedule, manual edits, and saved constraints. Successful replacements increment the Draft Schedule revision and never affect the same Course in another Semester.
+
+Execution uses one outer transaction and a nested savepoint per successful Course candidate. Repository mutation helpers flush but do not commit; API boundaries own commit and rollback. Changed Draft Schedule or active constraint snapshots return stale Course failures. Any unexpected orchestration or persistence exception rolls back the complete attempt and returns `BATCH_OPERATION_FAILED` without uncommitted success outcomes. Batch results and retry sets are response/UI state only and are not persisted.
+
 ## Migrations
 
-Migration placeholders live in `backend/app/db/migrations/`. The initial planning-table migration mirrors the SQLAlchemy models for this slice and should be wired into the project Alembic environment before production deployment.
+Migration scripts live in `backend/app/db/migrations/`. Migration `0002_course_semester_drafts` backfills optimistic revisions and changes Draft Schedule identity from Course-only to the `(course_id, semester_id)` pair using SQLite-compatible table recreation.
+
+At application startup, the backend creates a new database schema when needed and applies the supported pre-Slice-6 to Slice-6 upgrade automatically. Existing Draft Schedules, sessions, generation constraints, and manual edits are retained. If a database is in an unknown partially migrated state, startup stops with an actionable error instead of silently modifying it.
 
 ## Verification
 

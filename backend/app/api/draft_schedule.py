@@ -87,25 +87,34 @@ def generate_draft_schedule(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=GenerationFailureResponse(errors=result.errors).model_dump(mode="json"),
         )
-    draft = replace_draft_schedule(
-        db,
-        course_plan=course,
-        semester_id=semester.id,
-        generated_sessions=result.sessions,
-    )
-    save_generation_constraints(
-        db,
-        course_plan=course,
-        semester_plan=semester,
-        planning_period=planning_period,
-        allowed_windows=time_windows,
-    )
+    try:
+        draft = replace_draft_schedule(
+            db,
+            course_plan=course,
+            semester_id=semester.id,
+            generated_sessions=result.sessions,
+        )
+        save_generation_constraints(
+            db,
+            course_plan=course,
+            semester_plan=semester,
+            planning_period=planning_period,
+            allowed_windows=time_windows,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return _to_response_with_validation(db, draft)
 
 
 @router.get("", response_model=DraftScheduleResponse)
-def read_draft_schedule(course_id: int, db: Session = Depends(get_db)) -> DraftScheduleResponse:
-    draft = get_draft_schedule(db, course_id)
+def read_draft_schedule(
+    course_id: int,
+    semesterId: int,
+    db: Session = Depends(get_db),
+) -> DraftScheduleResponse:
+    draft = get_draft_schedule(db, course_id, semesterId)
     if draft is None:
         raise HTTPException(status_code=404, detail="No generated draft schedule exists.")
     return _to_response_with_validation(db, draft)
@@ -139,7 +148,9 @@ def edit_draft_session(
             end_time=_parse_edit_time(request.end_time),
             room_id=request.room_id,
         )
+        db.commit()
     except DraftSessionEditValidationError as exc:
+        db.rollback()
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=SessionEditFailureResponse(
@@ -152,6 +163,7 @@ def edit_draft_session(
             ).model_dump(mode="json"),
         )
     except PlanningInputNotFoundError as exc:
+        db.rollback()
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return _to_response_with_validation(db, draft)
 
@@ -181,7 +193,12 @@ def delete_generation_constraints(
         load_semester_plan(db, semesterId)
     except PlanningInputNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    clear_generation_constraints(db, course_id=course_id, semester_id=semesterId)
+    try:
+        clear_generation_constraints(db, course_id=course_id, semester_id=semesterId)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -221,6 +238,7 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None) -> DraftSchedu
     rooms_by_id = rooms_by_id or {}
     return DraftScheduleResponse(
         draftScheduleId=draft.id,
+        revision=draft.revision,
         courseId=draft.course_id,
         semesterId=draft.semester_id,
         context=DraftScheduleContextResponse(
@@ -320,6 +338,7 @@ def _constraints_to_response(constraints: GenerationConstraints) -> GenerationCo
         courseId=constraints.course_id,
         semesterId=constraints.semester_id,
         isCustom=constraints.is_custom,
+        revision=constraints.revision,
         planningPeriod=PlanningPeriodResponse(
             startDate=constraints.planning_period.start_date,
             endDate=constraints.planning_period.end_date,

@@ -1,10 +1,12 @@
 import type { DraftSchedule, GenerationConstraints } from '../api/draftSchedule'
 import type { RoomOption } from '../api/planningOptions'
+import type { BatchGenerationResult, BatchPreparation } from '../api/multiCourseDraftGeneration'
 
 export const generationConstraintsFixture: GenerationConstraints = {
   courseId: 1,
   semesterId: 1,
   isCustom: false,
+  revision: null,
   planningPeriod: {
     startDate: '2026-09-07',
     endDate: '2026-12-20',
@@ -27,6 +29,7 @@ export const generationConstraintsFixture: GenerationConstraints = {
 
 export const draftScheduleFixture: DraftSchedule = {
   draftScheduleId: 1,
+  revision: 1,
   courseId: 1,
   semesterId: 1,
   context: {
@@ -79,6 +82,7 @@ export const emptyDraftScheduleFixture: DraftSchedule = {
 
 export const secondDraftScheduleFixture: DraftSchedule = {
   draftScheduleId: 3,
+  revision: 1,
   courseId: 2,
   semesterId: 1,
   context: {
@@ -106,6 +110,18 @@ export const secondDraftScheduleFixture: DraftSchedule = {
       validationAlerts: [],
     },
   ],
+}
+
+export const otherSemesterDraftScheduleFixture: DraftSchedule = {
+  ...draftScheduleFixture,
+  draftScheduleId: 4,
+  revision: 3,
+  semesterId: 2,
+  sessions: draftScheduleFixture.sessions.map((session, index) => ({
+    ...session,
+    id: 20 + index,
+    date: index === 0 ? '2027-02-22' : '2027-02-15',
+  })),
 }
 
 export const relatedSessionFixture = {
@@ -158,3 +174,23 @@ export const roomOptionsFixture: RoomOption[] = [
   { id: 3, name: 'Auditorium', capacity: 80 },
   { id: 4, name: 'Tiny', capacity: 20 },
 ]
+
+export const batchPreparationFixture: BatchPreparation = {
+  semesterId: 1,
+  operationKind: 'initial',
+  courses: [
+    { courseId: 1, courseName: 'Planning 101', available: true, draftScheduleId: 1, draftRevision: 1, replacementRequired: true },
+    { courseId: 2, courseName: 'Scheduling 201', available: true, draftScheduleId: null, draftRevision: null, replacementRequired: false },
+  ],
+  replacementCourseIds: [1],
+}
+
+export const batchResultFixture: BatchGenerationResult = {
+  semesterId: 1,
+  operationKind: 'initial',
+  summary: { total: 2, succeeded: 1, failed: 1 },
+  outcomes: [
+    { courseId: 1, courseName: 'Planning 101', status: 'succeeded', draftScheduleId: 1, draftRevision: 2, errors: [] },
+    { courseId: 2, courseName: 'Scheduling 201', status: 'failed', draftScheduleId: null, draftRevision: null, errors: [{ code: 'INSUFFICIENT_ROOM_CAPACITY', message: 'Room is too small.' }] },
+  ],
+}

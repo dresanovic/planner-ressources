@@ -22,12 +22,19 @@ type DraftSchedulePanelProps = {
   schedules: DraftSchedule[]
   rooms?: RoomOption[]
   onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
+  resetKey?: number
+  isBusy?: boolean
 }
 
-export function DraftSchedulePanel({
+export function DraftSchedulePanel(props: DraftSchedulePanelProps) {
+  return <DraftSchedulePanelStateful key={props.resetKey ?? 0} {...props} />
+}
+
+function DraftSchedulePanelStateful({
   schedules,
   rooms = [],
   onUpdateSession,
+  isBusy = false,
 }: DraftSchedulePanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [filters, setFilters] = useState<ReviewFilters>({})
@@ -43,7 +50,7 @@ export function DraftSchedulePanel({
   const hasActiveFilters = Object.values(filters).some((value) => value !== undefined)
 
   return (
-    <section className="planner-panel" aria-labelledby="courses-overview-title">
+    <section className={`planner-panel ${isBusy ? 'overview-busy' : ''}`} aria-labelledby="courses-overview-title" aria-busy={isBusy}>
       <div className="panel-toolbar">
         <div>
           <p className="eyebrow">Generated plans</p>

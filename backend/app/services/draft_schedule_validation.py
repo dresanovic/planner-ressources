@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import date, time
 from enum import StrEnum
+from calendar import day_name
 
 from app.models.planning import DraftSchedule, DraftSession, Room
 from app.services.draft_schedule_repository import GenerationConstraints
@@ -146,15 +147,12 @@ def _add_generation_constraint_alert(
             )
         )
         return
-    if (
-        session.date < constraints.planning_period.start_date
-        or session.date > constraints.planning_period.end_date
-        or not _fits_any_window(session.date, session.start_time, session.end_time, constraints.allowed_windows)
-    ):
+    reasons = _generation_constraint_violation_reasons(session, constraints)
+    if reasons:
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION,
-                message="Session is outside the currently active generation constraints.",
+                message=f"Generation constraint mismatch: {' '.join(reasons)}",
             )
         )
 
@@ -183,9 +181,84 @@ def _add_study_type_window_alert(
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION,
-                message="Session is outside the Study Type Time Window.",
+                message=(
+                    "Study Type window mismatch: "
+                    f"{_teaching_window_violation_reason(session, windows)}"
+                ),
             )
         )
+
+
+def _generation_constraint_violation_reasons(
+    session: DraftSession,
+    constraints: GenerationConstraints,
+) -> list[str]:
+    reasons: list[str] = []
+    period = constraints.planning_period
+    if session.date < period.start_date:
+        reasons.append(
+            f"Session date {session.date.isoformat()} is before the allowed planning period "
+            f"{period.start_date.isoformat()}–{period.end_date.isoformat()}."
+        )
+    elif session.date > period.end_date:
+        reasons.append(
+            f"Session date {session.date.isoformat()} is after the allowed planning period "
+            f"{period.start_date.isoformat()}–{period.end_date.isoformat()}."
+        )
+    if not _fits_any_window(
+        session.date,
+        session.start_time,
+        session.end_time,
+        constraints.allowed_windows,
+    ):
+        reasons.append(_teaching_window_violation_reason(session, constraints.allowed_windows))
+    return reasons
+
+
+def _teaching_window_violation_reason(
+    session: DraftSession,
+    windows: list[TimeWindowPlan],
+) -> str:
+    if not windows:
+        return "No allowed teaching windows are configured."
+
+    weekday = session.date.weekday()
+    weekday_label = day_name[weekday]
+    windows_for_day = sorted(
+        (window for window in windows if window.weekday == weekday),
+        key=lambda window: (window.start_time, window.end_time),
+    )
+    if not windows_for_day:
+        return (
+            f"{weekday_label} is not an allowed teaching day. "
+            f"Allowed teaching windows: {_format_windows(windows)}."
+        )
+
+    actual_time = f"{_format_time(session.start_time)}–{_format_time(session.end_time)}"
+    allowed_times = ", ".join(
+        f"{_format_time(window.start_time)}–{_format_time(window.end_time)}"
+        for window in windows_for_day
+    )
+    return (
+        f"Session time {actual_time} on {weekday_label} is outside the allowed time. "
+        f"Allowed on {weekday_label}: {allowed_times}."
+    )
+
+
+def _format_windows(windows: list[TimeWindowPlan]) -> str:
+    ordered = sorted(
+        windows,
+        key=lambda window: (window.weekday, window.start_time, window.end_time),
+    )
+    return ", ".join(
+        f"{day_name[window.weekday]} "
+        f"{_format_time(window.start_time)}–{_format_time(window.end_time)}"
+        for window in ordered
+    )
+
+
+def _format_time(value: time) -> str:
+    return value.strftime("%H:%M")
 
 
 def _fits_any_window(

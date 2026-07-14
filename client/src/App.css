@@ -307,6 +307,182 @@ button:disabled {
   width: 100%;
 }
 
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.mode-switch button {
+  background: #edf2f8;
+  color: #314154;
+}
+
+.mode-switch button.active {
+  background: #075fc4;
+  color: #ffffff;
+}
+
+.multi-course-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.constraint-note,
+.selection-count,
+.batch-counts,
+.batch-outcome p {
+  margin: 0;
+}
+
+.constraint-note {
+  color: #526071;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.course-picker {
+  display: grid;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #dfe4eb;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.course-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 5px;
+  padding: 8px;
+}
+
+.course-checkbox:hover {
+  background: #f2f5f9;
+}
+
+.selection-count {
+  color: #3d5269;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.selection-invalid {
+  color: #9b1c13;
+}
+
+.schedule-results {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.batch-result {
+  background: #ffffff;
+  border: 1px solid #dfe4eb;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.batch-result h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.batch-counts {
+  color: #314154;
+  font-weight: 700;
+}
+
+.batch-outcomes {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.batch-outcome {
+  border: 1px solid #dfe4eb;
+  border-left: 4px solid #278450;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.batch-outcome.failed {
+  border-left-color: #c43d32;
+  background: #fff8f7;
+}
+
+.batch-outcome > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  text-transform: capitalize;
+}
+
+.batch-outcome p {
+  color: #8f2414;
+  font-size: 13px;
+  padding-top: 7px;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(23 32 51 / 55%);
+}
+
+.replacement-dialog {
+  width: min(520px, 100%);
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 18px 50px rgb(23 32 51 / 28%);
+  padding: 22px;
+}
+
+.replacement-dialog h2 {
+  margin: 0;
+}
+
+.replacement-warning {
+  border: 1px solid #f0b4a5;
+  border-radius: 6px;
+  background: #fff4f1;
+  color: #8f2414;
+  padding: 10px 12px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.refresh-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #efc26b;
+  border-radius: 8px;
+  background: #fff9e8;
+  color: #684c0a;
+  padding: 10px 12px;
+}
+
+.overview-busy {
+  opacity: 0.72;
+}
+
 .alert-list {
   display: grid;
   gap: 8px;
@@ -505,6 +681,12 @@ button:disabled {
 
   .planner-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dialog-actions,
+  .refresh-error {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .filter-bar {

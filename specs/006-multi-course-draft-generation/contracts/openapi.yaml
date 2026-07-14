@@ -1,0 +1,474 @@
+openapi: 3.0.3
+info:
+  title: Resource Planner - Multi-Course Draft Generation
+  version: 0.1.0
+  description: Preparation, execution, and semester-scoped Draft Schedule contract changes for Slice 6.
+paths:
+  /api/draft-schedules/batch/prepare:
+    post:
+      summary: Prepare a multi-course generation selection for replacement confirmation
+      operationId: prepareMultiCourseGeneration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchPreparationRequest"
+      responses:
+        "200":
+          description: Canonical read-only snapshot of every requested course and same-semester replacement target
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchPreparationResponse"
+        "404":
+          description: Selected semester does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid initial/retry count or duplicate course selection; no generation is performed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchRequestFailureResponse"
+
+  /api/draft-schedules/batch/generate:
+    post:
+      summary: Generate prepared courses independently and persist expected successes
+      operationId: generateMultipleCourseDrafts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchGenerationRequest"
+      responses:
+        "200":
+          description: Normal completion with all success, partial success, or all expected course failures
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchGenerationResult"
+        "404":
+          description: Selected semester does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: One or more prepared same-semester replacements were not explicitly confirmed; no generation is performed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReplacementConfirmationRequiredResponse"
+        "422":
+          description: Invalid initial/retry count, duplicate course selection, or malformed prepared snapshot; no generation is performed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchRequestFailureResponse"
+        "500":
+          description: Unexpected operation-wide failure; every change from this attempt is rolled back and no course success outcomes are returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchOperationFailureResponse"
+
+  /api/draft-schedules:
+    get:
+      summary: Read all current Draft Schedules for one semester with recalculated validation alerts
+      parameters:
+        - name: semesterId
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Complete selected-semester overview used after batch execution
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DraftScheduleResponse"
+        "404":
+          description: Selected semester does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/courses/{courseId}/draft-schedule:
+    get:
+      summary: Read one course's Draft Schedule for an explicit semester
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: semesterId
+          in: query
+          required: true
+          description: Required after Draft Schedules become unique by course and semester.
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: Current course-semester Draft Schedule, including optimistic revision and validation alerts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftScheduleResponse"
+        "404":
+          description: Course, semester, or course-semester Draft Schedule does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    BatchOperationKind:
+      type: string
+      enum:
+        - initial
+        - retry
+
+    BatchPreparationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - operationKind
+        - courseIds
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        operationKind:
+          $ref: "#/components/schemas/BatchOperationKind"
+        courseIds:
+          type: array
+          minItems: 1
+          maxItems: 50
+          uniqueItems: true
+          description: Initial operations require at least 2 items; retries allow 1 item.
+          items:
+            type: integer
+            minimum: 1
+
+    BatchPreparationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - operationKind
+        - courses
+        - replacementCourseIds
+      properties:
+        semesterId:
+          type: integer
+        operationKind:
+          $ref: "#/components/schemas/BatchOperationKind"
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Same order as the requested course IDs; retained by the client as the immutable confirmation snapshot.
+          items:
+            $ref: "#/components/schemas/PreparedCourseSnapshot"
+        replacementCourseIds:
+          type: array
+          uniqueItems: true
+          description: Requested courses with a Draft Schedule in the selected semester; courses with schedules only in other semesters are excluded.
+          items:
+            type: integer
+
+    PreparedCourseSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - courseName
+        - available
+        - draftScheduleId
+        - draftRevision
+        - replacementRequired
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          type: string
+          nullable: true
+        available:
+          type: boolean
+        draftScheduleId:
+          type: integer
+          nullable: true
+          description: Null when no Draft Schedule exists for this course in the selected semester.
+        draftRevision:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Present exactly when draftScheduleId is present.
+        replacementRequired:
+          type: boolean
+
+    BatchGenerationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - operationKind
+        - replacementConfirmed
+        - courses
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        operationKind:
+          $ref: "#/components/schemas/BatchOperationKind"
+        replacementConfirmed:
+          type: boolean
+          description: Must be true when any prepared course has an expected same-semester Draft Schedule.
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 50
+          uniqueItems: true
+          description: Immutable course/revision snapshots returned by preparation. Initial operations require at least 2 distinct items.
+          items:
+            $ref: "#/components/schemas/PreparedCourseInput"
+
+    PreparedCourseInput:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - expectedDraftScheduleId
+        - expectedDraftRevision
+      properties:
+        courseId:
+          type: integer
+          minimum: 1
+        expectedDraftScheduleId:
+          type: integer
+          nullable: true
+          description: Prepared same-semester Draft Schedule ID, or null when none existed.
+        expectedDraftRevision:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Present exactly when expectedDraftScheduleId is present.
+
+    BatchGenerationResult:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - operationKind
+        - summary
+        - outcomes
+      properties:
+        semesterId:
+          type: integer
+        operationKind:
+          $ref: "#/components/schemas/BatchOperationKind"
+        summary:
+          $ref: "#/components/schemas/BatchGenerationSummary"
+        outcomes:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Exactly one outcome per requested course, in request order.
+          items:
+            $ref: "#/components/schemas/CourseGenerationOutcome"
+
+    BatchGenerationSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - total
+        - succeeded
+        - failed
+      properties:
+        total:
+          type: integer
+          minimum: 1
+          maximum: 50
+        succeeded:
+          type: integer
+          minimum: 0
+          maximum: 50
+        failed:
+          type: integer
+          minimum: 0
+          maximum: 50
+
+    CourseGenerationOutcome:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - courseName
+        - status
+        - draftScheduleId
+        - draftRevision
+        - errors
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+            - succeeded
+            - failed
+        draftScheduleId:
+          type: integer
+          nullable: true
+          description: Present for succeeded outcomes.
+        draftRevision:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Present for succeeded outcomes.
+        errors:
+          type: array
+          description: Empty for success; one or more entries for failure.
+          items:
+            $ref: "#/components/schemas/CourseGenerationFailure"
+
+    CourseGenerationFailure:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - INSUFFICIENT_ROOM_CAPACITY
+            - INVALID_SESSION_PREFERENCE
+            - NO_FITTING_TIME_WINDOW
+            - INSUFFICIENT_SEMESTER_CAPACITY
+            - INVALID_PLANNING_PERIOD
+            - INVALID_TEACHING_WINDOW
+            - MISSING_TEACHING_WINDOW
+            - COURSE_NOT_FOUND
+            - PLANNING_INPUT_INCOMPLETE
+            - STALE_DRAFT_SCHEDULE
+            - STALE_GENERATION_CONSTRAINTS
+        message:
+          type: string
+
+    BatchRequestFailureResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/BatchRequestFailure"
+
+    BatchRequestFailure:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_BATCH_SIZE
+            - DUPLICATE_COURSE_SELECTION
+            - INVALID_PREPARED_SNAPSHOT
+        message:
+          type: string
+
+    ReplacementConfirmationRequiredResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+        - replacementCourseIds
+      properties:
+        code:
+          type: string
+          enum:
+            - REPLACEMENT_CONFIRMATION_REQUIRED
+        message:
+          type: string
+        replacementCourseIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            type: integer
+
+    BatchOperationFailureResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - BATCH_OPERATION_FAILED
+        message:
+          type: string
+          description: User-safe operation failure message; no uncommitted outcomes are included.
+
+    DraftScheduleResponse:
+      type: object
+      required:
+        - draftScheduleId
+        - revision
+        - courseId
+        - semesterId
+        - context
+        - sessions
+      properties:
+        draftScheduleId:
+          type: integer
+        revision:
+          type: integer
+          minimum: 1
+          description: Optimistic-concurrency token incremented by regeneration or manual session edits.
+        courseId:
+          type: integer
+        semesterId:
+          type: integer
+        context:
+          type: object
+          description: Existing Slice 2 course, Cohort, lecturer, room, and Study Type display context.
+        sessions:
+          type: array
+          description: Existing Draft Session response including Slice 5 validationAlerts.
+          items:
+            type: object
+
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string

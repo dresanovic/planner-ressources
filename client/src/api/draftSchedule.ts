@@ -49,6 +49,7 @@ export type GenerationConstraints = {
   courseId: number
   semesterId: number
   isCustom: boolean
+  revision?: number | null
   planningPeriod: PlanningPeriod
   allowedTeachingWindows: AllowedTeachingWindow[]
 }
@@ -69,6 +70,7 @@ export type DraftScheduleContext = {
 
 export type DraftSchedule = {
   draftScheduleId: number
+  revision: number
   courseId: number
   semesterId: number
   context: DraftScheduleContext
@@ -151,8 +153,10 @@ export async function clearGenerationConstraints(courseId: number, semesterId: n
   }
 }
 
-export async function getDraftSchedule(courseId: number): Promise<DraftSchedule> {
-  const response = await request(`${API_BASE}/api/courses/${courseId}/draft-schedule`)
+export async function getDraftSchedule(courseId: number, semesterId: number): Promise<DraftSchedule> {
+  const response = await request(
+    `${API_BASE}/api/courses/${courseId}/draft-schedule?semesterId=${semesterId}`,
+  )
   if (!response.ok) {
     throw [{ code: 'NOT_FOUND', message: 'No generated draft schedule exists.' }]
   }

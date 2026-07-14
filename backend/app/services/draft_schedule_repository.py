@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.planning import (
@@ -20,6 +20,8 @@ from app.services.schedule_generation import (
     TimeWindowPlan,
 )
 
+_UNSET = object()
+
 
 class PlanningInputNotFoundError(ValueError):
     pass
@@ -40,12 +42,16 @@ class GenerationConstraints:
         planning_period: PlanningPeriodPlan,
         allowed_windows: list[TimeWindowPlan],
         is_custom: bool,
+        constraint_set_id: int | None = None,
+        revision: int | None = None,
     ) -> None:
         self.course_id = course_id
         self.semester_id = semester_id
         self.planning_period = planning_period
         self.allowed_windows = allowed_windows
         self.is_custom = is_custom
+        self.constraint_set_id = constraint_set_id
+        self.revision = revision
 
 
 def load_course_plan(db: Session, course_id: int) -> CoursePlan:
@@ -137,6 +143,8 @@ def load_generation_constraints(
                 for index, window in enumerate(saved.windows)
             ],
             is_custom=True,
+            constraint_set_id=saved.id,
+            revision=saved.revision,
         )
 
     return GenerationConstraints(
@@ -157,30 +165,25 @@ def save_generation_constraints(
     semester_plan: SemesterPlan,
     planning_period: PlanningPeriodPlan,
     allowed_windows: list[TimeWindowPlan],
+    *,
+    existing_set=_UNSET,
+    reload: bool = True,
 ) -> GenerationConstraints:
-    existing = (
-        db.execute(
-            select(GenerationConstraintSet)
-            .where(
-                GenerationConstraintSet.course_id == course_plan.id,
-                GenerationConstraintSet.semester_id == semester_plan.id,
+    existing = existing_set
+    if existing is _UNSET:
+        existing = (
+            db.execute(
+                select(GenerationConstraintSet)
+                .where(
+                    GenerationConstraintSet.course_id == course_plan.id,
+                    GenerationConstraintSet.semester_id == semester_plan.id,
+                )
+                .options(selectinload(GenerationConstraintSet.windows))
             )
-            .options(selectinload(GenerationConstraintSet.windows))
+            .scalars()
+            .one_or_none()
         )
-        .scalars()
-        .one_or_none()
-    )
-    if existing is not None:
-        db.delete(existing)
-        db.flush()
-
-    constraint_set = GenerationConstraintSet(
-        course_id=course_plan.id,
-        semester_id=semester_plan.id,
-        planning_start_date=planning_period.start_date,
-        planning_end_date=planning_period.end_date,
-    )
-    constraint_set.windows = [
+    new_windows = [
         GenerationConstraintWindow(
             source_time_window_id=window.id,
             weekday=window.weekday,
@@ -190,9 +193,34 @@ def save_generation_constraints(
         )
         for index, window in enumerate(allowed_windows)
     ]
-    db.add(constraint_set)
-    db.commit()
-    return load_generation_constraints(db, course_plan, semester_plan)
+    if existing is None:
+        constraint_set = GenerationConstraintSet(
+            course_id=course_plan.id,
+            semester_id=semester_plan.id,
+            planning_start_date=planning_period.start_date,
+            planning_end_date=planning_period.end_date,
+            revision=1,
+            windows=new_windows,
+        )
+        db.add(constraint_set)
+    elif not _constraints_match(existing, planning_period, allowed_windows):
+        existing.planning_start_date = planning_period.start_date
+        existing.planning_end_date = planning_period.end_date
+        existing.revision += 1
+        existing.windows = new_windows
+    db.flush()
+    if reload:
+        return load_generation_constraints(db, course_plan, semester_plan)
+    active = constraint_set if existing is None else existing
+    return GenerationConstraints(
+        course_id=course_plan.id,
+        semester_id=semester_plan.id,
+        planning_period=planning_period,
+        allowed_windows=allowed_windows,
+        is_custom=True,
+        constraint_set_id=active.id,
+        revision=active.revision,
+    )
 
 
 def clear_generation_constraints(db: Session, course_id: int, semester_id: int) -> None:
@@ -208,7 +236,7 @@ def clear_generation_constraints(db: Session, course_id: int, semester_id: int) 
     )
     if existing is not None:
         db.delete(existing)
-        db.commit()
+        db.flush()
 
 
 def replace_draft_schedule(
@@ -216,18 +244,27 @@ def replace_draft_schedule(
     course_plan: CoursePlan,
     semester_id: int,
     generated_sessions: list[GeneratedSession],
+    *,
+    existing_draft=_UNSET,
+    reload: bool = True,
 ) -> DraftSchedule:
-    existing = get_draft_schedule(db, course_plan.id)
-    if existing is not None:
-        db.delete(existing)
+    draft = existing_draft
+    if draft is _UNSET:
+        draft = get_draft_schedule(db, course_plan.id, semester_id)
+    if draft is None:
+        draft = DraftSchedule(
+            course_id=course_plan.id,
+            semester_id=semester_id,
+            selected_time_window_id=None,
+            status="generated",
+            revision=1,
+        )
+        db.add(draft)
+    else:
+        draft.revision += 1
+        db.execute(delete(DraftSession).where(DraftSession.draft_schedule_id == draft.id))
         db.flush()
-
-    draft = DraftSchedule(
-        course_id=course_plan.id,
-        semester_id=semester_id,
-        selected_time_window_id=None,
-        status="generated",
-    )
+        db.expire(draft, ["sessions"])
     draft.sessions = [
         DraftSession(
             course_id=course_plan.id,
@@ -243,16 +280,20 @@ def replace_draft_schedule(
         )
         for session in generated_sessions
     ]
-    db.add(draft)
-    db.commit()
-    return get_draft_schedule(db, course_plan.id) or draft
+    db.flush()
+    if reload:
+        return get_draft_schedule(db, course_plan.id, semester_id) or draft
+    return draft
 
 
-def get_draft_schedule(db: Session, course_id: int) -> DraftSchedule | None:
+def get_draft_schedule(db: Session, course_id: int, semester_id: int) -> DraftSchedule | None:
     return (
         db.execute(
             select(DraftSchedule)
-            .where(DraftSchedule.course_id == course_id)
+            .where(
+                DraftSchedule.course_id == course_id,
+                DraftSchedule.semester_id == semester_id,
+            )
             .options(
                 selectinload(DraftSchedule.sessions),
                 selectinload(DraftSchedule.course).selectinload(Course.lecturer),
@@ -331,13 +372,35 @@ def update_draft_session(
     session.start_time = start_time
     session.end_time = end_time
     session.room_id = room_id
-    db.commit()
-    db.expire_all()
+    draft.revision += 1
+    db.flush()
+    db.expire(draft, ["sessions"])
 
-    updated = get_draft_schedule(db, session.course_id)
+    updated = get_draft_schedule(db, session.course_id, draft.semester_id)
     if updated is None:
         raise PlanningInputNotFoundError("Draft Schedule not found.")
     return updated
+
+
+def _constraints_match(
+    existing: GenerationConstraintSet,
+    planning_period: PlanningPeriodPlan,
+    allowed_windows: list[TimeWindowPlan],
+) -> bool:
+    if (
+        existing.planning_start_date != planning_period.start_date
+        or existing.planning_end_date != planning_period.end_date
+        or len(existing.windows) != len(allowed_windows)
+    ):
+        return False
+    return all(
+        saved.source_time_window_id == incoming.id
+        and saved.weekday == incoming.weekday
+        and saved.start_time == incoming.start_time
+        and saved.end_time == incoming.end_time
+        and saved.sort_order == index
+        for index, (saved, incoming) in enumerate(zip(existing.windows, allowed_windows))
+    )
 
 
 def list_draft_schedules_by_semester(db: Session, semester_id: int) -> list[DraftSchedule]:

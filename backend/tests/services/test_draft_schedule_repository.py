@@ -141,7 +141,7 @@ def test_successful_regeneration_replaces_prior_draft_sessions():
         ],
     )
 
-    draft = get_draft_schedule(db, 1)
+    draft = get_draft_schedule(db, 1, 1)
     assert draft is not None
     assert [session.date for session in draft.sessions] == [date(2026, 9, 14), date(2026, 9, 21)]
 
@@ -285,3 +285,71 @@ def test_update_draft_session_enforces_room_capacity_but_not_occupancy():
 
     edited = next(session for session in updated.sessions if session.id == target_session_id)
     assert edited.room_id == 2
+
+
+def test_course_semester_identity_revisions_and_cross_semester_retention():
+    db = make_session()
+    seed_course(db)
+    db.add(Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)))
+    db.commit()
+    plan = load_course_plan(db, 1)
+    sessions = [GeneratedSession(date(2026, 9, 7), start_time=time(8), end_time=time(11, 30), units=4, time_window_id=1, constraint_window_index=0)]
+    fall = replace_draft_schedule(db, plan, 1, sessions)
+    db.commit()
+    spring_sessions = [GeneratedSession(date(2027, 2, 1), start_time=time(8), end_time=time(11, 30), units=4, time_window_id=1, constraint_window_index=0)]
+    spring = replace_draft_schedule(db, plan, 2, spring_sessions)
+    db.commit()
+
+    assert fall.id != spring.id
+    assert get_draft_schedule(db, 1, 1).revision == 1
+    assert get_draft_schedule(db, 1, 2).revision == 1
+
+    regenerated = replace_draft_schedule(db, plan, 1, sessions)
+    assert regenerated.id == fall.id
+    assert regenerated.revision == 2
+    assert get_draft_schedule(db, 1, 2).id == spring.id
+
+
+def test_constraint_revision_changes_only_when_saved_values_change():
+    db = make_session()
+    seed_course(db)
+    plan = load_course_plan(db, 1)
+    semester = load_semester_plan(db, 1)
+    period = PlanningPeriodPlan(date(2026, 9, 7), date(2026, 12, 20))
+    windows = [TimeWindowPlan(id=1, weekday=0, start_time=time(8), end_time=time(12), sort_order=0)]
+
+    first = save_generation_constraints(db, plan, semester, period, windows)
+    unchanged = save_generation_constraints(db, plan, semester, period, windows)
+    changed = save_generation_constraints(
+        db, plan, semester, period,
+        [TimeWindowPlan(id=None, weekday=2, start_time=time(9), end_time=time(13), sort_order=0)],
+    )
+
+    assert first.revision == 1
+    assert unchanged.constraint_set_id == first.constraint_set_id
+    assert unchanged.revision == 1
+    assert changed.constraint_set_id == first.constraint_set_id
+    assert changed.revision == 2
+
+
+def test_repository_mutations_flush_without_commit_and_rollback_as_one_unit():
+    db = make_session()
+    seed_course(db)
+    plan = load_course_plan(db, 1)
+    semester = load_semester_plan(db, 1)
+    replace_draft_schedule(
+        db, plan, 1,
+        [GeneratedSession(date(2026, 9, 7), start_time=time(8), end_time=time(11, 30), units=4, time_window_id=1, constraint_window_index=0)],
+    )
+    save_generation_constraints(
+        db, plan, semester,
+        PlanningPeriodPlan(date(2026, 9, 7), date(2026, 12, 20)),
+        [TimeWindowPlan(id=1, weekday=0, start_time=time(8), end_time=time(12))],
+    )
+    assert get_draft_schedule(db, 1, 1) is not None
+    assert load_generation_constraints(db, plan, semester).is_custom is True
+
+    db.rollback()
+
+    assert get_draft_schedule(db, 1, 1) is None
+    assert load_generation_constraints(db, plan, semester).is_custom is False

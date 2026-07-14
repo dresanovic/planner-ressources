@@ -86,6 +86,7 @@ class GenerationConstraintsResponse(BaseModel):
     course_id: int = Field(alias="courseId")
     semester_id: int = Field(alias="semesterId")
     is_custom: bool = Field(alias="isCustom")
+    revision: int | None = None
     planning_period: PlanningPeriodResponse = Field(alias="planningPeriod")
     allowed_teaching_windows: list[AllowedTeachingWindowResponse] = Field(alias="allowedTeachingWindows")
 
@@ -152,6 +153,7 @@ class DraftScheduleResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     draft_schedule_id: int = Field(alias="draftScheduleId")
+    revision: int
     course_id: int = Field(alias="courseId")
     semester_id: int = Field(alias="semesterId")
     context: DraftScheduleContextResponse
