@@ -1,0 +1,901 @@
+openapi: 3.1.0
+info:
+  title: Resource Eligibility and Availability Additive Contract
+  version: 0.1.0
+  description: |
+    New and changed FS-008 HTTP surfaces. Existing unchanged fields and routes
+    remain governed by the earlier feature contracts. JSON property names are
+    camelCase. Resource retirement is outcome-driven: one confirmed DELETE may
+    permanently delete or inactivate after transactional usage re-evaluation.
+servers:
+  - url: http://localhost:8000
+
+paths:
+  /api/resources/lecturers:
+    get:
+      summary: List lecturers
+      parameters:
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Query'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Paginated lecturers; status defaults to active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LecturerList'
+    post:
+      summary: Create a lecturer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LecturerCreate'
+      responses:
+        '201':
+          description: Lecturer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LecturerRecord'
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/resources/lecturers/{lecturerId}:
+    parameters:
+      - $ref: '#/components/parameters/LecturerId'
+    get:
+      summary: Get lecturer details
+      responses:
+        '200':
+          description: Current lecturer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LecturerRecord'
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      summary: Update a lecturer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LecturerUpdate'
+      responses:
+        '200':
+          description: Lecturer updated and revision incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LecturerRecord'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      summary: Confirm lecturer removal
+      description: Deletes when unprotected; otherwise inactivates and preserves references.
+      parameters:
+        - $ref: '#/components/parameters/ExpectedRevision'
+        - $ref: '#/components/parameters/Confirmed'
+      responses:
+        '200':
+          description: Transactional deleted or inactivated disposition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRemovalResult'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/resources/lecturers/{lecturerId}/usage:
+    parameters:
+      - $ref: '#/components/parameters/LecturerId'
+    get:
+      summary: Assess lecturer removal consequences
+      responses:
+        '200':
+          description: Current non-authoritative preflight; DELETE rechecks transactionally
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceUsageAssessment'
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/resources/lecturers/{lecturerId}/reactivate:
+    parameters:
+      - $ref: '#/components/parameters/LecturerId'
+    post:
+      summary: Reactivate a lecturer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevisionCommand'
+      responses:
+        '200':
+          description: Lecturer and restored relationship usability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceReactivationResult'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/resources/rooms:
+    get:
+      summary: List rooms
+      parameters:
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Query'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Paginated rooms; status defaults to active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomList'
+    post:
+      summary: Create a room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomCreate'
+      responses:
+        '201':
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRecord'
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/resources/rooms/{roomId}:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    get:
+      summary: Get room details
+      responses:
+        '200':
+          description: Current room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRecord'
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      summary: Update a room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomUpdate'
+      responses:
+        '200':
+          description: Room updated; capacity impacts included
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomMutationResult'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      summary: Confirm room removal
+      parameters:
+        - $ref: '#/components/parameters/ExpectedRevision'
+        - $ref: '#/components/parameters/Confirmed'
+      responses:
+        '200':
+          description: Transactional deleted or inactivated disposition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRemovalResult'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/resources/rooms/{roomId}/usage:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    get:
+      summary: Assess room removal consequences
+      responses:
+        '200':
+          description: Current non-authoritative preflight
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceUsageAssessment'
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/resources/rooms/{roomId}/reactivate:
+    parameters:
+      - $ref: '#/components/parameters/RoomId'
+    post:
+      summary: Reactivate a room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevisionCommand'
+      responses:
+        '200':
+          description: Room and restored relationship usability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceReactivationResult'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/resources/{resourceType}/{resourceId}/unavailability:
+    parameters:
+      - $ref: '#/components/parameters/ResourceType'
+      - $ref: '#/components/parameters/ResourceId'
+    get:
+      summary: List one resource's unavailable periods
+      responses:
+        '200':
+          description: Canonically ordered periods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnavailabilityPeriod'
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      summary: Add an unavailable period
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnavailabilityWrite'
+      responses:
+        '201':
+          description: Period created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnavailabilityPeriod'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/resources/{resourceType}/{resourceId}/unavailability/{periodId}:
+    parameters:
+      - $ref: '#/components/parameters/ResourceType'
+      - $ref: '#/components/parameters/ResourceId'
+      - $ref: '#/components/parameters/PeriodId'
+    patch:
+      summary: Replace one unavailable period
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnavailabilityUpdate'
+      responses:
+        '200':
+          description: Period updated and revision incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnavailabilityPeriod'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    delete:
+      summary: Delete one unavailable period
+      parameters:
+        - $ref: '#/components/parameters/ExpectedRevision'
+      responses:
+        '204':
+          description: Period deleted
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/academic/courses/{courseId}/resource-eligibility:
+    parameters:
+      - $ref: '#/components/parameters/CourseId'
+    get:
+      summary: Get Course resource configuration
+      responses:
+        '200':
+          description: Current eligible sets, candidates, usability, and fixed preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseResourceConfiguration'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      summary: Atomically replace both Course eligible sets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseResourceEligibilityUpdate'
+      responses:
+        '200':
+          description: Canonical saved configuration and incremented Course revision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseResourceConfiguration'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/academic/cohorts/{cohortId}:
+    parameters:
+      - $ref: '#/components/parameters/CohortId'
+    patch:
+      summary: Update a Cohort and report automatic Room eligibility cleanup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CohortUpdate'
+      responses:
+        '200':
+          description: Updated Cohort and capacity cleanup impact
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CohortMutationResult'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/draft-sessions/{sessionId}:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    patch:
+      summary: Edit one Draft Session including its single Lecturer and Room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftSessionUpdate'
+      responses:
+        '200':
+          description: Existing DraftSchedule response with refreshed resource alerts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftScheduleResourceExtension'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/planning-options:
+    get:
+      summary: Get planning options with eligible resource sets
+      parameters:
+        - name: semesterId
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Existing planning options plus FS-008 resource configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanningOptionsResourceExtension'
+
+components:
+  parameters:
+    LecturerId:
+      name: lecturerId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    RoomId:
+      name: roomId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    ResourceId:
+      name: resourceId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    ResourceType:
+      name: resourceType
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [lecturers, rooms]
+    PeriodId:
+      name: periodId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    CourseId:
+      name: courseId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    CohortId:
+      name: cohortId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    ExpectedRevision:
+      name: expectedRevision
+      in: query
+      required: true
+      schema: { type: integer, minimum: 1 }
+    Confirmed:
+      name: confirmed
+      in: query
+      required: true
+      schema: { type: boolean, const: true }
+    Status:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [active, inactive, all]
+        default: active
+    Query:
+      name: query
+      in: query
+      required: false
+      schema: { type: string, maxLength: 200 }
+    Page:
+      name: page
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+
+  responses:
+    NotFound:
+      description: Record not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Conflict:
+      description: Stale revision or normalized-code/duplicate conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    ValidationError:
+      description: One or more field or relationship corrections are required
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  schemas:
+    ErrorEnvelope:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/ErrorItem' }
+    ErrorItem:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        field: { type: [string, 'null'] }
+        meta: { type: [object, 'null'], additionalProperties: true }
+
+    LecturerRecord:
+      type: object
+      required: [id, name, referenceCode, isActive, revision]
+      properties:
+        id: { type: integer, minimum: 1 }
+        name: { type: string }
+        referenceCode: { type: string }
+        isActive: { type: boolean }
+        revision: { type: integer, minimum: 1 }
+    RoomRecord:
+      allOf:
+        - $ref: '#/components/schemas/LecturerRecord'
+        - type: object
+          required: [capacity]
+          properties:
+            capacity: { type: integer, minimum: 1 }
+    LecturerCreate:
+      type: object
+      required: [name, referenceCode]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        referenceCode: { type: string, minLength: 1, maxLength: 100 }
+    LecturerUpdate:
+      allOf:
+        - $ref: '#/components/schemas/LecturerCreate'
+        - $ref: '#/components/schemas/RevisionCommand'
+    RoomCreate:
+      allOf:
+        - $ref: '#/components/schemas/LecturerCreate'
+        - type: object
+          required: [capacity]
+          properties:
+            capacity: { type: integer, minimum: 1 }
+    RoomUpdate:
+      allOf:
+        - $ref: '#/components/schemas/RoomCreate'
+        - $ref: '#/components/schemas/RevisionCommand'
+    RevisionCommand:
+      type: object
+      required: [expectedRevision]
+      properties:
+        expectedRevision: { type: integer, minimum: 1 }
+    LecturerList:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/LecturerRecord' }
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1 }
+        total: { type: integer, minimum: 0 }
+    RoomList:
+      type: object
+      required: [items, page, pageSize, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/RoomRecord' }
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1 }
+        total: { type: integer, minimum: 0 }
+
+    CourseIdentity:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer, minimum: 1 }
+        name: { type: string }
+    SessionUsage:
+      type: object
+      required: [draftSessionCount, draftScheduleCount]
+      properties:
+        draftSessionCount: { type: integer, minimum: 0 }
+        draftScheduleCount: { type: integer, minimum: 0 }
+    ResourceUsageAssessment:
+      type: object
+      required: [resourceId, revision, disposition, activeCourses, inactiveCourses, sessionUsage]
+      properties:
+        resourceId: { type: integer, minimum: 1 }
+        revision: { type: integer, minimum: 1 }
+        disposition: { type: string, enum: [delete, inactivate] }
+        activeCourses:
+          type: array
+          items: { $ref: '#/components/schemas/CourseIdentity' }
+        inactiveCourses:
+          type: array
+          items: { $ref: '#/components/schemas/CourseIdentity' }
+        sessionUsage: { $ref: '#/components/schemas/SessionUsage' }
+    ResourceRemovalResult:
+      oneOf:
+        - type: object
+          required: [outcome, resourceId, removedInactiveCourseLinks]
+          properties:
+            outcome: { type: string, const: deleted }
+            resourceId: { type: integer, minimum: 1 }
+            removedInactiveCourseLinks:
+              type: array
+              items: { $ref: '#/components/schemas/CourseIdentity' }
+        - type: object
+          required: [outcome, resource, activeCourses, sessionUsage]
+          properties:
+            outcome: { type: string, const: inactivated }
+            resource:
+              oneOf:
+                - $ref: '#/components/schemas/LecturerRecord'
+                - $ref: '#/components/schemas/RoomRecord'
+            activeCourses:
+              type: array
+              items: { $ref: '#/components/schemas/CourseIdentity' }
+            sessionUsage: { $ref: '#/components/schemas/SessionUsage' }
+    ResourceReactivationResult:
+      type: object
+      required: [resource, restoredRelationships, unusableRelationships]
+      properties:
+        resource:
+          oneOf:
+            - $ref: '#/components/schemas/LecturerRecord'
+            - $ref: '#/components/schemas/RoomRecord'
+        restoredRelationships:
+          type: array
+          items: { $ref: '#/components/schemas/CourseIdentity' }
+        unusableRelationships:
+          type: array
+          items: { $ref: '#/components/schemas/RelationshipStatus' }
+    RoomMutationResult:
+      type: object
+      required: [room, affectedRelationships]
+      properties:
+        room: { $ref: '#/components/schemas/RoomRecord' }
+        affectedRelationships:
+          type: array
+          items: { $ref: '#/components/schemas/RelationshipStatus' }
+
+    RecurringUnavailability:
+      type: object
+      required: [id, resourceType, resourceId, kind, weekdays, startTime, endTime, revision]
+      properties:
+        id: { type: integer, minimum: 1 }
+        resourceType: { type: string, enum: [lecturer, room] }
+        resourceId: { type: integer, minimum: 1 }
+        kind: { type: string, const: recurring }
+        weekdays:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: integer, minimum: 0, maximum: 6 }
+        startTime: { type: string, format: time }
+        endTime: { type: string, format: time }
+        revision: { type: integer, minimum: 1 }
+    DatedUnavailability:
+      type: object
+      required: [id, resourceType, resourceId, kind, startDate, startTime, endDate, endTime, revision]
+      properties:
+        id: { type: integer, minimum: 1 }
+        resourceType: { type: string, enum: [lecturer, room] }
+        resourceId: { type: integer, minimum: 1 }
+        kind: { type: string, const: dated }
+        startDate: { type: string, format: date }
+        startTime: { type: string, format: time }
+        endDate: { type: string, format: date }
+        endTime: { type: string, format: time }
+        revision: { type: integer, minimum: 1 }
+    UnavailabilityPeriod:
+      oneOf:
+        - $ref: '#/components/schemas/RecurringUnavailability'
+        - $ref: '#/components/schemas/DatedUnavailability'
+      discriminator:
+        propertyName: kind
+    RecurringUnavailabilityWrite:
+      type: object
+      required: [kind, weekdays, startTime, endTime]
+      properties:
+        kind: { type: string, const: recurring }
+        weekdays:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: integer, minimum: 0, maximum: 6 }
+        startTime: { type: string, format: time }
+        endTime: { type: string, format: time }
+    DatedUnavailabilityWrite:
+      type: object
+      required: [kind, startDate, startTime, endDate, endTime]
+      properties:
+        kind: { type: string, const: dated }
+        startDate: { type: string, format: date }
+        startTime: { type: string, format: time }
+        endDate: { type: string, format: date }
+        endTime: { type: string, format: time }
+    UnavailabilityWrite:
+      oneOf:
+        - $ref: '#/components/schemas/RecurringUnavailabilityWrite'
+        - $ref: '#/components/schemas/DatedUnavailabilityWrite'
+      discriminator:
+        propertyName: kind
+    UnavailabilityUpdate:
+      allOf:
+        - $ref: '#/components/schemas/UnavailabilityWrite'
+        - $ref: '#/components/schemas/RevisionCommand'
+
+    ResourceCandidate:
+      type: object
+      required: [id, name, referenceCode, kind, isActive, isEligible, isUsable, reasons]
+      properties:
+        id: { type: integer, minimum: 1 }
+        name: { type: string }
+        referenceCode: { type: string }
+        kind: { type: string, enum: [lecturer, room] }
+        capacity: { type: [integer, 'null'], minimum: 1 }
+        isActive: { type: boolean }
+        isEligible: { type: boolean }
+        isUsable: { type: boolean }
+        reasons:
+          type: array
+          items:
+            type: string
+            enum: [RESOURCE_INACTIVE, ROOM_CAPACITY_INSUFFICIENT]
+    RelationshipStatus:
+      type: object
+      required: [course, resourceId, usable, reasons]
+      properties:
+        course: { $ref: '#/components/schemas/CourseIdentity' }
+        resourceId: { type: integer, minimum: 1 }
+        usable: { type: boolean }
+        reasons:
+          type: array
+          items: { type: string }
+    AssignmentPreferences:
+      type: object
+      required: [minimizeLecturerChanges, minimizeRoomChanges]
+      properties:
+        minimizeLecturerChanges: { type: boolean, const: true }
+        minimizeRoomChanges: { type: boolean, const: true }
+    CourseResourceConfiguration:
+      type: object
+      required: [courseId, courseRevision, cohortSize, eligibleLecturerIds, eligibleRoomIds, lecturerCandidates, roomCandidates, preferences]
+      properties:
+        courseId: { type: integer, minimum: 1 }
+        courseRevision: { type: integer, minimum: 1 }
+        cohortSize: { type: integer, minimum: 1 }
+        eligibleLecturerIds:
+          type: array
+          uniqueItems: true
+          items: { type: integer, minimum: 1 }
+        eligibleRoomIds:
+          type: array
+          uniqueItems: true
+          items: { type: integer, minimum: 1 }
+        lecturerCandidates:
+          type: array
+          items: { $ref: '#/components/schemas/ResourceCandidate' }
+        roomCandidates:
+          type: array
+          items: { $ref: '#/components/schemas/ResourceCandidate' }
+        preferences: { $ref: '#/components/schemas/AssignmentPreferences' }
+    CourseResourceEligibilityUpdate:
+      type: object
+      required: [expectedRevision, lecturerIds, roomIds]
+      properties:
+        expectedRevision: { type: integer, minimum: 1 }
+        lecturerIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: integer, minimum: 1 }
+        roomIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: integer, minimum: 1 }
+
+    CohortUpdate:
+      type: object
+      required: [name, studentCount, expectedRevision]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        studentCount: { type: integer, minimum: 1 }
+        expectedRevision: { type: integer, minimum: 1 }
+    RemovedRoomRelationship:
+      type: object
+      required: [courseId, roomId, courseRevision]
+      properties:
+        courseId: { type: integer, minimum: 1 }
+        roomId: { type: integer, minimum: 1 }
+        courseRevision: { type: integer, minimum: 1 }
+    CohortCapacityImpact:
+      type: object
+      required: [removedRelationships, coursesWithoutRooms]
+      properties:
+        removedRelationships:
+          type: array
+          items: { $ref: '#/components/schemas/RemovedRoomRelationship' }
+        coursesWithoutRooms:
+          type: array
+          items: { $ref: '#/components/schemas/CourseIdentity' }
+    CohortMutationResult:
+      type: object
+      required: [cohort, capacityImpact]
+      properties:
+        cohort:
+          type: object
+          additionalProperties: true
+        capacityImpact: { $ref: '#/components/schemas/CohortCapacityImpact' }
+
+    DraftSessionUpdate:
+      type: object
+      required: [date, startTime, endTime, lecturerId, roomId]
+      properties:
+        date: { type: string, format: date }
+        startTime: { type: string, format: time }
+        endTime: { type: string, format: time }
+        lecturerId: { type: integer, minimum: 1 }
+        roomId: { type: integer, minimum: 1 }
+    ResourceValidationAlert:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [LECTURER_INELIGIBLE, ROOM_INELIGIBLE, LECTURER_UNAVAILABLE, ROOM_UNAVAILABLE, ROOM_CAPACITY]
+        message: { type: string }
+        resourceId: { type: [integer, 'null'] }
+        relatedSessions:
+          type: array
+          items: { type: object, additionalProperties: true }
+    DraftScheduleResourceExtension:
+      type: object
+      description: Existing DraftSchedule fields plus per-session resource identity and FS-008 alerts.
+      additionalProperties: true
+      properties:
+        sessions:
+          type: array
+          items:
+            type: object
+            required: [id, lecturerId, roomId, validationAlerts]
+            additionalProperties: true
+            properties:
+              id: { type: integer, minimum: 1 }
+              lecturerId: { type: integer, minimum: 1 }
+              lecturerName: { type: string }
+              lecturerReferenceCode: { type: string }
+              roomId: { type: integer, minimum: 1 }
+              roomName: { type: string }
+              roomReferenceCode: { type: string }
+              validationAlerts:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/ResourceValidationAlert'
+                    - type: object
+                      additionalProperties: true
+    CoursePlanningResourceExtension:
+      type: object
+      required: [courseId, available, availabilityReasons, eligibleLecturers, eligibleRooms, preferences]
+      properties:
+        courseId: { type: integer, minimum: 1 }
+        available: { type: boolean }
+        availabilityReasons:
+          type: array
+          items: { type: string }
+        eligibleLecturers:
+          type: array
+          items: { $ref: '#/components/schemas/ResourceCandidate' }
+        eligibleRooms:
+          type: array
+          items: { $ref: '#/components/schemas/ResourceCandidate' }
+        preferences: { $ref: '#/components/schemas/AssignmentPreferences' }
+    PlanningOptionsResourceExtension:
+      type: object
+      description: Existing planning options fields plus FS-008 coded resources and Course resource sets.
+      additionalProperties: true
+      required: [lecturers, rooms, courseResources]
+      properties:
+        lecturers:
+          type: array
+          items: { $ref: '#/components/schemas/LecturerRecord' }
+        rooms:
+          type: array
+          items: { $ref: '#/components/schemas/RoomRecord' }
+        courseResources:
+          type: array
+          items: { $ref: '#/components/schemas/CoursePlanningResourceExtension' }
+

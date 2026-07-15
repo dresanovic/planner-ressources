@@ -1,0 +1,356 @@
+openapi: 3.1.0
+info:
+  title: FS-009 Manual Session Management Contract
+  version: 1.0.0
+  description: >-
+    Focused contract for creating one manual Draft Session, deleting one Draft
+    Session, and clearing one course-semester Draft Schedule. Existing generation,
+    editing, overview, and validation-alert routes remain unchanged.
+paths:
+  /api/planning-options:
+    get:
+      summary: Read planning options with cohort capacity context
+      description: Existing planning-options route with additive cohortSize on each Course option.
+      parameters:
+        - name: semesterId
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Planning options available to the existing planner workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlanningOptionsResponse'
+  /api/courses/{course_id}/draft-schedule/sessions:
+    post:
+      summary: Create one manual Draft Session
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateManualDraftSessionRequest'
+      responses:
+        '201':
+          description: Session created; result contains current progress and updated draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftScheduleMutationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+  /api/draft-sessions/{session_id}:
+    delete:
+      summary: Delete one generated or manually created Draft Session
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/ExpectedDraftScheduleId'
+        - $ref: '#/components/parameters/ExpectedDraftRevision'
+      responses:
+        '200':
+          description: >-
+            Session deleted; draftSchedule is null when the deleted session was
+            the last session in its course-semester draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftScheduleMutationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/StaleDraft'
+  /api/courses/{course_id}/draft-schedule:
+    delete:
+      summary: Clear one complete course-semester Draft Schedule
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+        - name: semesterId
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - $ref: '#/components/parameters/ExpectedDraftScheduleId'
+        - $ref: '#/components/parameters/ExpectedDraftRevision'
+      responses:
+        '200':
+          description: Complete draft deleted; source records and generation constraints remain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftScheduleMutationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/StaleDraft'
+components:
+  parameters:
+    CourseId:
+      name: course_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    SessionId:
+      name: session_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    ExpectedDraftRevision:
+      name: expectedDraftRevision
+      in: query
+      required: true
+      description: Draft Schedule revision shown in the deletion confirmation
+      schema:
+        type: integer
+        minimum: 1
+    ExpectedDraftScheduleId:
+      name: expectedDraftScheduleId
+      in: query
+      required: true
+      description: Draft Schedule identity shown in the deletion confirmation
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    NotFound:
+      description: Required planning input, Draft Schedule, or Draft Session does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationFailure:
+      description: Manual session violates a hard structural, unit, or capacity rule
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MutationFailureResponse'
+    StaleDraft:
+      description: Draft contents changed after confirmation was displayed; no deletion occurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StaleDraftResponse'
+  schemas:
+    PlanningOptionsResponse:
+      type: object
+      additionalProperties: true
+      required:
+        - courses
+      properties:
+        courses:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanningCourseOption'
+    PlanningCourseOption:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - totalUnits
+        - cohort
+        - cohortSize
+      properties:
+        id:
+          type: integer
+        totalUnits:
+          type: integer
+          minimum: 1
+        cohort:
+          type: object
+          additionalProperties: true
+        cohortSize:
+          type: integer
+          minimum: 1
+    CreateManualDraftSessionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - date
+        - startTime
+        - endTime
+        - units
+        - roomId
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          pattern: '^([01]\\d|2[0-3]):[0-5]\\d$'
+        endTime:
+          type: string
+          pattern: '^([01]\\d|2[0-3]):[0-5]\\d$'
+        units:
+          type: integer
+          minimum: 1
+        roomId:
+          type: integer
+          minimum: 1
+    DraftScheduleMutationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - semesterId
+        - scheduledUnits
+        - remainingUnits
+        - draftSchedule
+      properties:
+        courseId:
+          type: integer
+        semesterId:
+          type: integer
+        scheduledUnits:
+          type: integer
+          minimum: 0
+        remainingUnits:
+          type: integer
+          minimum: 0
+        draftSchedule:
+          oneOf:
+            - $ref: '#/components/schemas/DraftSchedule'
+            - type: 'null'
+    DraftSchedule:
+      type: object
+      additionalProperties: true
+      required:
+        - draftScheduleId
+        - revision
+        - courseId
+        - semesterId
+        - context
+        - sessions
+      properties:
+        draftScheduleId:
+          type: integer
+        revision:
+          type: integer
+          minimum: 1
+        courseId:
+          type: integer
+        semesterId:
+          type: integer
+        context:
+          type: object
+          additionalProperties: true
+        sessions:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DraftSession'
+    DraftSession:
+      type: object
+      additionalProperties: true
+      required:
+        - id
+        - date
+        - startTime
+        - endTime
+        - units
+        - courseId
+        - lecturerId
+        - cohortId
+        - roomId
+        - validationAlerts
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        units:
+          type: integer
+          minimum: 1
+        courseId:
+          type: integer
+        lecturerId:
+          type: integer
+        cohortId:
+          type: integer
+        roomId:
+          type: integer
+        validationAlerts:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    MutationFailureResponse:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MutationFailure'
+    MutationFailure:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_SESSION_DATE
+            - INVALID_SESSION_TIME_RANGE
+            - INVALID_SESSION_UNITS
+            - UNITS_EXCEED_REMAINING
+            - DUPLICATE_SESSION_DATE
+            - INSUFFICIENT_ROOM_CAPACITY
+        message:
+          type: string
+    StaleDraftResponse:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          maxItems: 1
+          items:
+            type: object
+            required:
+              - code
+              - message
+              - currentRevision
+            properties:
+              code:
+                type: string
+                const: STALE_DRAFT
+              message:
+                type: string
+              currentRevision:
+                oneOf:
+                  - type: integer
+                    minimum: 1
+                  - type: 'null'
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string

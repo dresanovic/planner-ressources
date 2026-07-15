@@ -120,9 +120,9 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 4 | FS-004 | Manual Session Editing | Correct existing generated sessions | FS-003 | Implemented |
 | 5 | FS-005 | Conflict Detection | See non-blocking schedule validation alerts | FS-003, FS-004 | Implemented |
 | 6 | FS-006 | Multi-Course Draft Generation | Generate several course drafts in one operation | FS-003, FS-005 | Implemented |
-| 7 | FS-007 | Academic Planning Data Administration | Maintain academic scheduling inputs in the UI | FS-006 | Ready for specification |
-| 8 | FS-008 | Resource Eligibility and Availability | Maintain eligible resources and availability | FS-007 | Proposed |
-| 9 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Proposed |
+| 7 | FS-007 | Academic Planning Data Administration | Maintain academic scheduling inputs in the UI | FS-006 | Implemented |
+| 8 | FS-008 | Resource Eligibility and Availability | Maintain eligible resources and availability | FS-007 | Ready for specification |
+| 9 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Ready for specification |
 | 10 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Proposed |
 | 11 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Proposed |
 | 12 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Proposed |
