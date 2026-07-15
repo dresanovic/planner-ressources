@@ -7,6 +7,7 @@ import {
   updateCourse,
   getAcademicUsage,
   setAcademicLifecycle,
+  updateCohort,
 } from './academicCatalog'
 
 afterEach(() => vi.unstubAllGlobals())
@@ -30,9 +31,10 @@ describe('academic catalog API', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204, json: async () => ({ id: 1 }) })
     vi.stubGlobal('fetch', fetchMock)
     await createSemester({ name: 'Fall', startDate: '2026-09-01', endDate: '2026-12-20' })
-    await updateCourse(4, { name: 'C', totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4, semesterId: 1, cohortId: 2, studyTypeId: 3, lecturerId: 4, roomId: 5, expectedRevision: 6 })
+    await updateCourse(4, { name: 'C', totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4, semesterId: 1, cohortId: 2, studyTypeId: 3, expectedRevision: 6 })
     await deleteAcademicRecord('courses', 4, 7)
     expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: 'PATCH' })
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body))).not.toHaveProperty('lecturerId')
     expect(fetchMock.mock.calls[2][0]).toBe('/api/academic/courses/4?expectedRevision=7')
   })
 
@@ -54,5 +56,23 @@ describe('academic catalog API', () => {
     await setAcademicLifecycle('cohorts', 2, 'archive', 4)
     expect(fetchMock.mock.calls[0][0]).toBe('/api/academic/cohorts/2/usage')
     expect(fetchMock.mock.calls[1]).toEqual(['/api/academic/cohorts/2/archive', expect.objectContaining({ method: 'POST', body: JSON.stringify({ expectedRevision: 4 }) })])
+  })
+
+  it('retains Cohort growth capacity cleanup effects', async () => {
+    const payload = {
+      id: 2, name: 'Cohort', studentCount: 35, isActive: true, revision: 2,
+      cohort: { id: 2, name: 'Cohort', studentCount: 35, isActive: true, revision: 2 },
+      capacityImpact: {
+        removedRelationships: [{ courseId: 4, roomId: 5, courseRevision: 7 }],
+        coursesWithoutRooms: [{ id: 4, name: 'Course' }],
+      },
+    }
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => payload })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await updateCohort(2, { name: 'Cohort', studentCount: 35, expectedRevision: 1 })
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/academic/cohorts/2', expect.objectContaining({ method: 'PATCH' }))
+    expect(result.capacityImpact.coursesWithoutRooms).toEqual([{ id: 4, name: 'Course' }])
   })
 })

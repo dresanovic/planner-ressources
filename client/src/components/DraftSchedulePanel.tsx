@@ -12,7 +12,8 @@ import type {
   UpdateDraftSessionRequest,
   ViewMode,
 } from '../api/draftSchedule'
-import type { RoomOption } from '../api/planningOptions'
+import type { PlanningOptions, RoomOption } from '../api/planningOptions'
+import type { LecturerRecord, ResourceCandidate } from '../api/resourceCatalog'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
 import {
   groupSessionsByWeek,
@@ -22,6 +23,8 @@ import {
 type DraftSchedulePanelProps = {
   schedules: DraftSchedule[]
   rooms?: RoomOption[]
+  lecturers?: LecturerRecord[]
+  courseResources?: PlanningOptions['courseResources']
   onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
   resetKey?: number
   isBusy?: boolean
@@ -34,6 +37,8 @@ export function DraftSchedulePanel(props: DraftSchedulePanelProps) {
 function DraftSchedulePanelStateful({
   schedules,
   rooms = [],
+  lecturers = [],
+  courseResources = [],
   onUpdateSession,
   isBusy = false,
 }: DraftSchedulePanelProps) {
@@ -43,8 +48,11 @@ function DraftSchedulePanelStateful({
   const [editDraft, setEditDraft] = useState<UpdateDraftSessionRequest | null>(null)
   const [editErrors, setEditErrors] = useState<SessionEditFailure[]>([])
   const [isSavingEdit, setIsSavingEdit] = useState(false)
-  const overviewSessions = useMemo(() => flattenSchedules(schedules, rooms), [schedules, rooms])
-  const filterOptions = useMemo(() => buildFilterOptions(schedules, rooms), [schedules, rooms])
+  const overviewSessions = useMemo(
+    () => flattenSchedules(schedules, rooms, lecturers, courseResources),
+    [schedules, rooms, lecturers, courseResources],
+  )
+  const filterOptions = useMemo(() => buildFilterOptions(overviewSessions, schedules), [overviewSessions, schedules])
   const visibleSessions = sortSessionsChronologically(
     overviewSessions.filter((session) => matchesFilters(session, filters)),
   )
@@ -140,7 +148,6 @@ function DraftSchedulePanelStateful({
                     <SessionEditFields
                       session={session}
                       draft={editDraft}
-                      rooms={rooms}
                       isSaving={isSavingEdit}
                       errors={editErrors}
                       onChange={setEditDraft}
@@ -159,8 +166,8 @@ function DraftSchedulePanelStateful({
                       <span>{derivedLengthLabel(session.startTime, session.endTime)}</span>
                       <span>{session.context.course.name}</span>
                       <span>{session.context.cohort.name}</span>
-                      <span>{session.context.lecturer.name}</span>
-                      <span>{session.roomName}</span>
+                      <span>{resourceLabel(session.lecturer)}</span>
+                      <span>{resourceLabel(session.room)}</span>
                       <span>{session.context.studyType.name}</span>
                       <span>
                         <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)}>
@@ -189,8 +196,8 @@ function DraftSchedulePanelStateful({
                             <span>{derivedLengthLabel(session.startTime, session.endTime)}</span>
                             <span>{session.context.course.name}</span>
                             <span>{session.context.cohort.name}</span>
-                            <span>{session.context.lecturer.name}</span>
-                            <span>{session.roomName}</span>
+                            <span>{resourceLabel(session.lecturer)}</span>
+                            <span>{resourceLabel(session.room)}</span>
                             <span>{session.context.studyType.name}</span>
                             <SessionAlerts alerts={session.validationAlerts} />
                             <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)}>
@@ -226,6 +233,7 @@ function DraftSchedulePanelStateful({
       date: session.date,
       startTime: session.startTime,
       endTime: session.endTime,
+      lecturerId: session.lecturerId,
       roomId: session.roomId,
     })
     setEditErrors([])
@@ -284,7 +292,6 @@ function SessionAlerts({ alerts }: { alerts: DraftSession['validationAlerts'] })
 type SessionEditFieldsProps = {
   session: OverviewSession
   draft: UpdateDraftSessionRequest
-  rooms: RoomOption[]
   isSaving: boolean
   errors: SessionEditFailure[]
   onChange: (draft: UpdateDraftSessionRequest) => void
@@ -295,19 +302,18 @@ type SessionEditFieldsProps = {
 function SessionEditFields({
   session,
   draft,
-  rooms,
   isSaving,
   errors,
   onChange,
   onCancel,
   onSave,
 }: SessionEditFieldsProps) {
-  const eligibleRooms = rooms.filter(
-    (room) => room.capacity >= session.context.cohortSize || room.id === session.roomId,
-  )
-  const availableRooms = eligibleRooms.length > 0
-    ? eligibleRooms
-    : [{ id: session.roomId, name: session.roomName, capacity: session.context.cohortSize }]
+  const availableLecturers = session.eligibleLecturers.length > 0
+    ? session.eligibleLecturers
+    : [session.lecturer]
+  const availableRooms = session.eligibleRooms.length > 0
+    ? session.eligibleRooms
+    : [{ ...session.room, capacity: session.context.cohortSize }]
 
   return (
     <>
@@ -338,7 +344,17 @@ function SessionEditFields({
       <span>{derivedLengthLabel(draft.startTime, draft.endTime)}</span>
       <span>{session.context.course.name}</span>
       <span>{session.context.cohort.name}</span>
-      <span>{session.context.lecturer.name}</span>
+      <label className="lecturer-edit-field">
+        <span>Lecturer</span>
+        <select
+          value={draft.lecturerId}
+          onChange={(event) => onChange({ ...draft, lecturerId: Number(event.target.value) })}
+        >
+          {availableLecturers.map((lecturer) => (
+            <option value={lecturer.id} key={lecturer.id}>{resourceLabel(lecturer)}</option>
+          ))}
+        </select>
+      </label>
       <label className="inline-edit-field">
         <span>Room</span>
         <select
@@ -347,7 +363,7 @@ function SessionEditFields({
         >
           {availableRooms.map((room) => (
             <option value={room.id} key={room.id}>
-              {room.name}
+              {resourceLabel(room)}
               {room.capacity ? ` (${room.capacity} seats)` : ''}
             </option>
           ))}
@@ -565,8 +581,11 @@ function removeWindow(constraints: GenerationConstraints, index: number): Genera
 type OverviewSession = DraftSession & {
   draftScheduleId: number
   context: DraftScheduleContext
-  roomName: string
+  eligibleLecturers: EditableResource[]
+  eligibleRooms: EditableResource[]
 }
+
+type EditableResource = { id: number; name: string; referenceCode?: string; capacity?: number | null }
 
 type FilterOptions = {
   courses: PlanningEntity[]
@@ -576,30 +595,67 @@ type FilterOptions = {
   studyTypes: PlanningEntity[]
 }
 
-function flattenSchedules(schedules: DraftSchedule[], rooms: RoomOption[]): OverviewSession[] {
+function flattenSchedules(
+  schedules: DraftSchedule[],
+  rooms: RoomOption[],
+  lecturers: LecturerRecord[],
+  courseResources: PlanningOptions['courseResources'],
+): OverviewSession[] {
   return schedules.flatMap((schedule) =>
-    schedule.sessions.map((session) => ({
-      ...session,
-      draftScheduleId: schedule.draftScheduleId,
-      context: schedule.context,
-      roomName: getRoomName(session.roomId, rooms, schedule.context.room),
-    })),
+    schedule.sessions.map((session) => {
+      const configuration = courseResources.find((item) => item.courseId === schedule.courseId)
+      const listedRoom = rooms.find((item) => item.id === session.roomId)
+      const listedLecturer = lecturers.find((item) => item.id === session.lecturerId)
+      const currentLecturer = listedLecturer
+        ? { id: listedLecturer.id, name: listedLecturer.name, referenceCode: listedLecturer.referenceCode }
+        : session.lecturer
+      const currentRoom = listedRoom
+        ? { id: listedRoom.id, name: listedRoom.name, referenceCode: 'referenceCode' in listedRoom ? String(listedRoom.referenceCode) : '', capacity: listedRoom.capacity }
+        : session.room
+      return {
+        ...session,
+        lecturer: currentLecturer,
+        room: currentRoom,
+        draftScheduleId: schedule.draftScheduleId,
+        context: schedule.context,
+        eligibleLecturers: configuration
+          ? editableCandidates(configuration.eligibleLecturers, currentLecturer)
+          : lecturers.filter((item) => item.isActive || item.id === session.lecturerId).map((item) => ({ ...item })),
+        eligibleRooms: configuration
+          ? editableCandidates(configuration.eligibleRooms, currentRoom)
+          : rooms.filter((item) => item.capacity >= schedule.context.cohortSize || item.id === session.roomId).map((item) => ({
+              ...item,
+              referenceCode: 'referenceCode' in item ? String(item.referenceCode) : '',
+            })),
+      }
+    }),
   )
 }
 
-function buildFilterOptions(schedules: DraftSchedule[], rooms: RoomOption[]): FilterOptions {
-  const sessions = flattenSchedules(schedules, rooms)
+function buildFilterOptions(sessions: OverviewSession[], schedules: DraftSchedule[]): FilterOptions {
   return {
     courses: uniqueEntities(schedules.map((schedule) => schedule.context.course)),
     cohorts: uniqueEntities(schedules.map((schedule) => schedule.context.cohort)),
-    lecturers: uniqueEntities(schedules.map((schedule) => schedule.context.lecturer)),
-    rooms: uniqueEntities(sessions.map((session) => ({ id: session.roomId, name: session.roomName }))),
+    lecturers: uniqueEntities(sessions.map((session) => ({ id: session.lecturerId, name: resourceLabel(session.lecturer) }))),
+    rooms: uniqueEntities(sessions.map((session) => ({ id: session.roomId, name: resourceLabel(session.room) }))),
     studyTypes: uniqueEntities(schedules.map((schedule) => schedule.context.studyType)),
   }
 }
 
-function getRoomName(roomId: number, rooms: RoomOption[], fallback: PlanningEntity): string {
-  return rooms.find((room) => room.id === roomId)?.name ?? (fallback.id === roomId ? fallback.name : `Room ${roomId}`)
+function editableCandidates(candidates: ResourceCandidate[], current: EditableResource): EditableResource[] {
+  const options = candidates
+    .filter((candidate) => candidate.id === current.id || (candidate.isEligible && candidate.isUsable))
+    .map((candidate) => ({
+      id: candidate.id,
+      name: candidate.name,
+      referenceCode: candidate.referenceCode,
+      capacity: candidate.capacity,
+    }))
+  return options.some((option) => option.id === current.id) ? options : [current, ...options]
+}
+
+function resourceLabel(resource: { name: string; referenceCode?: string }): string {
+  return resource.referenceCode ? `${resource.name} Â· ${resource.referenceCode}` : resource.name
 }
 
 function uniqueEntities(entities: PlanningEntity[]): PlanningEntity[] {

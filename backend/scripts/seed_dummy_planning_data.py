@@ -16,6 +16,8 @@ from app.db.session import engine  # noqa: E402
 from app.models.planning import (  # noqa: E402
     Cohort,
     Course,
+    CourseEligibleLecturer,
+    CourseEligibleRoom,
     Lecturer,
     Room,
     Semester,
@@ -46,6 +48,47 @@ def upsert_named(db: Session, model: type[ModelT], name: str, **values: object) 
     else:
         for key, value in values.items():
             setattr(record, key, value)
+    return record
+
+
+def upsert_resource(
+    db: Session,
+    model: type[ModelT],
+    name: str,
+    reference_code: str,
+    **values: object,
+) -> ModelT:
+    canonical_code = reference_code.strip().casefold()
+    values.update(
+        reference_code=reference_code.strip(),
+        normalized_reference_code=canonical_code,
+        is_active=True,
+        revision=1,
+    )
+    return upsert_named(db, model, name, **values)
+
+
+def ensure_eligibility(
+    db: Session,
+    model: type[ModelT],
+    *,
+    course_id: int,
+    resource_field: str,
+    resource_id: int,
+) -> ModelT:
+    record = (
+        db.execute(
+            select(model).where(
+                model.course_id == course_id,
+                getattr(model, resource_field) == resource_id,
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if record is None:
+        record = model(course_id=course_id, **{resource_field: resource_id})
+        db.add(record)
     return record
 
 
@@ -88,16 +131,20 @@ def seed() -> None:
     Base.metadata.create_all(bind=engine)
 
     with Session(engine) as db:
-        lecturer_fischer = upsert_named(db, Lecturer, "Prof. Elena Fischer")
-        lecturer_novak = upsert_named(db, Lecturer, "Prof. Martin Novak")
+        lecturer_fischer = upsert_resource(
+            db, Lecturer, "Prof. Elena Fischer", "LECT-FISCHER"
+        )
+        lecturer_novak = upsert_resource(
+            db, Lecturer, "Prof. Martin Novak", "LECT-NOVAK"
+        )
 
         cohort_ai = upsert_named(db, Cohort, "AI 2026", student_count=28)
         cohort_ds = upsert_named(db, Cohort, "Data Science 2026", student_count=24)
         cohort_biz = upsert_named(db, Cohort, "Business Informatics 2026", student_count=32)
 
-        room_a = upsert_named(db, Room, "Room A-101", capacity=36)
-        room_b = upsert_named(db, Room, "Room B-204", capacity=30)
-        room_lab = upsert_named(db, Room, "Planning Lab", capacity=34)
+        room_a = upsert_resource(db, Room, "Room A-101", "ROOM-A-101", capacity=36)
+        room_b = upsert_resource(db, Room, "Room B-204", "ROOM-B-204", capacity=30)
+        room_lab = upsert_resource(db, Room, "Planning Lab", "ROOM-LAB", capacity=34)
 
         semester = upsert_named(
             db,
@@ -145,45 +192,60 @@ def seed() -> None:
         )
         db.flush()
 
-        upsert_named(
+        operations = upsert_named(
             db,
             Course,
             "Operations Planning",
             total_units=20,
             min_session_units=2,
             max_session_units=4,
-            lecturer_id=lecturer_fischer.id,
             cohort_id=cohort_ai.id,
-            room_id=room_a.id,
             study_type_id=full_time.id,
             current_semester_id=semester.id,
         )
-        upsert_named(
+        resource_scheduling = upsert_named(
             db,
             Course,
             "Resource Scheduling",
             total_units=16,
             min_session_units=2,
             max_session_units=4,
-            lecturer_id=lecturer_novak.id,
             cohort_id=cohort_ds.id,
-            room_id=room_b.id,
             study_type_id=part_time.id,
             current_semester_id=semester.id,
         )
-        upsert_named(
+        optimization = upsert_named(
             db,
             Course,
             "Applied Optimization",
             total_units=24,
             min_session_units=3,
             max_session_units=4,
-            lecturer_id=lecturer_fischer.id,
             cohort_id=cohort_biz.id,
-            room_id=room_lab.id,
             study_type_id=full_time.id,
             current_semester_id=semester.id,
         )
+        db.flush()
+
+        for course, lecturer, room in (
+            (operations, lecturer_fischer, room_a),
+            (resource_scheduling, lecturer_novak, room_b),
+            (optimization, lecturer_fischer, room_lab),
+        ):
+            ensure_eligibility(
+                db,
+                CourseEligibleLecturer,
+                course_id=course.id,
+                resource_field="lecturer_id",
+                resource_id=lecturer.id,
+            )
+            ensure_eligibility(
+                db,
+                CourseEligibleRoom,
+                course_id=course.id,
+                resource_field="room_id",
+                resource_id=room.id,
+            )
 
         db.commit()
 

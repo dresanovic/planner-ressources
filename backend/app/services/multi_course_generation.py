@@ -5,8 +5,13 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.planning import (
     Course,
+    CourseEligibleLecturer,
+    CourseEligibleRoom,
     DraftSchedule,
     GenerationConstraintSet,
+    Lecturer,
+    ResourceUnavailabilityPeriod,
+    Room,
     Semester,
     StudyTypeTimeWindow,
 )
@@ -29,6 +34,7 @@ from app.services.schedule_generation import (
     CoursePlan,
     PlanningPeriodPlan,
     SemesterPlan,
+    ResourceCandidatePlan,
     TimeWindowPlan,
     generate_schedule,
 )
@@ -113,9 +119,12 @@ def generate_batch(
             continue
         eligibility = _eligibility_reasons(course, semester, active_window_types)
         if eligibility:
-            outcomes.append(_failure(course.id, course.name, eligibility[0], "Course academic data is not eligible for this Semester."))
+            code = eligibility[0]
+            if code == "NO_USABLE_ELIGIBLE_ROOM" and any(link.room.is_active for link in course.eligible_rooms):
+                code = "INSUFFICIENT_ROOM_CAPACITY"
+            outcomes.append(_failure(course.id, course.name, code, "Course academic data is not eligible for this Semester."))
             continue
-        if course.cohort is None or course.room is None:
+        if course.cohort is None:
             outcomes.append(_failure(course.id, course.name, "PLANNING_INPUT_INCOMPLETE", "Course planning input is incomplete."))
             continue
         plan = _course_to_plan(course)
@@ -258,9 +267,15 @@ def _bulk_load(db: Session, semester_id: int, course_ids: list[int]):
             .where(Course.id.in_(course_ids))
             .execution_options(populate_existing=True)
             .options(
-                selectinload(Course.lecturer),
+                selectinload(Course.eligible_lecturers)
+                .selectinload(CourseEligibleLecturer.lecturer)
+                .selectinload(Lecturer.unavailability_periods)
+                .selectinload(ResourceUnavailabilityPeriod.weekdays),
                 selectinload(Course.cohort),
-                selectinload(Course.room),
+                selectinload(Course.eligible_rooms)
+                .selectinload(CourseEligibleRoom.room)
+                .selectinload(Room.unavailability_periods)
+                .selectinload(ResourceUnavailabilityPeriod.weekdays),
                 selectinload(Course.study_type),
             )
         ).scalars().all()
@@ -302,12 +317,31 @@ def _course_to_plan(course: Course) -> CoursePlan:
         total_units=course.total_units,
         min_session_units=course.min_session_units,
         max_session_units=course.max_session_units,
-        lecturer_id=course.lecturer_id,
+        lecturer_id=course.lecturer_id or 0,
         cohort_id=course.cohort_id,
-        room_id=course.room_id,
+        room_id=course.room_id or 0,
         study_type_id=course.study_type_id,
         cohort_size=course.cohort.student_count,
-        room_capacity=course.room.capacity,
+        room_capacity=course.room.capacity if course.room is not None else 0,
+        lecturer_candidates=tuple(
+            ResourceCandidatePlan(
+                id=link.lecturer.id,
+                normalized_code=link.lecturer.normalized_reference_code,
+                active=link.lecturer.is_active,
+                unavailable_periods=tuple(link.lecturer.unavailability_periods),
+            )
+            for link in course.eligible_lecturers
+        ),
+        room_candidates=tuple(
+            ResourceCandidatePlan(
+                id=link.room.id,
+                normalized_code=link.room.normalized_reference_code,
+                active=link.room.is_active,
+                capacity=link.room.capacity,
+                unavailable_periods=tuple(link.room.unavailability_periods),
+            )
+            for link in course.eligible_rooms
+        ),
     )
 
 
@@ -320,7 +354,8 @@ def _eligibility_reasons(course: Course, semester: Semester, active_window_types
     if not course.cohort.is_active: reasons.append("COHORT_INACTIVE")
     if not course.study_type.is_active: reasons.append("STUDY_TYPE_INACTIVE")
     if course.study_type_id not in active_window_types: reasons.append("MISSING_ACTIVE_TIME_WINDOW")
-    if course.lecturer is None or course.room is None: reasons.append("RESOURCE_RELATIONSHIP_INVALID")
+    if not any(link.lecturer.is_active for link in course.eligible_lecturers): reasons.append("NO_ACTIVE_ELIGIBLE_LECTURER")
+    if not any(link.room.is_active and link.room.capacity >= course.cohort.student_count for link in course.eligible_rooms): reasons.append("NO_USABLE_ELIGIBLE_ROOM")
     return reasons
 
 

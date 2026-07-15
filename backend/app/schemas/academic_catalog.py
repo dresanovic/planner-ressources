@@ -96,7 +96,7 @@ class TimeWindowUpdate(TimeWindowInput):
     expected_revision: int = Field(alias="expectedRevision")
 
 
-class CourseInput(BaseModel):
+class CourseDetailsInput(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     name: str
     total_units: int = Field(alias="totalUnits")
@@ -105,11 +105,15 @@ class CourseInput(BaseModel):
     semester_id: int = Field(alias="semesterId")
     cohort_id: int = Field(alias="cohortId")
     study_type_id: int = Field(alias="studyTypeId")
+
+
+class CourseInput(CourseDetailsInput):
     lecturer_id: int = Field(alias="lecturerId")
     room_id: int = Field(alias="roomId")
 
 
-class CourseUpdate(CourseInput):
+class CourseUpdate(CourseDetailsInput):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
     expected_revision: int = Field(alias="expectedRevision")
 
 
@@ -134,6 +138,25 @@ class CohortResponse(BaseModel):
     is_active: bool = Field(alias="isActive")
     revision: int
     usage: UsageSummaryResponse
+
+
+class RemovedRoomRelationship(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    course_id: int = Field(alias="courseId")
+    room_id: int = Field(alias="roomId")
+    course_revision: int = Field(alias="courseRevision")
+
+
+class CohortCapacityImpact(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    removed_relationships: list[RemovedRoomRelationship] = Field(alias="removedRelationships")
+    courses_without_rooms: list[EntitySummaryResponse] = Field(alias="coursesWithoutRooms")
+
+
+class CohortMutationResult(CohortResponse):
+    model_config = ConfigDict(populate_by_name=True)
+    cohort: CohortResponse
+    capacity_impact: CohortCapacityImpact = Field(alias="capacityImpact")
 
 
 class TimeWindowResponse(BaseModel):
@@ -172,8 +195,8 @@ class CourseResponse(BaseModel):
     semester: EntitySummaryResponse | None
     cohort: EntitySummaryResponse
     study_type: EntitySummaryResponse = Field(alias="studyType")
-    lecturer: EntitySummaryResponse
-    room: EntitySummaryResponse
+    lecturer: EntitySummaryResponse | None
+    room: EntitySummaryResponse | None
     is_active: bool = Field(alias="isActive")
     revision: int
     availability: AvailabilityResponse

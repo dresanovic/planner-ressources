@@ -12,6 +12,7 @@ class FailureCode(StrEnum):
     INVALID_PLANNING_PERIOD = "INVALID_PLANNING_PERIOD"
     INVALID_TEACHING_WINDOW = "INVALID_TEACHING_WINDOW"
     MISSING_TEACHING_WINDOW = "MISSING_TEACHING_WINDOW"
+    NO_FEASIBLE_RESOURCE = "NO_FEASIBLE_RESOURCE"
 
 
 class SessionEditFailureCode(StrEnum):
@@ -19,6 +20,10 @@ class SessionEditFailureCode(StrEnum):
     INVALID_SESSION_TIME_RANGE = "INVALID_SESSION_TIME_RANGE"
     INSUFFICIENT_ROOM_CAPACITY = "INSUFFICIENT_ROOM_CAPACITY"
     DUPLICATE_SESSION_DATE = "DUPLICATE_SESSION_DATE"
+    LECTURER_INELIGIBLE = "LECTURER_INELIGIBLE"
+    ROOM_INELIGIBLE = "ROOM_INELIGIBLE"
+    LECTURER_UNAVAILABLE = "LECTURER_UNAVAILABLE"
+    ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
 
 
 class ValidationAlertCode(StrEnum):
@@ -29,6 +34,10 @@ class ValidationAlertCode(StrEnum):
     GENERATION_CONSTRAINT_VIOLATION = "GENERATION_CONSTRAINT_VIOLATION"
     STUDY_TYPE_WINDOW_VIOLATION = "STUDY_TYPE_WINDOW_VIOLATION"
     VALIDATION_DATA_MISSING = "VALIDATION_DATA_MISSING"
+    LECTURER_UNAVAILABLE = "LECTURER_UNAVAILABLE"
+    ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
+    LECTURER_INELIGIBLE = "LECTURER_INELIGIBLE"
+    ROOM_INELIGIBLE = "ROOM_INELIGIBLE"
 
 
 class UpdateDraftSessionRequest(BaseModel):
@@ -37,6 +46,7 @@ class UpdateDraftSessionRequest(BaseModel):
     date: str
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
+    lecturer_id: int | None = Field(default=None, alias="lecturerId")
     room_id: int = Field(alias="roomId")
 
 
@@ -124,8 +134,12 @@ class DraftSessionResponse(BaseModel):
     units: int
     course_id: int = Field(alias="courseId")
     lecturer_id: int = Field(alias="lecturerId")
+    lecturer_name: str = Field(alias="lecturerName")
+    lecturer_reference_code: str = Field(alias="lecturerReferenceCode")
     cohort_id: int = Field(alias="cohortId")
     room_id: int = Field(alias="roomId")
+    room_name: str = Field(alias="roomName")
+    room_reference_code: str = Field(alias="roomReferenceCode")
     study_type_id: int = Field(alias="studyTypeId")
     time_window_id: int | None = Field(alias="timeWindowId")
     constraint_window_index: int = Field(alias="constraintWindowIndex")
@@ -133,11 +147,17 @@ class DraftSessionResponse(BaseModel):
         default_factory=list,
         alias="validationAlerts",
     )
+    lecturer: "PlanningResourceResponse"
+    room: "PlanningResourceResponse"
 
 
 class PlanningEntityResponse(BaseModel):
     id: int
     name: str
+
+
+class PlanningResourceResponse(PlanningEntityResponse):
+    reference_code: str = Field(alias="referenceCode")
 
 
 class DraftScheduleContextResponse(BaseModel):

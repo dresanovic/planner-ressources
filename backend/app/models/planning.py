@@ -1,7 +1,17 @@
 from datetime import date, datetime, time
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Time, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Time,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -9,9 +19,35 @@ from app.db.base import Base
 
 class Lecturer(Base):
     __tablename__ = "lecturers"
+    __table_args__ = (
+        UniqueConstraint(
+            "normalized_reference_code",
+            name="uq_lecturers_normalized_reference_code",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    reference_code: Mapped[str] = mapped_column(
+        String(100), nullable=False, default=lambda: f"AUTO-{uuid4().hex}"
+    )
+    normalized_reference_code: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default=lambda context: context.get_current_parameters()["reference_code"].strip().casefold(),
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
+
+    eligible_courses: Mapped[list["CourseEligibleLecturer"]] = relationship(
+        back_populates="lecturer",
+        cascade="all, delete-orphan",
+    )
+    unavailability_periods: Mapped[list["ResourceUnavailabilityPeriod"]] = relationship(
+        back_populates="lecturer",
+        cascade="all, delete-orphan",
+    )
 
 
 class Cohort(Base):
@@ -33,10 +69,37 @@ class Cohort(Base):
 
 class Room(Base):
     __tablename__ = "rooms"
+    __table_args__ = (
+        UniqueConstraint(
+            "normalized_reference_code",
+            name="uq_rooms_normalized_reference_code",
+        ),
+        CheckConstraint("capacity > 0", name="ck_rooms_capacity_positive"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
+    reference_code: Mapped[str] = mapped_column(
+        String(100), nullable=False, default=lambda: f"AUTO-{uuid4().hex}"
+    )
+    normalized_reference_code: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        default=lambda context: context.get_current_parameters()["reference_code"].strip().casefold(),
+    )
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
+
+    eligible_courses: Mapped[list["CourseEligibleRoom"]] = relationship(
+        back_populates="room",
+        cascade="all, delete-orphan",
+    )
+    unavailability_periods: Mapped[list["ResourceUnavailabilityPeriod"]] = relationship(
+        back_populates="room",
+        cascade="all, delete-orphan",
+    )
 
 
 class Semester(Base):
@@ -113,21 +176,138 @@ class Course(Base):
     total_units: Mapped[int] = mapped_column(Integer, nullable=False)
     min_session_units: Mapped[int] = mapped_column(Integer, nullable=False)
     max_session_units: Mapped[int] = mapped_column(Integer, nullable=False)
-    lecturer_id: Mapped[int] = mapped_column(ForeignKey("lecturers.id"), nullable=False)
     cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id"), nullable=False)
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False)
     study_type_id: Mapped[int] = mapped_column(ForeignKey("study_types.id"), nullable=False)
     current_semester_id: Mapped[int | None] = mapped_column(
         ForeignKey("semesters.id"), nullable=True
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
 
-    lecturer: Mapped[Lecturer] = relationship()
     cohort: Mapped[Cohort] = relationship()
-    room: Mapped[Room] = relationship()
     study_type: Mapped[StudyType] = relationship()
     current_semester: Mapped[Semester | None] = relationship()
+    eligible_lecturers: Mapped[list["CourseEligibleLecturer"]] = relationship(
+        back_populates="course",
+        cascade="all, delete-orphan",
+        order_by="CourseEligibleLecturer.lecturer_id",
+    )
+    eligible_rooms: Mapped[list["CourseEligibleRoom"]] = relationship(
+        back_populates="course",
+        cascade="all, delete-orphan",
+        order_by="CourseEligibleRoom.room_id",
+    )
+
+    @property
+    def lecturer_id(self) -> int | None:
+        return self.eligible_lecturers[0].lecturer_id if self.eligible_lecturers else None
+
+    @property
+    def room_id(self) -> int | None:
+        return self.eligible_rooms[0].room_id if self.eligible_rooms else None
+
+    @property
+    def lecturer(self) -> Lecturer | None:
+        return self.eligible_lecturers[0].lecturer if self.eligible_lecturers else None
+
+    @property
+    def room(self) -> Room | None:
+        return self.eligible_rooms[0].room if self.eligible_rooms else None
+
+
+class CourseEligibleLecturer(Base):
+    __tablename__ = "course_eligible_lecturers"
+
+    course_id: Mapped[int] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    lecturer_id: Mapped[int] = mapped_column(
+        ForeignKey("lecturers.id"),
+        primary_key=True,
+    )
+
+    course: Mapped[Course] = relationship(back_populates="eligible_lecturers")
+    lecturer: Mapped[Lecturer] = relationship(back_populates="eligible_courses")
+
+
+class CourseEligibleRoom(Base):
+    __tablename__ = "course_eligible_rooms"
+
+    course_id: Mapped[int] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    room_id: Mapped[int] = mapped_column(
+        ForeignKey("rooms.id"),
+        primary_key=True,
+    )
+
+    course: Mapped[Course] = relationship(back_populates="eligible_rooms")
+    room: Mapped[Room] = relationship(back_populates="eligible_courses")
+
+
+class ResourceUnavailabilityPeriod(Base):
+    __tablename__ = "resource_unavailability_periods"
+    __table_args__ = (
+        CheckConstraint(
+            "(lecturer_id IS NOT NULL AND room_id IS NULL) OR "
+            "(lecturer_id IS NULL AND room_id IS NOT NULL)",
+            name="ck_resource_unavailability_exactly_one_owner",
+        ),
+        CheckConstraint(
+            "kind IN ('recurring', 'dated')",
+            name="ck_resource_unavailability_kind",
+        ),
+        CheckConstraint(
+            "(kind = 'recurring' AND start_date IS NULL AND end_date IS NULL AND end_time > start_time) OR "
+            "(kind = 'dated' AND start_date IS NOT NULL AND end_date IS NOT NULL AND "
+            "(end_date > start_date OR (end_date = start_date AND end_time > start_time)))",
+            name="ck_resource_unavailability_shape",
+        ),
+        CheckConstraint("revision > 0", name="ck_resource_unavailability_revision_positive"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    lecturer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lecturers.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    room_id: Mapped[int | None] = mapped_column(
+        ForeignKey("rooms.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    start_time: Mapped[time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(Time, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
+
+    lecturer: Mapped[Lecturer | None] = relationship(back_populates="unavailability_periods")
+    room: Mapped[Room | None] = relationship(back_populates="unavailability_periods")
+    weekdays: Mapped[list["ResourceUnavailabilityWeekday"]] = relationship(
+        back_populates="period",
+        cascade="all, delete-orphan",
+        order_by="ResourceUnavailabilityWeekday.weekday",
+    )
+
+
+class ResourceUnavailabilityWeekday(Base):
+    __tablename__ = "resource_unavailability_weekdays"
+    __table_args__ = (
+        CheckConstraint("weekday >= 0 AND weekday <= 6", name="ck_resource_unavailability_weekday"),
+    )
+
+    period_id: Mapped[int] = mapped_column(
+        ForeignKey("resource_unavailability_periods.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    weekday: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    period: Mapped[ResourceUnavailabilityPeriod] = relationship(back_populates="weekdays")
 
 
 class GenerationConstraintSet(Base):

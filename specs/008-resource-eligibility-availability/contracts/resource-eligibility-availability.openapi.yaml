@@ -733,6 +733,16 @@ components:
           items:
             type: string
             enum: [RESOURCE_INACTIVE, ROOM_CAPACITY_INSUFFICIENT]
+    CourseResourceCandidate:
+      allOf:
+        - $ref: '#/components/schemas/ResourceCandidate'
+        - type: object
+          required: [unavailabilityPeriods, courseSessionUsage]
+          properties:
+            unavailabilityPeriods:
+              type: array
+              items: { $ref: '#/components/schemas/UnavailabilityPeriod' }
+            courseSessionUsage: { $ref: '#/components/schemas/SessionUsage' }
     RelationshipStatus:
       type: object
       required: [course, resourceId, usable, reasons]
@@ -766,10 +776,10 @@ components:
           items: { type: integer, minimum: 1 }
         lecturerCandidates:
           type: array
-          items: { $ref: '#/components/schemas/ResourceCandidate' }
+          items: { $ref: '#/components/schemas/CourseResourceCandidate' }
         roomCandidates:
           type: array
-          items: { $ref: '#/components/schemas/ResourceCandidate' }
+          items: { $ref: '#/components/schemas/CourseResourceCandidate' }
         preferences: { $ref: '#/components/schemas/AssignmentPreferences' }
     CourseResourceEligibilityUpdate:
       type: object
@@ -898,4 +908,3 @@ components:
         courseResources:
           type: array
           items: { $ref: '#/components/schemas/CoursePlanningResourceExtension' }
-

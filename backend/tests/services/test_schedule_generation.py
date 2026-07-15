@@ -4,12 +4,14 @@ from app.schemas.draft_schedule import FailureCode
 from app.services.schedule_generation import (
     CoursePlan,
     PlanningPeriodPlan,
+    ResourceCandidatePlan,
     SemesterPlan,
     TimeWindowPlan,
     distribute_units,
     generate_schedule,
     session_duration_minutes,
 )
+from app.models.planning import ResourceUnavailabilityPeriod, ResourceUnavailabilityWeekday
 
 
 def make_course(**overrides) -> CoursePlan:
@@ -190,3 +192,74 @@ def test_rejects_missing_and_invalid_allowed_windows():
 
     assert [error.code for error in missing.errors] == [FailureCode.MISSING_TEACHING_WINDOW]
     assert [error.code for error in invalid.errors] == [FailureCode.INVALID_TEACHING_WINDOW]
+
+
+def test_generation_assigns_exactly_one_feasible_resource_and_minimizes_switches():
+    monday_block = ResourceUnavailabilityPeriod(
+        lecturer_id=1,
+        kind="recurring",
+        start_time=time(8),
+        end_time=time(12),
+    )
+    monday_block.weekdays = [ResourceUnavailabilityWeekday(weekday=0)]
+    course = make_course(
+        total_units=8,
+        lecturer_candidates=(
+            ResourceCandidatePlan(id=1, normalized_code="lec-a", unavailable_periods=(monday_block,)),
+            ResourceCandidatePlan(id=2, normalized_code="lec-b"),
+        ),
+        room_candidates=(
+            ResourceCandidatePlan(id=1, normalized_code="room-small", capacity=20),
+            ResourceCandidatePlan(id=2, normalized_code="room-main", capacity=40),
+        ),
+    )
+
+    result = generate_schedule(course, make_semester(), make_period(), make_windows())
+
+    assert result.ok
+    assert [session.lecturer_id for session in result.sessions] == [2, 2]
+    assert [session.room_id for session in result.sessions] == [2, 2]
+    assert all(session.lecturer_id is not None and session.room_id is not None for session in result.sessions)
+
+
+def test_generation_reports_resource_infeasibility_when_every_candidate_is_blocked():
+    block = ResourceUnavailabilityPeriod(
+        lecturer_id=1,
+        kind="recurring",
+        start_time=time(8),
+        end_time=time(12),
+    )
+    block.weekdays = [ResourceUnavailabilityWeekday(weekday=0), ResourceUnavailabilityWeekday(weekday=2)]
+    result = generate_schedule(
+        make_course(
+            total_units=4,
+            lecturer_candidates=(ResourceCandidatePlan(id=1, normalized_code="lec-a", unavailable_periods=(block,)),),
+            room_candidates=(ResourceCandidatePlan(id=1, normalized_code="room-a", capacity=40),),
+        ),
+        make_semester(),
+        make_period(start=date(2026, 9, 7), end=date(2026, 9, 9)),
+        make_windows(),
+    )
+
+    assert not result.ok
+    assert [error.code for error in result.errors] == [FailureCode.NO_FEASIBLE_RESOURCE]
+
+
+def test_temporal_placement_skips_a_blocked_window_when_a_later_window_is_resource_feasible():
+    monday_block = ResourceUnavailabilityPeriod(
+        lecturer_id=1, kind="recurring", start_time=time(8), end_time=time(12)
+    )
+    monday_block.weekdays = [ResourceUnavailabilityWeekday(weekday=0)]
+    result = generate_schedule(
+        make_course(
+            total_units=4,
+            lecturer_candidates=(ResourceCandidatePlan(id=1, normalized_code="lec-a", unavailable_periods=(monday_block,)),),
+            room_candidates=(ResourceCandidatePlan(id=1, normalized_code="room-a", capacity=40),),
+        ),
+        make_semester(),
+        make_period(),
+        make_windows(),
+    )
+
+    assert result.ok
+    assert result.sessions[0].date == date(2026, 9, 9)

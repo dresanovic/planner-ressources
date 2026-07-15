@@ -1,24 +1,21 @@
 <!--
 Sync Impact Report
-Version change: template -> 1.0.0
+Version change: 1.0.0 -> 1.1.0
 Modified principles:
-- PRINCIPLE_1_NAME -> I. Spec-Driven Development
-- PRINCIPLE_2_NAME -> II. Test-First Delivery
-- PRINCIPLE_3_NAME -> III. Clear Acceptance Criteria
-- PRINCIPLE_4_NAME -> IV. Simple, Fit-for-Purpose Implementation
-- PRINCIPLE_5_NAME -> V. Verified Delivery Workflow
+- IV. Simple, Fit-for-Purpose Implementation -> IV. Simplicity and KISS
 Added sections:
-- Technology Standards
-- Development Workflow
+- None
 Removed sections:
 - None
 Templates requiring updates:
-- .specify/templates/plan-template.md: updated
-- .specify/templates/spec-template.md: updated
-- .specify/templates/tasks-template.md: updated
-- .specify/templates/commands/*.md: not present
+- ✅ .specify/templates/plan-template.md: updated
+- ✅ .specify/templates/spec-template.md: reviewed; no change required
+- ✅ .specify/templates/tasks-template.md: updated
+- ✅ .specify/templates/commands/*.md: not present
+- ✅ docs/process/Spec_Driven_Development_Process.md: updated
 Follow-up TODOs:
-- None
+- Existing `specs/*/plan.md` files predate v1.1.0; before implementation under
+  this amendment, the applicable plan MUST add and complete the Simplicity Check.
 -->
 # Resource Planner Constitution
 
@@ -52,13 +49,31 @@ decide whether the feature is complete. Ambiguity MUST be resolved during
 clarification before planning or implementation proceeds. Rationale: acceptance
 criteria define when work is done and prevent hidden scope changes.
 
-### IV. Simple, Fit-for-Purpose Implementation
+### IV. Simplicity and KISS
 
-Implementations MUST use the simplest design that satisfies the approved spec
-and tests. New dependencies, frameworks, background services, abstractions, or
-infrastructure MUST be justified in the implementation plan with the problem
-they solve and the simpler alternative rejected. Rationale: this project remains
-maintainable when complexity is limited to current feature needs.
+The implementation MUST use the simplest design that satisfies the current
+approved requirements and tests.
+
+- Abstractions, interfaces, factories, services, repositories, adapters,
+  configuration layers, and design patterns MUST NOT be introduced unless they
+  solve an existing requirement or a clearly demonstrated problem.
+- Implementations MUST NOT be designed for hypothetical future requirements.
+- Direct, readable code MUST be preferred over flexible but complex
+  architecture.
+- Existing project structures and dependencies MUST be preferred over new ones.
+- Shared abstractions MUST be extracted only after genuine duplication or
+  multiple concrete use cases exist.
+- Every new architectural layer, dependency, or design pattern MUST be justified
+  in the implementation plan.
+- When two solutions satisfy the requirements equally well, the solution with
+  fewer components, fewer dependencies, and less indirection MUST be chosen.
+- Implementation MUST remain limited to the current task or vertical slice and
+  MUST NOT add unrelated capabilities.
+- Complexity MUST be earned by demonstrated necessity, not anticipated
+  possibility.
+
+Rationale: direct solutions reduce maintenance cost and keep the codebase aligned
+with demonstrated needs rather than speculative flexibility.
 
 ### V. Verified Delivery Workflow
 
@@ -90,11 +105,14 @@ Feature work MUST follow this order:
 1. Create or update the feature spec.
 2. Clarify open questions until acceptance criteria are testable.
 3. Create or update the implementation plan and constitution check.
-4. Create or update tasks, with test tasks before implementation tasks.
-5. Write or update tests and confirm they fail for the intended behavior when
+4. Complete the plan's Simplicity Check by stating the simplest viable solution,
+   the abstractions necessary now, and the possible abstractions or extensions
+   deliberately excluded.
+5. Create or update tasks, with test tasks before implementation tasks.
+6. Write or update tests and confirm they fail for the intended behavior when
    practical.
-6. Implement the smallest production change that satisfies the spec.
-7. Run the relevant automated tests before committing.
+7. Implement the smallest production change that satisfies the spec.
+8. Run the relevant automated tests before committing.
 
 Plans and task lists MUST explicitly identify backend, frontend, and shared
 contract impacts. Reviewers MUST reject implementation work that lacks an
@@ -117,4 +135,4 @@ Compliance MUST be reviewed during planning, task generation, implementation
 review, and before commit. Any approved exception MUST be documented in the
 feature plan with rationale, scope, and verification impact.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-03
+**Version**: 1.1.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-15

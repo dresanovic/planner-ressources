@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models.planning import Cohort, Course, Lecturer, Room, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Semester, StudyType, StudyTypeTimeWindow
 
 
 def _client_with_100_of_each():
@@ -27,7 +27,7 @@ def _client_with_100_of_each():
     for index in range(1, 101):
         db.add_all([
             StudyTypeTimeWindow(id=index, study_type_id=index, weekday=index % 7, start_time=time(8), end_time=time(12), sort_order=0),
-            Course(id=index, name=f"Course {index:03}", normalized_name=f"course {index:03}", normalized_name_key=f"course {index:03}", total_units=8, min_session_units=2, max_session_units=4, lecturer_id=1, cohort_id=index, room_id=1, study_type_id=index, current_semester_id=index),
+            Course(id=index, name=f"Course {index:03}", normalized_name=f"course {index:03}", normalized_name_key=f"course {index:03}", total_units=8, min_session_units=2, max_session_units=4, cohort_id=index, study_type_id=index, current_semester_id=index, eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)], eligible_rooms=[CourseEligibleRoom(room_id=1)]),
         ])
     db.commit()
     app.dependency_overrides[get_db] = lambda: (yield db)
@@ -60,7 +60,7 @@ def test_reference_100_record_catalog_timings():
             started = perf_counter()
             updated = client.patch(f"/api/academic/courses/{record_id}", json={
                 "name": f"Course {record_id:03} refreshed", "totalUnits": current["totalUnits"], "minSessionUnits": current["minSessionUnits"], "maxSessionUnits": current["maxSessionUnits"],
-                "semesterId": current["semester"]["id"], "cohortId": current["cohort"]["id"], "studyTypeId": current["studyType"]["id"], "lecturerId": current["lecturer"]["id"], "roomId": current["room"]["id"], "expectedRevision": current["revision"],
+                "semesterId": current["semester"]["id"], "cohortId": current["cohort"]["id"], "studyTypeId": current["studyType"]["id"], "expectedRevision": current["revision"],
             })
             options = client.get(f"/api/planning-options?semesterId={record_id}")
             duration = perf_counter() - started

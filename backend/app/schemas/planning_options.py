@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.academic_catalog import AvailabilityResponse
 from app.schemas.draft_schedule import PlanningEntityResponse
+from app.schemas.resource_catalog import AssignmentPreferences, LecturerRecord, ResourceCandidate, RoomRecord
 
 
 class CourseOptionResponse(BaseModel):
@@ -16,9 +17,9 @@ class CourseOptionResponse(BaseModel):
     max_session_units: int = Field(alias="maxSessionUnits")
     semester_id: int = Field(alias="semesterId")
     availability: AvailabilityResponse
-    lecturer: PlanningEntityResponse
+    lecturer: PlanningEntityResponse | None
     cohort: PlanningEntityResponse
-    room: PlanningEntityResponse
+    room: PlanningEntityResponse | None
     study_type: PlanningEntityResponse = Field(alias="studyType")
 
 
@@ -54,5 +55,14 @@ class PlanningOptionsResponse(BaseModel):
     courses: list[CourseOptionResponse]
     semesters: list[SemesterOptionResponse]
     time_windows: list[TimeWindowOptionResponse] = Field(alias="timeWindows")
-    rooms: list[RoomOptionResponse]
-    lecturers: list[PlanningEntityResponse]
+    rooms: list[RoomRecord]
+    lecturers: list[LecturerRecord]
+    course_resources: list["CoursePlanningResourceExtension"] = Field(alias="courseResources")
+
+
+class CoursePlanningResourceExtension(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    course_id: int = Field(alias="courseId")
+    eligible_lecturers: list[ResourceCandidate] = Field(alias="eligibleLecturers")
+    eligible_rooms: list[ResourceCandidate] = Field(alias="eligibleRooms")
+    preferences: AssignmentPreferences

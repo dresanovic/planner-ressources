@@ -188,6 +188,8 @@ Returned for Course eligibility administration; not stored as a separate record.
 | `eligible_rooms` | Current relationships with capacity/usability state |
 | `lecturer_candidates` | Active and preserved Lecturer choices visible to the planner |
 | `room_candidates` | Active and preserved Room choices with capacity and reasons |
+| `unavailability_periods` | Current unavailable periods for each candidate |
+| `course_session_usage` | Saved Draft Session and Draft Schedule counts for each candidate within this Course |
 | `preferences` | Fixed `minimizeLecturerChanges=true`, `minimizeRoomChanges=true` |
 
 Replacement validates both submitted ID sets and either commits all changes plus one Course revision increment or commits none.
@@ -258,4 +260,3 @@ Upgrade from the recognized FS-007 schema:
 7. Verify current schema shape and foreign-key integrity.
 
 Clean databases are created directly at the current model shape. Existing databases migrate before current metadata creation so migration-owned tables are not pre-created accidentally.
-

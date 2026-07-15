@@ -16,6 +16,11 @@ verification task and cite the exception.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
+**Simplicity**: Generate tasks only for the current approved slice. Do not add
+layers, abstractions, dependencies, patterns, or extensibility work excluded by
+the plan's Simplicity Check. A task for any new architectural element MUST cite
+the demonstrated current need and its justification in plan.md.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
@@ -64,14 +69,14 @@ verification task and cite the exception.
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-Examples of foundational tasks (adjust based on your project):
+Examples of foundational tasks (include only when required by the current slice):
 
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
+- [ ] T004 Add the database change required by [current requirement]
+- [ ] T005 [P] Add authentication/authorization behavior required by [current requirement]
+- [ ] T006 [P] Add the API route required by [current requirement]
 - [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
+- [ ] T008 Add error handling or logging required by [current requirement]
+- [ ] T009 Add configuration required by [current requirement]
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -94,8 +99,8 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
 - [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
-- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T014 [US1] Implement [required behavior] in existing src/[location]/[file].py (depends on T012, T013)
+- [ ] T015 [US1] Expose [endpoint/feature] in src/[location]/[file].py
 - [ ] T016 [US1] Add validation and error handling
 - [ ] T017 [US1] Add logging for user story 1 operations
 
@@ -117,7 +122,7 @@ Examples of foundational tasks (adjust based on your project):
 ### Implementation for User Story 2
 
 - [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [Service] in src/services/[service].py
+- [ ] T021 [US2] Implement [required behavior] in existing src/[location]/[file].py
 - [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T023 [US2] Integrate with User Story 1 components (if needed)
 
@@ -139,7 +144,7 @@ Examples of foundational tasks (adjust based on your project):
 ### Implementation for User Story 3
 
 - [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [Service] in src/services/[service].py
+- [ ] T027 [US3] Implement [required behavior] in existing src/[location]/[file].py
 - [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
 
 **Checkpoint**: All user stories should now be independently functional
@@ -184,8 +189,8 @@ Examples of foundational tasks (adjust based on your project):
 ### Within Each User Story
 
 - Tests MUST be written before implementation where automated testing is practical
-- Models before services
-- Services before endpoints
+- Required data changes before behavior that uses them
+- Core behavior before endpoints or UI that expose it
 - Core implementation before integration
 - Story complete before moving to next priority
 
@@ -257,3 +262,4 @@ With multiple developers:
 - Solo work on `main`/`master` is acceptable only when the working tree is clean before changes and verification passes before commit
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
+- Avoid: speculative abstractions, future-proofing tasks, and unrelated capabilities

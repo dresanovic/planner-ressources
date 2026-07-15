@@ -7,16 +7,17 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.planning import (
     Cohort,
     Course,
+    CourseEligibleLecturer,
+    CourseEligibleRoom,
     DraftSchedule,
     DraftSession,
     GenerationConstraintSet,
     GenerationConstraintWindow,
-    Lecturer,
-    Room,
     Semester,
     StudyType,
     StudyTypeTimeWindow,
 )
+from app.services.resource_catalog import validate_course_resource_candidates
 
 
 @dataclass(frozen=True)
@@ -215,17 +216,25 @@ def create_course(db: Session, *, name: str, total_units: int, min_session_units
         (Semester, semester_id, "semesterId", "Semester"),
         (Cohort, cohort_id, "cohortId", "Cohort"),
         (StudyType, study_type_id, "studyTypeId", "Study Type"),
-        (Lecturer, lecturer_id, "lecturerId", "Lecturer"),
-        (Room, room_id, "roomId", "Room"),
     )
     errors.extend(CatalogErrorItem("REQUIRED_RELATIONSHIP_INVALID", f"{label} does not exist.", field) for model, record_id, field, label in relationships if db.get(model, record_id) is None)
+    cohort = db.get(Cohort, cohort_id)
+    resource_errors = validate_course_resource_candidates(
+        db,
+        cohort_size=cohort.student_count if cohort is not None else 0,
+        lecturer_ids=[lecturer_id],
+        room_ids=[room_id],
+    )
+    resource_fields = {"lecturerIds": "lecturerId", "roomIds": "roomId"}
+    errors.extend(CatalogErrorItem(item.code, item.message, resource_fields.get(item.field, item.field), item.meta) for item in resource_errors)
     if errors:
         raise AcademicCatalogError(name_status if len(errors) == 1 else 422, errors)
     row = Course(
         name=display, normalized_name=canonical, normalized_name_key=canonical,
         total_units=total_units, min_session_units=min_session_units, max_session_units=max_session_units,
         current_semester_id=semester_id, cohort_id=cohort_id, study_type_id=study_type_id,
-        lecturer_id=lecturer_id, room_id=room_id,
+        eligible_lecturers=[CourseEligibleLecturer(lecturer_id=lecturer_id)],
+        eligible_rooms=[CourseEligibleRoom(room_id=room_id)],
     )
     db.add(row)
     db.flush()
@@ -254,20 +263,34 @@ def list_records(db: Session, model, *, page: int = 1, page_size: int = 50, stat
     return list(db.execute(statement).scalars().all()), db.execute(count_statement).scalar_one()
 
 
-def availability_for_course(db: Session, course: Course) -> list[str]:
-    has_window = db.execute(select(StudyTypeTimeWindow.id).where(
-        StudyTypeTimeWindow.study_type_id == course.study_type_id,
-        StudyTypeTimeWindow.is_active.is_(True),
-    ).limit(1)).first() is not None
-    return course_availability_reasons(
+def availability_for_course(
+    db: Session,
+    course: Course,
+    *,
+    active_window_study_type_ids: set[int] | None = None,
+) -> list[str]:
+    has_window = (
+        course.study_type_id in active_window_study_type_ids
+        if active_window_study_type_ids is not None
+        else db.execute(select(StudyTypeTimeWindow.id).where(
+            StudyTypeTimeWindow.study_type_id == course.study_type_id,
+            StudyTypeTimeWindow.is_active.is_(True),
+        ).limit(1)).first() is not None
+    )
+    reasons = course_availability_reasons(
         course_active=course.is_active,
         semester_assigned=course.current_semester is not None,
         semester_active=bool(course.current_semester and course.current_semester.is_active),
         cohort_active=course.cohort.is_active,
         study_type_active=course.study_type.is_active,
         has_active_window=has_window,
-        resources_valid=course.lecturer is not None and course.room is not None,
+        resources_valid=True,
     )
+    if not any(link.lecturer.is_active for link in course.eligible_lecturers):
+        reasons.append("NO_ACTIVE_ELIGIBLE_LECTURER")
+    if not any(link.room.is_active and link.room.capacity >= course.cohort.student_count for link in course.eligible_rooms):
+        reasons.append("NO_USABLE_ELIGIBLE_ROOM")
+    return reasons
 
 
 def planning_eligibility_reasons(db: Session, course: Course, semester_id: int) -> list[str]:
@@ -370,6 +393,32 @@ def update_cohort(db: Session, row: Cohort, *, name: str, student_count: int, ex
     db.flush(); return row
 
 
+def update_cohort_with_capacity_impact(db: Session, row: Cohort, *, name: str, student_count: int, expected_revision: int) -> tuple[Cohort, dict]:
+    previous_count = row.student_count
+    updated = update_cohort(db, row, name=name, student_count=student_count, expected_revision=expected_revision)
+    removed: list[dict] = []
+    courses_without_rooms: list[dict] = []
+    if student_count > previous_count:
+        courses = db.execute(
+            select(Course)
+            .where(Course.cohort_id == row.id)
+            .options(selectinload(Course.eligible_rooms).selectinload(CourseEligibleRoom.room))
+            .order_by(Course.id)
+        ).scalars().all()
+        for course in courses:
+            insufficient = [link for link in course.eligible_rooms if link.room.capacity < student_count]
+            if not insufficient:
+                continue
+            for link in insufficient:
+                removed.append({"courseId": course.id, "roomId": link.room_id, "courseRevision": course.revision + 1})
+                course.eligible_rooms.remove(link)
+            course.revision += 1
+            if not course.eligible_rooms:
+                courses_without_rooms.append({"id": course.id, "name": course.name})
+        db.flush()
+    return updated, {"removedRelationships": removed, "coursesWithoutRooms": courses_without_rooms}
+
+
 def update_study_type(db: Session, row: StudyType, *, name: str, expected_revision: int) -> StudyType:
     require_revision(row, expected_revision)
     display, canonical = validate_and_prepare_name(db, StudyType, name, exclude_id=row.id)
@@ -399,7 +448,7 @@ def update_time_window(db: Session, row: StudyTypeTimeWindow, *, weekday: int, s
     row.revision += 1; db.flush(); return row
 
 
-def update_course(db: Session, row: Course, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, lecturer_id: int, room_id: int, expected_revision: int) -> Course:
+def update_course(db: Session, row: Course, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, expected_revision: int) -> Course:
     require_revision(row, expected_revision)
     errors: list[CatalogErrorItem] = []
     name_status = 422
@@ -413,13 +462,13 @@ def update_course(db: Session, row: Course, *, name: str, total_units: int, min_
         display, canonical = "", ""
         name_status = exc.status_code
         errors.extend(exc.errors)
-    relationships = ((Semester, semester_id, "semesterId", "Semester"), (Cohort, cohort_id, "cohortId", "Cohort"), (StudyType, study_type_id, "studyTypeId", "Study Type"), (Lecturer, lecturer_id, "lecturerId", "Lecturer"), (Room, room_id, "roomId", "Room"))
+    relationships = ((Semester, semester_id, "semesterId", "Semester"), (Cohort, cohort_id, "cohortId", "Cohort"), (StudyType, study_type_id, "studyTypeId", "Study Type"))
     errors.extend(CatalogErrorItem("REQUIRED_RELATIONSHIP_INVALID", f"{label} does not exist.", field) for model, record_id, field, label in relationships if db.get(model, record_id) is None)
     if errors: raise AcademicCatalogError(name_status if len(errors) == 1 else 422, errors)
     row.name, row.normalized_name, row.normalized_name_key = display, canonical, canonical
     row.name_repair_required = False
     row.total_units, row.min_session_units, row.max_session_units = total_units, min_session_units, max_session_units
-    row.current_semester_id, row.cohort_id, row.study_type_id, row.lecturer_id, row.room_id = semester_id, cohort_id, study_type_id, lecturer_id, room_id
+    row.current_semester_id, row.cohort_id, row.study_type_id = semester_id, cohort_id, study_type_id
     row.revision += 1; db.flush(); return row
 
 

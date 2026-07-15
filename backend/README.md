@@ -2,6 +2,16 @@
 
 FastAPI backend for the resource planner.
 
+## Resource Eligibility and Availability (FS-008)
+
+Planner-maintained Lecturers and Rooms have stable reference codes, active/inactive lifecycle state, optimistic revisions, and protected deletion. Resource endpoints under `/api/resources` provide catalog CRUD, usage-aware removal/reactivation, and nested recurring or dated unavailability CRUD. Course eligibility is maintained atomically through `GET` and `PUT /api/academic/courses/{courseId}/resource-eligibility`.
+
+Each active Course can have multiple eligible Lecturers and Rooms. Room capacity is a hard generation/edit rule. Cohort growth removes newly insufficient Room relationships and reports affected Courses without changing saved Draft Sessions; shrinking a Room preserves the relationship so current validation can show the impact. Existing assignments also remain unchanged when eligibility, availability, or lifecycle changes.
+
+Single- and multi-Course generation load active eligible resources, reject unavailable or undersized candidates, assign exactly one Lecturer and Room per session, and deterministically minimize Lecturer and Room transitions within each Course. Reference code then resource ID resolves equal choices. The batch workflow continues to generate Courses independently: FS-008 does not perform cross-Course conflict optimization, ranking, quotas, holidays, exams, authentication, or external synchronization.
+
+Draft Session responses include coded per-session Lecturer/Room identities and separate eligibility, availability, and capacity alerts. `PATCH /api/draft-sessions/{sessionId}` accepts `lecturerId` and `roomId`; a changed assignment must currently be valid, while an unchanged legacy-invalid assignment can be retained and remains visible through validation.
+
 ## Setup
 
 Install dependencies from `backend/requirements.txt`.
@@ -34,7 +44,7 @@ The draft schedule API supports explicit generation for one course:
 
 The planning options endpoint returns the database-backed courses, semesters, and study type time windows that the UI can select from. The generation-constraints endpoint returns the active course-semester constraints: semester dates and study type time windows by default, or the last successfully generated custom planning period and weekly windows.
 
-Generation requires existing planning data for one course, lecturer, room, Cohort, semester, study type, and at least one allowed teaching window. The request body includes `semesterId`, `planningPeriod`, and `allowedTeachingWindows`; each window includes `weekday`, `startTime`, `endTime`, and optional `sourceTimeWindowId`. Invalid requests return a `422` response with all detected generation errors in an `errors` array. Successful generation replaces the previous generated draft for that course and saves the submitted constraint set for the course-semester pair. Failed generation leaves the previous draft and saved constraints unchanged.
+Generation requires existing planning data for one Course, at least one active eligible Lecturer and capacity-sufficient Room, a Cohort, Semester, Study Type, and at least one allowed teaching window. The request body includes `semesterId`, `planningPeriod`, and `allowedTeachingWindows`; each window includes `weekday`, `startTime`, `endTime`, and optional `sourceTimeWindowId`. Invalid requests return a `422` response with all detected generation errors in an `errors` array. Successful generation replaces the previous generated draft for that Course and saves the submitted constraint set for the Course-Semester pair. Failed generation leaves the previous draft and saved constraints unchanged.
 
 The single-course draft schedule response includes review context for the selected course:
 
@@ -44,7 +54,7 @@ The single-course draft schedule response includes review context for the select
 
 The semester-scoped draft schedule endpoint returns all generated schedules for the selected semester so the planner UI can power the Courses overview filters.
 
-Manual Draft Session editing is available through `PATCH /api/draft-sessions/{session_id}`. The request body accepts `date`, `startTime`, `endTime`, and `roomId`; a successful edit returns the refreshed parent Draft Schedule so the Courses overview can replace its saved schedule data. The endpoint rejects out-of-semester dates, end times that are not after start times, duplicate session dates within the same Draft Schedule, missing rooms, and rooms whose capacity is below the session Cohort size. Room occupancy conflicts are reported as non-blocking validation alerts after save; public holidays, exams, dashboard alerts, and source planning-record edits remain deferred to later slices.
+Manual Draft Session editing is available through `PATCH /api/draft-sessions/{session_id}`. The request body accepts `date`, `startTime`, `endTime`, `lecturerId`, and `roomId`; a successful edit returns the refreshed parent Draft Schedule so the Courses overview can replace its saved schedule data. The endpoint rejects out-of-semester dates, invalid ranges, duplicate dates, and changed resource assignments that are inactive, ineligible, unavailable, or capacity-insufficient. Resource occupancy conflicts are reported as non-blocking validation alerts after save.
 
 Conflict detection adds non-blocking validation alerts to generated Draft Sessions returned by generation, single-course reads, semester overview reads, and manual edit responses. Alerts are derived at read time from the selected-semester schedule set and planning data. They currently cover lecturer, room, and Cohort overlaps; room capacity violations; sessions outside the currently active course-semester generation constraints; sessions outside Study Type Time Windows when no custom active generation constraints exist; and missing validation reference data. Alerts never block generation or otherwise valid manual edits.
 
@@ -68,7 +78,7 @@ Migration `0003_academic_catalog_administration` adds lifecycle state, optimisti
 
 Planner users can maintain Semesters, Cohorts, Courses, Study Types, and nested Study Type Time Windows through `/api/academic`. Each named collection supports paginated list, create, detail, revisioned patch, usage, archive/reactivate, and protected permanent deletion. Time Window item operations use `/api/academic/time-windows/{recordId}`. Validation and conflict responses use an `errors` array with stable codes, field names, and metadata.
 
-Usage is rechecked atomically before deletion. Course and required dependent references, generation constraints, and immutable saved-schedule references prevent destructive deletion. Archive/reactivate never cascades to dependent records. Lecturer and Room records remain read-only planning options in this slice; they are selectable when creating or editing a Course but are not administered by these endpoints.
+Usage is rechecked atomically before deletion. Course and required dependent references, generation constraints, and immutable saved-schedule references prevent destructive deletion. Archive/reactivate never cascades to dependent records. Lecturer and Room records are administered separately under `/api/resources`; Course creation establishes their initial eligibility and later eligibility changes use the Course resource endpoint.
 
 Planning options accept an optional `semesterId`, return active academic chains, include Lecturer/Room options, and retain an otherwise eligible Course without an active Study Type Time Window as unavailable with `MISSING_ACTIVE_TIME_WINDOW`. Generation additionally verifies the Course's current Semester assignment and academic lifecycle state.
 

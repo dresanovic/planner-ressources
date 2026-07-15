@@ -107,8 +107,9 @@ Typical principles include:
 - specifications must be updated before implementation;
 - acceptance criteria must be defined;
 - tests should be written before production code;
-- dependencies should be kept minimal;
-- implementation should remain as simple as reasonably possible;
+- the simplest design satisfying current approved requirements and tests must be used;
+- abstractions, layers, dependencies, and patterns must solve demonstrated current needs;
+- hypothetical future requirements and unrelated capabilities must not shape the implementation;
 - all changes must be verified before they are committed;
 - unrelated changes must not be introduced into a slice.
 
@@ -475,6 +476,12 @@ The plan must remain aligned with:
 - the established architecture;
 - the existing codebase;
 - the confirmed specification.
+
+Before implementation, the plan must include a short Simplicity Check stating:
+
+1. the simplest viable solution;
+2. which abstractions are necessary now;
+3. which possible abstractions or extensions were deliberately excluded.
 
 A plan must not silently expand the scope of the slice.
 

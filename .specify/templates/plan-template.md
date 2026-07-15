@@ -43,10 +43,26 @@
 - **Spec-first**: Feature spec exists/updated, with scope, requirements, and acceptance criteria before production implementation.
 - **Acceptance criteria**: User stories are independently testable and acceptance scenarios use Given/When/Then.
 - **Test-first**: Plan identifies tests to create/update before production code, or documents a justified exception with manual verification.
-- **Simplicity**: New dependencies, services, abstractions, or infrastructure are justified with simpler alternatives considered.
+- **Simplicity and KISS**: The design is limited to current approved
+  requirements; any new layer, dependency, pattern, or abstraction solves a
+  demonstrated present need and is justified below.
 - **Technology fit**: Backend work uses FastAPI; frontend work uses React with Vite; cross-stack contracts are documented.
 - **Delivery workflow**: Work is on a feature branch for larger/risky/customer-facing changes, or on `main`/`master` only for clean verified solo changes.
 - **Verification before commit**: Relevant test commands and expected verification evidence are listed.
+
+## Simplicity Check *(mandatory before implementation)*
+
+1. **Simplest viable solution**: [Describe the direct solution with the fewest
+   components, dependencies, and indirection that satisfies the approved
+   requirements and tests.]
+2. **Necessary abstractions**: [List only abstractions required by a demonstrated
+   present need, or state "None".]
+3. **Deliberately excluded**: [List possible abstractions, layers, patterns,
+   dependencies, or extensions excluded because they are hypothetical,
+   unrelated, or not yet justified.]
+
+Implementation MUST NOT begin until all three answers are complete and consistent
+with the selected vertical slice.
 
 ## Project Structure
 
@@ -104,10 +120,10 @@ directories captured above]
 
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., new dependency] | [current need] | [why existing code or standard library is insufficient] |
-| [e.g., new abstraction] | [specific problem] | [why direct implementation is insufficient] |
+| New layer, dependency, pattern, or abstraction | Demonstrated current need | Simpler alternative rejected because |
+|------------------------------------------------|---------------------------|--------------------------------------|
+| [e.g., new dependency] | [current requirement or observed problem] | [why existing code is insufficient] |
+| [e.g., new abstraction] | [duplication or multiple concrete uses] | [why direct code is insufficient] |
 
 ## Verification Plan
 

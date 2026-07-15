@@ -8,7 +8,7 @@ type EditorOptions = { semesters?: Option[]; cohorts?: Option[]; studyTypes?: Op
 
 const defaults = { name: '', startDate: '', endDate: '', studentCount: '', totalUnits: '', minSessionUnits: '', maxSessionUnits: '', semesterId: '', cohortId: '', studyTypeId: '', lecturerId: '', roomId: '', weekday: '0', startTime: '', endTime: '' }
 
-export function AcademicRecordEditor({ category, options = {}, initialValues = {}, submitLabel = 'Save', onSubmit }: { category: AcademicCategory; options?: EditorOptions; initialValues?: Record<string, string | number>; submitLabel?: string; onSubmit: (value: Record<string, string | number>) => Promise<unknown> }) {
+export function AcademicRecordEditor({ category, options = {}, initialValues = {}, submitLabel = 'Save', includeCourseResources = true, onSubmit }: { category: AcademicCategory; options?: EditorOptions; initialValues?: Record<string, string | number>; submitLabel?: string; includeCourseResources?: boolean; onSubmit: (value: Record<string, string | number>) => Promise<unknown> }) {
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...defaults, ...Object.fromEntries(Object.entries(initialValues).map(([key, value]) => [key, String(value)])) }))
   const [errors, setErrors] = useState<string[]>([])
   const set = (name: string, value: string) => setValues((current) => ({ ...current, [name]: value }))
@@ -29,13 +29,13 @@ export function AcademicRecordEditor({ category, options = {}, initialValues = {
         : [reason instanceof Error ? reason.message : 'Could not save this record.'])
     }
   }
-  const missingLecturers = category === 'courses' && (options.lecturers?.length ?? 0) === 0
-  const missingRooms = category === 'courses' && (options.rooms?.length ?? 0) === 0
+  const missingLecturers = category === 'courses' && includeCourseResources && (options.lecturers?.length ?? 0) === 0
+  const missingRooms = category === 'courses' && includeCourseResources && (options.rooms?.length ?? 0) === 0
   return <form className="catalog-editor" onSubmit={submit}>
     {category !== 'time-windows' && input('name', 'Name')}
     {category === 'semesters' && <>{input('startDate', 'Start date', 'date')}{input('endDate', 'End date', 'date')}</>}
     {category === 'cohorts' && input('studentCount', 'Student count', 'number')}
-    {category === 'courses' && <>{input('totalUnits', 'Total units', 'number')}{input('minSessionUnits', 'Minimum session units', 'number')}{input('maxSessionUnits', 'Maximum session units', 'number')}{select('semesterId', 'Semester', options.semesters ?? [])}{select('cohortId', 'Cohort', options.cohorts ?? [])}{select('studyTypeId', 'Study type', options.studyTypes ?? [])}{select('lecturerId', 'Lecturer', options.lecturers ?? [])}{select('roomId', 'Room', options.rooms ?? [])}</>}
+    {category === 'courses' && <>{input('totalUnits', 'Total units', 'number')}{input('minSessionUnits', 'Minimum session units', 'number')}{input('maxSessionUnits', 'Maximum session units', 'number')}{select('semesterId', 'Semester', options.semesters ?? [])}{select('cohortId', 'Cohort', options.cohorts ?? [])}{select('studyTypeId', 'Study type', options.studyTypes ?? [])}{includeCourseResources && <>{select('lecturerId', 'Lecturer', options.lecturers ?? [])}{select('roomId', 'Room', options.rooms ?? [])}</>}</>}
     {category === 'time-windows' && <>{select('studyTypeId', 'Study type', options.studyTypes ?? [])}<label className="catalog-field">Day of week<select name="weekday" value={values.weekday} onChange={(event) => set('weekday', event.target.value)} required>{WEEKDAY_NAMES.map((name, weekday) => <option key={name} value={weekday}>{name}</option>)}</select></label>{input('startTime', 'Start time', 'time')}{input('endTime', 'End time', 'time')}</>}
     {missingLecturers && <p role="alert" className="inline-error">No Lecturer records are available. Add the required read-only planning resource before creating a Course.</p>}
     {missingRooms && <p role="alert" className="inline-error">No Room records are available. Add the required read-only planning resource before creating a Course.</p>}

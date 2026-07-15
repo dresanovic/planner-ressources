@@ -7,7 +7,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
-from app.models.planning import DraftSchedule, GenerationConstraintSet
+from app.models.planning import (
+    CourseEligibleLecturer,
+    DraftSchedule,
+    GenerationConstraintSet,
+    Lecturer,
+    ResourceUnavailabilityPeriod,
+    ResourceUnavailabilityWeekday,
+)
 from app.schemas.multi_course_generation import BatchOperationKind, PreparedCourseInput
 from app.services.draft_schedule_repository import (
     get_draft_schedule,
@@ -146,3 +153,35 @@ def test_changed_saved_constraints_are_reported_as_stale_without_replacing_draft
     result = generate_batch(db, 1, BatchOperationKind.RETRY, prepared(1))
     assert result.outcomes[0].errors[0].code == "STALE_GENERATION_CONSTRAINTS"
     assert get_draft_schedule(db, 1, 1) is None
+
+
+def test_batch_generation_assigns_resources_within_each_course_independently():
+    db, _ = make_session()
+    seed_multi_course_planner(db, course_count=2)
+    alternate = Lecturer(
+        id=20,
+        name="Course 1 Alternate",
+        reference_code="LEC-020",
+        normalized_reference_code="lec-020",
+    )
+    blocked = ResourceUnavailabilityPeriod(
+        lecturer_id=1,
+        kind="recurring",
+        start_time=time(8),
+        end_time=time(12),
+    )
+    blocked.weekdays = [
+        ResourceUnavailabilityWeekday(weekday=0),
+        ResourceUnavailabilityWeekday(weekday=2),
+    ]
+    db.add_all([alternate, CourseEligibleLecturer(course_id=1, lecturer_id=20), blocked])
+    db.commit()
+
+    result = generate_batch(db, 1, BatchOperationKind.INITIAL, prepared(1, 2))
+    db.commit()
+
+    assert result.summary.succeeded == 2
+    course_one = get_draft_schedule(db, 1, 1)
+    course_two = get_draft_schedule(db, 2, 1)
+    assert {session.lecturer_id for session in course_one.sessions} == {20}
+    assert {session.lecturer_id for session in course_two.sessions} == {2}

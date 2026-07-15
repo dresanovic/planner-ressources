@@ -7,6 +7,10 @@ const mocks = vi.hoisted(() => ({
   createSemester: vi.fn(), createCohort: vi.fn(), createCourse: vi.fn(), createStudyType: vi.fn(), createTimeWindow: vi.fn(),
   updateSemester: vi.fn(), updateCohort: vi.fn(), updateCourse: vi.fn(), updateStudyType: vi.fn(), updateTimeWindow: vi.fn(),
   deleteAcademicRecord: vi.fn(), setAcademicLifecycle: vi.fn(), getPlanningOptions: vi.fn(),
+  listLecturers: vi.fn(), listRooms: vi.fn(), createLecturer: vi.fn(), createRoom: vi.fn(),
+  updateLecturer: vi.fn(), updateRoom: vi.fn(), getResourceUsage: vi.fn(), removeResource: vi.fn(), reactivateResource: vi.fn(),
+  listUnavailability: vi.fn(),
+  getCourseResourceConfiguration: vi.fn(), updateCourseResourceEligibility: vi.fn(),
 }))
 
 vi.mock('../api/academicCatalog', async () => ({
@@ -14,6 +18,17 @@ vi.mock('../api/academicCatalog', async () => ({
   ...Object.fromEntries(Object.entries(mocks).filter(([name]) => name !== 'getPlanningOptions')),
 }))
 vi.mock('../api/planningOptions', () => ({ getPlanningOptions: mocks.getPlanningOptions }))
+vi.mock('../api/resourceCatalog', async () => ({
+  ...(await vi.importActual('../api/resourceCatalog')),
+  listLecturers: mocks.listLecturers, listRooms: mocks.listRooms,
+  createLecturer: mocks.createLecturer, createRoom: mocks.createRoom,
+  updateLecturer: mocks.updateLecturer, updateRoom: mocks.updateRoom,
+  getResourceUsage: mocks.getResourceUsage, removeResource: mocks.removeResource,
+  reactivateResource: mocks.reactivateResource,
+  listUnavailability: mocks.listUnavailability,
+  getCourseResourceConfiguration: mocks.getCourseResourceConfiguration,
+  updateCourseResourceEligibility: mocks.updateCourseResourceEligibility,
+}))
 
 import { AcademicDataPage } from './AcademicDataPage'
 
@@ -28,6 +43,10 @@ beforeEach(() => {
   mocks.listStudyTypes.mockResolvedValue(page([]))
   mocks.listTimeWindows.mockResolvedValue([])
   mocks.getPlanningOptions.mockResolvedValue({ courses: [], semesters: [], timeWindows: [], lecturers: [], rooms: [] })
+  mocks.listLecturers.mockResolvedValue(page([]))
+  mocks.listRooms.mockResolvedValue(page([]))
+  mocks.listUnavailability.mockResolvedValue([])
+  mocks.getCourseResourceConfiguration.mockResolvedValue({ courseId: 1, courseRevision: 1, cohortSize: 20, eligibleLecturerIds: [], eligibleRoomIds: [], lecturerCandidates: [], roomCandidates: [], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } })
   for (const name of ['createSemester', 'createCohort', 'createCourse', 'createStudyType', 'createTimeWindow', 'updateSemester', 'updateCohort', 'updateCourse', 'updateStudyType', 'updateTimeWindow', 'deleteAcademicRecord', 'setAcademicLifecycle'] as const) {
     mocks[name].mockResolvedValue(undefined)
   }
@@ -127,5 +146,221 @@ describe('AcademicDataPage', () => {
     await act(async () => { button('Archive')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
 
     expect(document.body.textContent).toContain('Refresh and review the current record.')
+  })
+
+  it('navigates coded Lecturer and Room administration with active-default loading', async () => {
+    mocks.listLecturers.mockResolvedValue(page([{ id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 }]))
+    mocks.listRooms.mockResolvedValue(page([{ id: 2, name: 'R1', referenceCode: 'R-1', capacity: 30, isActive: true, revision: 1 }]))
+    await renderPage()
+    await act(async () => { button('Lecturers')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(mocks.listLecturers).toHaveBeenCalledWith(expect.objectContaining({ status: 'active' }))
+    expect(document.body.textContent).toContain('Ada · A-1')
+    await act(async () => { button('Rooms')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('R1 · R-1')
+  })
+
+  it('retains the selected resource and last-known content when refresh fails', async () => {
+    mocks.listLecturers.mockResolvedValueOnce(page([{ id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 }])).mockRejectedValueOnce(new Error('offline'))
+    await renderPage()
+    await act(async () => { button('Lecturers')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Edit')?.click() })
+    const refresh = button('Refresh')
+    await act(async () => { refresh?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('Could not refresh resources')
+    expect(document.querySelector<HTMLInputElement>('input[name="name"]')?.value).toBe('Ada')
+  })
+
+  it('ignores an older availability response after another resource is selected', async () => {
+    const firstPeriod = { id: 1, resourceType: 'lecturer', resourceId: 1, kind: 'recurring', weekdays: [0], startTime: '08:00', endTime: '09:00', revision: 1 }
+    const secondPeriod = { id: 2, resourceType: 'lecturer', resourceId: 2, kind: 'recurring', weekdays: [1], startTime: '10:00', endTime: '11:00', revision: 1 }
+    let resolveFirst: (periods: typeof firstPeriod[]) => void = () => undefined
+    const delayedFirst = new Promise<typeof firstPeriod[]>((resolve) => { resolveFirst = resolve })
+    mocks.listLecturers.mockResolvedValue(page([
+      { id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 },
+      { id: 2, name: 'Grace', referenceCode: 'G-1', isActive: true, revision: 1 },
+    ]))
+    mocks.listUnavailability.mockReturnValueOnce(delayedFirst).mockResolvedValueOnce([secondPeriod])
+
+    await renderPage()
+    await act(async () => { button('Lecturers')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    await act(async () => { editButtons()[0]?.click() })
+    await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('Tuesday · 10:00–11:00')
+
+    await act(async () => { resolveFirst([firstPeriod]); await delayedFirst })
+
+    expect(document.body.textContent).toContain('Tuesday · 10:00–11:00')
+    expect(document.body.textContent).not.toContain('Monday · 08:00–09:00')
+  })
+
+  it('ignores an older availability response after returning to the same resource', async () => {
+    const stalePeriod = { id: 1, resourceType: 'lecturer', resourceId: 1, kind: 'recurring', weekdays: [0], startTime: '08:00', endTime: '09:00', revision: 1 }
+    const otherPeriod = { id: 2, resourceType: 'lecturer', resourceId: 2, kind: 'recurring', weekdays: [1], startTime: '10:00', endTime: '11:00', revision: 1 }
+    const currentPeriod = { id: 3, resourceType: 'lecturer', resourceId: 1, kind: 'recurring', weekdays: [2], startTime: '12:00', endTime: '13:00', revision: 1 }
+    let resolveStale: (periods: typeof stalePeriod[]) => void = () => undefined
+    const delayedStale = new Promise<typeof stalePeriod[]>((resolve) => { resolveStale = resolve })
+    mocks.listLecturers.mockResolvedValue(page([
+      { id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 },
+      { id: 2, name: 'Grace', referenceCode: 'G-1', isActive: true, revision: 1 },
+    ]))
+    mocks.listUnavailability
+      .mockReturnValueOnce(delayedStale)
+      .mockResolvedValueOnce([otherPeriod])
+      .mockResolvedValueOnce([currentPeriod])
+
+    await renderPage()
+    await act(async () => { button('Lecturers')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    await act(async () => { editButtons()[0]?.click() })
+    await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { editButtons()[0]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('Wednesday · 12:00–13:00')
+
+    await act(async () => { resolveStale([stalePeriod]); await delayedStale })
+
+    expect(document.body.textContent).toContain('Wednesday · 12:00–13:00')
+    expect(document.body.textContent).not.toContain('Monday · 08:00–09:00')
+  })
+
+  it('clears another resource availability when the new selection cannot be loaded', async () => {
+    const firstPeriod = { id: 1, resourceType: 'lecturer', resourceId: 1, kind: 'recurring', weekdays: [0], startTime: '08:00', endTime: '09:00', revision: 1 }
+    mocks.listLecturers.mockResolvedValue(page([
+      { id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 },
+      { id: 2, name: 'Grace', referenceCode: 'G-1', isActive: true, revision: 1 },
+    ]))
+    mocks.listUnavailability.mockResolvedValueOnce([firstPeriod]).mockRejectedValueOnce(new Error('offline'))
+
+    await renderPage()
+    await act(async () => { button('Lecturers')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    await act(async () => { editButtons()[0]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('Monday · 08:00–09:00')
+
+    await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+
+    expect(document.body.textContent).toContain('Could not refresh resource availability')
+    expect(document.body.textContent).not.toContain('Monday · 08:00–09:00')
+  })
+
+  it('loads and preserves Course eligibility beside Course administration', async () => {
+    const course = { id: 1, name: 'Course', nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, studyType: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision: 1, availability: { available: true, reasons: [] }, usage }
+    mocks.listCourses.mockResolvedValue(page([course]))
+    mocks.getCourseResourceConfiguration.mockResolvedValue({ courseId: 1, courseRevision: 1, cohortSize: 20, eligibleLecturerIds: [4], eligibleRoomIds: [5], lecturerCandidates: [{ id: 4, name: 'Ada', referenceCode: 'A', kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], roomCandidates: [{ id: 5, name: 'R', referenceCode: 'R', kind: 'room', capacity: 30, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } })
+    await renderPage()
+    await act(async () => { button('Courses')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Edit')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(mocks.getCourseResourceConfiguration).toHaveBeenCalledWith(1)
+    expect(document.body.textContent).toContain('Eligible lecturers and rooms')
+    expect(document.body.textContent).toContain('Ada · A')
+  })
+
+  it('never renders or saves eligibility from a previously selected Course after refresh failure', async () => {
+    const course = (id: number, name: string) => ({ id, name, nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, studyType: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision: 1, availability: { available: true, reasons: [] }, usage: { ...usage, recordId: id } })
+    const firstConfiguration = { courseId: 1, courseRevision: 1, cohortSize: 20, eligibleLecturerIds: [4], eligibleRoomIds: [5], lecturerCandidates: [{ id: 4, name: 'First Course Lecturer', referenceCode: 'A', kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], roomCandidates: [{ id: 5, name: 'First Course Room', referenceCode: 'R', kind: 'room', capacity: 30, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } }
+    mocks.listCourses.mockResolvedValue(page([course(1, 'First Course'), course(2, 'Second Course')]))
+    mocks.getCourseResourceConfiguration
+      .mockResolvedValueOnce(firstConfiguration)
+      .mockRejectedValueOnce(new Error('offline'))
+
+    await renderPage()
+    await act(async () => { button('Courses')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    await act(async () => { editButtons()[0]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('First Course Lecturer')
+
+    await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+
+    expect(document.body.textContent).toContain('Could not refresh Course eligibility')
+    expect(document.body.textContent).not.toContain('First Course Lecturer')
+    expect(button('Save eligibility')).toBeUndefined()
+    expect(mocks.updateCourseResourceEligibility).not.toHaveBeenCalled()
+  })
+
+  it('does not apply a completed eligibility save to a different selected Course', async () => {
+    const course = (id: number, name: string, revision: number) => ({ id, name, nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, studyType: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision, availability: { available: true, reasons: [] }, usage: { ...usage, recordId: id } })
+    const configuration = (courseId: number, courseRevision: number, lecturerName: string) => ({ courseId, courseRevision, cohortSize: 20, eligibleLecturerIds: [courseId + 10], eligibleRoomIds: [courseId + 20], lecturerCandidates: [{ id: courseId + 10, name: lecturerName, referenceCode: `L-${courseId}`, kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], roomCandidates: [{ id: courseId + 20, name: `Room ${courseId}`, referenceCode: `R-${courseId}`, kind: 'room', capacity: 30, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } })
+    const firstConfiguration = configuration(1, 1, 'First Lecturer')
+    const secondConfiguration = configuration(2, 7, 'Second Lecturer')
+    let finishFirstSave: (value: typeof firstConfiguration) => void = () => undefined
+    const firstSave = new Promise<typeof firstConfiguration>((resolve) => { finishFirstSave = resolve })
+    mocks.listCourses.mockResolvedValue(page([course(1, 'First Course', 1), course(2, 'Second Course', 7)]))
+    mocks.getCourseResourceConfiguration.mockResolvedValueOnce(firstConfiguration).mockResolvedValueOnce(secondConfiguration)
+    mocks.updateCourseResourceEligibility.mockReturnValueOnce(firstSave)
+
+    await renderPage()
+    await act(async () => { button('Courses')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    await act(async () => { editButtons()[0]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Save eligibility')?.click() })
+    await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('Second Lecturer')
+
+    await act(async () => { finishFirstSave({ ...firstConfiguration, courseRevision: 2 }); await firstSave })
+
+    expect(document.body.textContent).toContain('Second Lecturer')
+    expect(document.body.textContent).not.toContain('First Lecturer')
+    expect(button('Save eligibility')).toBeDefined()
+  })
+
+  it('explains Cohort growth room cleanup and Courses left without a Room', async () => {
+    const cohort = { id: 2, name: 'AI 1', nameRepairRequired: false, studentCount: 20, isActive: true, revision: 1, usage: { ...usage, recordId: 2 } }
+    mocks.listCohorts.mockResolvedValue(page([cohort]))
+    mocks.updateCohort.mockResolvedValue({
+      ...cohort,
+      revision: 2,
+      cohort: { ...cohort, revision: 2 },
+      capacityImpact: {
+        removedRelationships: [{ courseId: 7, roomId: 8, courseRevision: 4 }],
+        coursesWithoutRooms: [{ id: 7, name: 'Advanced Planning' }],
+      },
+    })
+    await renderPage()
+    await act(async () => { button('Cohorts')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Edit')?.click() })
+    await act(async () => { button('Save changes')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+
+    expect(document.body.textContent).toContain('Removed 1 newly insufficient room relationship')
+    expect(document.body.textContent).toContain('Advanced Planning')
+  })
+
+  it('excludes inactive resources from new Course choices', async () => {
+    mocks.getPlanningOptions.mockResolvedValue({
+      courses: [], semesters: [], timeWindows: [],
+      lecturers: [
+        { id: 1, name: 'Active Lecturer', referenceCode: 'L-A', isActive: true, revision: 1 },
+        { id: 2, name: 'Inactive Lecturer', referenceCode: 'L-I', isActive: false, revision: 2 },
+      ],
+      rooms: [
+        { id: 1, name: 'Active Room', referenceCode: 'R-A', capacity: 40, isActive: true, revision: 1 },
+        { id: 2, name: 'Inactive Room', referenceCode: 'R-I', capacity: 40, isActive: false, revision: 2 },
+      ],
+      courseResources: [],
+    })
+
+    await renderPage()
+    await act(async () => { button('Courses')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+
+    const lecturers = Array.from(document.querySelector<HTMLSelectElement>('select[name="lecturerId"]')!.options).map((item) => item.textContent)
+    const rooms = Array.from(document.querySelector<HTMLSelectElement>('select[name="roomId"]')!.options).map((item) => item.textContent)
+    expect(lecturers).toContain('Active Lecturer')
+    expect(lecturers).not.toContain('Inactive Lecturer')
+    expect(rooms).toContain('Active Room')
+    expect(rooms).not.toContain('Inactive Room')
+  })
+
+  it('reports saved-session usage when it is the only resource retirement blocker', async () => {
+    const lecturer = { id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 }
+    mocks.listLecturers.mockResolvedValue(page([lecturer]))
+    mocks.getResourceUsage.mockResolvedValue({ resourceId: 1, revision: 1, disposition: 'inactivate', activeCourses: [], inactiveCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 } })
+    mocks.removeResource.mockResolvedValue({ outcome: 'inactivated', resource: { ...lecturer, isActive: false, revision: 2 }, activeCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 } })
+
+    await renderPage()
+    await act(async () => { button('Lecturers')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Remove')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Place inactive')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+
+    expect(document.querySelector('[role="status"]')?.textContent).toContain('2 saved sessions across 1 schedule')
+    expect(document.querySelector('[role="status"]')?.textContent).not.toContain('active course')
   })
 })

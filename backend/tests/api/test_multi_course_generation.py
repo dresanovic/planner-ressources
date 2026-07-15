@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models.planning import DraftSchedule, GenerationConstraintSet
+from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, DraftSchedule, GenerationConstraintSet
 from tests.multi_course_fixtures import seed_multi_course_planner
 
 
@@ -198,9 +198,9 @@ def test_post_batch_overview_keeps_overlaps_non_blocking_and_visible(client, db_
     seed_multi_course_planner(db_session)
     from app.models.planning import Course
     second = db_session.get(Course, 2)
-    second.lecturer_id = 1
+    second.eligible_lecturers = [CourseEligibleLecturer(lecturer_id=1)]
     second.cohort_id = 1
-    second.room_id = 1
+    second.eligible_rooms = [CourseEligibleRoom(room_id=1)]
     db_session.commit()
     prepared = client.post("/api/draft-schedules/batch/prepare", json=prepare_payload()).json()
     result = client.post("/api/draft-schedules/batch/generate", json=execution_payload(prepared)).json()

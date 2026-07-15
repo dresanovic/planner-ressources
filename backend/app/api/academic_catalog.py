@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session, object_session, selectinload
+from sqlalchemy.orm.exc import StaleDataError
 
 from app.db.session import get_db
-from app.models.planning import Cohort, Course, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Semester, StudyType, StudyTypeTimeWindow
 from app.schemas.academic_catalog import (
     AvailabilityResponse,
     CatalogErrorEnvelope,
@@ -12,6 +13,7 @@ from app.schemas.academic_catalog import (
     CohortInput,
     CohortUpdate,
     CohortResponse,
+    CohortMutationResult,
     CourseInput,
     CourseUpdate,
     CourseResponse,
@@ -43,6 +45,7 @@ from app.services.academic_catalog import (
     require_record,
     set_lifecycle,
     update_cohort,
+    update_cohort_with_capacity_impact,
     update_course,
     update_semester,
     update_study_type,
@@ -51,6 +54,14 @@ from app.services.academic_catalog import (
 )
 
 router = APIRouter(prefix="/api/academic", tags=["academic catalog"])
+
+COURSE_OPTIONS = (
+    selectinload(Course.current_semester),
+    selectinload(Course.cohort),
+    selectinload(Course.study_type),
+    selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
+    selectinload(Course.eligible_rooms).selectinload(CourseEligibleRoom.room),
+)
 
 
 def _error_response(exc: AcademicCatalogError) -> JSONResponse:
@@ -99,7 +110,7 @@ def _course(db: Session, row: Course) -> CourseResponse:
         id=row.id, name=row.name, nameRepairRequired=row.name_repair_required,
         totalUnits=row.total_units, minSessionUnits=row.min_session_units, maxSessionUnits=row.max_session_units,
         semester=summary(row.current_semester) if row.current_semester else None,
-        cohort=summary(row.cohort), studyType=summary(row.study_type), lecturer=summary(row.lecturer), room=summary(row.room),
+        cohort=summary(row.cohort), studyType=summary(row.study_type), lecturer=summary(row.lecturer) if row.lecturer else None, room=summary(row.room) if row.room else None,
         isActive=row.is_active, revision=row.revision,
         availability=AvailabilityResponse(available=not reasons, reasons=reasons), usage=_usage(row, "course"),
     )
@@ -204,7 +215,7 @@ def post_time_window(study_type_id: int, payload: TimeWindowInput, db: Session =
 
 @router.get("/courses", response_model=PageResponse)
 def list_courses(page: int = Query(1, ge=1), pageSize: int = Query(50, ge=1, le=200), status_filter: str = Query("all", alias="status"), query: str | None = None, semesterId: int | None = Query(None, ge=1), db: Session = Depends(get_db)):
-    options = (selectinload(Course.current_semester), selectinload(Course.cohort), selectinload(Course.study_type), selectinload(Course.lecturer), selectinload(Course.room))
+    options = COURSE_OPTIONS
     filters = (Course.current_semester_id == semesterId,) if semesterId is not None else ()
     rows, total = list_records(db, Course, page=page, page_size=pageSize, status=status_filter, query=query, options=options, extra_filters=filters)
     return _page(rows, total, page, pageSize, lambda row: _course(db, row))
@@ -215,7 +226,7 @@ def post_course(payload: CourseInput, db: Session = Depends(get_db)):
     try:
         row = create_course(db, name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, lecturer_id=payload.lecturer_id, room_id=payload.room_id)
         db.commit()
-        row = db.get(Course, row.id, options=[selectinload(Course.current_semester), selectinload(Course.cohort), selectinload(Course.study_type), selectinload(Course.lecturer), selectinload(Course.room)])
+        row = db.get(Course, row.id, options=COURSE_OPTIONS)
         return _course(db, row)
     except AcademicCatalogError as exc:
         db.rollback(); return _error_response(exc)
@@ -223,7 +234,7 @@ def post_course(payload: CourseInput, db: Session = Depends(get_db)):
 
 @router.get("/courses/{record_id}", response_model=CourseResponse)
 def get_course(record_id: int, db: Session = Depends(get_db)):
-    row = db.get(Course, record_id, options=[selectinload(Course.current_semester), selectinload(Course.cohort), selectinload(Course.study_type), selectinload(Course.lecturer), selectinload(Course.room)])
+    row = db.get(Course, record_id, options=COURSE_OPTIONS)
     if row is None: return _not_found("Course")
     return _course(db, row)
 
@@ -236,6 +247,11 @@ def _commit_or_error(db: Session, action, converter):
     except AcademicCatalogError as exc:
         db.rollback()
         return _error_response(exc)
+    except StaleDataError:
+        db.rollback()
+        return _error_response(AcademicCatalogError(409, [CatalogErrorItem(
+            "STALE_REVISION", "This record changed. Refresh and review the current values."
+        )]))
 
 
 @router.patch("/semesters/{record_id}", response_model=SemesterResponse)
@@ -243,9 +259,16 @@ def patch_semester(record_id: int, payload: SemesterUpdate, db: Session = Depend
     return _commit_or_error(db, lambda: update_semester(db, require_record(db, Semester, record_id), name=payload.name, start_date=payload.start_date, end_date=payload.end_date, expected_revision=payload.expected_revision), _semester)
 
 
-@router.patch("/cohorts/{record_id}", response_model=CohortResponse)
+@router.patch("/cohorts/{record_id}", response_model=CohortMutationResult)
 def patch_cohort(record_id: int, payload: CohortUpdate, db: Session = Depends(get_db)):
-    return _commit_or_error(db, lambda: update_cohort(db, require_record(db, Cohort, record_id), name=payload.name, student_count=payload.student_count, expected_revision=payload.expected_revision), _cohort)
+    def action():
+        row, impact = update_cohort_with_capacity_impact(db, require_record(db, Cohort, record_id), name=payload.name, student_count=payload.student_count, expected_revision=payload.expected_revision)
+        return row, impact
+    def convert(result):
+        row, impact = result
+        cohort = _cohort(row)
+        return CohortMutationResult(**cohort.model_dump(), cohort=cohort, capacityImpact=impact)
+    return _commit_or_error(db, action, convert)
 
 
 @router.patch("/study-types/{record_id}", response_model=StudyTypeResponse)
@@ -268,7 +291,7 @@ def patch_time_window(record_id: int, payload: TimeWindowUpdate, db: Session = D
 
 @router.patch("/courses/{record_id}", response_model=CourseResponse)
 def patch_course(record_id: int, payload: CourseUpdate, db: Session = Depends(get_db)):
-    return _commit_or_error(db, lambda: update_course(db, require_record(db, Course, record_id), name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, lecturer_id=payload.lecturer_id, room_id=payload.room_id, expected_revision=payload.expected_revision), lambda row: _course(db, row))
+    return _commit_or_error(db, lambda: update_course(db, require_record(db, Course, record_id), name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, expected_revision=payload.expected_revision), lambda row: _course(db, row))
 
 
 RESOURCE_MODELS = {

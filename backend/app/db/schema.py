@@ -15,33 +15,39 @@ class UnsupportedSchemaStateError(RuntimeError):
 
 def initialize_database(engine: Engine) -> None:
     """Create a new schema or upgrade supported planner schemas sequentially."""
-    Base.metadata.create_all(bind=engine)
-
     with engine.connect() as connection:
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
             connection.commit()
         with connection.begin():
             inspector = inspect(connection)
-            if not _is_current_schema(inspector):
+            if not inspector.get_table_names():
+                Base.metadata.create_all(bind=connection)
+                inspector = inspect(connection)
+            elif not _is_current_schema(inspector):
                 if _is_slice_1_to_5_schema(inspector):
                     migration = _load_migration("0002_course_semester_drafts.py")
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
                     inspector = inspect(connection)
-                if not _is_slice_6_schema(inspector):
+                if _is_slice_6_schema(inspector):
+                    migration = _load_migration("0003_academic_catalog_administration.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                    inspector = inspect(connection)
+                if not _is_slice_7_schema(inspector):
                     raise UnsupportedSchemaStateError(
-                        "Database schema is not a supported FS-001 through FS-006 or FS-007 state. "
+                        "Database schema is not a supported FS-001 through FS-007 state. "
                         "Back up the database and inspect its migration state."
                     )
 
-                migration = _load_migration("0003_academic_catalog_administration.py")
+                migration = _load_migration("0004_resource_eligibility_availability.py")
                 migration.op = Operations(MigrationContext.configure(connection))
                 migration.upgrade()
 
                 if not _is_current_schema(inspect(connection)):
                     raise UnsupportedSchemaStateError(
-                        "FS-007 database migration completed without producing the expected schema."
+                        "FS-008 database migration completed without producing the expected schema."
                     )
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=ON")
@@ -50,11 +56,29 @@ def initialize_database(engine: Engine) -> None:
 
 
 def _is_current_schema(inspector) -> bool:
+    tables = set(inspector.get_table_names())
+    required_tables = {
+        "course_eligible_lecturers",
+        "course_eligible_rooms",
+        "resource_unavailability_periods",
+        "resource_unavailability_weekdays",
+    }
+    lecturer_columns = _column_names(inspector, "lecturers")
+    room_columns = _column_names(inspector, "rooms")
+    course_columns = _column_names(inspector, "courses")
     draft_columns = _column_names(inspector, "draft_schedules")
     constraint_columns = _column_names(inspector, "generation_constraint_sets")
-    course_columns = _column_names(inspector, "courses")
     return (
-        "revision" in draft_columns
+        required_tables.issubset(tables)
+        and {"reference_code", "normalized_reference_code", "is_active", "revision"}.issubset(
+            lecturer_columns
+        )
+        and {"reference_code", "normalized_reference_code", "is_active", "revision"}.issubset(
+            room_columns
+        )
+        and "lecturer_id" not in course_columns
+        and "room_id" not in course_columns
+        and "revision" in draft_columns
         and "revision" in constraint_columns
         and "current_semester_id" in course_columns
         and "course_name_snapshot" in draft_columns
@@ -64,6 +88,22 @@ def _is_current_schema(inspector) -> bool:
             ("course_id", "semester_id"),
         )
         and not _has_unique_columns(inspector, "draft_schedules", ("course_id",))
+    )
+
+
+def _is_slice_7_schema(inspector) -> bool:
+    course_columns = _column_names(inspector, "courses")
+    draft_columns = _column_names(inspector, "draft_schedules")
+    constraint_columns = _column_names(inspector, "generation_constraint_sets")
+    return (
+        "lecturer_id" in course_columns
+        and "room_id" in course_columns
+        and "current_semester_id" in course_columns
+        and "reference_code" not in _column_names(inspector, "lecturers")
+        and "reference_code" not in _column_names(inspector, "rooms")
+        and "revision" in draft_columns
+        and "revision" in constraint_columns
+        and "course_name_snapshot" in draft_columns
     )
 
 

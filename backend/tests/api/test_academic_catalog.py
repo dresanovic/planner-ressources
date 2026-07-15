@@ -105,6 +105,61 @@ def test_course_normalized_name_is_unique(client, db_session):
     assert duplicate.json()["errors"][0]["code"] == "DUPLICATE_NORMALIZED_NAME"
 
 
+def test_course_creation_rejects_inactive_lecturer_and_undersized_room(client, db_session):
+    db_session.add_all([
+        Lecturer(id=1, name="Inactive", is_active=False),
+        Room(id=1, name="Small", capacity=20),
+    ])
+    db_session.commit()
+    semester, cohort, study_type, _ = create_academic_chain(client)
+
+    response = client.post("/api/academic/courses", json={
+        "name": "Invalid resources", "totalUnits": 8, "minSessionUnits": 2, "maxSessionUnits": 4,
+        "semesterId": semester["id"], "cohortId": cohort["id"], "studyTypeId": study_type["id"],
+        "lecturerId": 1, "roomId": 1,
+    })
+
+    assert response.status_code == 422
+    assert {error["code"] for error in response.json()["errors"]} == {
+        "RESOURCE_INACTIVE", "ROOM_CAPACITY_INSUFFICIENT",
+    }
+
+
+def test_course_metadata_update_preserves_complete_resource_eligibility(client, db_session):
+    seed_resources(db_session)
+    db_session.add_all([Lecturer(id=2, name="Grace"), Room(id=2, name="R2", capacity=50)])
+    db_session.commit()
+    semester, cohort, study_type, _ = create_academic_chain(client)
+    course = client.post("/api/academic/courses", json={
+        "name": "Scheduling", "totalUnits": 8, "minSessionUnits": 2, "maxSessionUnits": 4,
+        "semesterId": semester["id"], "cohortId": cohort["id"], "studyTypeId": study_type["id"],
+        "lecturerId": 1, "roomId": 1,
+    }).json()
+    eligibility_url = f"/api/academic/courses/{course['id']}/resource-eligibility"
+    configured = client.put(eligibility_url, json={
+        "expectedRevision": course["revision"], "lecturerIds": [1, 2], "roomIds": [1, 2],
+    }).json()
+
+    changed = client.patch(f"/api/academic/courses/{course['id']}", json={
+        "name": "Scheduling renamed", "totalUnits": 8, "minSessionUnits": 2, "maxSessionUnits": 4,
+        "semesterId": semester["id"], "cohortId": cohort["id"], "studyTypeId": study_type["id"],
+        "expectedRevision": configured["courseRevision"],
+    })
+
+    assert changed.status_code == 200
+    db_session.expire_all()
+    persisted = db_session.get(Course, course["id"])
+    assert [item.lecturer_id for item in persisted.eligible_lecturers] == [1, 2]
+    assert [item.room_id for item in persisted.eligible_rooms] == [1, 2]
+
+    scalar_attempt = client.patch(f"/api/academic/courses/{course['id']}", json={
+        "name": "Scheduling renamed", "totalUnits": 8, "minSessionUnits": 2, "maxSessionUnits": 4,
+        "semesterId": semester["id"], "cohortId": cohort["id"], "studyTypeId": study_type["id"],
+        "lecturerId": 1, "roomId": 1, "expectedRevision": changed.json()["revision"],
+    })
+    assert scalar_attempt.status_code == 422
+
+
 @pytest.mark.parametrize("payload", [
     {"name": "C", "totalUnits": 0, "minSessionUnits": 1, "maxSessionUnits": 1},
     {"name": "C", "totalUnits": 4, "minSessionUnits": 3, "maxSessionUnits": 2},
@@ -316,7 +371,7 @@ def test_usage_and_delete_cover_every_dependent_and_saved_schedule_blocker(clien
     reassigned = client.patch(f"/api/academic/courses/{course['id']}", json={
         "name": "Scheduling 201", "totalUnits": 10, "minSessionUnits": 2, "maxSessionUnits": 5,
         "semesterId": next_semester["id"], "cohortId": cohort["id"], "studyTypeId": study_type["id"],
-        "lecturerId": 1, "roomId": 1, "expectedRevision": course["revision"],
+        "expectedRevision": course["revision"],
     })
     assert reassigned.status_code == 200
     assert reassigned.json()["semester"]["id"] == next_semester["id"]

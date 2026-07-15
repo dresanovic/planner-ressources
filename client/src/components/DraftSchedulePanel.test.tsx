@@ -12,13 +12,16 @@ import {
   secondDraftScheduleFixture,
 } from '../test/draftScheduleFixtures'
 import type { DraftSchedule, GenerationConstraints, UpdateDraftSessionRequest } from '../api/draftSchedule'
+import type { PlanningOptions } from '../api/planningOptions'
 
 function renderPanel({
   schedules = [draftScheduleFixture],
   onUpdateSession = vi.fn(),
+  courseResources = [],
 }: {
   schedules?: DraftSchedule[]
   onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
+  courseResources?: PlanningOptions['courseResources']
 } = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
@@ -27,6 +30,7 @@ function renderPanel({
       <DraftSchedulePanel
         schedules={schedules}
         rooms={roomOptionsFixture}
+        courseResources={courseResources}
         onUpdateSession={onUpdateSession}
       />,
     )
@@ -344,6 +348,7 @@ describe('DraftSchedulePanel', () => {
       date: '2026-12-14',
       startTime: '09:00',
       endTime: '10:30',
+      lecturerId: 1,
       roomId: 3,
     })
   })
@@ -362,6 +367,40 @@ describe('DraftSchedulePanel', () => {
     expect(optionLabels).toContain('R1 (40 seats)')
     expect(optionLabels).toContain('Auditorium (80 seats)')
     expect(optionLabels).not.toContain('Tiny (20 seats)')
+  })
+
+  it('keeps the current ineligible room selected while offering eligible alternatives', async () => {
+    const currentSession = {
+      ...draftScheduleFixture.sessions[1],
+      roomId: 4,
+      roomName: 'Tiny',
+      roomReferenceCode: 'ROOM-004',
+      room: { id: 4, name: 'Tiny', referenceCode: 'ROOM-004' },
+      validationAlerts: [{ code: 'ROOM_INELIGIBLE' as const, message: 'Assigned Room is outside the current eligibility set.', relatedSessions: [] }],
+    }
+    renderPanel({
+      schedules: [{ ...draftScheduleFixture, sessions: [currentSession] }],
+      courseResources: [{
+        courseId: 1,
+        eligibleLecturers: [],
+        eligibleRooms: [{ id: 1, name: 'R1', referenceCode: 'ROOM-001', kind: 'room', capacity: 40, isActive: true, isEligible: true, isUsable: true, reasons: [] }],
+        preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true },
+      }],
+    })
+
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+    await act(async () => {
+      editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    const roomSelect = document.querySelector<HTMLSelectElement>('.inline-edit-field select')
+    const optionLabels = [...(roomSelect?.options ?? [])].map((option) => option.textContent)
+
+    expect(roomSelect?.value).toBe('4')
+    expect(optionLabels).toContain('Tiny (20 seats)')
+    expect(optionLabels.some((label) => label?.includes('R1') && label.includes('ROOM-001') && label.includes('40 seats'))).toBe(true)
+    expect(optionLabels).not.toContain('R2')
+    expect(optionLabels).not.toContain('Auditorium')
   })
 
   it('shows edit failures without falsely saving', async () => {

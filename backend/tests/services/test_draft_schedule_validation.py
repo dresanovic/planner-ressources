@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
-from app.models.planning import Cohort, Course, Lecturer, Room, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Semester, StudyType, StudyTypeTimeWindow
 from app.services.draft_schedule_repository import (
     load_course_plan,
     load_generation_constraints,
@@ -64,10 +64,10 @@ def seed_validation_courses(db):
                 total_units=20,
                 min_session_units=2,
                 max_session_units=4,
-                lecturer_id=1,
                 cohort_id=1,
-                room_id=1,
                 study_type_id=1,
+                eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
+                eligible_rooms=[CourseEligibleRoom(room_id=1)],
             ),
             Course(
                 id=2,
@@ -75,10 +75,10 @@ def seed_validation_courses(db):
                 total_units=16,
                 min_session_units=2,
                 max_session_units=4,
-                lecturer_id=1,
                 cohort_id=2,
-                room_id=2,
                 study_type_id=1,
+                eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
+                eligible_rooms=[CourseEligibleRoom(room_id=2)],
             ),
             Course(
                 id=3,
@@ -86,10 +86,10 @@ def seed_validation_courses(db):
                 total_units=16,
                 min_session_units=2,
                 max_session_units=4,
-                lecturer_id=2,
                 cohort_id=1,
-                room_id=1,
                 study_type_id=1,
+                eligible_lecturers=[CourseEligibleLecturer(lecturer_id=2)],
+                eligible_rooms=[CourseEligibleRoom(room_id=1)],
             ),
         ]
     )

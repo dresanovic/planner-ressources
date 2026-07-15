@@ -319,7 +319,15 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
                 <button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId)} disabled={overviewLoading}>Retry refresh</button>
               </div>
             )}
-            <DraftSchedulePanel resetKey={overviewResetKey} schedules={schedules} rooms={planningOptions?.rooms ?? []} onUpdateSession={handleUpdateSession} isBusy={overviewLoading} />
+            <DraftSchedulePanel
+              resetKey={overviewResetKey}
+              schedules={schedules}
+              rooms={planningOptions?.rooms ?? []}
+              lecturers={planningOptions?.lecturers ?? []}
+              courseResources={planningOptions?.courseResources ?? []}
+              onUpdateSession={handleUpdateSession}
+              isBusy={overviewLoading}
+            />
           </div>
         </div>
       </section>
@@ -360,8 +368,8 @@ function PlanningSummary({ course, semester }: { course: CourseOption | null; se
     <div><dt>Units</dt><dd>{course.totalUnits}</dd></div>
     <div><dt>Session preference</dt><dd>{course.minSessionUnits}-{course.maxSessionUnits} units</dd></div>
     <div><dt>Cohort</dt><dd>{course.cohort.name}</dd></div>
-    <div><dt>Lecturer</dt><dd>{course.lecturer.name}</dd></div>
-    <div><dt>Room</dt><dd>{course.room.name}</dd></div>
+    <div><dt>Lecturer</dt><dd>{course.lecturer?.name ?? 'No eligible lecturer'}</dd></div>
+    <div><dt>Room</dt><dd>{course.room?.name ?? 'No usable room'}</dd></div>
     <div><dt>Study type</dt><dd>{course.studyType.name}</dd></div>
     <div><dt>Semester dates</dt><dd>{semester ? `${semester.startDate} - ${semester.endDate}` : 'No semester selected'}</dd></div>
   </dl>

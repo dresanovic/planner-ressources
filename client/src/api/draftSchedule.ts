@@ -6,12 +6,18 @@ export type DraftSession = {
   units: number
   courseId: number
   lecturerId: number
+  lecturerName: string
+  lecturerReferenceCode: string
   cohortId: number
   roomId: number
+  roomName: string
+  roomReferenceCode: string
   studyTypeId: number
   timeWindowId: number | null
   constraintWindowIndex: number
   validationAlerts: ValidationAlert[]
+  lecturer: PlanningResource
+  room: PlanningResource
 }
 
 export type RelatedSession = {
@@ -28,10 +34,15 @@ export type RelatedSession = {
 }
 
 export type ValidationAlert = {
-  code: string
+  code: ValidationAlertCode
   message: string
   relatedSessions: RelatedSession[]
 }
+
+export type ValidationAlertCode =
+  | 'LECTURER_OVERLAP' | 'ROOM_OVERLAP' | 'COHORT_OVERLAP' | 'ROOM_CAPACITY'
+  | 'GENERATION_CONSTRAINT_VIOLATION' | 'STUDY_TYPE_WINDOW_VIOLATION' | 'VALIDATION_DATA_MISSING'
+  | 'LECTURER_UNAVAILABLE' | 'ROOM_UNAVAILABLE' | 'LECTURER_INELIGIBLE' | 'ROOM_INELIGIBLE'
 
 export type PlanningPeriod = {
   startDate: string
@@ -58,6 +69,8 @@ export type PlanningEntity = {
   id: number
   name: string
 }
+
+export type PlanningResource = PlanningEntity & { referenceCode: string }
 
 export type DraftScheduleContext = {
   course: PlanningEntity
@@ -96,6 +109,7 @@ export type UpdateDraftSessionRequest = {
   date: string
   startTime: string
   endTime: string
+  lecturerId: number
   roomId: number
 }
 

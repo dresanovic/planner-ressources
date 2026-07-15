@@ -59,6 +59,31 @@
 .catalog-editor { display: grid; gap: 12px; margin-top: 18px; }
 .catalog-field { display: grid; gap: 4px; color: #526071; font-size: 13px; font-weight: 700; }
 .catalog-field input, .catalog-field select { border: 1px solid #cfd7e3; border-radius: 6px; padding: 9px 10px; }
+.resource-catalog-list li > span:first-child { display: grid; gap: 4px; }
+.resource-catalog-list small { color: #526071; }
+.resource-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.resource-toolbar .catalog-field { min-width: min(360px, 100%); }
+.resource-removal-dialog h3 { margin: 18px 0 6px; font-size: 15px; }
+.resource-availability { border-top: 1px solid #dfe4eb; margin-top: 22px; padding-top: 18px; }
+.resource-availability h3 { margin: 0; }
+.availability-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 8px; }
+.availability-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #dfe4eb; border-radius: 6px; padding: 9px; }
+.resource-availability fieldset { border: 1px solid #dfe4eb; border-radius: 6px; }
+.weekday-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
+.weekday-options label { display: flex; gap: 6px; align-items: center; }
+.availability-dates, .availability-times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.course-resource-eligibility { border-top: 1px solid #dfe4eb; margin-top: 22px; padding-top: 18px; display: grid; gap: 12px; }
+.course-resource-eligibility h3, .course-resource-eligibility p { margin: 0; }
+.eligibility-group { border: 1px solid #dfe4eb; border-radius: 6px; display: grid; gap: 10px; }
+.eligibility-candidates { display: grid; gap: 6px; max-height: 240px; overflow-y: auto; }
+.eligibility-candidates > div { padding: 6px; }
+.eligibility-candidates label { display: flex; align-items: start; gap: 8px; padding: 6px; }
+.eligibility-candidates > div > label { padding: 0; }
+.eligibility-candidates label > span { display: grid; gap: 2px; }
+.eligibility-candidates small { color: #526071; }
+.eligibility-candidates > div > small,
+.eligibility-candidates details { display: block; margin: 4px 0 0 24px; }
+.eligibility-candidates .candidate-invalid { background: #fff9e8; }
 
 .sidebar a {
   color: #526071;
@@ -559,12 +584,14 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-.inline-edit-field {
+.inline-edit-field,
+.lecturer-edit-field {
   display: grid;
   gap: 4px;
 }
 
-.inline-edit-field span {
+.inline-edit-field span,
+.lecturer-edit-field span {
   color: #526071;
   font-size: 11px;
   font-weight: 700;
@@ -572,7 +599,8 @@ button:disabled {
 }
 
 .inline-edit-field input,
-.inline-edit-field select {
+.inline-edit-field select,
+.lecturer-edit-field select {
   min-width: 0;
   width: 100%;
   border: 1px solid #cfd7e3;
@@ -718,6 +746,7 @@ button:disabled {
   }
 
   .catalog-grid { grid-template-columns: 1fr; }
+  .resource-toolbar { align-items: stretch; flex-direction: column; }
 
   .dialog-actions,
   .refresh-error {

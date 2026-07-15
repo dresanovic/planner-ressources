@@ -3,10 +3,10 @@ from datetime import date, time
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.models.planning import Room
+from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, Lecturer, ResourceUnavailabilityPeriod, Room
 from app.schemas.draft_schedule import (
     AllowedTeachingWindowResponse,
     DraftScheduleContextResponse,
@@ -16,6 +16,7 @@ from app.schemas.draft_schedule import (
     GenerationConstraintsResponse,
     GenerationFailureResponse,
     PlanningEntityResponse,
+    PlanningResourceResponse,
     PlanningPeriodResponse,
     RelatedSessionResponse,
     SessionEditFailure,
@@ -74,6 +75,8 @@ def generate_draft_schedule(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     source_course = db.get(Course, course_id)
     eligibility = planning_eligibility_reasons(db, source_course, request.semester_id)
+    if any(link.room.is_active for link in source_course.eligible_rooms):
+        eligibility = [reason for reason in eligibility if reason != "NO_USABLE_ELIGIBLE_ROOM"]
     if eligibility:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -155,6 +158,7 @@ def edit_draft_session(
             date=_parse_date(request.date),
             start_time=_parse_edit_time(request.start_time),
             end_time=_parse_edit_time(request.end_time),
+            lecturer_id=request.lecturer_id,
             room_id=request.room_id,
         )
         db.commit()
@@ -234,8 +238,13 @@ def _to_response_with_validation(db: Session, draft) -> DraftScheduleResponse:
 
 def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResponse]:
     rooms_by_id = {room.id: room for room in db.execute(select(Room)).scalars().all()}
+    lecturers_by_id = {lecturer.id: lecturer for lecturer in db.execute(select(Lecturer)).scalars().all()}
     constraints_by_course_id = {}
     study_windows_by_study_type_id = {}
+    unavailability_by_resource = {}
+    for period in db.execute(select(ResourceUnavailabilityPeriod).options(selectinload(ResourceUnavailabilityPeriod.weekdays))).scalars().all():
+        key = ("lecturer", period.lecturer_id) if period.lecturer_id is not None else ("room", period.room_id)
+        unavailability_by_resource.setdefault(key, []).append(period)
     if drafts:
         semester_plan = load_semester_plan(db, drafts[0].semester_id)
         for draft in drafts:
@@ -247,16 +256,29 @@ def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResp
     alerts_by_session = collect_validation_alerts(
         list(drafts),
         rooms_by_id=rooms_by_id,
+        lecturers_by_id=lecturers_by_id,
         constraints_by_course_id=constraints_by_course_id,
         study_windows_by_study_type_id=study_windows_by_study_type_id,
+        unavailability_by_resource=unavailability_by_resource,
+        eligible_lecturer_ids_by_course={draft.course_id: {link.lecturer_id for link in draft.course.eligible_lecturers} for draft in drafts},
+        eligible_room_ids_by_course={draft.course_id: {link.room_id for link in draft.course.eligible_rooms} for draft in drafts},
+        active_lecturer_ids=set(db.execute(select(Lecturer.id).where(Lecturer.is_active.is_(True))).scalars()),
+        active_room_ids={room.id for room in rooms_by_id.values() if room.is_active},
+        current_cohort_sizes_by_course={
+            draft.course_id: draft.course.cohort.student_count for draft in drafts
+        },
     )
-    return [_to_response(draft, alerts_by_session=alerts_by_session, rooms_by_id=rooms_by_id) for draft in drafts]
+    return [_to_response(draft, alerts_by_session=alerts_by_session, rooms_by_id=rooms_by_id, lecturers_by_id=lecturers_by_id) for draft in drafts]
 
 
-def _to_response(draft, alerts_by_session=None, rooms_by_id=None) -> DraftScheduleResponse:
+def _to_response(draft, alerts_by_session=None, rooms_by_id=None, lecturers_by_id=None) -> DraftScheduleResponse:
     course = draft.course
     alerts_by_session = alerts_by_session or {}
     rooms_by_id = rooms_by_id or {}
+    lecturers_by_id = lecturers_by_id or {}
+    first_session = draft.sessions[0] if draft.sessions else None
+    context_lecturer = lecturers_by_id.get(first_session.lecturer_id) if first_session else course.lecturer
+    context_room = rooms_by_id.get(first_session.room_id) if first_session else course.room
     return DraftScheduleResponse(
         draftScheduleId=draft.id,
         revision=draft.revision,
@@ -266,8 +288,8 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None) -> DraftSchedu
             course=PlanningEntityResponse(id=course.id, name=draft.course_name_snapshot),
             cohort=PlanningEntityResponse(id=draft.cohort_id_snapshot, name=draft.cohort_name_snapshot),
             cohortSize=draft.cohort_size_snapshot,
-            lecturer=PlanningEntityResponse(id=course.lecturer.id, name=course.lecturer.name),
-            room=PlanningEntityResponse(id=course.room.id, name=course.room.name),
+            lecturer=PlanningEntityResponse(id=context_lecturer.id, name=context_lecturer.name),
+            room=PlanningEntityResponse(id=context_room.id, name=context_room.name),
             studyType=PlanningEntityResponse(id=draft.study_type_id_snapshot, name=draft.study_type_name_snapshot),
         ),
         sessions=[
@@ -279,11 +301,17 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None) -> DraftSchedu
                 units=session.units,
                 courseId=session.course_id,
                 lecturerId=session.lecturer_id,
+                lecturerName=lecturers_by_id.get(session.lecturer_id).name if lecturers_by_id.get(session.lecturer_id) is not None else f"Lecturer {session.lecturer_id}",
+                lecturerReferenceCode=lecturers_by_id.get(session.lecturer_id).reference_code if lecturers_by_id.get(session.lecturer_id) is not None else "UNKNOWN",
                 cohortId=session.cohort_id,
                 roomId=session.room_id,
+                roomName=rooms_by_id.get(session.room_id).name if rooms_by_id.get(session.room_id) is not None else f"Room {session.room_id}",
+                roomReferenceCode=rooms_by_id.get(session.room_id).reference_code if rooms_by_id.get(session.room_id) is not None else "UNKNOWN",
                 studyTypeId=draft.study_type_id_snapshot,
                 timeWindowId=session.time_window_id,
                 constraintWindowIndex=session.constraint_window_index,
+                lecturer=_planning_resource(lecturers_by_id.get(session.lecturer_id), "Lecturer", session.lecturer_id),
+                room=_planning_resource(rooms_by_id.get(session.room_id), "Room", session.room_id),
                 validationAlerts=[
                     _validation_alert_to_response(alert)
                     for alert in alerts_by_session.get(session.id, [])
@@ -291,6 +319,14 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None) -> DraftSchedu
             )
             for session in draft.sessions
         ],
+    )
+
+
+def _planning_resource(resource, label: str, resource_id: int) -> PlanningResourceResponse:
+    return PlanningResourceResponse(
+        id=resource_id,
+        name=resource.name if resource is not None else f"{label} {resource_id}",
+        referenceCode=resource.reference_code if resource is not None else "UNKNOWN",
     )
 
 

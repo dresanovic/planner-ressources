@@ -3,7 +3,8 @@ from datetime import date, time
 from enum import StrEnum
 from calendar import day_name
 
-from app.models.planning import DraftSchedule, DraftSession, Room
+from app.models.planning import DraftSchedule, DraftSession, Lecturer, ResourceUnavailabilityPeriod, Room
+from app.services.resource_rules import resource_is_unavailable
 from app.services.draft_schedule_repository import GenerationConstraints
 from app.services.schedule_generation import TimeWindowPlan
 
@@ -16,6 +17,10 @@ class ValidationAlertCode(StrEnum):
     GENERATION_CONSTRAINT_VIOLATION = "GENERATION_CONSTRAINT_VIOLATION"
     STUDY_TYPE_WINDOW_VIOLATION = "STUDY_TYPE_WINDOW_VIOLATION"
     VALIDATION_DATA_MISSING = "VALIDATION_DATA_MISSING"
+    LECTURER_UNAVAILABLE = "LECTURER_UNAVAILABLE"
+    ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
+    LECTURER_INELIGIBLE = "LECTURER_INELIGIBLE"
+    ROOM_INELIGIBLE = "ROOM_INELIGIBLE"
 
 
 @dataclass(frozen=True)
@@ -43,23 +48,58 @@ def collect_validation_alerts(
     drafts: list[DraftSchedule],
     *,
     rooms_by_id: dict[int, Room],
+    lecturers_by_id: dict[int, Lecturer] | None = None,
     constraints_by_course_id: dict[int, GenerationConstraints],
     study_windows_by_study_type_id: dict[int, list[TimeWindowPlan]],
+    unavailability_by_resource: dict[tuple[str, int], list[ResourceUnavailabilityPeriod]] | None = None,
+    eligible_lecturer_ids_by_course: dict[int, set[int]] | None = None,
+    eligible_room_ids_by_course: dict[int, set[int]] | None = None,
+    active_lecturer_ids: set[int] | None = None,
+    active_room_ids: set[int] | None = None,
+    current_cohort_sizes_by_course: dict[int, int] | None = None,
 ) -> dict[int, list[ValidationAlert]]:
     alerts: dict[int, list[ValidationAlert]] = {
         session.id: [] for draft in drafts for session in draft.sessions
     }
     sessions = [(draft, session) for draft in drafts for session in draft.sessions]
+    unavailability_by_resource = unavailability_by_resource or {}
+    eligible_lecturer_ids_by_course = eligible_lecturer_ids_by_course or {}
+    eligible_room_ids_by_course = eligible_room_ids_by_course or {}
+    lecturers_by_id = lecturers_by_id or {}
+    current_cohort_sizes_by_course = current_cohort_sizes_by_course or {}
 
     for code, attr, label in [
         (ValidationAlertCode.LECTURER_OVERLAP, "lecturer_id", "lecturer"),
         (ValidationAlertCode.ROOM_OVERLAP, "room_id", "room"),
         (ValidationAlertCode.COHORT_OVERLAP, "cohort_id", "Cohort"),
     ]:
-        _add_overlap_alerts(alerts, sessions, code=code, attr=attr, label=label, rooms_by_id=rooms_by_id)
+        _add_overlap_alerts(alerts, sessions, code=code, attr=attr, label=label, rooms_by_id=rooms_by_id, lecturers_by_id=lecturers_by_id)
 
     for draft, session in sessions:
-        _add_capacity_alert(alerts, draft, session, rooms_by_id)
+        if eligible_lecturer_ids_by_course and (
+            session.lecturer_id not in eligible_lecturer_ids_by_course.get(draft.course_id, set())
+            or (active_lecturer_ids is not None and session.lecturer_id not in active_lecturer_ids)
+        ):
+            alerts[session.id].append(ValidationAlert(code=ValidationAlertCode.LECTURER_INELIGIBLE, message="Assigned Lecturer is inactive or outside the current Course eligibility set."))
+        if eligible_room_ids_by_course and (
+            session.room_id not in eligible_room_ids_by_course.get(draft.course_id, set())
+            or (active_room_ids is not None and session.room_id not in active_room_ids)
+        ):
+            alerts[session.id].append(ValidationAlert(code=ValidationAlertCode.ROOM_INELIGIBLE, message="Assigned Room is inactive or outside the current Course eligibility set."))
+        for resource_type, resource_id, code, label in (
+            ("lecturer", session.lecturer_id, ValidationAlertCode.LECTURER_UNAVAILABLE, "Lecturer"),
+            ("room", session.room_id, ValidationAlertCode.ROOM_UNAVAILABLE, "Room"),
+        ):
+            periods = unavailability_by_resource.get((resource_type, resource_id), [])
+            if resource_is_unavailable(periods, session.date, session.start_time, session.end_time):
+                alerts[session.id].append(ValidationAlert(code=code, message=f"{label} is unavailable during this session."))
+        _add_capacity_alert(
+            alerts,
+            draft,
+            session,
+            rooms_by_id,
+            current_cohort_sizes_by_course.get(draft.course_id, draft.cohort_size_snapshot),
+        )
         _add_generation_constraint_alert(alerts, draft, session, constraints_by_course_id)
         _add_study_type_window_alert(
             alerts,
@@ -89,10 +129,11 @@ def _add_overlap_alerts(
     attr: str,
     label: str,
     rooms_by_id: dict[int, Room],
+    lecturers_by_id: dict[int, Lecturer],
 ) -> None:
     for draft, session in sessions:
         related = [
-            _related_session(other_draft, other_session, rooms_by_id)
+            _related_session(other_draft, other_session, rooms_by_id, lecturers_by_id)
             for other_draft, other_session in sessions
             if getattr(session, attr) == getattr(other_session, attr)
             and sessions_overlap(session, other_session)
@@ -112,6 +153,7 @@ def _add_capacity_alert(
     draft: DraftSchedule,
     session: DraftSession,
     rooms_by_id: dict[int, Room],
+    current_cohort_size: int,
 ) -> None:
     room = rooms_by_id.get(session.room_id)
     if room is None:
@@ -122,11 +164,11 @@ def _add_capacity_alert(
             )
         )
         return
-    if room.capacity < draft.cohort_size_snapshot:
+    if room.capacity < current_cohort_size:
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.ROOM_CAPACITY,
-                message=f"Room capacity {room.capacity} is lower than Cohort size {draft.cohort_size_snapshot}.",
+                message=f"Room capacity {room.capacity} is lower than Cohort size {current_cohort_size}.",
             )
         )
 
@@ -279,9 +321,10 @@ def _related_session(
     draft: DraftSchedule,
     session: DraftSession,
     rooms_by_id: dict[int, Room],
+    lecturers_by_id: dict[int, Lecturer],
 ) -> RelatedSession:
-    course = draft.course
     room = rooms_by_id.get(session.room_id)
+    lecturer = lecturers_by_id.get(session.lecturer_id)
     return RelatedSession(
         session_id=session.id,
         draft_schedule_id=draft.id,
@@ -291,6 +334,6 @@ def _related_session(
         start_time=session.start_time.strftime("%H:%M"),
         end_time=session.end_time.strftime("%H:%M"),
         cohort_name=draft.cohort_name_snapshot,
-        lecturer_name=course.lecturer.name,
+        lecturer_name=lecturer.name if lecturer is not None else f"Lecturer {session.lecturer_id}",
         room_name=room.name if room is not None else f"Room {session.room_id}",
     )

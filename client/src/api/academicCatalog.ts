@@ -4,13 +4,16 @@ export type UsageSummary = { recordId: number; revision: number; canDelete: bool
 export type CatalogAudit = { isActive: boolean; revision: number }
 export type SemesterRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; startDate: string; endDate: string; usage: UsageSummary }
 export type CohortRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; studentCount: number; usage: UsageSummary }
+export type CohortCapacityImpact = { removedRelationships: Array<{ courseId: number; roomId: number; courseRevision: number }>; coursesWithoutRooms: EntitySummary[] }
+export type CohortMutationResult = CohortRecord & { cohort: CohortRecord; capacityImpact: CohortCapacityImpact }
 export type EntitySummary = { id: number; name: string }
 export type Availability = { available: boolean; reasons: string[] }
 export type TimeWindowRecord = CatalogAudit & { id: number; studyTypeId: number; weekday: number; startTime: string; endTime: string; sortOrder: number; availability: Availability; usage: UsageSummary }
 export type StudyTypeRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; timeWindows: TimeWindowRecord[]; usage: UsageSummary }
-export type CourseRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; totalUnits: number; minSessionUnits: number; maxSessionUnits: number; semester: EntitySummary | null; cohort: EntitySummary; studyType: EntitySummary; lecturer: EntitySummary; room: EntitySummary; availability: Availability; usage: UsageSummary }
+export type CourseRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; totalUnits: number; minSessionUnits: number; maxSessionUnits: number; semester: EntitySummary | null; cohort: EntitySummary; studyType: EntitySummary; lecturer: EntitySummary | null; room: EntitySummary | null; availability: Availability; usage: UsageSummary }
 export type CatalogPage<T> = { page: number; pageSize: number; total: number; items: T[] }
 export type CourseInput = { name: string; totalUnits: number; minSessionUnits: number; maxSessionUnits: number; semesterId: number; cohortId: number; studyTypeId: number; lecturerId: number; roomId: number }
+export type CourseUpdateInput = Omit<CourseInput, 'lecturerId' | 'roomId'> & { expectedRevision: number }
 export type SemesterInput = { name: string; startDate: string; endDate: string }
 export type CohortInput = { name: string; studentCount: number }
 export type StudyTypeInput = { name: string }
@@ -87,7 +90,7 @@ export function createCourse(input: CourseInput): Promise<CourseRecord> {
   return request('/api/academic/courses', json('POST', input))
 }
 
-export function updateCourse(recordId: number, input: CourseInput & { expectedRevision: number }): Promise<CourseRecord> {
+export function updateCourse(recordId: number, input: CourseUpdateInput): Promise<CourseRecord> {
   return request(`/api/academic/courses/${recordId}`, json('PATCH', input))
 }
 
@@ -107,7 +110,7 @@ export function updateSemester(recordId: number, input: SemesterInput & { expect
   return request(`/api/academic/semesters/${recordId}`, json('PATCH', input))
 }
 
-export function updateCohort(recordId: number, input: CohortInput & { expectedRevision: number }): Promise<CohortRecord> {
+export function updateCohort(recordId: number, input: CohortInput & { expectedRevision: number }): Promise<CohortMutationResult> {
   return request(`/api/academic/cohorts/${recordId}`, json('PATCH', input))
 }
 

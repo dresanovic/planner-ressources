@@ -2,6 +2,14 @@
 
 React/Vite frontend for the resource planner.
 
+## Resource Eligibility and Availability (FS-008)
+
+The **Academic Data** workspace includes coded Lecturer and Room administration. Active resources are shown by default; planners can search by name/code, inspect inactive records, maintain Room capacity and recurring/dated unavailable periods, review usage before removal, and reactivate retired resources. Unreferenced resources are permanently deleted; resources used by active Courses or saved sessions are retained inactive with the affected Courses explained.
+
+Course editing includes searchable eligible Lecturer and Room sets. Invalid preserved relationships stay visible, while inactive or newly undersized choices cannot be added. The fixed guidance explains that generation always prefers contiguous Lecturer blocks and Room reuse where hard eligibility, availability, and capacity rules allow. Cohort growth feedback lists automatic insufficient-Room cleanup and Courses left without a usable Room.
+
+Generated session rows show `Name Â· CODE` for the actual per-session Lecturer and Room. Manual editing changes exactly one eligible Lecturer and Room and retains simultaneous eligibility, availability, capacity, and overlap alerts. These preferences and assignments are Course-local; there is no global resource optimizer in this slice.
+
 ## Draft Schedule Page
 
 The schedule page lets an admin trigger draft schedule generation for one selected course, review generated sessions across the selected semester, and manually correct already generated Draft Sessions.
@@ -28,7 +36,7 @@ The review panel supports:
 - chronological list review with date, time, units, course, Cohort, lecturer, room, and study type context
 - weekly grouped review mode
 - compact filters derived from all generated course, Cohort, lecturer, room, and study type values in the selected semester
-- manual editing of an existing Draft Session's date, start time, end time, and room
+- manual editing of an existing Draft Session's date, start time, end time, Lecturer, and Room
 - derived session length display from the edited start and end time
 - room choices with capacity metadata, with insufficient-capacity room edits rejected by the backend
 - non-blocking validation alerts for lecturer, room, and Cohort overlaps, room capacity issues, active generation-constraint violations, and Study Type Time Window violations
@@ -47,13 +55,13 @@ Automatic conflict resolution, conflict-aware generation, room occupancy blockin
 
 ## Academic Data Administration
 
-Use the top-level **Academic Data** view to create, review, edit, archive/reactivate, and safely delete Semesters, Cohorts, Courses, Study Types, and Time Windows. Category lists retain last-known content during refresh, support active/inactive filtering, and use controlled forms so entered values survive backend validation. Course forms select academic relationships plus the existing read-only Lecturer and Room options.
+Use the top-level **Academic Data** view to create, review, edit, archive/reactivate, and safely delete Semesters, Cohorts, Courses, Study Types, Time Windows, Lecturers, and Rooms. Category lists retain last-known content during refresh, support active/inactive filtering, and use controlled forms so entered values survive backend validation. Course forms establish initial resources and expose the complete maintained eligibility sets while editing.
 
 Each record exposes usage-aware actions. Permanent deletion opens a keyboard-operable dialog that separates dependent-record blockers from saved-schedule blockers and offers Archive without changing dependent lifecycle state. Revision conflicts and validation failures are announced without silently replacing local form input. Legacy name-repair records show rename guidance.
 
 Returning to **Schedule** remounts and refetches planning options. Course choices are limited to the selected current Semester; invalid prior selections are retained and flagged, and visible unavailable Courses show their reason. Generation remains disabled until the planner selects an eligible Course. No client router, form library, or external state library is required.
 
-The academic administration client uses the `/api/academic` contract documented by the backend. Lecturer/Room administration, availability calendars, authentication, and imports remain outside this slice.
+The academic administration client uses `/api/academic` for Courses and eligibility and `/api/resources` for Lecturer/Room lifecycle and unavailable periods. Authentication, imports, and external synchronization remain outside this slice.
 
 ## Development
 

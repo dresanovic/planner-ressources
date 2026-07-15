@@ -12,7 +12,11 @@ from app.main import app
 from app.models.planning import (
     Cohort,
     Course,
+    CourseEligibleLecturer,
+    CourseEligibleRoom,
     Lecturer,
+    ResourceUnavailabilityPeriod,
+    ResourceUnavailabilityWeekday,
     Room,
     Semester,
     StudyType,
@@ -78,11 +82,11 @@ def client(db_session):
 def seed_valid_course(db, *, total_units=20, room_capacity=40, cohort_size=30, min_units=2, max_units=4):
     db.add_all(
         [
-            Lecturer(id=1, name="Ada Lovelace"),
+            Lecturer(id=1, name="Ada Lovelace", reference_code="LEC-001", normalized_reference_code="lec-001"),
             Cohort(id=1, name="AI 1", student_count=cohort_size),
-            Room(id=1, name="R1", capacity=room_capacity),
-            Room(id=3, name="R3", capacity=60),
-            Room(id=4, name="Tiny", capacity=20),
+            Room(id=1, name="R1", reference_code="ROOM-001", normalized_reference_code="room-001", capacity=room_capacity),
+            Room(id=3, name="R3", reference_code="ROOM-003", normalized_reference_code="room-003", capacity=60),
+            Room(id=4, name="Tiny", reference_code="ROOM-004", normalized_reference_code="room-004", capacity=20),
             StudyType(id=1, name="Full-time"),
             Semester(id=1, name="Fall", start_date=date(2026, 9, 7), end_date=date(2026, 12, 20)),
             StudyTypeTimeWindow(
@@ -107,11 +111,11 @@ def seed_valid_course(db, *, total_units=20, room_capacity=40, cohort_size=30, m
                 total_units=total_units,
                 min_session_units=min_units,
                 max_session_units=max_units,
-                lecturer_id=1,
                 cohort_id=1,
-                room_id=1,
                 study_type_id=1,
                 current_semester_id=1,
+                eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
+                eligible_rooms=[CourseEligibleRoom(room_id=1)],
             ),
         ]
     )
@@ -130,11 +134,11 @@ def seed_second_course(db):
                 total_units=16,
                 min_session_units=2,
                 max_session_units=4,
-                lecturer_id=2,
                 cohort_id=2,
-                room_id=2,
                 study_type_id=1,
                 current_semester_id=1,
+                eligible_lecturers=[CourseEligibleLecturer(lecturer_id=2)],
+                eligible_rooms=[CourseEligibleRoom(room_id=2)],
             ),
         ]
     )
@@ -153,12 +157,10 @@ def test_read_planning_options_returns_database_courses_and_windows(client, db_s
     assert payload["courses"][0]["cohort"] == {"id": 1, "name": "AI 1"}
     assert payload["courses"][1]["lecturer"] == {"id": 2, "name": "Grace Hopper"}
     assert payload["courses"][1]["room"] == {"id": 2, "name": "R2"}
-    assert payload["rooms"] == [
-        {"id": 1, "name": "R1", "capacity": 40},
-        {"id": 2, "name": "R2", "capacity": 30},
-        {"id": 3, "name": "R3", "capacity": 60},
-        {"id": 4, "name": "Tiny", "capacity": 20},
+    assert [(room["id"], room["name"], room["capacity"]) for room in payload["rooms"]] == [
+        (1, "R1", 40), (2, "R2", 30), (3, "R3", 60), (4, "Tiny", 20),
     ]
+    assert all(room["referenceCode"] for room in payload["rooms"])
     assert payload["semesters"] == [
         {
             "id": 1,
@@ -204,7 +206,10 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
     assert [session["units"] for session in payload["sessions"]] == [4, 4, 4, 4, 4]
     assert payload["sessions"][0]["startTime"] == "08:00"
     assert payload["sessions"][0]["endTime"] == "11:30"
-    assert payload["sessions"][0] == {
+    assert {key: payload["sessions"][0][key] for key in (
+        "id", "date", "startTime", "endTime", "units", "courseId", "lecturerId",
+        "cohortId", "roomId", "studyTypeId", "timeWindowId", "constraintWindowIndex", "validationAlerts",
+    )} == {
         "id": payload["sessions"][0]["id"],
         "date": "2026-09-07",
         "startTime": "08:00",
@@ -219,6 +224,8 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
         "constraintWindowIndex": 0,
         "validationAlerts": [],
     }
+    assert payload["sessions"][0]["lecturer"]["referenceCode"] == "LEC-001"
+    assert payload["sessions"][0]["room"]["referenceCode"] == "ROOM-001"
 
     read_response = client.get("/api/courses/1/draft-schedule?semesterId=1")
     assert read_response.status_code == 200
@@ -251,8 +258,8 @@ def test_read_draft_schedules_returns_overlap_validation_alerts(client, db_sessi
     seed_valid_course(db_session)
     seed_second_course(db_session)
     second_course = db_session.get(Course, 2)
-    second_course.lecturer_id = 1
-    second_course.room_id = 1
+    second_course.eligible_lecturers = [CourseEligibleLecturer(lecturer_id=1)]
+    second_course.eligible_rooms = [CourseEligibleRoom(room_id=1)]
     second_course.cohort_id = 1
     db_session.commit()
 
@@ -273,7 +280,7 @@ def test_read_single_draft_schedule_returns_validation_alerts(client, db_session
     seed_valid_course(db_session)
     seed_second_course(db_session)
     second_course = db_session.get(Course, 2)
-    second_course.lecturer_id = 1
+    second_course.eligible_lecturers = [CourseEligibleLecturer(lecturer_id=1)]
     db_session.commit()
     client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
     client.post("/api/courses/2/draft-schedule/generate", json=generation_payload())
@@ -287,6 +294,8 @@ def test_read_single_draft_schedule_returns_validation_alerts(client, db_session
 
 def test_validation_alerts_include_capacity_window_and_missing_data_codes(client, db_session):
     seed_valid_course(db_session)
+    db_session.add(CourseEligibleRoom(course_id=1, room_id=3))
+    db_session.commit()
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     session_id = generated["sessions"][0]["id"]
     db_session.get(Room, 1).capacity = 20
@@ -416,7 +425,7 @@ def test_generation_returns_non_blocking_validation_alerts(client, db_session):
     seed_valid_course(db_session)
     seed_second_course(db_session)
     second_course = db_session.get(Course, 2)
-    second_course.lecturer_id = 1
+    second_course.eligible_lecturers = [CourseEligibleLecturer(lecturer_id=1)]
     db_session.commit()
     client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
 
@@ -596,6 +605,11 @@ def test_update_draft_session_edits_time_and_rejects_invalid_values(client, db_s
 
 def test_update_draft_session_room_capacity_and_missing_room(client, db_session):
     seed_valid_course(db_session)
+    db_session.add_all([
+        CourseEligibleRoom(course_id=1, room_id=3),
+        CourseEligibleRoom(course_id=1, room_id=4),
+    ])
+    db_session.commit()
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     session_id = generated["sessions"][0]["id"]
 
@@ -620,8 +634,125 @@ def test_update_draft_session_room_capacity_and_missing_room(client, db_session)
     assert missing_response.status_code == 404
 
 
+def test_update_draft_session_changes_lecturer_and_room_only_to_current_valid_eligible_choices(client, db_session):
+    seed_valid_course(db_session)
+    db_session.add(Lecturer(id=2, name="Grace Hopper", reference_code="LEC-002", normalized_reference_code="lec-002"))
+    db_session.add_all([
+        CourseEligibleLecturer(course_id=1, lecturer_id=2),
+        CourseEligibleRoom(course_id=1, room_id=3),
+    ])
+    db_session.commit()
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    session_id = generated["sessions"][0]["id"]
+
+    changed = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "lecturerId": 2, "roomId": 3},
+    )
+    assert changed.status_code == 200
+    edited = next(item for item in changed.json()["sessions"] if item["id"] == session_id)
+    assert (edited["lecturerId"], edited["roomId"]) == (2, 3)
+    assert edited["lecturer"]["referenceCode"] == "LEC-002"
+
+    invalid = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "lecturerId": 999, "roomId": 3},
+    )
+    assert invalid.status_code == 422
+    assert invalid.json()["errors"][0]["code"] == "LECTURER_INELIGIBLE"
+
+
+def test_update_draft_session_preserves_an_unchanged_legacy_invalid_assignment(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    session_id = generated["sessions"][0]["id"]
+    db_session.query(CourseEligibleRoom).filter_by(course_id=1, room_id=1).delete()
+    db_session.commit()
+
+    response = client.patch(
+        f"/api/draft-sessions/{session_id}",
+        json={"date": "2026-12-14", "startTime": "09:00", "endTime": "10:30", "lecturerId": 1, "roomId": 1},
+    )
+
+    assert response.status_code == 200
+    edited = next(item for item in response.json()["sessions"] if item["id"] == session_id)
+    assert edited["roomId"] == 1
+    assert "ROOM_INELIGIBLE" in {alert["code"] for alert in edited["validationAlerts"]}
+
+
+def test_draft_api_serializes_combined_resource_alerts_without_mutating_assignments(client, db_session):
+    seed_valid_course(db_session)
+    generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
+    before = [
+        (item["id"], item["lecturerId"], item["roomId"], item["date"], item["startTime"], item["endTime"])
+        for item in generated["sessions"]
+    ]
+    lecturer_period = ResourceUnavailabilityPeriod(
+        lecturer_id=1, kind="recurring", start_time=time(8), end_time=time(12)
+    )
+    lecturer_period.weekdays = [ResourceUnavailabilityWeekday(weekday=0)]
+    room_period = ResourceUnavailabilityPeriod(
+        room_id=1,
+        kind="dated",
+        start_date=date(2026, 9, 7),
+        end_date=date(2026, 9, 7),
+        start_time=time(8),
+        end_time=time(12),
+    )
+    db_session.add_all([lecturer_period, room_period])
+    db_session.query(CourseEligibleLecturer).filter_by(course_id=1, lecturer_id=1).delete()
+    db_session.query(CourseEligibleRoom).filter_by(course_id=1, room_id=1).delete()
+    db_session.get(Room, 1).capacity = 20
+    db_session.commit()
+
+    payload = client.get("/api/courses/1/draft-schedule?semesterId=1").json()
+    first = payload["sessions"][0]
+    codes = {alert["code"] for alert in first["validationAlerts"]}
+    assert {
+        "LECTURER_INELIGIBLE", "ROOM_INELIGIBLE", "LECTURER_UNAVAILABLE",
+        "ROOM_UNAVAILABLE", "ROOM_CAPACITY",
+    }.issubset(codes)
+    assert first["lecturer"]["referenceCode"] == "LEC-001"
+    assert first["room"]["referenceCode"] == "ROOM-001"
+    after = [
+        (item["id"], item["lecturerId"], item["roomId"], item["date"], item["startTime"], item["endTime"])
+        for item in payload["sessions"]
+    ]
+    assert after == before
+
+
+def test_cohort_growth_validates_saved_sessions_against_current_cohort_size(client, db_session):
+    seed_valid_course(
+        db_session,
+        total_units=4,
+        room_capacity=30,
+        cohort_size=20,
+        min_units=2,
+        max_units=2,
+    )
+    generated = client.post(
+        "/api/courses/1/draft-schedule/generate",
+        json=generation_payload(),
+    )
+    assert generated.status_code == 201
+
+    grown = client.patch(
+        "/api/academic/cohorts/1",
+        json={"name": "AI 1", "studentCount": 35, "expectedRevision": 1},
+    )
+    assert grown.status_code == 200
+
+    reread = client.get("/api/courses/1/draft-schedule?semesterId=1")
+    assert reread.status_code == 200
+    for session in reread.json()["sessions"]:
+        codes = {alert["code"] for alert in session["validationAlerts"]}
+        assert {"ROOM_INELIGIBLE", "ROOM_CAPACITY"}.issubset(codes)
+
+
 def test_read_draft_schedules_returns_saved_manual_edit_values_and_regeneration_replaces_them(client, db_session):
     seed_valid_course(db_session)
+    db_session.add(CourseEligibleRoom(course_id=1, room_id=3))
+    db_session.commit()
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     session_id = generated["sessions"][0]["id"]
 

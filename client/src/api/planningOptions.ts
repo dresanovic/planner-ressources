@@ -1,5 +1,6 @@
 import type { PlanningEntity } from './draftSchedule'
 import type { Availability } from './academicCatalog'
+import type { LecturerRecord, ResourceCandidate, RoomRecord } from './resourceCatalog'
 
 export type CourseOption = {
   id: number
@@ -9,9 +10,9 @@ export type CourseOption = {
   maxSessionUnits: number
   semesterId?: number
   availability?: Availability
-  lecturer: PlanningEntity
+  lecturer: PlanningEntity | null
   cohort: PlanningEntity
-  room: PlanningEntity
+  room: PlanningEntity | null
   studyType: PlanningEntity
 }
 
@@ -41,8 +42,9 @@ export type PlanningOptions = {
   courses: CourseOption[]
   semesters: SemesterOption[]
   timeWindows: TimeWindowOption[]
-  rooms: RoomOption[]
-  lecturers: PlanningEntity[]
+  rooms: RoomRecord[]
+  lecturers: LecturerRecord[]
+  courseResources: Array<{ courseId: number; eligibleLecturers: ResourceCandidate[]; eligibleRooms: ResourceCandidate[]; preferences: { minimizeLecturerChanges: true; minimizeRoomChanges: true } }>
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''

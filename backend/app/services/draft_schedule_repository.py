@@ -4,11 +4,15 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.planning import (
     Cohort,
     Course,
+    CourseEligibleLecturer,
+    CourseEligibleRoom,
     DraftSchedule,
     DraftSession,
     GenerationConstraintSet,
     GenerationConstraintWindow,
+    Lecturer,
     Room,
+    ResourceUnavailabilityPeriod,
     Semester,
     StudyTypeTimeWindow,
 )
@@ -17,8 +21,10 @@ from app.services.schedule_generation import (
     GeneratedSession,
     PlanningPeriodPlan,
     SemesterPlan,
+    ResourceCandidatePlan,
     TimeWindowPlan,
 )
+from app.services.resource_rules import resource_is_unavailable
 
 _UNSET = object()
 
@@ -55,24 +61,61 @@ class GenerationConstraints:
 
 
 def load_course_plan(db: Session, course_id: int) -> CoursePlan:
-    course = db.get(Course, course_id)
+    course = (
+        db.execute(
+            select(Course)
+            .where(Course.id == course_id)
+            .options(
+                selectinload(Course.cohort),
+                selectinload(Course.eligible_lecturers)
+                .selectinload(CourseEligibleLecturer.lecturer)
+                .selectinload(Lecturer.unavailability_periods)
+                .selectinload(ResourceUnavailabilityPeriod.weekdays),
+                selectinload(Course.eligible_rooms)
+                .selectinload(CourseEligibleRoom.room)
+                .selectinload(Room.unavailability_periods)
+                .selectinload(ResourceUnavailabilityPeriod.weekdays),
+            )
+        )
+        .scalars()
+        .one_or_none()
+    )
     if course is None:
         raise PlanningInputNotFoundError("Course not found.")
-    cohort = db.get(Cohort, course.cohort_id)
-    room = db.get(Room, course.room_id)
-    if cohort is None or room is None:
+    cohort = course.cohort
+    room = course.room
+    if cohort is None:
         raise PlanningInputNotFoundError("Course planning input is incomplete.")
     return CoursePlan(
         id=course.id,
         total_units=course.total_units,
         min_session_units=course.min_session_units,
         max_session_units=course.max_session_units,
-        lecturer_id=course.lecturer_id,
+        lecturer_id=course.lecturer_id or 0,
         cohort_id=course.cohort_id,
-        room_id=course.room_id,
+        room_id=course.room_id or 0,
         study_type_id=course.study_type_id,
         cohort_size=cohort.student_count,
-        room_capacity=room.capacity,
+        room_capacity=room.capacity if room is not None else 0,
+        lecturer_candidates=tuple(
+            ResourceCandidatePlan(
+                id=link.lecturer.id,
+                normalized_code=link.lecturer.normalized_reference_code,
+                active=link.lecturer.is_active,
+                unavailable_periods=tuple(link.lecturer.unavailability_periods),
+            )
+            for link in course.eligible_lecturers
+        ),
+        room_candidates=tuple(
+            ResourceCandidatePlan(
+                id=link.room.id,
+                normalized_code=link.room.normalized_reference_code,
+                active=link.room.is_active,
+                capacity=link.room.capacity,
+                unavailable_periods=tuple(link.room.unavailability_periods),
+            )
+            for link in course.eligible_rooms
+        ),
     )
 
 
@@ -287,9 +330,9 @@ def replace_draft_schedule(
     draft.sessions = [
         DraftSession(
             course_id=course_plan.id,
-            lecturer_id=course_plan.lecturer_id,
+            lecturer_id=session.lecturer_id if session.lecturer_id is not None else course_plan.lecturer_id,
             cohort_id=course_plan.cohort_id,
-            room_id=course_plan.room_id,
+            room_id=session.room_id if session.room_id is not None else course_plan.room_id,
             date=session.date,
             start_time=session.start_time,
             end_time=session.end_time,
@@ -315,9 +358,9 @@ def get_draft_schedule(db: Session, course_id: int, semester_id: int) -> DraftSc
             )
             .options(
                 selectinload(DraftSchedule.sessions),
-                selectinload(DraftSchedule.course).selectinload(Course.lecturer),
+                selectinload(DraftSchedule.course).selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
                 selectinload(DraftSchedule.course).selectinload(Course.cohort),
-                selectinload(DraftSchedule.course).selectinload(Course.room),
+                selectinload(DraftSchedule.course).selectinload(Course.eligible_rooms).selectinload(CourseEligibleRoom.room),
                 selectinload(DraftSchedule.course).selectinload(Course.study_type),
             )
         )
@@ -333,6 +376,7 @@ def update_draft_session(
     date,
     start_time,
     end_time,
+    lecturer_id: int | None = None,
     room_id: int,
 ) -> DraftSchedule:
     session = db.get(DraftSession, session_id)
@@ -371,18 +415,58 @@ def update_draft_session(
             "Another Draft Session in this draft schedule already uses that date.",
         )
 
-    room = db.get(Room, room_id)
-    if room is None:
-        raise PlanningInputNotFoundError("Room not found.")
-    if room.capacity < draft.cohort_size_snapshot:
-        raise DraftSessionEditValidationError(
-            "INSUFFICIENT_ROOM_CAPACITY",
-            f"Room capacity {room.capacity} is lower than Cohort size {draft.cohort_size_snapshot}.",
+    requested_lecturer_id = session.lecturer_id if lecturer_id is None else lecturer_id
+    if requested_lecturer_id != session.lecturer_id:
+        lecturer_link = db.get(CourseEligibleLecturer, (session.course_id, requested_lecturer_id))
+        lecturer = db.get(Lecturer, requested_lecturer_id)
+        if lecturer_link is None or lecturer is None or not lecturer.is_active:
+            raise DraftSessionEditValidationError(
+                "LECTURER_INELIGIBLE",
+                "The selected Lecturer is inactive or outside the current Course eligibility set.",
+            )
+        lecturer_periods = list(
+            db.execute(
+                select(ResourceUnavailabilityPeriod)
+                .where(ResourceUnavailabilityPeriod.lecturer_id == requested_lecturer_id)
+                .options(selectinload(ResourceUnavailabilityPeriod.weekdays))
+            ).scalars()
         )
+        if resource_is_unavailable(lecturer_periods, date, start_time, end_time):
+            raise DraftSessionEditValidationError("LECTURER_UNAVAILABLE", "The selected Lecturer is unavailable during this session.")
+
+    if room_id != session.room_id:
+        room = db.get(Room, room_id)
+        if room is None:
+            raise PlanningInputNotFoundError("Room not found.")
+        course = db.get(Course, session.course_id)
+        cohort = db.get(Cohort, course.cohort_id) if course is not None else None
+        if cohort is None:
+            raise PlanningInputNotFoundError("Course planning input is incomplete.")
+        room_link = db.get(CourseEligibleRoom, (session.course_id, room_id))
+        if room_link is None or not room.is_active:
+            raise DraftSessionEditValidationError(
+                "ROOM_INELIGIBLE",
+                "The selected Room is inactive or outside the current Course eligibility set.",
+            )
+        if room.capacity < cohort.student_count:
+            raise DraftSessionEditValidationError(
+                "INSUFFICIENT_ROOM_CAPACITY",
+                f"Room capacity {room.capacity} is lower than Cohort size {cohort.student_count}.",
+            )
+        room_periods = list(
+            db.execute(
+                select(ResourceUnavailabilityPeriod)
+                .where(ResourceUnavailabilityPeriod.room_id == room_id)
+                .options(selectinload(ResourceUnavailabilityPeriod.weekdays))
+            ).scalars()
+        )
+        if resource_is_unavailable(room_periods, date, start_time, end_time):
+            raise DraftSessionEditValidationError("ROOM_UNAVAILABLE", "The selected Room is unavailable during this session.")
 
     session.date = date
     session.start_time = start_time
     session.end_time = end_time
+    session.lecturer_id = requested_lecturer_id
     session.room_id = room_id
     draft.revision += 1
     db.flush()
@@ -422,9 +506,9 @@ def list_draft_schedules_by_semester(db: Session, semester_id: int) -> list[Draf
             .where(DraftSchedule.semester_id == semester_id)
             .options(
                 selectinload(DraftSchedule.sessions),
-                selectinload(DraftSchedule.course).selectinload(Course.lecturer),
+                selectinload(DraftSchedule.course).selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
                 selectinload(DraftSchedule.course).selectinload(Course.cohort),
-                selectinload(DraftSchedule.course).selectinload(Course.room),
+                selectinload(DraftSchedule.course).selectinload(Course.eligible_rooms).selectinload(CourseEligibleRoom.room),
                 selectinload(DraftSchedule.course).selectinload(Course.study_type),
             )
             .order_by(DraftSchedule.course_id)

@@ -3,6 +3,8 @@ from datetime import date, time
 from app.models.planning import (
     Cohort,
     Course,
+    CourseEligibleLecturer,
+    CourseEligibleRoom,
     Lecturer,
     Room,
     Semester,
@@ -42,11 +44,11 @@ def seed_multi_course_planner(db, *, course_count: int = 3, invalid_course_id: i
                 total_units=8,
                 min_session_units=2,
                 max_session_units=4,
-                lecturer_id=course_id,
                 cohort_id=course_id,
-                room_id=course_id,
                 study_type_id=1,
                 current_semester_id=1,
+                eligible_lecturers=[CourseEligibleLecturer(lecturer_id=course_id)],
+                eligible_rooms=[CourseEligibleRoom(room_id=course_id)],
             ),
         ])
     db.commit()

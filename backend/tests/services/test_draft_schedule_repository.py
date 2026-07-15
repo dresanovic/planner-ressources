@@ -8,6 +8,8 @@ from app.db.base import Base
 from app.models.planning import (
     Cohort,
     Course,
+    CourseEligibleLecturer,
+    CourseEligibleRoom,
     Lecturer,
     Room,
     Semester,
@@ -61,12 +63,17 @@ def seed_course(db):
         total_units=20,
         min_session_units=2,
         max_session_units=4,
-        lecturer_id=1,
         cohort_id=1,
-        room_id=1,
         study_type_id=1,
+        eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
+        eligible_rooms=[CourseEligibleRoom(room_id=1)],
     )
     db.add_all([lecturer, cohort, room, room_2, small_room, study_type, semester, window, course])
+    db.flush()
+    db.add_all([
+        CourseEligibleRoom(course_id=1, room_id=2),
+        CourseEligibleRoom(course_id=1, room_id=3),
+    ])
     db.commit()
 
 
@@ -309,6 +316,28 @@ def test_update_draft_session_enforces_room_capacity_but_not_occupancy():
 
     edited = next(session for session in updated.sessions if session.id == target_session_id)
     assert edited.room_id == 2
+
+
+def test_update_draft_session_uses_current_cohort_size_after_cohort_shrink():
+    db = make_session()
+    seed_course(db)
+    draft = seed_draft(db)
+    target = draft.sessions[0]
+
+    db.get(Cohort, 1).student_count = 15
+    db.flush()
+
+    updated = update_draft_session(
+        db,
+        target.id,
+        date=target.date,
+        start_time=target.start_time,
+        end_time=target.end_time,
+        room_id=3,
+    )
+
+    edited = next(session for session in updated.sessions if session.id == target.id)
+    assert edited.room_id == 3
 
 
 def test_course_semester_identity_revisions_and_cross_semester_retention():
