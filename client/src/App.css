@@ -29,6 +29,37 @@
   gap: 6px;
 }
 
+.sidebar nav button {
+  background: transparent;
+  color: #526071;
+  text-align: left;
+}
+
+.sidebar nav button.active,
+.sidebar nav button:hover {
+  background: #e8f1ff;
+  color: #075fc4;
+}
+
+.view-navigation {
+  position: fixed;
+  z-index: 20;
+  right: 24px;
+  top: 18px;
+  display: flex;
+  gap: 6px;
+}
+
+.view-navigation button:not(.active) { background: #edf2f8; color: #314154; }
+
+.catalog-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 420px); gap: 20px; }
+.catalog-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; }
+.catalog-list li { display: flex; justify-content: space-between; align-items: center; border: 1px solid #dfe4eb; border-radius: 6px; padding: 10px 12px; }
+.catalog-record-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.catalog-editor { display: grid; gap: 12px; margin-top: 18px; }
+.catalog-field { display: grid; gap: 4px; color: #526071; font-size: 13px; font-weight: 700; }
+.catalog-field input, .catalog-field select { border: 1px solid #cfd7e3; border-radius: 6px; padding: 9px 10px; }
+
 .sidebar a {
   color: #526071;
   text-decoration: none;
@@ -453,6 +484,9 @@ button:disabled {
   margin: 0;
 }
 
+.protected-delete-dialog h3 { margin: 18px 0 6px; font-size: 15px; }
+.protected-delete-dialog section p { margin: 4px 0; color: #526071; }
+
 .replacement-warning {
   border: 1px solid #f0b4a5;
   border-radius: 6px;
@@ -682,6 +716,8 @@ button:disabled {
   .planner-grid {
     grid-template-columns: 1fr;
   }
+
+  .catalog-grid { grid-template-columns: 1fr; }
 
   .dialog-actions,
   .refresh-error {

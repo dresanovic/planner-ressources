@@ -146,6 +146,30 @@ def test_successful_regeneration_replaces_prior_draft_sessions():
     assert [session.date for session in draft.sessions] == [date(2026, 9, 14), date(2026, 9, 21)]
 
 
+def test_draft_academic_snapshots_survive_source_edits():
+    db = make_session()
+    seed_course(db)
+    draft = seed_draft(db)
+    assert draft.course_name_snapshot == "Planning 101"
+    assert draft.cohort_name_snapshot == "AI 1"
+    assert draft.cohort_size_snapshot == 30
+    assert draft.study_type_name_snapshot == "Full-time"
+    assert draft.semester_name_snapshot == "Fall"
+
+    db.get(Course, 1).name = "Renamed course"
+    db.get(Cohort, 1).name = "Renamed cohort"
+    db.get(Cohort, 1).student_count = 99
+    db.get(StudyType, 1).name = "Renamed type"
+    db.get(Semester, 1).name = "Renamed semester"
+    db.commit()
+    preserved = get_draft_schedule(db, 1, 1)
+    assert preserved.course_name_snapshot == "Planning 101"
+    assert preserved.cohort_name_snapshot == "AI 1"
+    assert preserved.cohort_size_snapshot == 30
+    assert preserved.study_type_name_snapshot == "Full-time"
+    assert preserved.semester_name_snapshot == "Fall"
+
+
 def test_generation_constraints_default_save_replace_and_clear():
     db = make_session()
     seed_course(db)

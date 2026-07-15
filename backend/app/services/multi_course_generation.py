@@ -52,7 +52,8 @@ def prepare_batch(
     operation_kind: BatchOperationKind,
     course_ids: list[int],
 ) -> BatchPreparationResponse:
-    semester, courses, drafts, _, _ = _bulk_load(db, semester_id, course_ids)
+    semester, courses, drafts, _, default_windows = _bulk_load(db, semester_id, course_ids)
+    active_window_types = {window.study_type_id for window in default_windows}
     by_id = {course.id: course for course in courses}
     drafts_by_course = {draft.course_id: draft for draft in drafts}
     snapshots: list[PreparedCourseSnapshot] = []
@@ -60,6 +61,7 @@ def prepare_batch(
     for course_id in course_ids:
         course = by_id.get(course_id)
         draft = drafts_by_course.get(course_id)
+        reasons = _eligibility_reasons(course, semester, active_window_types) if course is not None else ["COURSE_NOT_FOUND"]
         replacement = course is not None and draft is not None
         if replacement:
             replacements.append(course_id)
@@ -67,7 +69,7 @@ def prepare_batch(
             PreparedCourseSnapshot(
                 courseId=course_id,
                 courseName=course.name if course else None,
-                available=course is not None,
+                available=course is not None and not reasons,
                 draftScheduleId=draft.id if draft else None,
                 draftRevision=draft.revision if draft else None,
                 replacementRequired=replacement,
@@ -100,6 +102,7 @@ def generate_batch(
     windows_by_study_type: dict[int, list[StudyTypeTimeWindow]] = {}
     for window in default_windows:
         windows_by_study_type.setdefault(window.study_type_id, []).append(window)
+    active_window_types = set(windows_by_study_type)
 
     outcomes: list[CourseGenerationOutcome] = []
     candidates: list[tuple[PreparedCourseInput, LoadedBatchInput, object]] = []
@@ -107,6 +110,10 @@ def generate_batch(
         course = courses_by_id.get(prepared.course_id)
         if course is None:
             outcomes.append(_failure(prepared.course_id, None, "COURSE_NOT_FOUND", "Course is not available in the planner."))
+            continue
+        eligibility = _eligibility_reasons(course, semester, active_window_types)
+        if eligibility:
+            outcomes.append(_failure(course.id, course.name, eligibility[0], "Course academic data is not eligible for this Semester."))
             continue
         if course.cohort is None or course.room is None:
             outcomes.append(_failure(course.id, course.name, "PLANNING_INPUT_INCOMPLETE", "Course planning input is incomplete."))
@@ -281,7 +288,7 @@ def _bulk_load(db: Session, semester_id: int, course_ids: list[int]):
     default_windows = list(
         db.execute(
             select(StudyTypeTimeWindow)
-            .where(StudyTypeTimeWindow.study_type_id.in_(study_type_ids))
+            .where(StudyTypeTimeWindow.study_type_id.in_(study_type_ids), StudyTypeTimeWindow.is_active.is_(True))
             .order_by(StudyTypeTimeWindow.sort_order, StudyTypeTimeWindow.weekday)
             .execution_options(populate_existing=True)
         ).scalars().all()
@@ -302,6 +309,19 @@ def _course_to_plan(course: Course) -> CoursePlan:
         cohort_size=course.cohort.student_count,
         room_capacity=course.room.capacity,
     )
+
+
+def _eligibility_reasons(course: Course, semester: Semester, active_window_types: set[int]) -> list[str]:
+    reasons = []
+    if not course.is_active: reasons.append("RECORD_INACTIVE")
+    if course.current_semester_id is None: reasons.append("SEMESTER_ASSIGNMENT_REQUIRED")
+    elif course.current_semester_id != semester.id: reasons.append("COURSE_SEMESTER_MISMATCH")
+    if not semester.is_active: reasons.append("SEMESTER_INACTIVE")
+    if not course.cohort.is_active: reasons.append("COHORT_INACTIVE")
+    if not course.study_type.is_active: reasons.append("STUDY_TYPE_INACTIVE")
+    if course.study_type_id not in active_window_types: reasons.append("MISSING_ACTIVE_TIME_WINDOW")
+    if course.lecturer is None or course.room is None: reasons.append("RESOURCE_RELATIONSHIP_INVALID")
+    return reasons
 
 
 def _active_constraints(plan, semester, saved, defaults) -> GenerationConstraints:

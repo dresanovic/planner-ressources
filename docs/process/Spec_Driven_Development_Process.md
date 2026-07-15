@@ -1,318 +1,1074 @@
-Spec Driven Development Process
+# Spec-Driven Development Process
+
+This document defines the overall development process using **Spec Kit** together with the custom skills:
+
+- `$architecture-exploration`
+- `$requirements-engineering`
+- `$code-review`
+- `$code-refactor`
+
+The process has three different levels:
+
+1. **Project foundations**, normally established once
+2. **Product scope and slice management**, established initially and updated when necessary
+3. **Iterative slice implementation**, repeated for every development slice
+
+---
+
+# Overall process
+
+```text
+PROJECT FOUNDATION
+──────────────────────────────────────────────────────────
+
+$speckit-constitution
+        ↓
+$architecture-exploration
 
 
+PRODUCT SCOPE AND SLICE DEFINITION
+──────────────────────────────────────────────────────────
 
-Now here is the overall development process with Spec Kit, from project start to iterative delivery.
+$requirements-engineering
+        ↓
+docs/planning/Feature_slices.md
 
-Overall Spec Kit development process
 
-The official Spec Kit flow is basically:
+ITERATIVE IMPLEMENTATION — REPEATED FOR EACH SLICE
+──────────────────────────────────────────────────────────
 
-Constitution → Specify → Clarify → Plan → Tasks → Analyze → Implement
+$speckit-specify
+        ↓
+$speckit-clarify
+        ↺ repeat until sufficiently clear
+        ↓
+$speckit-plan
+        ↓
+$speckit-tasks
+        ↓
+$speckit-analyze
+        ↺ correct findings and repeat until consistent
+        ↓
+$speckit-implement
+        ↓
+$code-review
+        ↓
+verify → commit → merge
 
-Spec Kit’s documentation describes the core process as Spec → Plan → Tasks → Implement, with the quickstart adding constitution, clarification, checklist/analyze, and implementation steps around that flow. Sources: https://github.github.com/spec-kit/ and https://github.github.com/spec-kit/quickstart.html
 
- 
+PERIODIC CODEBASE IMPROVEMENT
+──────────────────────────────────────────────────────────
 
-1. Project setup / initialization
+$code-refactor
+```
 
-This is done once per project.
+The official Spec Kit workflow focuses on specification, planning, task creation, analysis, and implementation. The custom skills extend this workflow with architecture exploration, product-level requirements engineering, code review, and controlled refactoring.
 
-Typical actions:
+Official Spec Kit documentation:
 
-create repositoryinstall / configure Spec Kitinitialize projectconnect coding agent
+- [Spec Kit documentation](https://github.github.com/spec-kit/)
+- [Spec Kit quickstart](https://github.github.com/spec-kit/quickstart.html)
 
-The goal is simply to prepare the project so that Spec Kit can create and manage the specification artifacts.
+---
 
-In your case, this is already mostly done for the resource planner project.
+# Phase 1: Project foundation
 
- 
+These activities define the rules and technical direction of the project. They are normally performed once at the beginning and are not repeated for every development slice.
 
-2. Constitution: define project rules
+## 1. Project setup and initialization
 
-Command:
+This is performed once per project.
 
-/speckit.constitution
+Typical activities include:
 
-Purpose:
+- creating the repository;
+- initializing the project structure;
+- installing and configuring Spec Kit;
+- connecting the coding agent;
+- defining the basic Git workflow;
+- configuring the development and test environments.
 
-Define the non-negotiable project principles.
+The purpose is to prepare the project so that specification artifacts and implementation changes can be managed consistently.
 
-Examples:
+---
 
-Use TDD where possible.Keep implementation simple.Prefer minimal dependencies.All features must have acceptance criteria.No implementation without updated spec.
+## 2. Constitution: define project principles
 
-This is not a feature spec. It is more like the project’s rulebook. Spec Kit’s quickstart describes /speckit.constitution as the step for establishing core rules and principles for the project. Source: https://github.github.com/spec-kit/quickstart.html
+Skill:
 
-You usually do this once at the beginning, then update only if your development principles change.
+```text
+$speckit-constitution
+```
 
- 
+The constitution defines the project’s non-negotiable development principles.
 
-3. Feature discovery
+Typical principles include:
 
-This is where you collect the first rough requirement from yourself, the customer, or stakeholders.
+- specifications must be updated before implementation;
+- acceptance criteria must be defined;
+- tests should be written before production code;
+- dependencies should be kept minimal;
+- implementation should remain as simple as reasonably possible;
+- all changes must be verified before they are committed;
+- unrelated changes must not be introduced into a slice.
+
+The constitution is not a feature specification. It is the project’s development rulebook.
+
+It is normally created once at the start of the project and updated only when the project’s general development principles change.
+
+---
+
+## 3. Architecture exploration
+
+Custom skill:
+
+```text
+$architecture-exploration
+```
+
+Architecture exploration is used to evaluate and select the project’s fundamental technical direction.
+
+It can be executed:
+
+```text
+$architecture-exploration
+        ↓
+$speckit-constitution
+```
+
+or:
+
+```text
+$speckit-constitution
+        ↓
+$architecture-exploration
+```
+
+The appropriate order depends on the project.
+
+Architecture exploration may come first when architectural options must be understood before meaningful project rules can be established. The constitution may come first when important organizational or development constraints already exist and must guide the architectural decision.
+
+Typical architecture questions include:
+
+- Which frontend and backend technologies should be used?
+- Should the application use a monolith, modular monolith, or distributed architecture?
+- Which persistence technology is appropriate?
+- Which external systems must be integrated?
+- Which deployment model should be used?
+- Which architectural constraints are imposed by the organization?
+- Which quality attributes are most important?
+- What are the major technical risks and trade-offs?
+
+Example output may include:
+
+- selected technology stack;
+- rejected alternatives;
+- architectural decisions;
+- important constraints;
+- integration boundaries;
+- major technical risks;
+- assumptions that still require validation.
+
+Architecture exploration is normally performed once for the initial project architecture. It may be repeated only when a substantial architectural decision or major technology change is required.
+
+It is not part of the regular implementation cycle for every slice.
+
+---
+
+# Phase 2: Product scope and slice definition
+
+## 4. Requirements engineering
+
+Custom skill:
+
+```text
+$requirements-engineering
+```
+
+Requirements engineering establishes the product-level ground truth.
+
+Its purpose is to transform a broad product idea, major feature area, or scope change into a structured set of ordered vertical development slices.
+
+The skill creates or updates:
+
+```text
+docs/planning/Feature_slices.md
+```
+
+This file is the authoritative source for:
+
+- product goals;
+- target users and actors;
+- application scope;
+- explicit exclusions;
+- external-system boundaries;
+- major business rules;
+- high-level workflows;
+- development slices;
+- slice dependencies;
+- recommended implementation order;
+- ready-to-copy `$speckit-specify` prompts.
+
+## Development slices
+
+A slice is a vertical implementation of a meaningful high-level capability.
+
+A slice should deliver an observable user or business outcome across the necessary technical layers. It should not normally be defined as an isolated technical component such as:
+
+- create the database;
+- build the backend;
+- create the frontend;
+- add an API layer;
+- configure infrastructure.
+
+Those are usually implementation tasks within a vertical slice.
+
+Examples of vertical slices for a resource-planning application could be:
+
+- create a meeting-room booking;
+- prevent conflicting bookings;
+- cancel an existing booking;
+- approve restricted bookings;
+- notify users about booking changes;
+- manage rooms and availability.
+
+From a requirements-engineering perspective, slices often correspond to complete or partial business processes, user workflows, or business capabilities. However, a slice should remain small enough to be handled through one focused Spec Kit cycle.
+
+## How often requirements engineering is used
+
+`$requirements-engineering` is first executed near the beginning of the project after the initial project and architecture foundations are sufficiently clear.
+
+Unlike the project constitution and initial architecture exploration, requirements engineering is not strictly a one-time activity.
+
+It can be executed again when:
+
+- new product scope is introduced;
+- stakeholder requirements change;
+- a slice must be added;
+- an existing slice must be divided;
+- several slices must be merged;
+- priorities change;
+- dependencies change;
+- an integration boundary changes;
+- previously planned scope is deferred or removed;
+- implementation experience reveals that the original slice boundaries are unsuitable.
+
+It will therefore normally be used multiple times during development, but less frequently than the iterative Spec Kit skills.
+
+The distinction is:
+
+```text
+$requirements-engineering
+    manages the overall product scope and slice map
+
+$speckit-* skills
+    specify and implement one selected slice
+```
+
+The current `Feature_slices.md` remains the product-level ground truth throughout development.
+
+---
+
+# Phase 3: Iterative slice implementation
+
+The following workflow is repeated independently for every selected development slice:
+
+```text
+$speckit-specify
+        ↓
+$speckit-clarify
+        ↺
+$speckit-plan
+        ↓
+$speckit-tasks
+        ↓
+$speckit-analyze
+        ↺
+$speckit-implement
+        ↓
+$code-review
+```
+
+Each slice should normally have its own feature branch and specification artifacts.
+
+---
+
+## 5. Select the next slice
+
+Before starting a new Spec Kit cycle:
+
+1. open `docs/planning/Feature_slices.md`;
+2. identify the next recommended slice;
+3. check its dependencies;
+4. confirm that prerequisite slices are complete;
+5. copy the prepared `$speckit-specify` prompt;
+6. create a dedicated branch.
 
 Example:
 
-The system should allow users to book meeting rooms.
+```text
+feature/003-booking-conflict-detection
+```
 
-At this point, the requirement can still be incomplete. That is normal.
+Only one sufficiently focused slice should normally be implemented in one cycle.
 
-The important thing is: you do not start coding yet.
+---
 
- 
+## 6. Specify the selected slice
 
-4. Specify: create the feature spec
+Skill:
 
-Command:
-
-/speckit.specify
+```text
+$speckit-specify
+```
 
 Purpose:
 
-Describe what should be built and why.
+Define **what the selected slice must achieve and why**.
 
-The spec should focus on:
+The specification should focus on:
 
-user goalsuser scenariosfunctional requirementsacceptance criteriaedge casesbusiness rules
+- user goals;
+- actors;
+- user scenarios;
+- functional requirements;
+- acceptance criteria;
+- business rules;
+- edge cases;
+- observable behavior;
+- explicit exclusions.
 
-It should avoid too much technical implementation detail.
+It should avoid premature implementation detail.
 
 Example:
 
-/speckit.specify Build a meeting room booking system where employees can select a room, choose a time range, and create a booking.
+```text
+$speckit-specify
 
-Output is usually a feature folder like:
+Allow employees to create a booking for an available meeting room.
+The user selects a room, start time, and end time. The system validates
+the request and confirms a successful booking.
+```
 
-specs/001-meeting-room-booking/spec.md
+Typical output:
 
- 
+```text
+specs/003-room-booking/spec.md
+```
 
-5. Clarify: resolve open questions
+The specification represents the detailed agreement for this particular slice.
 
-Command:
+---
 
-/speckit.clarify
+## 7. Clarify the specification
 
-Purpose:
+Skill:
 
-Find ambiguity before planning and coding.
-
-This is the important customer-interaction step.
-
-Typical questions:
-
-Can users book rooms in the past?Can bookings overlap?Who can cancel a booking?Are approvals required?What happens if a room is unavailable?
-
-You answer the questions, and the answers are integrated back into spec.md.
-
-This is where Spec Kit fits iterative customer discovery very well: the customer does not need to know everything upfront, but each implementation slice should be clarified before it is planned and built.
-
- 
-
-6. Optional checklist: check spec quality
-
-Command:
-
-/speckit.checklist
+```text
+$speckit-clarify
+```
 
 Purpose:
 
-Check whether the spec is complete enough.
+Identify and resolve ambiguities before technical planning begins.
 
-This helps verify whether the requirements are clear before moving to technical planning. The quickstart mentions checklist generation after planning/spec refinement. Source: https://github.github.com/spec-kit/quickstart.html
+Typical clarification questions include:
 
-For smaller projects, you may not need this every time. For customer projects, I would use it often.
+- Can bookings be created for past times?
+- Can a booking span multiple days?
+- Who may create a booking?
+- What happens when a room becomes unavailable?
+- Which time increments are supported?
+- Who may cancel or modify a booking?
+- Which validation message should the user receive?
 
- 
+Clarification should be run repeatedly when necessary:
 
-7. Plan: create the technical plan
+```text
+$speckit-clarify
+        ↓
+update specification
+        ↓
+$speckit-clarify
+        ↓
+repeat until sufficiently clear
+```
 
-Command:
+The goal is not to eliminate every possible future question. The goal is to remove ambiguities that could materially affect planning, implementation, testing, or acceptance.
 
-/speckit.plan
+All confirmed answers must be integrated into the specification.
 
-Purpose:
+---
 
-Translate the spec into a technical implementation approach.
+## 8. Optional specification checklist
 
-Here you provide or confirm the stack and architecture.
+Skill:
 
-Example:
-
-/speckit.plan Use React for the frontend, FastAPI for the backend, SQLite for local persistence, and pytest for backend tests.
-
-Output usually includes:
-
-plan.mddata-model.mdcontracts/research.mdquickstart.md
-
-depending on the project and template.
-
-The plan answers:
-
-What architecture?What data model?What APIs?What libraries?What constraints?What testing approach?
-
- 
-
-8. Tasks: create implementation tasks
-
-Command:
-
-/speckit.tasks
+```text
+$speckit-checklist
+```
 
 Purpose:
 
-Break the plan into concrete work items.
+Assess whether the specification is sufficiently complete and testable.
 
-Output:
+The checklist may verify that:
+
+- user scenarios are defined;
+- acceptance criteria are measurable;
+- important business rules are documented;
+- exclusions are explicit;
+- edge cases are considered;
+- unresolved questions are visible;
+- requirements do not contradict each other.
+
+This step is especially useful for:
+
+- customer projects;
+- important business processes;
+- high-risk functionality;
+- complex slices;
+- specifications created from incomplete stakeholder input.
+
+It may be omitted for simple, low-risk slices when the specification is already clearly defined.
+
+---
+
+## 9. Create the technical plan
+
+Skill:
+
+```text
+$speckit-plan
+```
+
+Purpose:
+
+Translate the confirmed specification into a technical implementation approach.
+
+The plan answers questions such as:
+
+- Which components must change?
+- Which architecture patterns should be used?
+- Which domain entities are required?
+- Which API contracts are required?
+- Which persistence changes are required?
+- Which external integrations are involved?
+- Which tests are required?
+- Which existing conventions must be followed?
+- Which technical risks must be addressed?
+
+Depending on the project, the generated artifacts may include:
+
+```text
+plan.md
+research.md
+data-model.md
+contracts/
+quickstart.md
+```
+
+The plan must remain aligned with:
+
+- the selected slice;
+- the project constitution;
+- the established architecture;
+- the existing codebase;
+- the confirmed specification.
+
+A plan must not silently expand the scope of the slice.
+
+---
+
+## 10. Create implementation tasks
+
+Skill:
+
+```text
+$speckit-tasks
+```
+
+Purpose:
+
+Convert the plan into an ordered and executable task list.
+
+Typical tasks include:
+
+- create or update tests;
+- add a domain entity;
+- implement validation rules;
+- update persistence;
+- expose an API endpoint;
+- add user-interface behavior;
+- handle error responses;
+- update documentation;
+- run verification commands.
+
+The output is usually:
+
+```text
+tasks.md
+```
+
+Tasks should:
+
+- be concrete;
+- reference relevant files where possible;
+- follow dependency order;
+- support incremental implementation;
+- map back to requirements and acceptance criteria;
+- include necessary tests;
+- avoid unrelated work.
+
+Technical-layer tasks are appropriate at this stage because they are implementation steps within an already-defined vertical slice.
+
+---
+
+## 11. Analyze consistency
+
+Skill:
+
+```text
+$speckit-analyze
+```
+
+Purpose:
+
+Check whether the specification, plan, tasks, and project rules are mutually consistent.
+
+Analysis should detect issues such as:
+
+- a requirement has no corresponding implementation task;
+- an acceptance criterion has no test task;
+- a task introduces behavior not present in the specification;
+- the plan contradicts the project constitution;
+- the selected architecture is not respected;
+- dependencies are missing;
+- data-model changes are inconsistent with API contracts;
+- scope from another slice has been added accidentally.
+
+Analysis is an iterative quality gate:
+
+```text
+$speckit-analyze
+        ↓
+findings
+        ↓
+correct spec, plan, or tasks
+        ↓
+$speckit-analyze
+        ↓
+repeat until sufficiently consistent
+```
+
+Implementation should not begin while material consistency problems remain unresolved.
+
+---
+
+## 12. Implement the slice
+
+Skill:
+
+```text
+$speckit-implement
+```
+
+Purpose:
+
+Implement the selected slice according to the specification, plan, and task list.
+
+Implementation should follow a test-first approach where practical:
+
+```text
+select one task or small task group
+        ↓
+identify related acceptance criteria
+        ↓
+write or update tests
+        ↓
+run tests
+        ↓
+confirm the expected failure
+        ↓
+implement the minimum production code
+        ↓
+run tests again
+        ↓
+refactor locally when necessary
+        ↓
+review the diff
+        ↓
+continue with the next task
+```
+
+The implementation skill should:
+
+- work only within the selected slice;
+- follow the ordered task list;
+- create or update tests before production behavior;
+- avoid unrelated changes;
+- run appropriate verification commands;
+- document deviations from the plan;
+- stop before committing;
+- show the resulting Git diff and status.
+
+Implementation is complete only when:
+
+- the relevant tasks are completed;
+- acceptance criteria are satisfied;
+- required tests pass;
+- no unexplained unrelated changes remain.
+
+---
+
+## 13. Review the implementation
+
+Custom skill:
+
+```text
+$code-review
+```
+
+The code-review skill is executed after implementation and before commit, pull request, or merge.
+
+It reviews the changes for:
+
+- functional correctness;
+- specification compliance;
+- acceptance-criteria coverage;
+- test quality;
+- missing edge cases;
+- maintainability;
+- architectural consistency;
+- unnecessary complexity;
+- security concerns;
+- performance risks;
+- appropriate use of design principles and patterns;
+- accidental scope expansion.
+
+The review should prioritize findings by severity.
+
+Example categories:
+
+```text
+Critical
+High
+Medium
+Low
+Suggestion
+```
+
+The review skill should report findings but should not automatically modify the code.
+
+When material problems are found:
+
+```text
+$code-review
+        ↓
+correct implementation
+        ↓
+run tests
+        ↓
+$code-review
+```
+
+This cycle may be repeated until no blocking findings remain.
+
+---
+
+## 14. Verify the completed slice
+
+Before committing, verify:
+
+- all acceptance criteria;
+- relevant automated tests;
+- application behavior;
+- changed files;
+- `git diff`;
+- `git status`;
+- completed task markers;
+- absence of unrelated modifications;
+- consistency between code and specification.
+
+Recommended commands include:
+
+```text
+git diff --stat
+git diff
+git status --short
+```
+
+The final implementation summary should state:
+
+- what was implemented;
+- which tests were executed;
+- whether they passed;
+- which files changed;
+- which risks remain;
+- which follow-up work was deliberately deferred.
+
+---
+
+## 15. Commit, review, and merge
+
+Only commit the slice when:
+
+- the specification is complete enough;
+- clarification is resolved;
+- the plan and tasks are aligned;
+- analysis has no unresolved material findings;
+- implementation is complete;
+- tests pass;
+- code review has no blocking findings;
+- the diff has been inspected.
+
+Typical workflow:
+
+```text
+commit specification artifacts
+        ↓
+commit planning artifacts
+        ↓
+commit implementation
+        ↓
+push branch
+        ↓
+create or inspect pull request
+        ↓
+merge into main
+```
+
+For a small solo project, some commits may be combined. However, specification, planning, and implementation changes should remain understandable from the Git history.
+
+GitHub describes pull requests as a mechanism for proposing, reviewing, and merging changes into another branch:
+
+[GitHub: About pull requests](https://docs.github.com/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests)
+
+---
+
+# Phase 4: Periodic refactoring
+
+## 16. Refactor the codebase
+
+Custom skill:
+
+```text
+$code-refactor
+```
+
+Refactoring is not necessarily executed for every slice.
+
+It should be used periodically to reduce accumulated technical debt and improve the internal structure of the code without intentionally changing its observable behavior.
+
+Typical triggers include:
+
+- `$code-review` identifies structural or maintainability issues;
+- several slices have introduced duplication;
+- responsibilities have become unclear;
+- modules or classes have grown too large;
+- temporary implementation decisions have accumulated;
+- new abstractions are now justified by repeated patterns;
+- testability has deteriorated;
+- dependencies between components have become difficult to manage;
+- naming and structure no longer represent the domain clearly.
+
+A practical rule is to consider refactoring:
+
+```text
+after a code review identifies meaningful structural issues
+```
+
+or:
+
+```text
+after every few completed slices
+```
+
+The exact frequency should depend on the state of the codebase rather than a rigid number.
+
+## Refactoring workflow
+
+```text
+identify concrete technical debt
+        ↓
+define the refactoring scope
+        ↓
+confirm existing tests
+        ↓
+add characterization tests when necessary
+        ↓
+run tests and establish a baseline
+        ↓
+$code-refactor
+        ↓
+run the complete relevant test suite
+        ↓
+$code-review
+        ↓
+verify behavior and diff
+        ↓
+commit separately
+```
+
+Refactoring should normally be performed in a dedicated branch or dedicated commit so that structural changes are not mixed unnecessarily with feature behavior.
+
+The refactoring skill must not:
+
+- silently add new functionality;
+- change product requirements;
+- expand into unrelated modules;
+- claim that behavior was preserved without verification;
+- commit or push automatically.
+
+---
+
+# Updating the product scope during development
+
+During implementation, new information may require changes to the overall product scope.
+
+Examples include:
+
+- stakeholders request a new workflow;
+- an external integration becomes necessary;
+- one slice becomes too large;
+- two slices are strongly coupled and should be merged;
+- a planned capability is no longer needed;
+- implementation reveals a missing prerequisite;
+- priorities change.
+
+In such cases, return to:
+
+```text
+$requirements-engineering
+```
+
+The skill updates:
+
+```text
+docs/planning/Feature_slices.md
+```
+
+After the slice map is updated, continue with the next selected slice through the normal iterative workflow.
+
+This creates a controlled hierarchy:
+
+```text
+Feature_slices.md
+    defines the product scope and slice structure
+
+spec.md
+    defines one selected slice in detail
+
+plan.md
+    defines how that slice will be implemented
 
 tasks.md
+    defines the concrete implementation work
+
+production code
+    implements the approved slice
+```
+
+---
+
+# Complete development lifecycle
+
+```text
+PROJECT INITIALIZATION
+────────────────────────────────────────
+
+Initialize repository and Spec Kit
+        ↓
+$speckit-constitution
+        ↓
+$architecture-exploration
+
+
+PRODUCT DEFINITION
+────────────────────────────────────────
+
+$requirements-engineering
+        ↓
+Create docs/planning/Feature_slices.md
+        ↓
+Select recommended first slice
+
+
+SLICE IMPLEMENTATION
+────────────────────────────────────────
+
+Create feature branch
+        ↓
+$speckit-specify
+        ↓
+$speckit-clarify
+        ↺ until sufficiently clear
+        ↓
+optional $speckit-checklist
+        ↓
+$speckit-plan
+        ↓
+$speckit-tasks
+        ↓
+$speckit-analyze
+        ↺ until sufficiently consistent
+        ↓
+$speckit-implement
+        ↓
+run tests and inspect diff
+        ↓
+$code-review
+        ↺ correct and review again when needed
+        ↓
+commit
+        ↓
+push
+        ↓
+pull request or direct review
+        ↓
+merge into main
+
+
+CONTINUOUS PRODUCT DEVELOPMENT
+────────────────────────────────────────
+
+Select next slice
+        ↓
+repeat the slice-implementation cycle
+        ↓
+update $requirements-engineering when scope changes
+        ↓
+use $code-refactor periodically
+```
+
+---
+
+# Recommended practical workflow
+
+## Once near the beginning of the project
+
+```text
+1. Initialize the project and repository
+2. Run $speckit-constitution
+3. Run $architecture-exploration
+4. Run $requirements-engineering
+5. Review docs/planning/Feature_slices.md
+6. Confirm the first implementation slice
+```
+
+Architecture exploration may also be run before the constitution when the technology decision must be understood first.
+
+## For every development slice
+
+```text
+1. Start from the latest main branch
+2. Select the next slice from Feature_slices.md
+3. Create a feature branch
+4. Run $speckit-specify
+5. Run $speckit-clarify until sufficiently clear
+6. Optionally run $speckit-checklist
+7. Run $speckit-plan
+8. Run $speckit-tasks
+9. Run $speckit-analyze
+10. Correct findings and repeat analysis when necessary
+11. Run $speckit-implement
+12. Run tests and inspect the Git diff
+13. Run $code-review
+14. Correct blocking review findings
+15. Repeat tests and code review where necessary
+16. Commit and push the branch
+17. Review through a pull request or direct diff inspection
+18. Merge into main
+19. Update the slice status in Feature_slices.md
+```
 
-The task list should be actionable for the coding agent.
+## Periodically
 
-Example tasks:
+```text
+1. Review accumulated technical debt
+2. Run $code-refactor when justified
+3. Run tests
+4. Run $code-review
+5. Commit the refactoring separately
+```
 
-Create Booking entityAdd booking validation serviceAdd API endpoint for booking creationAdd test for overlapping booking rejectionAdd UI validation message
+## When product scope changes
 
-This is the bridge between planning and implementation.
+```text
+1. Run $requirements-engineering
+2. Update Feature_slices.md
+3. Preserve unaffected slices
+4. Update dependencies and priorities
+5. Select the next ready slice
+6. Continue with the regular Spec Kit cycle
+```
 
- 
+---
 
-9. Analyze: check consistency
+# Main principles
 
-Command:
+## Project foundations are relatively stable
 
-/speckit.analyze
+```text
+$speckit-constitution
+$architecture-exploration
+```
 
-Purpose:
+These are normally established once and changed only when fundamental project rules or architectural decisions change.
 
-Check whether spec, plan, and tasks are aligned.
+## The slice map is the product-level ground truth
 
-This is a quality gate before implementation.
+```text
+$requirements-engineering
+        ↓
+docs/planning/Feature_slices.md
+```
 
-It should detect problems like:
+Requirements engineering manages the complete product scope and is revisited when that scope changes.
 
-spec says future-only bookings, but tasks do not include validationplan mentions REST API, but tasks do not create endpointsacceptance criteria exist, but no tests are planned
+## Spec Kit is applied incrementally
 
-For serious work, I would run this before implementation.
+```text
+$speckit-specify
+$speckit-clarify
+$speckit-plan
+$speckit-tasks
+$speckit-analyze
+$speckit-implement
+```
 
- 
+These skills are executed iteratively for each selected vertical slice.
 
-10. Implement: build the feature
+## Review is mandatory before integration
 
-Command:
+```text
+$code-review
+```
 
-/speckit.implement
+Review ensures that implementation changes satisfy the specification and meet the project’s quality expectations.
 
-Purpose:
+## Refactoring is deliberate and periodic
 
-Use the spec, plan, and tasks to implement the feature.
+```text
+$code-refactor
+```
 
-This is where code changes happen.
+Refactoring is triggered by concrete technical debt, code-review findings, or accumulated structural problems after several slices. It should not become uncontrolled redesign.
 
-You can add instructions such as:
+## Specifications are living agreements
 
-Implement only tasks related to the booking validation.Create tests first, then implement the code.Do not implement unrelated tasks.Summarize changed files and test commands.
+A specification is not written once for the entire product.
 
-So the command is still /speckit.implement, but you can guide the implementation style.
+The hierarchy is:
 
- 
+```text
+Feature_slices.md = living agreement about overall product scope
 
-11. Verify implementation
+spec.md = living agreement about one implementation slice
 
-After implementation, you check:
+plan.md and tasks.md = technical path for delivering that slice
 
-git statuschanged filestestsapplication behavioracceptance criteria
+code = verified implementation of the agreed behavior
+```
 
-You should ask:
-
-Does the implementation satisfy the spec?Are all relevant tests passing?Were unrelated files changed?Were tasks correctly completed?
-
-Only then commit the implementation.
-
- 
-
-12. Review with customer
-
-Now you show the result to the customer.
-
-Important: do not show only code. Show behavior against the spec.
-
-Example:
-
-Customer feedback was:"Users should not be able to create bookings in the past."
-
-Implemented behavior:- Past start time is rejected.- End time before or equal start time is rejected.- Future booking is accepted.- User sees a validation message.
-
-This turns the spec into a shared agreement.
-
- 
-
-13. Merge into main
-
-Only merge when the branch is complete:
-
-spec updatedplan/tasks updatedimplementation donetests passedcustomer or self-review accepted
-
-Then merge into:
-
-main
-
-For solo work, you can merge directly. For a more professional workflow, create a GitHub Pull Request and review the diff before merging. GitHub describes pull requests as a way to propose, review, and merge changes into another branch. Source: https://docs.github.com/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
-
- 
-
-The iterative process
-
-The important thing: you do not do this once for the whole project.
-
-You repeat it for each meaningful feature or customer feedback item.
-
-Feature / feedback idea→ create branch→ update/create spec→ clarify with customer→ plan→ tasks→ analyze→ implement→ verify→ review→ merge→ next feature
-
-For your resource planner, it could look like this:
-
-Iteration 1:Meeting room booking baseline
-
-Iteration 2:Future-only booking validation
-
-Iteration 3:Booking conflict detection
-
-Iteration 4:User cancellation rules
-
-Iteration 5:Admin approval workflow
-
-Iteration 6:Notifications
-
-Each iteration has its own focused spec-driven cycle.
-
- 
-
-Recommended practical workflow for you
-
-For every new feature or feedback item:
-
-1. Start on main2. Pull latest main3. Create branch4. /speckit.specify or update existing spec.md5. /speckit.clarify6. Commit spec update7. /speckit.plan8. /speckit.tasks9. /speckit.analyze10. Commit plan/tasks11. /speckit.implement12. Run tests and review changed files13. Commit implementation14. Push branch15. Review / Pull Request / merge into main16. Push main
-
-For customer feedback on an existing feature, the flow is slightly different:
-
-1. Create feedback branch2. Update existing spec.md3. Clarify if needed4. Update plan/tasks5. Analyze6. Implement7. Verify8. Merge
-
- 
-
-Main principle
-
-Use Spec Kit like this:
-
-Spec is not a document written once at the beginning.Spec is the living agreement for the next implementation slice.
-
-That is how you avoid waterfall and use Spec Kit iteratively.
-
-Confidence: High. This workflow is based on the documented Spec Kit command structure and the branch-based process you just practiced.
-
- 
-
-From <https://chatgpt.com/g/g-p-6a3252a9b1688191ab6cc4e82f374227/c/6a44c747-2534-83eb-8938-18b5f471ad72> 
-
- 
-
+This preserves iterative development while maintaining a clear and traceable connection between product scope, detailed requirements, technical planning, implementation, and review.

@@ -45,6 +45,16 @@ Batch results are retained only in mounted React state. After every normal resul
 
 Automatic conflict resolution, conflict-aware generation, room occupancy blocking, holiday warnings, exam controls, dashboard summaries, source planning-record editing, session creation/deletion/splitting/merging, persisted batch history, and background processing remain out of scope.
 
+## Academic Data Administration
+
+Use the top-level **Academic Data** view to create, review, edit, archive/reactivate, and safely delete Semesters, Cohorts, Courses, Study Types, and Time Windows. Category lists retain last-known content during refresh, support active/inactive filtering, and use controlled forms so entered values survive backend validation. Course forms select academic relationships plus the existing read-only Lecturer and Room options.
+
+Each record exposes usage-aware actions. Permanent deletion opens a keyboard-operable dialog that separates dependent-record blockers from saved-schedule blockers and offers Archive without changing dependent lifecycle state. Revision conflicts and validation failures are announced without silently replacing local form input. Legacy name-repair records show rename guidance.
+
+Returning to **Schedule** remounts and refetches planning options. Course choices are limited to the selected current Semester; invalid prior selections are retained and flagged, and visible unavailable Courses show their reason. Generation remains disabled until the planner selects an eligible Course. No client router, form library, or external state library is required.
+
+The academic administration client uses the `/api/academic` contract documented by the backend. Lecturer/Room administration, availability calendars, authentication, and imports remain outside this slice.
+
 ## Development
 
 Install dependencies:

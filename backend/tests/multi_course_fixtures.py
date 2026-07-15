@@ -46,6 +46,7 @@ def seed_multi_course_planner(db, *, course_count: int = 3, invalid_course_id: i
                 cohort_id=course_id,
                 room_id=course_id,
                 study_type_id=1,
+                current_semester_id=1,
             ),
         ])
     db.commit()

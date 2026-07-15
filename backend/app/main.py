@@ -10,6 +10,7 @@ from app.api.draft_schedule import (
     session_router,
 )
 from app.api.planning_options import router as planning_options_router
+from app.api.academic_catalog import router as academic_catalog_router
 from app.api.multi_course_generation import router as multi_course_router
 from app.db.schema import initialize_database
 from app.db.session import engine, get_db
@@ -39,6 +40,7 @@ app.include_router(overview_router)
 app.include_router(session_router)
 app.include_router(multi_course_router)
 app.include_router(planning_options_router)
+app.include_router(academic_catalog_router)
 
 
 @app.get("/health")

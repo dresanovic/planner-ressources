@@ -62,6 +62,16 @@ Migration scripts live in `backend/app/db/migrations/`. Migration `0002_course_s
 
 At application startup, the backend creates a new database schema when needed and applies the supported pre-Slice-6 to Slice-6 upgrade automatically. Existing Draft Schedules, sessions, generation constraints, and manual edits are retained. If a database is in an unknown partially migrated state, startup stops with an actionable error instead of silently modifying it.
 
+Migration `0003_academic_catalog_administration` adds lifecycle state, optimistic revisions, canonical normalized names, each Course's current Semester assignment, and immutable academic snapshots on saved Draft Schedules. Supported legacy name collisions remain visible with `nameRepairRequired`; they must be uniquely renamed before edit or reactivation. A legacy Course assignment is inferred only when one saved Semester is unambiguous. Unknown partial schemas still stop startup with a diagnostic.
+
+## Academic Data Administration
+
+Planner users can maintain Semesters, Cohorts, Courses, Study Types, and nested Study Type Time Windows through `/api/academic`. Each named collection supports paginated list, create, detail, revisioned patch, usage, archive/reactivate, and protected permanent deletion. Time Window item operations use `/api/academic/time-windows/{recordId}`. Validation and conflict responses use an `errors` array with stable codes, field names, and metadata.
+
+Usage is rechecked atomically before deletion. Course and required dependent references, generation constraints, and immutable saved-schedule references prevent destructive deletion. Archive/reactivate never cascades to dependent records. Lecturer and Room records remain read-only planning options in this slice; they are selectable when creating or editing a Course but are not administered by these endpoints.
+
+Planning options accept an optional `semesterId`, return active academic chains, include Lecturer/Room options, and retain an otherwise eligible Course without an active Study Type Time Window as unavailable with `MISSING_ACTIVE_TIME_WINDOW`. Generation additionally verifies the Course's current Semester assignment and academic lifecycle state.
+
 ## Verification
 
 Run backend tests from this directory:
@@ -79,3 +89,4 @@ python scripts/seed_dummy_planning_data.py
 ```
 
 The script is idempotent: it updates or reuses records by name, so it can be run more than once without creating duplicate dummy courses. It adds three courses across two lecturers, with cohorts, rooms, study types, time windows, and a Fall 2026 semester.
+Seeded academic names are canonicalized, lifecycle fields remain valid, and every seeded Course is assigned to Fall 2026.

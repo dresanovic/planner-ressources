@@ -31,6 +31,14 @@ def one_by_name(db: Session, model: type[ModelT], name: str) -> ModelT | None:
 
 
 def upsert_named(db: Session, model: type[ModelT], name: str, **values: object) -> ModelT:
+    if hasattr(model, "normalized_name"):
+        canonical = name.strip().casefold()
+        values.update(
+            normalized_name=canonical,
+            normalized_name_key=canonical,
+            name_repair_required=False,
+            is_active=True,
+        )
     record = one_by_name(db, model, name)
     if record is None:
         record = model(name=name, **values)
@@ -148,6 +156,7 @@ def seed() -> None:
             cohort_id=cohort_ai.id,
             room_id=room_a.id,
             study_type_id=full_time.id,
+            current_semester_id=semester.id,
         )
         upsert_named(
             db,
@@ -160,6 +169,7 @@ def seed() -> None:
             cohort_id=cohort_ds.id,
             room_id=room_b.id,
             study_type_id=part_time.id,
+            current_semester_id=semester.id,
         )
         upsert_named(
             db,
@@ -172,6 +182,7 @@ def seed() -> None:
             cohort_id=cohort_biz.id,
             room_id=room_lab.id,
             study_type_id=full_time.id,
+            current_semester_id=semester.id,
         )
 
         db.commit()

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   clearGenerationConstraints,
   generateDraftSchedule,
@@ -30,7 +30,7 @@ import { ReplacementConfirmationDialog } from '../components/ReplacementConfirma
 
 type GenerationMode = 'single' | 'batch'
 
-export function CourseSchedulePage() {
+export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: number }) {
   const [planningOptions, setPlanningOptions] = useState<PlanningOptions | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | null>(null)
@@ -50,6 +50,12 @@ export function CourseSchedulePage() {
   const [batchExecuting, setBatchExecuting] = useState(false)
   const [overviewRefreshError, setOverviewRefreshError] = useState(false)
   const [overviewResetKey, setOverviewResetKey] = useState(0)
+  const [semesterSelectionMissing, setSemesterSelectionMissing] = useState(false)
+  const selectedCourseIdRef = useRef<number | null>(null)
+  const selectedSemesterIdRef = useRef<number | null>(null)
+
+  useEffect(() => { selectedCourseIdRef.current = selectedCourseId }, [selectedCourseId])
+  useEffect(() => { selectedSemesterIdRef.current = selectedSemesterId }, [selectedSemesterId])
 
   const selectedCourse = useMemo(
     () => planningOptions?.courses.find((course) => course.id === selectedCourseId) ?? null,
@@ -59,6 +65,14 @@ export function CourseSchedulePage() {
     () => planningOptions?.semesters.find((semester) => semester.id === selectedSemesterId) ?? null,
     [planningOptions, selectedSemesterId],
   )
+  const semesterCourses = useMemo(
+    () => planningOptions?.courses.filter((course) => course.semesterId == null || course.semesterId === selectedSemesterId) ?? [],
+    [planningOptions, selectedSemesterId],
+  )
+  const courseSelectionInvalid = selectedCourse != null && selectedCourse.semesterId != null && selectedCourse.semesterId !== selectedSemesterId
+  const courseUnavailable = selectedCourse?.availability?.available === false
+  const planningSelectionInvalid = semesterSelectionMissing || courseSelectionInvalid || courseUnavailable
+  const selectableCourses = useMemo(() => selectedCourse && courseSelectionInvalid ? [selectedCourse, ...semesterCourses.filter((course) => course.id !== selectedCourse.id)] : semesterCourses, [selectedCourse, courseSelectionInvalid, semesterCourses])
   const writeBusy = singleGenerating || batchPreparing || batchExecuting
 
   useEffect(() => {
@@ -66,17 +80,35 @@ export function CourseSchedulePage() {
     void getPlanningOptions()
       .then((options) => {
         if (!current) return
-        setPlanningOptions(options)
-        setSelectedCourseId(options.courses[0]?.id ?? null)
-        setSelectedSemesterId(options.semesters[0]?.id ?? null)
+        const currentCourseId = selectedCourseIdRef.current
+        const currentSemesterId = selectedSemesterIdRef.current
+        const courseMissing = currentCourseId != null && !options.courses.some((course) => course.id === currentCourseId)
+        const semesterMissing = currentSemesterId != null && !options.semesters.some((semester) => semester.id === currentSemesterId)
+        setSemesterSelectionMissing(semesterMissing)
+        setPlanningOptions((previous) => {
+          const previousCourse = previous?.courses.find((course) => course.id === currentCourseId)
+          const previousSemester = previous?.semesters.find((semester) => semester.id === currentSemesterId)
+          return {
+            ...options,
+            courses: courseMissing && previousCourse
+              ? [{ ...previousCourse, availability: { available: false, reasons: ['OPTION_NO_LONGER_AVAILABLE'] } }, ...options.courses]
+              : options.courses,
+            semesters: semesterMissing && previousSemester ? [previousSemester, ...options.semesters] : options.semesters,
+          }
+        })
+        const initialSemesterId = options.semesters[0]?.id ?? null
+        setSelectedSemesterId((value) => value ?? initialSemesterId)
+        setSelectedCourseId((value) => value ?? options.courses.find((course) => course.semesterId == null || course.semesterId === initialSemesterId)?.id ?? null)
       })
       .catch(() => current && setErrors([{ code: 'REQUEST_FAILED', message: 'Could not load planning options.' }]))
       .finally(() => current && setOptionsLoading(false))
     return () => { current = false }
-  }, [])
+  }, [catalogRevision])
 
   useEffect(() => {
-    if (!selectedCourseId || !selectedSemesterId) return
+    if (!selectedCourseId || !selectedSemesterId || planningSelectionInvalid) {
+      return
+    }
     let current = true
     async function loadConstraints() {
       setConstraintsLoading(true)
@@ -93,7 +125,7 @@ export function CourseSchedulePage() {
     }
     void loadConstraints()
     return () => { current = false }
-  }, [selectedCourseId, selectedSemesterId])
+  }, [selectedCourseId, selectedSemesterId, planningSelectionInvalid])
 
   useEffect(() => {
     if (!selectedSemesterId) return
@@ -129,6 +161,11 @@ export function CourseSchedulePage() {
   }
 
   async function handleGenerateSingle() {
+    if (planningSelectionInvalid) {
+      const code = semesterSelectionMissing ? 'SEMESTER_NO_LONGER_AVAILABLE' : courseSelectionInvalid ? 'COURSE_SEMESTER_MISMATCH' : (selectedCourse?.availability?.reasons[0] ?? 'COURSE_UNAVAILABLE')
+      setErrors([{ code, message: 'Choose an available Course and Semester before generating.' }])
+      return
+    }
     if (!selectedCourseId || !selectedSemesterId || !generationConstraints) {
       setErrors([{ code: 'MISSING_SELECTION', message: 'Select a course and semester.' }])
       return
@@ -253,20 +290,21 @@ export function CourseSchedulePage() {
                   <button type="button" className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Several courses</button>
                 </div>
                 <div className="planning-selectors">
-                  {mode === 'single' && <SelectField label="Course" value={selectedCourseId ?? ''} options={planningOptions.courses} getLabel={(course) => course.name} onChange={(value) => setSelectedCourseId(Number(value))} />}
-                  <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => semester.name} onChange={(value) => setSelectedSemesterId(Number(value))} />
+                  {mode === 'single' && <SelectField label="Course" value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ` — unavailable: ${course.availability.reasons.join(', ')}` : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — not assigned to selected Semester' : ''}`} onChange={(value) => setSelectedCourseId(Number(value))} />}
+                  <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — unavailable' : ''}`} onChange={(value) => { setSemesterSelectionMissing(false); setSelectedSemesterId(Number(value)) }} />
                 </div>
                 {mode === 'single' ? (
                   <>
                     <PlanningSummary course={selectedCourse} semester={selectedSemester} />
+                    {planningSelectionInvalid && <div className="refresh-error" role="alert">{semesterSelectionMissing ? 'The selected Semester is no longer available. Choose another Semester.' : courseSelectionInvalid ? 'This Course is not assigned to the selected Semester. Choose another Course.' : `This Course is unavailable: ${selectedCourse?.availability?.reasons.join(', ')}`}</div>}
                     {generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={constraintsLoading || singleGenerating} onChange={setGenerationConstraints} onClear={handleClearGenerationConstraints} />}
                     {errors.length > 0 && <ErrorList errors={errors} />}
-                    <button type="button" className="generate-button" onClick={handleGenerateSingle} disabled={writeBusy || constraintsLoading}>
+                    <button type="button" className="generate-button" onClick={handleGenerateSingle} disabled={writeBusy || constraintsLoading || planningSelectionInvalid}>
                       {singleGenerating ? 'Generating...' : 'Generate'}
                     </button>
                   </>
                 ) : (
-                  <MultiCourseGenerationPanel courses={planningOptions.courses} selectedCourseIds={selectedBatchCourseIds} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
+                  <MultiCourseGenerationPanel courses={semesterCourses} selectedCourseIds={selectedBatchCourseIds} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
                 )}
                 {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
               </>

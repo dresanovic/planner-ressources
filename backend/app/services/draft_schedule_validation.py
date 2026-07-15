@@ -114,8 +114,7 @@ def _add_capacity_alert(
     rooms_by_id: dict[int, Room],
 ) -> None:
     room = rooms_by_id.get(session.room_id)
-    cohort = draft.course.cohort
-    if room is None or cohort is None:
+    if room is None:
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.VALIDATION_DATA_MISSING,
@@ -123,11 +122,11 @@ def _add_capacity_alert(
             )
         )
         return
-    if room.capacity < cohort.student_count:
+    if room.capacity < draft.cohort_size_snapshot:
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.ROOM_CAPACITY,
-                message=f"Room capacity {room.capacity} is lower than Cohort size {cohort.student_count}.",
+                message=f"Room capacity {room.capacity} is lower than Cohort size {draft.cohort_size_snapshot}.",
             )
         )
 
@@ -168,7 +167,7 @@ def _add_study_type_window_alert(
     if constraints is not None and constraints.is_custom:
         return
 
-    windows = study_windows_by_study_type_id.get(draft.course.study_type_id)
+    windows = study_windows_by_study_type_id.get(draft.study_type_id_snapshot)
     if not windows:
         alerts[session.id].append(
             ValidationAlert(
@@ -287,11 +286,11 @@ def _related_session(
         session_id=session.id,
         draft_schedule_id=draft.id,
         course_id=draft.course_id,
-        course_name=course.name,
+        course_name=draft.course_name_snapshot,
         date=session.date,
         start_time=session.start_time.strftime("%H:%M"),
         end_time=session.end_time.strftime("%H:%M"),
-        cohort_name=course.cohort.name,
+        cohort_name=draft.cohort_name_snapshot,
         lecturer_name=course.lecturer.name,
         room_name=room.name if room is not None else f"Room {session.room_id}",
     )

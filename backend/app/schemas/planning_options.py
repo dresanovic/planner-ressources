@@ -2,6 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.academic_catalog import AvailabilityResponse
 from app.schemas.draft_schedule import PlanningEntityResponse
 
 
@@ -13,6 +14,8 @@ class CourseOptionResponse(BaseModel):
     total_units: int = Field(alias="totalUnits")
     min_session_units: int = Field(alias="minSessionUnits")
     max_session_units: int = Field(alias="maxSessionUnits")
+    semester_id: int = Field(alias="semesterId")
+    availability: AvailabilityResponse
     lecturer: PlanningEntityResponse
     cohort: PlanningEntityResponse
     room: PlanningEntityResponse
@@ -52,3 +55,4 @@ class PlanningOptionsResponse(BaseModel):
     semesters: list[SemesterOptionResponse]
     time_windows: list[TimeWindowOptionResponse] = Field(alias="timeWindows")
     rooms: list[RoomOptionResponse]
+    lecturers: list[PlanningEntityResponse]
