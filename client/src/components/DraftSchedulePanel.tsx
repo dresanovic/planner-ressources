@@ -13,6 +13,7 @@ import type {
   ViewMode,
 } from '../api/draftSchedule'
 import type { RoomOption } from '../api/planningOptions'
+import { WEEKDAY_NAMES } from '../utils/weekdays'
 import {
   groupSessionsByWeek,
   sortSessionsChronologically,
@@ -408,16 +409,6 @@ type GenerationConstraintEditorProps = {
   onClear: () => void
 }
 
-const WEEKDAY_OPTIONS = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
-]
-
 export function GenerationConstraintEditor({
   constraints,
   isLoading,
@@ -487,7 +478,7 @@ export function GenerationConstraintEditor({
                   onChange(updateWindow(constraints, index, { weekday: Number(event.target.value) }))
                 }
               >
-                {WEEKDAY_OPTIONS.map((label, weekday) => (
+                {WEEKDAY_NAMES.map((label, weekday) => (
                   <option value={weekday} key={label}>
                     {label}
                   </option>

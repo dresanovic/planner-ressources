@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.models.planning import Course, Room, Semester, StudyTypeTimeWindow
+from app.models.planning import Course, Lecturer, Room, Semester, StudyTypeTimeWindow
+from app.schemas.academic_catalog import AvailabilityResponse
 from app.schemas.draft_schedule import PlanningEntityResponse
 from app.schemas.planning_options import (
     CourseOptionResponse,
@@ -12,12 +13,16 @@ from app.schemas.planning_options import (
     SemesterOptionResponse,
     TimeWindowOptionResponse,
 )
+from app.services.academic_catalog import availability_for_course
 
 router = APIRouter(prefix="/api/planning-options", tags=["planning options"])
 
 
 @router.get("", response_model=PlanningOptionsResponse)
-def read_planning_options(db: Session = Depends(get_db)) -> PlanningOptionsResponse:
+def read_planning_options(
+    semester_id: int | None = Query(None, alias="semesterId"),
+    db: Session = Depends(get_db),
+) -> PlanningOptionsResponse:
     courses = (
         db.execute(
             select(Course)
@@ -26,17 +31,29 @@ def read_planning_options(db: Session = Depends(get_db)) -> PlanningOptionsRespo
                 selectinload(Course.cohort),
                 selectinload(Course.room),
                 selectinload(Course.study_type),
+                selectinload(Course.current_semester),
             )
+            .where(Course.is_active.is_(True))
             .order_by(Course.name)
         )
         .scalars()
         .all()
     )
-    semesters = db.execute(select(Semester).order_by(Semester.start_date, Semester.name)).scalars().all()
+    courses = [
+        course
+        for course in courses
+        if course.current_semester_id is not None
+        and (semester_id is None or course.current_semester_id == semester_id)
+        and course.current_semester.is_active
+        and course.cohort.is_active
+        and course.study_type.is_active
+    ]
+    semesters = db.execute(select(Semester).where(Semester.is_active.is_(True)).order_by(Semester.start_date, Semester.name)).scalars().all()
     rooms = db.execute(select(Room).order_by(Room.name)).scalars().all()
+    lecturers = db.execute(select(Lecturer).order_by(Lecturer.name)).scalars().all()
     time_windows = (
         db.execute(
-            select(StudyTypeTimeWindow).order_by(
+            select(StudyTypeTimeWindow).where(StudyTypeTimeWindow.is_active.is_(True)).order_by(
                 StudyTypeTimeWindow.study_type_id,
                 StudyTypeTimeWindow.sort_order,
                 StudyTypeTimeWindow.weekday,
@@ -54,6 +71,11 @@ def read_planning_options(db: Session = Depends(get_db)) -> PlanningOptionsRespo
                 totalUnits=course.total_units,
                 minSessionUnits=course.min_session_units,
                 maxSessionUnits=course.max_session_units,
+                semesterId=course.current_semester_id,
+                availability=AvailabilityResponse(
+                    available=not (reasons := availability_for_course(db, course)),
+                    reasons=reasons,
+                ),
                 lecturer=PlanningEntityResponse(id=course.lecturer.id, name=course.lecturer.name),
                 cohort=PlanningEntityResponse(id=course.cohort.id, name=course.cohort.name),
                 room=PlanningEntityResponse(id=course.room.id, name=course.room.name),
@@ -77,6 +99,10 @@ def read_planning_options(db: Session = Depends(get_db)) -> PlanningOptionsRespo
                 capacity=room.capacity,
             )
             for room in rooms
+        ],
+        lecturers=[
+            PlanningEntityResponse(id=lecturer.id, name=lecturer.name)
+            for lecturer in lecturers
         ],
         timeWindows=[
             TimeWindowOptionResponse(

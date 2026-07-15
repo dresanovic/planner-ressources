@@ -91,6 +91,16 @@ def test_batch_all_success_persists_ordered_schedules_and_active_defaults(client
     assert db_session.query(GenerationConstraintSet).count() == 2
 
 
+def test_batch_preparation_marks_course_unavailable_for_wrong_semester(client, db_session):
+    seed_multi_course_planner(db_session)
+    from app.models.planning import Course
+    db_session.get(Course, 1).current_semester_id = 2
+    db_session.commit()
+    prepared = client.post("/api/draft-schedules/batch/prepare", json=prepare_payload()).json()
+    first = next(item for item in prepared["courses"] if item["courseId"] == 1)
+    assert first["available"] is False
+
+
 def test_partial_success_preserves_failed_course_and_reports_every_reason(client, db_session):
     seed_multi_course_planner(db_session, invalid_course_id=2)
     prepared = client.post("/api/draft-schedules/batch/prepare", json=prepare_payload()).json()
@@ -131,10 +141,15 @@ def test_replacement_requires_confirmation_and_cancel_path_writes_nothing(client
 
 def test_confirmed_replacement_increments_revision_and_preserves_other_semester(client, db_session):
     seed_multi_course_planner(db_session)
+    from app.models.planning import Course
+    db_session.get(Course, 1).current_semester_id = 2
+    db_session.commit()
     spring = client.post(
         "/api/draft-schedules/batch/prepare", json=prepare_payload((1,), "retry", 2)
     ).json()
     client.post("/api/draft-schedules/batch/generate", json=execution_payload(spring))
+    db_session.get(Course, 1).current_semester_id = 1
+    db_session.commit()
     fall = client.post("/api/draft-schedules/batch/prepare", json=prepare_payload()).json()
     client.post("/api/draft-schedules/batch/generate", json=execution_payload(fall))
     replacement = client.post("/api/draft-schedules/batch/prepare", json=prepare_payload()).json()

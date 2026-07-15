@@ -111,6 +111,7 @@ def seed_valid_course(db, *, total_units=20, room_capacity=40, cohort_size=30, m
                 cohort_id=1,
                 room_id=1,
                 study_type_id=1,
+                current_semester_id=1,
             ),
         ]
     )
@@ -133,6 +134,7 @@ def seed_second_course(db):
                 cohort_id=2,
                 room_id=2,
                 study_type_id=1,
+                current_semester_id=1,
             ),
         ]
     )
@@ -454,6 +456,22 @@ def test_generation_returns_multiple_failure_reasons_without_partial_draft(clien
     codes = {error["code"] for error in response.json()["errors"]}
     assert codes == {"INSUFFICIENT_ROOM_CAPACITY", "INVALID_SESSION_PREFERENCE"}
     assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
+
+
+def test_generation_blocks_wrong_current_semester_and_missing_active_window(client, db_session):
+    seed_valid_course(db_session)
+    db_session.add(Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)))
+    db_session.commit()
+    mismatch = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload() | {"semesterId": 2, "planningPeriod": {"startDate": "2027-02-01", "endDate": "2027-06-20"}})
+    assert mismatch.status_code == 422
+    assert any(error["code"] == "COURSE_SEMESTER_MISMATCH" for error in mismatch.json()["errors"])
+
+    for window in db_session.query(StudyTypeTimeWindow).all():
+        window.is_active = False
+    db_session.commit()
+    missing = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+    assert missing.status_code == 422
+    assert any(error["code"] == "MISSING_ACTIVE_TIME_WINDOW" for error in missing.json()["errors"])
 
 
 def test_generation_constraints_default_load_save_reload_and_clear(client, db_session):

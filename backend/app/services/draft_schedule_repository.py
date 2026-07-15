@@ -252,12 +252,31 @@ def replace_draft_schedule(
     if draft is _UNSET:
         draft = get_draft_schedule(db, course_plan.id, semester_id)
     if draft is None:
+        course = db.get(Course, course_plan.id)
+        semester = db.get(Semester, semester_id)
+        if course is None or semester is None:
+            raise PlanningInputNotFoundError("Course or Semester not found.")
+        cohort = db.get(Cohort, course.cohort_id)
+        if cohort is None:
+            raise PlanningInputNotFoundError("Course planning input is incomplete.")
         draft = DraftSchedule(
             course_id=course_plan.id,
             semester_id=semester_id,
             selected_time_window_id=None,
             status="generated",
             revision=1,
+            course_name_snapshot=course.name,
+            course_total_units_snapshot=course.total_units,
+            course_min_session_units_snapshot=course.min_session_units,
+            course_max_session_units_snapshot=course.max_session_units,
+            cohort_id_snapshot=cohort.id,
+            cohort_name_snapshot=cohort.name,
+            cohort_size_snapshot=cohort.student_count,
+            study_type_id_snapshot=course.study_type_id,
+            study_type_name_snapshot=course.study_type.name,
+            semester_name_snapshot=semester.name,
+            semester_start_date_snapshot=semester.start_date,
+            semester_end_date_snapshot=semester.end_date,
         )
         db.add(draft)
     else:
@@ -324,11 +343,7 @@ def update_draft_session(
     if draft is None:
         raise PlanningInputNotFoundError("Draft Schedule not found.")
 
-    semester = db.get(Semester, draft.semester_id)
-    if semester is None:
-        raise PlanningInputNotFoundError("Semester not found.")
-
-    if date < semester.start_date or date > semester.end_date:
+    if date < draft.semester_start_date_snapshot or date > draft.semester_end_date_snapshot:
         raise DraftSessionEditValidationError(
             "INVALID_SESSION_DATE",
             "Session date must be inside the selected semester.",
@@ -359,13 +374,10 @@ def update_draft_session(
     room = db.get(Room, room_id)
     if room is None:
         raise PlanningInputNotFoundError("Room not found.")
-    cohort = db.get(Cohort, session.cohort_id)
-    if cohort is None:
-        raise PlanningInputNotFoundError("Cohort not found.")
-    if room.capacity < cohort.student_count:
+    if room.capacity < draft.cohort_size_snapshot:
         raise DraftSessionEditValidationError(
             "INSUFFICIENT_ROOM_CAPACITY",
-            f"Room capacity {room.capacity} is lower than Cohort size {cohort.student_count}.",
+            f"Room capacity {room.capacity} is lower than Cohort size {draft.cohort_size_snapshot}.",
         )
 
     session.date = date

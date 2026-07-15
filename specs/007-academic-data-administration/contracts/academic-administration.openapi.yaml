@@ -1,0 +1,925 @@
+openapi: 3.1.0
+info:
+  title: Resource Planner Academic Administration Contract
+  version: 0.1.0
+  description: >-
+    FS-007 planner-only CRUD, lifecycle, usage, protected deletion, stale-write,
+    and planning-option refresh contract. JSON fields use the existing camelCase convention.
+servers:
+  - url: /
+
+paths:
+  /api/academic/semesters:
+    get:
+      operationId: listSemesters
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Query'
+      responses:
+        '200':
+          description: Stable page ordered by start date, normalized name, then ID.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SemesterPage' }
+    post:
+      operationId: createSemester
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SemesterCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/SemesterResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+  /api/academic/semesters/{recordId}:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getSemester
+      responses:
+        '200': { $ref: '#/components/responses/SemesterResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: updateSemester
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SemesterUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/SemesterResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+    delete:
+      operationId: deleteSemester
+      parameters:
+        - $ref: '#/components/parameters/ExpectedRevision'
+      responses:
+        '204': { description: Permanently deleted after an atomic no-usage recheck. }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/semesters/{recordId}/usage:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getSemesterUsage
+      responses:
+        '200': { $ref: '#/components/responses/UsageResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/academic/semesters/{recordId}/archive:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: archiveSemester
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/SemesterResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/semesters/{recordId}/reactivate:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: reactivateSemester
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/SemesterResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+
+  /api/academic/cohorts:
+    get:
+      operationId: listCohorts
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Query'
+      responses:
+        '200':
+          description: Stable page ordered by normalized name then ID.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CohortPage' }
+    post:
+      operationId: createCohort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CohortCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/CohortResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+  /api/academic/cohorts/{recordId}:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getCohort
+      responses:
+        '200': { $ref: '#/components/responses/CohortResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: updateCohort
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CohortUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/CohortResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+    delete:
+      operationId: deleteCohort
+      parameters:
+        - $ref: '#/components/parameters/ExpectedRevision'
+      responses:
+        '204': { description: Permanently deleted after an atomic no-usage recheck. }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/cohorts/{recordId}/usage:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getCohortUsage
+      responses:
+        '200': { $ref: '#/components/responses/UsageResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/academic/cohorts/{recordId}/archive:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: archiveCohort
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/CohortResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/cohorts/{recordId}/reactivate:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: reactivateCohort
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/CohortResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+
+  /api/academic/courses:
+    get:
+      operationId: listCourses
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Query'
+        - name: semesterId
+          in: query
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Stable page ordered by normalized name then ID, including legacy repair state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CoursePage' }
+    post:
+      operationId: createCourse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CourseCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/CourseResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+  /api/academic/courses/{recordId}:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getCourse
+      responses:
+        '200': { $ref: '#/components/responses/CourseResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: updateOrReassignCourse
+      description: Updating semesterId atomically replaces the one current semester assignment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CourseUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/CourseResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+    delete:
+      operationId: deleteCourse
+      parameters:
+        - $ref: '#/components/parameters/ExpectedRevision'
+      responses:
+        '204': { description: Permanently deleted after an atomic no-usage recheck. }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/courses/{recordId}/usage:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getCourseUsage
+      responses:
+        '200': { $ref: '#/components/responses/UsageResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/academic/courses/{recordId}/archive:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: archiveCourse
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/CourseResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/courses/{recordId}/reactivate:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: reactivateCourse
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/CourseResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+
+  /api/academic/study-types:
+    get:
+      operationId: listStudyTypes
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/Query'
+      responses:
+        '200':
+          description: Stable page ordered by normalized name then ID.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StudyTypePage' }
+    post:
+      operationId: createStudyType
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StudyTypeCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/StudyTypeResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+  /api/academic/study-types/{recordId}:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getStudyType
+      responses:
+        '200': { $ref: '#/components/responses/StudyTypeResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: updateStudyType
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StudyTypeUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/StudyTypeResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+    delete:
+      operationId: deleteStudyType
+      parameters:
+        - $ref: '#/components/parameters/ExpectedRevision'
+      responses:
+        '204': { description: Permanently deleted after an atomic no-usage recheck. }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/study-types/{recordId}/usage:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getStudyTypeUsage
+      responses:
+        '200': { $ref: '#/components/responses/UsageResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/academic/study-types/{recordId}/archive:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: archiveStudyType
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/StudyTypeResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/study-types/{recordId}/reactivate:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: reactivateStudyType
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/StudyTypeResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+
+  /api/academic/study-types/{studyTypeId}/time-windows:
+    parameters:
+      - name: studyTypeId
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    get:
+      operationId: listStudyTypeTimeWindows
+      responses:
+        '200':
+          description: All active and inactive owned windows in sort order.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TimeWindow' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: createStudyTypeTimeWindow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TimeWindowCreate' }
+      responses:
+        '201': { $ref: '#/components/responses/TimeWindowResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+  /api/academic/time-windows/{recordId}:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getStudyTypeTimeWindow
+      responses:
+        '200': { $ref: '#/components/responses/TimeWindowResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: updateStudyTypeTimeWindow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TimeWindowUpdate' }
+      responses:
+        '200': { $ref: '#/components/responses/TimeWindowResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+    delete:
+      operationId: deleteStudyTypeTimeWindow
+      parameters:
+        - $ref: '#/components/parameters/ExpectedRevision'
+      responses:
+        '204': { description: Permanently deleted after an atomic no-usage recheck. }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/time-windows/{recordId}/usage:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      operationId: getStudyTypeTimeWindowUsage
+      responses:
+        '200': { $ref: '#/components/responses/UsageResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/academic/time-windows/{recordId}/archive:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: archiveStudyTypeTimeWindow
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/TimeWindowResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/academic/time-windows/{recordId}/reactivate:
+    parameters:
+      - $ref: '#/components/parameters/RecordId'
+    post:
+      operationId: reactivateStudyTypeTimeWindow
+      requestBody: { $ref: '#/components/requestBodies/LifecycleRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/TimeWindowResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailure' }
+
+  /api/planning-options:
+    get:
+      operationId: readPlanningOptions
+      description: >-
+        Existing additive contract. Returns active Semesters, active usable Time Windows,
+        existing read-only Lecturer/Room options, and Courses assigned to the requested
+        Semester whose academic parent chain is otherwise active and valid. A Course whose
+        Study Type lacks an active usable Time Window remains present with available=false
+        and MISSING_ACTIVE_TIME_WINDOW. Every Course includes semesterId. When semesterId
+        is supplied, Courses are limited to that current assignment.
+      parameters:
+        - name: semesterId
+          in: query
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Current planning selector options.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlanningOptions' }
+
+components:
+  parameters:
+    RecordId:
+      name: recordId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    ExpectedRevision:
+      name: expectedRevision
+      in: query
+      required: true
+      schema: { type: integer, minimum: 1 }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+    Status:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [active, inactive, all]
+        default: all
+    Query:
+      name: query
+      in: query
+      schema: { type: string, maxLength: 200 }
+
+  requestBodies:
+    LifecycleRequest:
+      required: true
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/LifecycleRequest' }
+
+  responses:
+    SemesterResponse:
+      description: Canonical Semester representation.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Semester' }
+    CohortResponse:
+      description: Canonical Cohort representation.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Cohort' }
+    CourseResponse:
+      description: Canonical Course representation.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Course' }
+    StudyTypeResponse:
+      description: Canonical Study Type representation.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/StudyType' }
+    TimeWindowResponse:
+      description: Canonical Time Window representation.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/TimeWindow' }
+    UsageResponse:
+      description: Current categorized usage and deletion eligibility.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/UsageSummary' }
+    ValidationFailure:
+      description: One or more field or relationship corrections are required.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    Conflict:
+      description: >-
+        Normalized-name/window conflict, stale revision, blocked reactivation, or protected
+        deletion. No mutation is applied. Blocker details are returned in error meta.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    NotFound:
+      description: Requested record does not exist.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  schemas:
+    LifecycleRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision]
+      properties:
+        expectedRevision: { type: integer, minimum: 1 }
+    UsageSummary:
+      type: object
+      required: [recordId, revision, canDelete, dependentRecords, savedSchedules, blockers]
+      properties:
+        recordId: { type: integer }
+        revision: { type: integer, minimum: 1 }
+        canDelete: { type: boolean }
+        dependentRecords:
+          type: array
+          items: { $ref: '#/components/schemas/UsageCount' }
+        savedSchedules:
+          $ref: '#/components/schemas/UsageCount'
+        blockers:
+          type: array
+          items: { $ref: '#/components/schemas/Blocker' }
+    UsageCount:
+      type: object
+      required: [type, count]
+      properties:
+        type: { type: string }
+        count: { type: integer, minimum: 0 }
+    Blocker:
+      type: object
+      required: [kind, type, count, message]
+      properties:
+        kind: { type: string, enum: [dependent, saved_schedule] }
+        type: { type: string }
+        count: { type: integer, minimum: 1 }
+        message: { type: string }
+        prerequisiteAction: { type: [string, 'null'] }
+    Availability:
+      type: object
+      required: [available, reasons]
+      properties:
+        available: { type: boolean }
+        reasons:
+          type: array
+          items:
+            type: string
+            enum:
+              - RECORD_INACTIVE
+              - SEMESTER_ASSIGNMENT_REQUIRED
+              - SEMESTER_INACTIVE
+              - COHORT_INACTIVE
+              - STUDY_TYPE_INACTIVE
+              - MISSING_ACTIVE_TIME_WINDOW
+              - RESOURCE_RELATIONSHIP_INVALID
+    AuditFields:
+      type: object
+      required: [isActive, revision]
+      properties:
+        isActive: { type: boolean }
+        revision: { type: integer, minimum: 1 }
+    Semester:
+      allOf:
+        - $ref: '#/components/schemas/AuditFields'
+        - type: object
+          required: [id, name, nameRepairRequired, startDate, endDate, usage]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            nameRepairRequired: { type: boolean }
+            startDate: { type: string, format: date }
+            endDate: { type: string, format: date }
+            usage: { $ref: '#/components/schemas/UsageSummary' }
+    SemesterCreate:
+      type: object
+      required: [name, startDate, endDate]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+    SemesterUpdate:
+      allOf:
+        - $ref: '#/components/schemas/SemesterCreate'
+        - type: object
+          required: [expectedRevision]
+          properties:
+            expectedRevision: { type: integer, minimum: 1 }
+    Cohort:
+      allOf:
+        - $ref: '#/components/schemas/AuditFields'
+        - type: object
+          required: [id, name, nameRepairRequired, studentCount, usage]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            nameRepairRequired: { type: boolean }
+            studentCount: { type: integer, minimum: 1 }
+            usage: { $ref: '#/components/schemas/UsageSummary' }
+    CohortCreate:
+      type: object
+      required: [name, studentCount]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        studentCount:
+          type: integer
+          minimum: 1
+          description: Positive whole number with no additional FS-007 upper limit.
+    CohortUpdate:
+      allOf:
+        - $ref: '#/components/schemas/CohortCreate'
+        - type: object
+          required: [expectedRevision]
+          properties:
+            expectedRevision: { type: integer, minimum: 1 }
+    EntitySummary:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+    Course:
+      allOf:
+        - $ref: '#/components/schemas/AuditFields'
+        - type: object
+          required:
+            - id
+            - name
+            - nameRepairRequired
+            - totalUnits
+            - minSessionUnits
+            - maxSessionUnits
+            - semester
+            - cohort
+            - studyType
+            - lecturer
+            - room
+            - availability
+            - usage
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            nameRepairRequired: { type: boolean }
+            totalUnits: { type: integer, minimum: 1 }
+            minSessionUnits: { type: integer, minimum: 1 }
+            maxSessionUnits: { type: integer, minimum: 1 }
+            semester:
+              anyOf:
+                - $ref: '#/components/schemas/EntitySummary'
+                - type: 'null'
+              description: Null only for a legacy Course awaiting planner assignment.
+            cohort: { $ref: '#/components/schemas/EntitySummary' }
+            studyType: { $ref: '#/components/schemas/EntitySummary' }
+            lecturer: { $ref: '#/components/schemas/EntitySummary' }
+            room: { $ref: '#/components/schemas/EntitySummary' }
+            availability: { $ref: '#/components/schemas/Availability' }
+            usage: { $ref: '#/components/schemas/UsageSummary' }
+    CourseCreate:
+      type: object
+      required:
+        - name
+        - totalUnits
+        - minSessionUnits
+        - maxSessionUnits
+        - semesterId
+        - cohortId
+        - studyTypeId
+        - lecturerId
+        - roomId
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        totalUnits:
+          type: integer
+          minimum: 1
+          description: Positive whole number with no additional FS-007 upper limit.
+        minSessionUnits:
+          type: integer
+          minimum: 1
+          description: Must not exceed maxSessionUnits or totalUnits.
+        maxSessionUnits:
+          type: integer
+          minimum: 1
+          description: Must be at least minSessionUnits and must not exceed totalUnits.
+        semesterId: { type: integer, minimum: 1 }
+        cohortId: { type: integer, minimum: 1 }
+        studyTypeId: { type: integer, minimum: 1 }
+        lecturerId: { type: integer, minimum: 1 }
+        roomId: { type: integer, minimum: 1 }
+    CourseUpdate:
+      allOf:
+        - $ref: '#/components/schemas/CourseCreate'
+        - type: object
+          required: [expectedRevision]
+          properties:
+            expectedRevision: { type: integer, minimum: 1 }
+    StudyType:
+      allOf:
+        - $ref: '#/components/schemas/AuditFields'
+        - type: object
+          required: [id, name, nameRepairRequired, timeWindows, usage]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            nameRepairRequired: { type: boolean }
+            timeWindows:
+              type: array
+              items: { $ref: '#/components/schemas/TimeWindow' }
+            usage: { $ref: '#/components/schemas/UsageSummary' }
+    StudyTypeCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+    StudyTypeUpdate:
+      allOf:
+        - $ref: '#/components/schemas/StudyTypeCreate'
+        - type: object
+          required: [expectedRevision]
+          properties:
+            expectedRevision: { type: integer, minimum: 1 }
+    TimeWindow:
+      allOf:
+        - $ref: '#/components/schemas/AuditFields'
+        - type: object
+          required: [id, studyTypeId, weekday, startTime, endTime, sortOrder, availability, usage]
+          properties:
+            id: { type: integer }
+            studyTypeId: { type: integer }
+            weekday: { type: integer, minimum: 0, maximum: 6 }
+            startTime: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+            endTime: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+            sortOrder: { type: integer, minimum: 0 }
+            availability: { $ref: '#/components/schemas/Availability' }
+            usage: { $ref: '#/components/schemas/UsageSummary' }
+    TimeWindowCreate:
+      type: object
+      required: [weekday, startTime, endTime, sortOrder]
+      properties:
+        weekday: { type: integer, minimum: 0, maximum: 6 }
+        startTime: { type: string }
+        endTime: { type: string }
+        sortOrder: { type: integer, minimum: 0 }
+    TimeWindowUpdate:
+      allOf:
+        - $ref: '#/components/schemas/TimeWindowCreate'
+        - type: object
+          required: [expectedRevision]
+          properties:
+            expectedRevision: { type: integer, minimum: 1 }
+    PageMeta:
+      type: object
+      required: [page, pageSize, total]
+      properties:
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 200 }
+        total: { type: integer, minimum: 0 }
+    SemesterPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Semester' } }
+    CohortPage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Cohort' } }
+    CoursePage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/Course' } }
+    StudyTypePage:
+      allOf:
+        - $ref: '#/components/schemas/PageMeta'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/StudyType' } }
+    ErrorEnvelope:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [code, message]
+            properties:
+              code:
+                type: string
+                enum:
+                  - VALIDATION_ERROR
+                  - DUPLICATE_NORMALIZED_NAME
+                  - NAME_REPAIR_REQUIRED
+                  - DUPLICATE_TIME_WINDOW
+                  - REQUIRED_RELATIONSHIP_INVALID
+                  - SEMESTER_DATE_EXCLUDES_SESSIONS
+                  - DELETE_BLOCKED_DEPENDENTS
+                  - DELETE_BLOCKED_SAVED_SCHEDULES
+                  - REACTIVATION_BLOCKED
+                  - STALE_REVISION
+                  - PLANNING_OPTION_INVALID
+                  - MISSING_ACTIVE_TIME_WINDOW
+                  - NOT_FOUND
+              message: { type: string }
+              field: { type: [string, 'null'] }
+              meta: { type: [object, 'null'], additionalProperties: true }
+    PlanningCourseOption:
+      type: object
+      required:
+        - id
+        - name
+        - semesterId
+        - totalUnits
+        - minSessionUnits
+        - maxSessionUnits
+        - lecturer
+        - cohort
+        - room
+        - studyType
+        - availability
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        semesterId: { type: integer }
+        totalUnits: { type: integer }
+        minSessionUnits: { type: integer }
+        maxSessionUnits: { type: integer }
+        lecturer: { $ref: '#/components/schemas/EntitySummary' }
+        cohort: { $ref: '#/components/schemas/EntitySummary' }
+        room: { $ref: '#/components/schemas/EntitySummary' }
+        studyType: { $ref: '#/components/schemas/EntitySummary' }
+        availability: { $ref: '#/components/schemas/Availability' }
+    PlanningOptions:
+      type: object
+      required: [courses, semesters, timeWindows, rooms, lecturers]
+      properties:
+        courses:
+          type: array
+          items: { $ref: '#/components/schemas/PlanningCourseOption' }
+        semesters:
+          type: array
+          items: { $ref: '#/components/schemas/PlanningSemesterOption' }
+        timeWindows:
+          type: array
+          items: { $ref: '#/components/schemas/PlanningTimeWindowOption' }
+        rooms:
+          type: array
+          items: { $ref: '#/components/schemas/RoomOption' }
+        lecturers:
+          type: array
+          items: { $ref: '#/components/schemas/EntitySummary' }
+    PlanningSemesterOption:
+      type: object
+      required: [id, name, startDate, endDate]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        startDate: { type: string, format: date }
+        endDate: { type: string, format: date }
+    PlanningTimeWindowOption:
+      type: object
+      required: [id, studyTypeId, weekday, startTime, endTime, sortOrder]
+      properties:
+        id: { type: integer }
+        studyTypeId: { type: integer }
+        weekday: { type: integer, minimum: 0, maximum: 6 }
+        startTime: { type: string }
+        endTime: { type: string }
+        sortOrder: { type: integer, minimum: 0 }
+    RoomOption:
+      allOf:
+        - $ref: '#/components/schemas/EntitySummary'
+        - type: object
+          required: [capacity]
+          properties:
+            capacity: { type: integer, minimum: 1 }

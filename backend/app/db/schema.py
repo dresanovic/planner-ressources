@@ -3,7 +3,7 @@ from pathlib import Path
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import Engine, inspect
+from sqlalchemy import Engine, event, inspect
 
 from app.db.base import Base
 from app.models import planning as _planning  # noqa: F401 - registers model metadata
@@ -14,41 +14,68 @@ class UnsupportedSchemaStateError(RuntimeError):
 
 
 def initialize_database(engine: Engine) -> None:
-    """Create a new schema or upgrade the supported pre-Slice-6 schema in place."""
+    """Create a new schema or upgrade supported planner schemas sequentially."""
     Base.metadata.create_all(bind=engine)
 
-    with engine.begin() as connection:
-        inspector = inspect(connection)
-        if _is_current_schema(inspector):
-            return
-        if not _is_slice_1_to_5_schema(inspector):
-            raise UnsupportedSchemaStateError(
-                "Database schema is neither the pre-Slice-6 schema nor the current schema. "
-                "Back up the database and inspect its Draft Schedule migration state."
-            )
+    with engine.connect() as connection:
+        if engine.dialect.name == "sqlite":
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
+        with connection.begin():
+            inspector = inspect(connection)
+            if not _is_current_schema(inspector):
+                if _is_slice_1_to_5_schema(inspector):
+                    migration = _load_migration("0002_course_semester_drafts.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                    inspector = inspect(connection)
+                if not _is_slice_6_schema(inspector):
+                    raise UnsupportedSchemaStateError(
+                        "Database schema is not a supported FS-001 through FS-006 or FS-007 state. "
+                        "Back up the database and inspect its migration state."
+                    )
 
-        migration = _load_migration("0002_course_semester_drafts.py")
-        migration.op = Operations(MigrationContext.configure(connection))
-        migration.upgrade()
+                migration = _load_migration("0003_academic_catalog_administration.py")
+                migration.op = Operations(MigrationContext.configure(connection))
+                migration.upgrade()
 
-        if not _is_current_schema(inspect(connection)):
-            raise UnsupportedSchemaStateError(
-                "Slice 6 database migration completed without producing the expected schema."
-            )
+                if not _is_current_schema(inspect(connection)):
+                    raise UnsupportedSchemaStateError(
+                        "FS-007 database migration completed without producing the expected schema."
+                    )
+        if engine.dialect.name == "sqlite":
+            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+            connection.commit()
+    _configure_sqlite_foreign_keys(engine)
 
 
 def _is_current_schema(inspector) -> bool:
     draft_columns = _column_names(inspector, "draft_schedules")
     constraint_columns = _column_names(inspector, "generation_constraint_sets")
+    course_columns = _column_names(inspector, "courses")
     return (
         "revision" in draft_columns
         and "revision" in constraint_columns
+        and "current_semester_id" in course_columns
+        and "course_name_snapshot" in draft_columns
         and _has_unique_columns(
             inspector,
             "draft_schedules",
             ("course_id", "semester_id"),
         )
         and not _has_unique_columns(inspector, "draft_schedules", ("course_id",))
+    )
+
+
+def _is_slice_6_schema(inspector) -> bool:
+    draft_columns = _column_names(inspector, "draft_schedules")
+    constraint_columns = _column_names(inspector, "generation_constraint_sets")
+    return (
+        "revision" in draft_columns
+        and "course_name_snapshot" not in draft_columns
+        and "revision" in constraint_columns
+        and "current_semester_id" not in _column_names(inspector, "courses")
+        and _has_unique_columns(inspector, "draft_schedules", ("course_id", "semester_id"))
     )
 
 
@@ -90,3 +117,18 @@ def _load_migration(filename: str):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _configure_sqlite_foreign_keys(engine: Engine) -> None:
+    if engine.dialect.name != "sqlite" or getattr(engine, "_fs007_fk_listener", False):
+        return
+
+    def enable(dbapi_connection, _connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+    event.listen(engine, "connect", enable)
+    setattr(engine, "_fs007_fk_listener", True)
+    with engine.connect() as connection:
+        connection.exec_driver_sql("PRAGMA foreign_keys=ON")

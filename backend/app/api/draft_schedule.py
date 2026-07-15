@@ -40,6 +40,8 @@ from app.services.draft_schedule_repository import (
     update_draft_session,
 )
 from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan, generate_schedule
+from app.models.planning import Course
+from app.services.academic_catalog import planning_eligibility_reasons
 from app.services.draft_schedule_validation import (
     ValidationAlert,
     collect_validation_alerts,
@@ -70,6 +72,13 @@ def generate_draft_schedule(
         semester = load_semester_plan(db, request.semester_id)
     except PlanningInputNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    source_course = db.get(Course, course_id)
+    eligibility = planning_eligibility_reasons(db, source_course, request.semester_id)
+    if eligibility:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"errors": [{"code": code, "message": "Course academic data is not eligible for this Semester."} for code in eligibility]},
+        )
     planning_period = PlanningPeriodPlan(
         start_date=request.planning_period.start_date,
         end_date=request.planning_period.end_date,
@@ -179,6 +188,12 @@ def read_generation_constraints(
         semester = load_semester_plan(db, semesterId)
     except PlanningInputNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    eligibility = planning_eligibility_reasons(db, db.get(Course, course_id), semesterId)
+    if eligibility:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"errors": [{"code": code, "message": "Course academic data is not eligible for this Semester."} for code in eligibility]},
+        )
     return _constraints_to_response(load_generation_constraints(db, course, semester))
 
 
@@ -193,6 +208,12 @@ def delete_generation_constraints(
         load_semester_plan(db, semesterId)
     except PlanningInputNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    eligibility = planning_eligibility_reasons(db, db.get(Course, course_id), semesterId)
+    if eligibility:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"errors": [{"code": code, "message": "Course academic data is not eligible for this Semester."} for code in eligibility]},
+        )
     try:
         clear_generation_constraints(db, course_id=course_id, semester_id=semesterId)
         db.commit()
@@ -220,7 +241,7 @@ def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResp
         for draft in drafts:
             course_plan = load_course_plan(db, draft.course_id)
             constraints_by_course_id[draft.course_id] = load_generation_constraints(db, course_plan, semester_plan)
-            study_type_id = draft.course.study_type_id
+            study_type_id = draft.study_type_id_snapshot
             if study_type_id not in study_windows_by_study_type_id:
                 study_windows_by_study_type_id[study_type_id] = load_time_windows(db, study_type_id)
     alerts_by_session = collect_validation_alerts(
@@ -242,12 +263,12 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None) -> DraftSchedu
         courseId=draft.course_id,
         semesterId=draft.semester_id,
         context=DraftScheduleContextResponse(
-            course=PlanningEntityResponse(id=course.id, name=course.name),
-            cohort=PlanningEntityResponse(id=course.cohort.id, name=course.cohort.name),
-            cohortSize=course.cohort.student_count,
+            course=PlanningEntityResponse(id=course.id, name=draft.course_name_snapshot),
+            cohort=PlanningEntityResponse(id=draft.cohort_id_snapshot, name=draft.cohort_name_snapshot),
+            cohortSize=draft.cohort_size_snapshot,
             lecturer=PlanningEntityResponse(id=course.lecturer.id, name=course.lecturer.name),
             room=PlanningEntityResponse(id=course.room.id, name=course.room.name),
-            studyType=PlanningEntityResponse(id=course.study_type.id, name=course.study_type.name),
+            studyType=PlanningEntityResponse(id=draft.study_type_id_snapshot, name=draft.study_type_name_snapshot),
         ),
         sessions=[
             DraftSessionResponse(
@@ -260,7 +281,7 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None) -> DraftSchedu
                 lecturerId=session.lecturer_id,
                 cohortId=session.cohort_id,
                 roomId=session.room_id,
-                studyTypeId=course.study_type_id,
+                studyTypeId=draft.study_type_id_snapshot,
                 timeWindowId=session.time_window_id,
                 constraintWindowIndex=session.constraint_window_index,
                 validationAlerts=[

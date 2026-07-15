@@ -51,7 +51,7 @@ afterEach(() => { document.body.innerHTML = '' })
 async function renderPage() {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   await act(async () => {
-    root.render(<CourseSchedulePage />)
+    root.render(<CourseSchedulePage catalogRevision={0} />)
     await new Promise((resolve) => setTimeout(resolve, 0))
   })
   return root
@@ -106,5 +106,54 @@ describe('CourseSchedulePage multi-course mode', () => {
     act(() => button('Cancel')?.click())
     expect(mocks.generateBatch).not.toHaveBeenCalled()
     expect(document.body.textContent).not.toContain('Replace existing Draft Schedules?')
+  })
+})
+
+describe('CourseSchedulePage academic option compatibility', () => {
+  it('filters by assigned semester and retains an invalid prior selection without substitution', async () => {
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      semesters: [...options.semesters, { id: 2, name: 'Spring 2027', startDate: '2027-02-01', endDate: '2027-06-20' }],
+      courses: [
+        { ...options.courses[0], semesterId: 1, availability: { available: true, reasons: [] } },
+        { ...options.courses[1], semesterId: 2, availability: { available: false, reasons: ['MISSING_ACTIVE_TIME_WINDOW'] } },
+      ],
+    })
+    await renderPage()
+    const selects = document.querySelectorAll<HTMLSelectElement>('.planning-selectors select')
+    act(() => { selects[1].value = '2'; selects[1].dispatchEvent(new Event('change', { bubbles: true })) })
+    expect(selects[0].value).toBe('1')
+    expect(document.body.textContent).toContain('not assigned to the selected Semester')
+    expect((button('Generate') as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('refreshes options without replacing a still-valid selected Course', async () => {
+    const root = await renderPage()
+    const courseSelect = document.querySelector<HTMLSelectElement>('.planning-selectors select')!
+    act(() => { courseSelect.value = '2'; courseSelect.dispatchEvent(new Event('change', { bubbles: true })) })
+
+    await act(async () => {
+      root.render(<CourseSchedulePage catalogRevision={1} />)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(courseSelect.value).toBe('2')
+    expect(mocks.getPlanningOptions).toHaveBeenCalledTimes(2)
+  })
+
+  it('retains and flags a selected Course removed by a catalog refresh', async () => {
+    const root = await renderPage()
+    const courseSelect = document.querySelector<HTMLSelectElement>('.planning-selectors select')!
+    act(() => { courseSelect.value = '2'; courseSelect.dispatchEvent(new Event('change', { bubbles: true })) })
+    mocks.getPlanningOptions.mockResolvedValue({ ...options, courses: [options.courses[0]] })
+
+    await act(async () => {
+      root.render(<CourseSchedulePage catalogRevision={1} />)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(courseSelect.value).toBe('2')
+    expect(document.body.textContent).toContain('OPTION_NO_LONGER_AVAILABLE')
+    expect((button('Generate') as HTMLButtonElement).disabled).toBe(true)
   })
 })
