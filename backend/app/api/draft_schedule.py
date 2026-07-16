@@ -1,3 +1,4 @@
+import re
 from datetime import date, time
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
@@ -10,6 +11,7 @@ from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, Lect
 from app.schemas.draft_schedule import (
     AllowedTeachingWindowResponse,
     DraftScheduleContextResponse,
+    DraftScheduleMutationResponse,
     DraftScheduleResponse,
     DraftSessionResponse,
     GenerateDraftScheduleRequest,
@@ -22,14 +24,26 @@ from app.schemas.draft_schedule import (
     SessionEditFailure,
     SessionEditFailureCode,
     SessionEditFailureResponse,
+    StaleDraftFailure,
+    StaleDraftResponse,
+    CreateManualDraftSessionRequest,
+    ManualSessionFailure,
+    ManualSessionFailureCode,
+    ManualSessionFailureResponse,
     UpdateDraftSessionRequest,
     ValidationAlertResponse,
 )
 from app.services.draft_schedule_repository import (
     DraftSessionEditValidationError,
+    ManualSessionValidationError,
+    StaleDraftError,
     GenerationConstraints,
     PlanningInputNotFoundError,
     clear_generation_constraints,
+    clear_course_draft,
+    course_semester_progress,
+    create_manual_draft_session,
+    delete_draft_session,
     get_draft_schedule,
     list_draft_schedules_by_semester,
     load_generation_constraints,
@@ -55,6 +69,110 @@ constraints_router = APIRouter(
 )
 overview_router = APIRouter(prefix="/api/draft-schedules", tags=["draft schedule"])
 session_router = APIRouter(prefix="/api/draft-sessions", tags=["draft schedule"])
+_MANUAL_SESSION_DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
+_MANUAL_SESSION_TIME_PATTERN = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d")
+
+
+@router.post(
+    "/sessions",
+    response_model=DraftScheduleMutationResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={422: {"model": ManualSessionFailureResponse}},
+)
+def create_manual_session(
+    course_id: int,
+    request: CreateManualDraftSessionRequest,
+    db: Session = Depends(get_db),
+) -> DraftScheduleMutationResponse | JSONResponse:
+    try:
+        session_date = _parse_manual_session_date(request.date)
+    except ValueError:
+        return _manual_failure("INVALID_SESSION_DATE", "Session date must use a valid YYYY-MM-DD value.")
+    try:
+        start_time = _parse_manual_session_time(request.start_time)
+        end_time = _parse_manual_session_time(request.end_time)
+    except ValueError:
+        return _manual_failure("INVALID_SESSION_TIME_RANGE", "Session start and end times must use HH:MM values.")
+    try:
+        draft = create_manual_draft_session(
+            db,
+            course_id,
+            request.semester_id,
+            session_date=session_date,
+            start_time=start_time,
+            end_time=end_time,
+            units=request.units,
+            room_id=request.room_id,
+        )
+        db.commit()
+    except ManualSessionValidationError as exc:
+        db.rollback()
+        return _manual_failure(exc.code, exc.message)
+    except PlanningInputNotFoundError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception:
+        db.rollback()
+        raise
+    return _to_mutation_response(db, course_id, request.semester_id, draft)
+
+
+@session_router.delete(
+    "/{session_id}",
+    response_model=DraftScheduleMutationResponse,
+    responses={409: {"model": StaleDraftResponse}},
+)
+def remove_draft_session(
+    session_id: int,
+    expectedDraftScheduleId: int,
+    expectedDraftRevision: int,
+    db: Session = Depends(get_db),
+) -> DraftScheduleMutationResponse | JSONResponse:
+    try:
+        draft, course_id, semester_id = delete_draft_session(
+            db,
+            session_id,
+            expected_draft_schedule_id=expectedDraftScheduleId,
+            expected_revision=expectedDraftRevision,
+        )
+        db.commit()
+    except StaleDraftError as exc:
+        db.rollback()
+        return _stale_response(exc.current_revision)
+    except Exception:
+        db.rollback()
+        raise
+    return _to_mutation_response(db, course_id, semester_id, draft)
+
+
+@router.delete(
+    "",
+    response_model=DraftScheduleMutationResponse,
+    responses={409: {"model": StaleDraftResponse}},
+)
+def remove_course_draft(
+    course_id: int,
+    semesterId: int,
+    expectedDraftScheduleId: int,
+    expectedDraftRevision: int,
+    db: Session = Depends(get_db),
+) -> DraftScheduleMutationResponse | JSONResponse:
+    try:
+        course_id, semester_id = clear_course_draft(
+            db,
+            course_id,
+            semesterId,
+            expected_draft_schedule_id=expectedDraftScheduleId,
+            expected_revision=expectedDraftRevision,
+        )
+        db.commit()
+    except StaleDraftError as exc:
+        db.rollback()
+        return _stale_response(exc.current_revision)
+    except Exception:
+        db.rollback()
+        raise
+    return _to_mutation_response(db, course_id, semester_id, None)
 
 
 @router.post(
@@ -234,6 +352,52 @@ def _to_response_with_validation(db: Session, draft) -> DraftScheduleResponse:
         if response.draft_schedule_id == draft.id:
             return response
     return _to_response(draft)
+
+
+def _to_mutation_response(db: Session, course_id: int, semester_id: int, draft) -> DraftScheduleMutationResponse:
+    _total, scheduled, remaining = course_semester_progress(db, course_id, semester_id)
+    return DraftScheduleMutationResponse(
+        courseId=course_id,
+        semesterId=semester_id,
+        scheduledUnits=scheduled,
+        remainingUnits=remaining,
+        draftSchedule=_to_response_with_validation(db, draft) if draft is not None else None,
+    )
+
+
+def _manual_failure(code: str, message: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=ManualSessionFailureResponse(
+            errors=[ManualSessionFailure(code=ManualSessionFailureCode(code), message=message)]
+        ).model_dump(mode="json"),
+    )
+
+
+def _parse_manual_session_date(value: str) -> date:
+    if _MANUAL_SESSION_DATE_PATTERN.fullmatch(value) is None:
+        raise ValueError("Manual Draft Session dates must use YYYY-MM-DD.")
+    return date.fromisoformat(value)
+
+
+def _parse_manual_session_time(value: str) -> time:
+    if _MANUAL_SESSION_TIME_PATTERN.fullmatch(value) is None:
+        raise ValueError("Manual Draft Session times must use HH:MM.")
+    return time.fromisoformat(value)
+
+
+def _stale_response(current_revision: int | None) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content=StaleDraftResponse(
+            errors=[
+                StaleDraftFailure(
+                    message="The confirmed Draft Schedule changed. Refresh and confirm again.",
+                    currentRevision=current_revision,
+                )
+            ]
+        ).model_dump(by_alias=True, mode="json"),
+    )
 
 
 def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResponse]:

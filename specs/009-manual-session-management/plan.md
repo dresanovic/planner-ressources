@@ -48,6 +48,13 @@ Extend the existing course-semester draft workflow so a planner can create one m
 
 All gates remain satisfied after research and contract design. The design adds no migration or dependency, uses optimistic comparison against the existing Draft Schedule revision for destructive actions, retains established alert derivation, and keeps remaining units derived rather than persisted. No constitution exception or complexity justification is required.
 
+### Simplicity Check
+
+- **Simplest viable solution**: Extend the existing Draft Schedule repository, FastAPI route module, typed client, `CourseSchedulePage`, and `DraftSchedulePanel`; derive remaining units from current sessions and reuse the established validation-alert refresh.
+- **Necessary abstractions**: One shared mutation-result contract is justified by all three mutations, and one schedule-specific confirmation dialog is justified by the two destructive actions with common accessibility and stale-reconfirmation behavior.
+- **Deliberately excluded**: No migration, new persistence entity, provenance field, eligibility layer, optimization service, calendar workspace, generic mutation framework, or persisted progress/alert state is introduced.
+- **Result**: PASS. The design uses existing project boundaries and adds only the shared structures required by multiple FS-009 behaviors.
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -129,7 +136,8 @@ Research decisions are recorded in [research.md](./research.md). All technical u
    - increment the Draft Schedule revision for every mutation that leaves it present;
    - delete the parent Draft Schedule when its last session is removed;
    - delete the complete parent draft without touching source records or `GenerationConstraintSet` rows;
-   - compare the submitted expected Draft Schedule identity and atomically claim its expected revision before destructive changes, then roll back on any mismatch.
+   - compare the submitted expected Draft Schedule identity and atomically claim its expected revision before destructive changes, then roll back on any mismatch;
+   - serialize manual creation against the latest saved course-semester draft state: conditionally claim a surviving parent revision, use the existing unique course-semester boundary when creating a first draft, and retry validation against the winning state after a concurrent write so units and duplicate-date rules cannot be bypassed.
 3. Reuse `_to_response_with_validation` for a surviving affected draft and the existing semester-wide alert collector. Mutation responses expose the affected course's scheduled/remaining values; the client then reloads the existing semester overview so alerts on related surviving sessions also refresh.
 4. Keep all hard validation in the backend: current references, semester bounds, positive whole units, units not exceeding current remaining units, time order, one session per draft per date, and room capacity. Overlap and window findings remain response alerts rather than save blockers.
 
@@ -153,7 +161,7 @@ The contract in [manual-session-management.openapi.yaml](./contracts/manual-sess
 - `DELETE /api/courses/{course_id}/draft-schedule?semesterId=...&expectedDraftScheduleId=...&expectedDraftRevision=...` for one complete course-semester draft;
 - the additive `cohortSize` field on the existing planning-options Course shape so room choices can be capacity-filtered before the first draft exists;
 - `201/200` mutation results with nullable current draft plus scheduled and remaining units;
-- `404` missing input/target, `409 STALE_DRAFT`, and `422` structural/capacity/unit validation outcomes.
+- `404` for missing current source input on manual creation, `409 STALE_DRAFT` whenever a confirmed deletion target or expected parent identity/revision is missing or changed, and `422` structural/capacity/unit validation outcomes.
 
 ### Agent Context Update
 

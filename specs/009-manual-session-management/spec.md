@@ -18,7 +18,7 @@ independent test paths.
 
 - Q: For a manually created Draft Session, how should units and clock time relate? → A: Units and start time calculate a default end time; the planner may override the end time, while units continue to drive remaining units.
 - Q: How should a course-semester draft be represented after its last session is deleted? → A: Remove the empty Draft Schedule and keep the course visible with all units remaining.
-- Q: Which confirmation behavior should apply to single-session and complete-draft deletion? → A: Confirm both actions, with each confirmation identifying its exact scope and returned units.
+- Q: Which confirmation behavior should apply to single-session and complete-draft deletion? → A: Confirm both actions, with each confirmation identifying its exact scope, units removed from scheduled coverage, and resulting remaining-unit count.
 - Q: Which lecturer and room choices should manual session creation allow? → A: Inherit the course's lecturer and let the planner select any existing room with sufficient capacity.
 - Q: What happens if the target session or course draft changes after its deletion confirmation appears? → A: Cancel the stale deletion, refresh current state, and require confirmation again.
 
@@ -47,11 +47,11 @@ A planner adds one Draft Session to a selected course in one semester and immedi
 
 ### User Story 2 - Delete One Draft Session (Priority: P2)
 
-A planner deletes one selected generated or manually created Draft Session after confirming the exact consequence and immediately sees the returned units and refreshed alerts.
+A planner deletes one selected generated or manually created Draft Session after confirming the exact consequence and immediately sees the resulting remaining-unit count and refreshed alerts.
 
 **Why this priority**: Removing one incorrect or unwanted session is the smallest safe way to reduce a draft without clearing unrelated course work.
 
-**Independent Test**: Select one session from a multi-session course draft, review and accept its deletion confirmation, then verify that only that session is removed, its units return to the remaining count, and alerts on all affected sessions are refreshed.
+**Independent Test**: Select one session from a multi-session course draft, review and accept its deletion confirmation, then verify that only that session is removed, scheduled coverage decreases by its units, remaining units follow FR-026, and alerts on all affected sessions are refreshed.
 
 **Acceptance Scenarios**:
 
@@ -108,7 +108,7 @@ A planner explicitly clears every Draft Session for one course in one semester a
 - **FR-006**: The system MUST reject a manual session when any required course, semester, course-assigned lecturer, planner-selected room, or cohort reference does not exist.
 - **FR-007**: The system MUST preserve the existing rule that one course Draft Schedule cannot contain more than one Draft Session on the same date.
 - **FR-008**: The system MUST reject a manual session whose assigned room capacity is below the course cohort size.
-- **FR-009**: The system MUST reject a manual session whose units exceed the course's current remaining units.
+- **FR-009**: The system MUST reject a manual session whose units exceed the course's current remaining units. Validation and persistence MUST use the same current saved schedule state so concurrent creation requests cannot together schedule more than the current remaining units.
 - **FR-010**: The system MUST leave the existing Draft Schedule, sessions, remaining-unit count, alerts, source records, and saved generation constraints unchanged when manual-session creation fails.
 - **FR-011**: The system MUST allow an otherwise valid manual session to be saved when it produces non-blocking lecturer, room, cohort, generation-constraint, or Study Type Time Window alerts.
 - **FR-012**: The system MUST NOT automatically move, resize, split, merge, delete, regenerate, optimize, or otherwise repair sessions in response to manual creation or its alerts.

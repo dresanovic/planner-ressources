@@ -18,9 +18,9 @@
 
 **Purpose**: Prepare reusable FS-009 fixtures without changing production behavior or adding dependencies.
 
-- [ ] T001 [P] Extend repository fixtures with empty, partial, over-scheduled, constrained, and cross-semester course drafts in `backend/tests/services/test_draft_schedule_repository.py`
-- [ ] T002 [P] Extend API fixtures with capacity-valid/invalid rooms, saved constraints, related-course alerts, and multiple semesters in `backend/tests/api/test_draft_schedule.py`
-- [ ] T003 [P] Add manual-mutation, selected-course progress, nullable-draft, and stale-error fixtures in `client/src/test/draftScheduleFixtures.ts`
+- [X] T001 [P] Extend repository fixtures with empty, partial, over-scheduled, constrained, and cross-semester course drafts in `backend/tests/services/test_draft_schedule_repository.py`
+- [X] T002 [P] Extend API fixtures with capacity-valid/invalid rooms, saved constraints, related-course alerts, and multiple semesters in `backend/tests/api/test_draft_schedule.py`
+- [X] T003 [P] Add manual-mutation, selected-course progress, nullable-draft, and stale-error fixtures in `client/src/test/draftScheduleFixtures.ts`
 
 **Checkpoint**: Shared backend and frontend test data can express every FS-009 state without a schema migration.
 
@@ -34,15 +34,15 @@
 
 ### Tests for Shared Foundations (write before implementation)
 
-- [ ] T004 [P] Add failing serialization tests for the common mutation result, validation failures, nullable Draft Schedule, and stale conflict response in `backend/tests/api/test_draft_schedule.py`
-- [ ] T005 [P] Add failing client contract tests for mutation-result parsing, validation errors, network failures, and `STALE_DRAFT` mapping in `client/src/api/draftSchedule.test.ts`
-- [ ] T006 [P] Add failing accessibility tests for modal labelling, initial focus, focus trapping, Escape cancellation, busy-state controls, and focus restoration in `client/src/components/ScheduleDeletionDialog.test.tsx`
+- [X] T004 [P] Add failing serialization tests for the common mutation result, validation failures, nullable Draft Schedule, and stale conflict response in `backend/tests/api/test_draft_schedule.py`
+- [X] T005 [P] Add failing client contract tests for mutation-result parsing, validation errors, network failures, and `STALE_DRAFT` mapping in `client/src/api/draftSchedule.test.ts`
+- [X] T006 [P] Add failing accessibility tests for modal labelling, initial focus, focus trapping, Escape cancellation, busy-state controls, and focus restoration in `client/src/components/ScheduleDeletionDialog.test.tsx`
 
 ### Shared Implementation
 
-- [ ] T007 Implement shared mutation response, progress, failure-code, and stale-conflict schemas in `backend/app/schemas/draft_schedule.py`
-- [ ] T008 [P] Add shared mutation result, failure, and stale-conflict types plus error parsing in `client/src/api/draftSchedule.ts`
-- [ ] T009 Implement the reusable accessible confirmation shell with action-specific content slots in `client/src/components/ScheduleDeletionDialog.tsx`
+- [X] T007 Implement shared mutation response, progress, failure-code, and stale-conflict schemas in `backend/app/schemas/draft_schedule.py`
+- [X] T008 [P] Add shared mutation result, failure, and stale-conflict types plus error parsing in `client/src/api/draftSchedule.ts`
+- [X] T009 Implement the reusable accessible confirmation shell with action-specific content slots in `client/src/components/ScheduleDeletionDialog.tsx`
 
 **Checkpoint**: Shared cross-stack contracts and the confirmation shell are ready; no user-story write endpoint is enabled yet.
 
@@ -56,22 +56,22 @@
 
 ### Tests for User Story 1 (write before implementation)
 
-- [ ] T010 [P] [US1] Add failing repository tests for derived progress, first-draft snapshot creation, append/revision behavior, lecturer/cohort inheritance, neutral manual window fields, and transaction rollback in `backend/tests/services/test_draft_schedule_repository.py`
-- [ ] T011 [P] [US1] Add failing API tests for additive planning-option `cohortSize`, `POST /api/courses/{course_id}/draft-schedule/sessions`, mutation results, current-source validation, all hard failure codes, non-blocking alerts, and constraint/source preservation in `backend/tests/api/test_planning_options.py` and `backend/tests/api/test_draft_schedule.py`
-- [ ] T012 [P] [US1] Add failing client tests for additive `cohortSize` planning options and the manual-create API request/result/error contract in `client/src/api/planningOptions.test.ts` and `client/src/api/draftSchedule.test.ts`
-- [ ] T013 [P] [US1] Add failing unit tests for remaining-unit derivation and default end-time calculation covering one/multiple units, break minutes, recalculation after override, invalid input, and midnight overflow in `client/src/components/manualSessionUtils.test.ts`
-- [ ] T014 [P] [US1] Add failing page tests for empty/partial progress, form labels, inherited context, capacity-filtered rooms, override retention, busy state, validation errors, successful refresh, and alert updates in `client/src/pages/CourseSchedulePage.test.tsx`
+- [X] T010 [P] [US1] Add failing repository tests for derived progress, first-draft snapshot creation, append/revision behavior, concurrent first-draft and append attempts, latest-state remaining-unit and duplicate-date enforcement, lecturer/cohort inheritance, neutral manual window fields, and transaction rollback in `backend/tests/services/test_draft_schedule_repository.py`
+- [X] T011 [P] [US1] Add failing API tests for additive planning-option `cohortSize`, `POST /api/courses/{course_id}/draft-schedule/sessions`, mutation results, current-source validation, concurrent creation without over-scheduling, all hard failure codes, non-blocking alerts, unchanged generation/regeneration behavior, and constraint/source preservation in `backend/tests/api/test_planning_options.py` and `backend/tests/api/test_draft_schedule.py`
+- [X] T012 [P] [US1] Add failing client tests for additive `cohortSize` planning options and the manual-create API request/result/error contract in `client/src/api/planningOptions.test.ts` and `client/src/api/draftSchedule.test.ts`
+- [X] T013 [P] [US1] Add failing unit tests for remaining-unit derivation and default end-time calculation covering one/multiple units, break minutes, valid earlier and later overrides with explicit units remaining authoritative, recalculation after either override, invalid input, and midnight overflow in `client/src/components/manualSessionUtils.test.ts`
+- [X] T014 [P] [US1] Add failing page tests for empty/partial progress, form labels, inherited context, capacity-filtered rooms, earlier/later override retention, filter/view preservation, Draft terminology, polite announcements, busy and mutation-failure states, validation errors, successful refresh, and alert updates in `client/src/pages/CourseSchedulePage.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T015 [P] [US1] Expose current course `cohortSize` through planning-option schemas and mapping in `backend/app/schemas/planning_options.py` and `backend/app/api/planning_options.py`
-- [ ] T016 [US1] Implement reusable new-draft snapshot construction, scheduled/remaining calculation, hard validation, and transactional manual-session creation in `backend/app/services/draft_schedule_repository.py`
-- [ ] T017 [US1] Add the manual-create request/failure schemas, `POST` route, commit/rollback handling, mutation-result mapping, and existing validation-alert serialization in `backend/app/schemas/draft_schedule.py` and `backend/app/api/draft_schedule.py`
-- [ ] T018 [P] [US1] Add `cohortSize` client typing plus pure progress/end-time helpers that keep explicit units authoritative and reject midnight rollover in `client/src/api/planningOptions.ts` and `client/src/components/manualSessionUtils.ts`
-- [ ] T019 [US1] Implement the typed manual-create API call and structured `404`/`422`/network error handling in `client/src/api/draftSchedule.ts`
-- [ ] T020 [US1] Add selected-course scheduled/remaining indicators and the manual-session editor with native labelled inputs, inherited lecturer/cohort, capacity-valid rooms, calculated editable end time, and polite announcements in `client/src/pages/CourseSchedulePage.tsx`
-- [ ] T021 [US1] Orchestrate manual-create busy/error/success state and complete-semester refresh without resetting filters, and normalize mixed manual/generated overview wording to “Draft” in `client/src/pages/CourseSchedulePage.tsx` and `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T022 [US1] Run the focused US1 backend/client tests and record creation, hard-validation, remaining-unit, and alert-refresh evidence in `specs/009-manual-session-management/quickstart.md`
+- [X] T015 [P] [US1] Expose current course `cohortSize` through planning-option schemas and mapping in `backend/app/schemas/planning_options.py` and `backend/app/api/planning_options.py`
+- [X] T016 [US1] Implement reusable new-draft snapshot construction, scheduled/remaining calculation, hard validation, and transactional manual-session creation that conditionally claims an existing parent revision or resolves a concurrent first-draft insert, then revalidates against the latest saved state before persistence in `backend/app/services/draft_schedule_repository.py`
+- [X] T017 [US1] Add the manual-create request/failure schemas, `POST` route, commit/rollback handling, mutation-result mapping, and existing validation-alert serialization in `backend/app/schemas/draft_schedule.py` and `backend/app/api/draft_schedule.py`
+- [X] T018 [P] [US1] Add `cohortSize` client typing plus pure progress/end-time helpers that keep explicit units authoritative and reject midnight rollover in `client/src/api/planningOptions.ts` and `client/src/components/manualSessionUtils.ts`
+- [X] T019 [US1] Implement the typed manual-create API call and structured `404`/`422`/network error handling in `client/src/api/draftSchedule.ts`
+- [X] T020 [US1] Add selected-course scheduled/remaining indicators and the manual-session editor with native labelled inputs, inherited lecturer/cohort, capacity-valid rooms, calculated editable end time, and polite announcements in `client/src/pages/CourseSchedulePage.tsx`
+- [X] T021 [US1] Orchestrate manual-create busy/error/success state and complete-semester refresh without resetting filters, and normalize mixed manual/generated overview wording to “Draft” in `client/src/pages/CourseSchedulePage.tsx` and `client/src/components/DraftSchedulePanel.tsx`
+- [X] T022 [US1] Run the focused US1 backend/client tests and record creation, hard-validation, remaining-unit, and alert-refresh evidence in `specs/009-manual-session-management/quickstart.md`
 
 **Checkpoint**: User Story 1 is a deployable MVP; manual creation works from empty or partial state without any deletion feature.
 
@@ -85,21 +85,21 @@
 
 ### Tests for User Story 2 (write before implementation)
 
-- [ ] T023 [P] [US2] Add failing repository tests for atomic parent identity/revision claim, one-of-many deletion, last-session parent removal, over-scheduled progress, stale rollback, and source/constraint preservation in `backend/tests/services/test_draft_schedule_repository.py`
-- [ ] T024 [P] [US2] Add failing API tests for `DELETE /api/draft-sessions/{session_id}`, expected parent identity/revision, nullable draft result, refreshed related alerts, `404`, and `409 STALE_DRAFT` in `backend/tests/api/test_draft_schedule.py`
-- [ ] T025 [P] [US2] Add failing client API tests for single-delete query parameters, mutation result, and stale/missing/network failures in `client/src/api/draftSchedule.test.ts`
-- [ ] T026 [P] [US2] Add failing dialog tests for single-session date/time/course/semester context, removed units, resulting remainder, last-session consequence, cancel, confirm, stale notice, and destructive button naming in `client/src/components/ScheduleDeletionDialog.test.tsx`
-- [ ] T027 [P] [US2] Add failing overview/page tests for Delete actions in list and weekly modes, filter preservation, related-alert refresh, last-session empty state, cancelled writes, and refreshed reconfirmation after stale failure in `client/src/components/DraftSchedulePanel.test.tsx` and `client/src/pages/CourseSchedulePage.test.tsx`
+- [X] T023 [P] [US2] Add failing repository tests for atomic parent identity/revision claim, one-of-many deletion, last-session parent removal, over-scheduled progress, stale rollback, and source/constraint preservation in `backend/tests/services/test_draft_schedule_repository.py`
+- [X] T024 [P] [US2] Add failing API tests for `DELETE /api/draft-sessions/{session_id}`, expected parent identity/revision, nullable draft result, refreshed related alerts, and `409 STALE_DRAFT` for a missing confirmed target or changed parent in `backend/tests/api/test_draft_schedule.py`
+- [X] T025 [P] [US2] Add failing client API tests for single-delete query parameters, mutation result, and stale-target/network failures in `client/src/api/draftSchedule.test.ts`
+- [X] T026 [P] [US2] Add failing dialog tests for single-session date/time/course/semester context, removed units, resulting remainder, last-session consequence, cancel, confirm, stale notice, and destructive button naming in `client/src/components/ScheduleDeletionDialog.test.tsx`
+- [X] T027 [P] [US2] Add failing overview/page tests for Delete actions in list and weekly modes, filter preservation, related-alert refresh, last-session empty state, cancelled writes, and refreshed reconfirmation after stale failure in `client/src/components/DraftSchedulePanel.test.tsx` and `client/src/pages/CourseSchedulePage.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] Implement conditional Draft Schedule identity/revision claiming, transactional single-session deletion, surviving-parent revision behavior, last-session ORM parent deletion, and progress recomputation in `backend/app/services/draft_schedule_repository.py`
-- [ ] T029 [US2] Add the single-session `DELETE` route, expected identity/revision parameters, `404`/`409` mapping, rollback, and mutation-result response in `backend/app/api/draft_schedule.py`
-- [ ] T030 [P] [US2] Implement the typed single-session delete call with expected identity/revision parameters in `client/src/api/draftSchedule.ts`
-- [ ] T031 [US2] Add single-session consequence rendering and stale/cancel/confirm behavior to `client/src/components/ScheduleDeletionDialog.tsx`
-- [ ] T032 [US2] Add contextual Delete controls beside Edit in list and weekly views and emit the selected session plus parent revision snapshot from `client/src/components/DraftSchedulePanel.tsx`
-- [ ] T033 [US2] Orchestrate confirmation state, mutation busy state, success refresh, stale refresh/message, focus restoration, and required renewed confirmation in `client/src/pages/CourseSchedulePage.tsx`
-- [ ] T034 [US2] Run the focused US2 backend/client tests and record cancellation, exact-scope deletion, last-session cleanup, over-scheduled progress, alert refresh, and stale-reconfirmation evidence in `specs/009-manual-session-management/quickstart.md`
+- [X] T028 [US2] Implement conditional Draft Schedule identity/revision claiming, transactional single-session deletion, surviving-parent revision behavior, last-session ORM parent deletion, and progress recomputation in `backend/app/services/draft_schedule_repository.py`
+- [X] T029 [US2] Add the single-session `DELETE` route, expected identity/revision parameters, `409 STALE_DRAFT` mapping for missing or changed confirmed targets, rollback, and mutation-result response in `backend/app/api/draft_schedule.py`
+- [X] T030 [P] [US2] Implement the typed single-session delete call with expected identity/revision parameters in `client/src/api/draftSchedule.ts`
+- [X] T031 [US2] Add single-session consequence rendering and stale/cancel/confirm behavior to `client/src/components/ScheduleDeletionDialog.tsx`
+- [X] T032 [US2] Add contextual Delete controls beside Edit in list and weekly views and emit the selected session plus parent revision snapshot from `client/src/components/DraftSchedulePanel.tsx`
+- [X] T033 [US2] Orchestrate confirmation state, mutation busy state, success refresh, stale refresh/message, focus restoration, and required renewed confirmation in `client/src/pages/CourseSchedulePage.tsx`
+- [X] T034 [US2] Run the focused US2 backend/client tests and record cancellation, exact-scope deletion, last-session cleanup, over-scheduled progress, alert refresh, and stale-reconfirmation evidence in `specs/009-manual-session-management/quickstart.md`
 
 **Checkpoint**: User Story 2 works independently with pre-existing generated sessions; manual creation is not required to prove single-session deletion.
 
@@ -113,18 +113,18 @@
 
 ### Tests for User Story 3 (write before implementation)
 
-- [ ] T035 [P] [US3] Add failing repository tests for complete ORM parent deletion, no retained empty draft, current progress, cross-course/cross-semester isolation, source/constraint preservation, and stale rollback in `backend/tests/services/test_draft_schedule_repository.py`
-- [ ] T036 [P] [US3] Add failing API tests for complete-draft `DELETE`, semester plus expected parent identity/revision, nullable result, refreshed alerts, `404`, and `409 STALE_DRAFT` in `backend/tests/api/test_draft_schedule.py`
-- [ ] T037 [P] [US3] Add failing client API tests for complete-draft query parameters, nullable result, and stale/missing/network failures in `client/src/api/draftSchedule.test.ts`
-- [ ] T038 [P] [US3] Add failing dialog/page tests for course/semester/session-count/full-remainder context, preservation copy, cancel, selected-course-only action, success refresh, no-draft state, and stale reconfirmation in `client/src/components/ScheduleDeletionDialog.test.tsx` and `client/src/pages/CourseSchedulePage.test.tsx`
+- [X] T035 [P] [US3] Add failing repository tests for complete ORM parent deletion, no retained empty draft, current progress, cross-course/cross-semester isolation, source/constraint preservation, and stale rollback in `backend/tests/services/test_draft_schedule_repository.py`
+- [X] T036 [P] [US3] Add failing API tests for complete-draft `DELETE`, semester plus expected parent identity/revision, nullable result, refreshed alerts, and `409 STALE_DRAFT` for a missing confirmed draft or changed parent in `backend/tests/api/test_draft_schedule.py`
+- [X] T037 [P] [US3] Add failing client API tests for complete-draft query parameters, nullable result, and stale-target/network failures in `client/src/api/draftSchedule.test.ts`
+- [X] T038 [P] [US3] Add failing dialog/page tests for course/semester/session-count/full-remainder context, preservation copy, cancel, selected-course-only action, success refresh, no-draft state, and stale reconfirmation in `client/src/components/ScheduleDeletionDialog.test.tsx` and `client/src/pages/CourseSchedulePage.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T039 [US3] Implement transactional complete course-semester ORM parent deletion with atomic identity/revision claim, source/constraint isolation, and full remaining-unit result in `backend/app/services/draft_schedule_repository.py`
-- [ ] T040 [US3] Add the course-draft `DELETE` route with semester and expected identity/revision parameters, `404`/`409` mapping, rollback, and nullable mutation result in `backend/app/api/draft_schedule.py`
-- [ ] T041 [P] [US3] Implement the typed complete-draft delete call in `client/src/api/draftSchedule.ts`
-- [ ] T042 [US3] Add complete-draft consequence content to `client/src/components/ScheduleDeletionDialog.tsx` and selected-course clear action, success/stale refresh, and disabled no-draft state to `client/src/pages/CourseSchedulePage.tsx`
-- [ ] T043 [US3] Run the focused US3 backend/client tests and record cancellation, full clearing, source/constraint preservation, isolation, alert cleanup, and stale-reconfirmation evidence in `specs/009-manual-session-management/quickstart.md`
+- [X] T039 [US3] Implement transactional complete course-semester ORM parent deletion with atomic identity/revision claim, source/constraint isolation, and full remaining-unit result in `backend/app/services/draft_schedule_repository.py`
+- [X] T040 [US3] Add the course-draft `DELETE` route with semester and expected identity/revision parameters, `409 STALE_DRAFT` mapping for a missing or changed confirmed draft, rollback, and nullable mutation result in `backend/app/api/draft_schedule.py`
+- [X] T041 [P] [US3] Implement the typed complete-draft delete call in `client/src/api/draftSchedule.ts`
+- [X] T042 [US3] Add complete-draft consequence content to `client/src/components/ScheduleDeletionDialog.tsx` and selected-course clear action, success/stale refresh, and disabled no-draft state to `client/src/pages/CourseSchedulePage.tsx`
+- [X] T043 [US3] Run the focused US3 backend/client tests and record cancellation, full clearing, source/constraint preservation, isolation, alert cleanup, and stale-reconfirmation evidence in `specs/009-manual-session-management/quickstart.md`
 
 **Checkpoint**: All three FS-009 user stories are independently functional and testable.
 
@@ -134,13 +134,13 @@
 
 **Purpose**: Prove regression safety, accessibility, performance, documentation, and measurable completion across the complete slice.
 
-- [ ] T044 [P] Add backend regression coverage proving generation/regeneration, manual editing, multi-course behavior, constraint revisions, and derived validation alerts remain unchanged in `backend/tests/api/test_draft_schedule.py`, `backend/tests/api/test_multi_course_generation.py`, and `backend/tests/services/test_draft_schedule_validation.py`
-- [ ] T045 [P] Add frontend regression and accessibility coverage for filter/view preservation, Draft terminology, polite progress announcements, keyboard dialog behavior, and mutation failure states in `client/src/components/DraftSchedulePanel.test.tsx` and `client/src/pages/CourseSchedulePage.test.tsx`
-- [ ] T046 [P] Document manual-create/delete endpoints, error codes, revision requirements, derived progress, and preserved constraints/source data in `backend/README.md`
-- [ ] T047 [P] Document the selected-course manual workflow, end-time override, confirmation behavior, stale refresh, and remaining-unit interpretation in `client/README.md`
-- [ ] T048 Execute all eight end-to-end scenarios and the one-second reference-environment timing, then record results and residual risks in `specs/009-manual-session-management/quickstart.md`
+- [X] T044 [P] Run the existing and test-first backend regression coverage for generation/regeneration, manual editing, multi-course behavior, constraint revisions, and derived validation alerts in `backend/tests/api/test_draft_schedule.py`, `backend/tests/api/test_multi_course_generation.py`, and `backend/tests/services/test_draft_schedule_validation.py`, then record results in `specs/009-manual-session-management/quickstart.md`
+- [X] T045 [P] Run the existing and test-first frontend regression and accessibility coverage for filter/view preservation, Draft terminology, polite progress announcements, keyboard dialog behavior, and mutation failure states in `client/src/components/ScheduleDeletionDialog.test.tsx`, `client/src/components/DraftSchedulePanel.test.tsx`, and `client/src/pages/CourseSchedulePage.test.tsx`, then record results in `specs/009-manual-session-management/quickstart.md`
+- [X] T046 [P] Document manual-create/delete endpoints, error codes, revision requirements, derived progress, and preserved constraints/source data in `backend/README.md`
+- [X] T047 [P] Document the selected-course manual workflow, end-time override, confirmation behavior, stale refresh, and remaining-unit interpretation in `client/README.md`
+- [X] T048 Execute all eight end-to-end scenarios and the one-second reference-environment timing, then record results and residual risks in `specs/009-manual-session-management/quickstart.md`
 - [ ] T049 Conduct the specified at-least-10-participant unaided usability review for manual creation and deletion-scope comprehension and record anonymized aggregate evidence in `specs/009-manual-session-management/quickstart.md`
-- [ ] T050 Run full `python -m pytest`, `npm test`, `npm run lint`, and `npm run build` verification and record command outcomes in `specs/009-manual-session-management/quickstart.md`
+- [X] T050 Run full `python -m pytest`, `npm test`, `npm run lint`, and `npm run build` verification and record command outcomes in `specs/009-manual-session-management/quickstart.md`
 
 ---
 
@@ -182,7 +182,7 @@ US1 P1   US2 P2   US3 P3
 - In US1, T010–T014 can be written in parallel; after they fail, T015 and T016 can proceed in parallel, as can backend work and T018.
 - In US2, T023–T027 can be written in parallel; after they fail, backend T028–T029 and client T030–T032 can proceed with coordinated contract ownership.
 - In US3, T035–T038 can be written in parallel; after they fail, backend T039–T040 and client T041–T042 can proceed with coordinated contract ownership.
-- T044–T047 cover independent regression and documentation files.
+- T044–T045 execute regression suites whose required additions are made test-first in T006 and the user-story test tasks; T046–T047 cover independent documentation files.
 - US1, US2, and US3 are behaviorally independent after Phase 2, but parallel implementers must coordinate edits to `draft_schedule_repository.py`, `draft_schedule.py`, `draftSchedule.ts`, `ScheduleDeletionDialog.tsx`, and `CourseSchedulePage.tsx`.
 
 ---

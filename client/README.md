@@ -92,3 +92,12 @@ npm run lint
 npm run test
 npm run build
 ```
+## FS-009 manual session workflow
+
+In the selected-course Planning Summary, scheduled and remaining units are derived from the complete saved course-semester draft, independent of active overview filters. A course without a Draft Schedule remains visible with zero scheduled units and all current course units remaining.
+
+The **Add one Draft Session** form inherits the selected Course lecturer and cohort and offers current rooms with sufficient capacity. Start time plus explicit units proposes an end time using 45 minutes per unit and 10 minutes between units. The planner may move the end time earlier for merged teaching or later for a pause; the explicit unit count remains authoritative for progress.
+
+Every session in list and weekly views has an action-specific **Delete** control. The selected-course section also provides **Clear course draft** when a draft exists. Both actions require a modal confirmation describing the exact course-semester scope, removed scheduled coverage, resulting remaining units, and—for complete clearing—preservation of source records and saved generation constraints.
+
+Successful mutations refresh the complete semester overview without resetting filters. If the backend returns `STALE_DRAFT`, the obsolete confirmation closes, current schedules, progress, and alerts refresh, and the planner must open the action and confirm again. Network, validation, and persistence failures remain visible and are never presented as successful changes.

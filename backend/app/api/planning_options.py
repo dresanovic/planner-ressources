@@ -99,6 +99,7 @@ def read_planning_options(
                 ),
                 lecturer=PlanningEntityResponse(id=course.lecturer.id, name=course.lecturer.name) if course.lecturer else None,
                 cohort=PlanningEntityResponse(id=course.cohort.id, name=course.cohort.name),
+                cohortSize=course.cohort.student_count,
                 room=PlanningEntityResponse(id=course.room.id, name=course.room.name) if course.room else None,
                 studyType=PlanningEntityResponse(id=course.study_type.id, name=course.study_type.name),
             )

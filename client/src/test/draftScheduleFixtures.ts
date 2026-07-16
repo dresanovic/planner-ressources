@@ -1,4 +1,4 @@
-import type { DraftSchedule, GenerationConstraints } from '../api/draftSchedule'
+import type { DraftSchedule, DraftScheduleMutationResult, GenerationConstraints, MutationFailure } from '../api/draftSchedule'
 import type { RoomOption } from '../api/planningOptions'
 import type { BatchGenerationResult, BatchPreparation } from '../api/multiCourseDraftGeneration'
 
@@ -192,6 +192,34 @@ export const roomOptionsFixture: RoomOption[] = [
   { id: 3, name: 'Auditorium', capacity: 80 },
   { id: 4, name: 'Tiny', capacity: 20 },
 ]
+
+export const selectedCourseProgressFixture = {
+  totalUnits: 12,
+  scheduledUnits: 8,
+  remainingUnits: 4,
+}
+
+export const manualMutationFixture: DraftScheduleMutationResult = {
+  courseId: 1,
+  semesterId: 1,
+  scheduledUnits: 10,
+  remainingUnits: 2,
+  draftSchedule: draftScheduleFixture,
+}
+
+export const nullableDraftMutationFixture: DraftScheduleMutationResult = {
+  courseId: 1,
+  semesterId: 1,
+  scheduledUnits: 0,
+  remainingUnits: 12,
+  draftSchedule: null,
+}
+
+export const staleDraftFailureFixture: MutationFailure = {
+  code: 'STALE_DRAFT',
+  message: 'The Draft Schedule changed. Review the refreshed state and confirm again.',
+  currentRevision: 3,
+}
 
 export const batchPreparationFixture: BatchPreparation = {
   semesterId: 1,

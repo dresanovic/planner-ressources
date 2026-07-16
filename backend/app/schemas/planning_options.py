@@ -19,6 +19,7 @@ class CourseOptionResponse(BaseModel):
     availability: AvailabilityResponse
     lecturer: PlanningEntityResponse | None
     cohort: PlanningEntityResponse
+    cohort_size: int = Field(alias="cohortSize")
     room: PlanningEntityResponse | None
     study_type: PlanningEntityResponse = Field(alias="studyType")
 

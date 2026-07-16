@@ -100,3 +100,16 @@ python scripts/seed_dummy_planning_data.py
 
 The script is idempotent: it updates or reuses records by name, so it can be run more than once without creating duplicate dummy courses. It adds three courses across two lecturers, with cohorts, rooms, study types, time windows, and a Fall 2026 semester.
 Seeded academic names are canonicalized, lifecycle fields remain valid, and every seeded Course is assigned to Fall 2026.
+## FS-009 manual Draft Session management
+
+The planner uses three focused mutations:
+
+- `POST /api/courses/{course_id}/draft-schedule/sessions` creates one manual Draft Session from `semesterId`, `date`, `startTime`, `endTime`, explicit whole `units`, and `roomId`.
+- `DELETE /api/draft-sessions/{session_id}` deletes one session and requires `expectedDraftScheduleId` plus `expectedDraftRevision`.
+- `DELETE /api/courses/{course_id}/draft-schedule` clears one course-semester draft and requires `semesterId`, `expectedDraftScheduleId`, and `expectedDraftRevision`.
+
+Each success returns `courseId`, `semesterId`, authoritative `scheduledUnits`, authoritative `remainingUnits`, and a nullable `draftSchedule`. Remaining units are derived from the current Course total minus saved Draft Session units and are never persisted. Deleting the last session or clearing the draft returns `draftSchedule: null`.
+
+Manual creation returns structured `422` errors for date, time, whole-unit, remaining-unit, duplicate-date, and room-capacity rules. A missing current source record returns `404`. Confirmed deletions return `409 STALE_DRAFT` when the target, parent identity, or revision no longer matches; no deletion occurs and the client must refresh and obtain a new confirmation.
+
+All mutations preserve Course, Semester, Lecturer, Room, Cohort, Study Type, and saved Generation Constraint Set records. Manual creation inherits the Course lecturer and cohort, accepts any existing capacity-valid Room, and retains established non-blocking validation alerts.

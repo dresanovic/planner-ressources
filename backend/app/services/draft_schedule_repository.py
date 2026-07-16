@@ -1,4 +1,5 @@
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.planning import (
@@ -38,6 +39,19 @@ class DraftSessionEditValidationError(ValueError):
         super().__init__(message)
         self.code = code
         self.message = message
+
+
+class ManualSessionValidationError(ValueError):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+
+class StaleDraftError(ValueError):
+    def __init__(self, current_revision: int | None) -> None:
+        super().__init__("The confirmed Draft Schedule changed. Refresh and confirm again.")
+        self.current_revision = current_revision
 
 
 class GenerationConstraints:
@@ -367,6 +381,233 @@ def get_draft_schedule(db: Session, course_id: int, semester_id: int) -> DraftSc
         .scalars()
         .one_or_none()
     )
+
+
+def course_semester_progress(db: Session, course_id: int, semester_id: int) -> tuple[int, int, int]:
+    course = db.get(Course, course_id)
+    if course is None:
+        raise PlanningInputNotFoundError("Course not found.")
+    if db.get(Semester, semester_id) is None:
+        raise PlanningInputNotFoundError("Semester not found.")
+    draft = get_draft_schedule(db, course_id, semester_id)
+    scheduled = sum(session.units for session in draft.sessions) if draft is not None else 0
+    return course.total_units, scheduled, max(course.total_units - scheduled, 0)
+
+
+def create_manual_draft_session(
+    db: Session,
+    course_id: int,
+    semester_id: int,
+    *,
+    session_date,
+    start_time,
+    end_time,
+    units,
+    room_id: int,
+) -> DraftSchedule:
+    for _attempt in range(3):
+        course = (
+            db.execute(
+                select(Course)
+                .where(Course.id == course_id)
+                .options(
+                    selectinload(Course.cohort),
+                    selectinload(Course.study_type),
+                    selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
+                )
+            )
+            .scalars()
+            .one_or_none()
+        )
+        semester = db.get(Semester, semester_id)
+        room = db.get(Room, room_id)
+        if course is None:
+            raise PlanningInputNotFoundError("Course not found.")
+        if semester is None:
+            raise PlanningInputNotFoundError("Semester not found.")
+        if course.cohort is None or course.lecturer is None or course.study_type is None:
+            raise PlanningInputNotFoundError("Course planning input is incomplete.")
+        if room is None:
+            raise PlanningInputNotFoundError("Room not found.")
+
+        draft = get_draft_schedule(db, course_id, semester_id)
+        scheduled = sum(item.units for item in draft.sessions) if draft is not None else 0
+        remaining = max(course.total_units - scheduled, 0)
+        _validate_manual_session(
+            draft=draft,
+            semester=semester,
+            room=room,
+            cohort=course.cohort,
+            session_date=session_date,
+            start_time=start_time,
+            end_time=end_time,
+            units=units,
+            remaining_units=remaining,
+        )
+
+        if draft is None:
+            candidate = DraftSchedule(
+                course_id=course.id,
+                semester_id=semester.id,
+                selected_time_window_id=None,
+                status="draft",
+                revision=1,
+                course_name_snapshot=course.name,
+                course_total_units_snapshot=course.total_units,
+                course_min_session_units_snapshot=course.min_session_units,
+                course_max_session_units_snapshot=course.max_session_units,
+                cohort_id_snapshot=course.cohort.id,
+                cohort_name_snapshot=course.cohort.name,
+                cohort_size_snapshot=course.cohort.student_count,
+                study_type_id_snapshot=course.study_type.id,
+                study_type_name_snapshot=course.study_type.name,
+                semester_name_snapshot=semester.name,
+                semester_start_date_snapshot=semester.start_date,
+                semester_end_date_snapshot=semester.end_date,
+            )
+            candidate.sessions.append(
+                DraftSession(
+                    course_id=course.id,
+                    lecturer_id=course.lecturer.id,
+                    cohort_id=course.cohort.id,
+                    room_id=room.id,
+                    date=session_date,
+                    start_time=start_time,
+                    end_time=end_time,
+                    units=int(units),
+                    time_window_id=None,
+                    constraint_window_index=0,
+                )
+            )
+            try:
+                with db.begin_nested():
+                    db.add(candidate)
+                    db.flush()
+                draft = candidate
+            except IntegrityError:
+                db.expire_all()
+                continue
+        else:
+            expected_revision = draft.revision
+            claimed = db.execute(
+                update(DraftSchedule)
+                .where(DraftSchedule.id == draft.id, DraftSchedule.revision == expected_revision)
+                .values(revision=expected_revision + 1),
+                execution_options={"synchronize_session": False},
+            )
+            if claimed.rowcount != 1:
+                db.expire_all()
+                continue
+            draft.revision = expected_revision + 1
+            db.add(
+                DraftSession(
+                    draft_schedule=draft,
+                    course_id=course.id,
+                    lecturer_id=course.lecturer.id,
+                    cohort_id=course.cohort.id,
+                    room_id=room.id,
+                    date=session_date,
+                    start_time=start_time,
+                    end_time=end_time,
+                    units=int(units),
+                    time_window_id=None,
+                    constraint_window_index=0,
+                )
+            )
+            db.flush()
+        db.expire(draft, ["sessions"])
+        saved = get_draft_schedule(db, course_id, semester_id)
+        if saved is None:
+            raise PlanningInputNotFoundError("Draft Schedule not found after manual creation.")
+        return saved
+    raise RuntimeError("Could not serialize manual Draft Session creation after concurrent updates.")
+
+
+def _validate_manual_session(
+    *, draft, semester, room, cohort, session_date, start_time, end_time, units, remaining_units: int
+) -> None:
+    if session_date < semester.start_date or session_date > semester.end_date:
+        raise ManualSessionValidationError("INVALID_SESSION_DATE", "Session date must be inside the selected semester.")
+    if end_time <= start_time:
+        raise ManualSessionValidationError("INVALID_SESSION_TIME_RANGE", "Session end time must be later than start time.")
+    if isinstance(units, bool) or not isinstance(units, (int, float)):
+        raise ManualSessionValidationError("INVALID_SESSION_UNITS", "Units must be a positive whole number.")
+    if units <= 0 or (isinstance(units, float) and not units.is_integer()):
+        raise ManualSessionValidationError("INVALID_SESSION_UNITS", "Units must be a positive whole number.")
+    if int(units) > remaining_units:
+        raise ManualSessionValidationError("UNITS_EXCEED_REMAINING", f"Only {remaining_units} course units remain.")
+    if draft is not None and any(item.date == session_date for item in draft.sessions):
+        raise ManualSessionValidationError("DUPLICATE_SESSION_DATE", "Another Draft Session in this course draft already uses that date.")
+    if room.capacity < cohort.student_count:
+        raise ManualSessionValidationError(
+            "INSUFFICIENT_ROOM_CAPACITY",
+            f"Room capacity {room.capacity} is lower than Cohort size {cohort.student_count}.",
+        )
+
+
+def delete_draft_session(
+    db: Session,
+    session_id: int,
+    *,
+    expected_draft_schedule_id: int,
+    expected_revision: int,
+) -> tuple[DraftSchedule | None, int, int]:
+    expected_draft = db.get(DraftSchedule, expected_draft_schedule_id)
+    session = db.get(DraftSession, session_id)
+    if expected_draft is None:
+        raise StaleDraftError(None)
+    if session is None or session.draft_schedule_id != expected_draft_schedule_id:
+        raise StaleDraftError(expected_draft.revision)
+
+    draft = get_draft_schedule(db, session.course_id, expected_draft.semester_id)
+    if draft is None or draft.id != expected_draft_schedule_id:
+        raise StaleDraftError(None)
+    _claim_draft_revision(db, draft, expected_revision)
+    course_id = draft.course_id
+    semester_id = draft.semester_id
+    if len(draft.sessions) == 1:
+        db.delete(draft)
+        db.flush()
+        return None, course_id, semester_id
+
+    db.delete(session)
+    db.flush()
+    db.expire(draft, ["sessions"])
+    surviving = get_draft_schedule(db, course_id, semester_id)
+    if surviving is None:
+        raise PlanningInputNotFoundError("Draft Schedule not found after session deletion.")
+    return surviving, course_id, semester_id
+
+
+def clear_course_draft(
+    db: Session,
+    course_id: int,
+    semester_id: int,
+    *,
+    expected_draft_schedule_id: int,
+    expected_revision: int,
+) -> tuple[int, int]:
+    draft = get_draft_schedule(db, course_id, semester_id)
+    if draft is None or draft.id != expected_draft_schedule_id:
+        raise StaleDraftError(draft.revision if draft is not None else None)
+    _claim_draft_revision(db, draft, expected_revision)
+    db.delete(draft)
+    db.flush()
+    return course_id, semester_id
+
+
+def _claim_draft_revision(db: Session, draft: DraftSchedule, expected_revision: int) -> None:
+    claimed = db.execute(
+        update(DraftSchedule)
+        .where(DraftSchedule.id == draft.id, DraftSchedule.revision == expected_revision)
+        .values(revision=expected_revision + 1),
+        execution_options={"synchronize_session": False},
+    )
+    if claimed.rowcount != 1:
+        db.expire_all()
+        current = db.get(DraftSchedule, draft.id)
+        raise StaleDraftError(current.revision if current is not None else None)
+    draft.revision = expected_revision + 1
 
 
 def update_draft_session(

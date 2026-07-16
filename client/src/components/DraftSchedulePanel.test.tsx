@@ -17,11 +17,15 @@ import type { PlanningOptions } from '../api/planningOptions'
 function renderPanel({
   schedules = [draftScheduleFixture],
   onUpdateSession = vi.fn(),
+  onDeleteSession = vi.fn(),
   courseResources = [],
+  isBusy = false,
 }: {
   schedules?: DraftSchedule[]
   onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
+  onDeleteSession?: (session: DraftSchedule['sessions'][number], schedule: DraftSchedule) => void
   courseResources?: PlanningOptions['courseResources']
+  isBusy?: boolean
 } = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
@@ -32,6 +36,8 @@ function renderPanel({
         rooms={roomOptionsFixture}
         courseResources={courseResources}
         onUpdateSession={onUpdateSession}
+        onDeleteSession={onDeleteSession}
+        isBusy={isBusy}
       />,
     )
   })
@@ -78,6 +84,10 @@ function setSelectValue(select: HTMLSelectElement, value: string) {
   select.dispatchEvent(new Event('change', { bubbles: true }))
 }
 
+function buttonByText(label: string) {
+  return [...document.querySelectorAll('button')].find((button) => button.textContent === label)
+}
+
 describe('DraftSchedulePanel', () => {
   it('renders generated sessions chronologically with planning context', () => {
     renderPanel()
@@ -98,13 +108,13 @@ describe('DraftSchedulePanel', () => {
   it('shows a no-schedule empty state', () => {
     renderPanel({ schedules: [] })
 
-    expect(document.body.textContent).toContain('No generated draft schedules for this semester yet.')
+    expect(document.body.textContent).toContain('No Draft Schedules for this semester yet.')
   })
 
   it('shows a distinct empty state when a generated schedule has zero sessions', () => {
     renderPanel({ schedules: [emptyDraftScheduleFixture] })
 
-    expect(document.body.textContent).toContain('No generated draft schedules for this semester yet.')
+    expect(document.body.textContent).toContain('No Draft Schedules for this semester yet.')
   })
 
   it('switches between list and weekly review modes', () => {
@@ -132,6 +142,43 @@ describe('DraftSchedulePanel', () => {
     })
 
     expect(document.querySelector('.session-table')).not.toBeNull()
+  })
+
+  it('offers exact-session Delete actions in list and weekly modes', () => {
+    const onDeleteSession = vi.fn()
+    renderPanel({ onDeleteSession })
+    const listDeletes = [...document.querySelectorAll('button')].filter((item) => item.textContent === 'Delete')
+    expect(listDeletes).toHaveLength(2)
+    act(() => listDeletes[0].click())
+    expect(onDeleteSession).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), expect.objectContaining({ draftScheduleId: 1 }))
+
+    const weekly = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Weekly')!
+    act(() => weekly.click())
+    const weeklyDeletes = [...document.querySelectorAll('button')].filter((item) => item.textContent === 'Delete')
+    expect(weeklyDeletes).toHaveLength(2)
+  })
+
+  it('disables edit entry and an already-open edit save while the overview is stale', () => {
+    const onUpdateSession = vi.fn().mockResolvedValue(undefined)
+    const root = renderPanel({ onUpdateSession })
+    const edit = [...document.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent === 'Edit')!
+    act(() => edit.click())
+    expect((buttonByText('Save') as HTMLButtonElement).disabled).toBe(false)
+
+    act(() => {
+      root.render(
+        <DraftSchedulePanel
+          schedules={[draftScheduleFixture]}
+          rooms={roomOptionsFixture}
+          onUpdateSession={onUpdateSession}
+          isBusy
+        />,
+      )
+    })
+
+    expect((buttonByText('Save') as HTMLButtonElement).disabled).toBe(true)
+    const remainingEdits = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.textContent === 'Edit')
+    expect(remainingEdits.every((item) => item.disabled)).toBe(true)
   })
 
   it('filters visible sessions and shows a no-results state', () => {

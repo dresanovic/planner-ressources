@@ -95,4 +95,4 @@
 - Build the future calendar workspace now: rejected as FS-014 scope.
 - Build a semester-wide unscheduled-course list: rejected as broader operational-dashboard scope.
 - Add drag/drop: rejected explicitly by FS-009.
-- Reuse `ProtectedDeleteDialog` unchanged: rejected because it describes source-record blockers/archive behavior rather than returned units, course-semester scope, and stale reconfirmation.
+- Reuse `ProtectedDeleteDialog` unchanged: rejected because it describes source-record blockers/archive behavior rather than units removed from scheduled coverage, resulting remaining units, course-semester scope, and stale reconfirmation.

@@ -1,5 +1,8 @@
 from datetime import date, time
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -18,7 +21,13 @@ from app.models.planning import (
 )
 from app.services.draft_schedule_repository import (
     DraftSessionEditValidationError,
+    ManualSessionValidationError,
+    StaleDraftError,
     clear_generation_constraints,
+    clear_course_draft,
+    course_semester_progress,
+    create_manual_draft_session,
+    delete_draft_session,
     get_draft_schedule,
     load_generation_constraints,
     load_course_plan,
@@ -101,6 +110,34 @@ def seed_draft(db):
                 constraint_window_index=0,
             ),
         ],
+    )
+
+
+def seed_over_scheduled_draft(db):
+    draft = seed_draft(db)
+    db.get(Course, 1).total_units = 6
+    db.flush()
+    return draft
+
+
+def seed_saved_constraints(db):
+    return save_generation_constraints(
+        db,
+        load_course_plan(db, 1),
+        load_semester_plan(db, 1),
+        PlanningPeriodPlan(date(2026, 9, 7), date(2026, 12, 20)),
+        [TimeWindowPlan(id=1, weekday=0, start_time=time(8), end_time=time(12))],
+    )
+
+
+def seed_cross_semester_draft(db):
+    db.add(Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)))
+    db.flush()
+    return replace_draft_schedule(
+        db,
+        load_course_plan(db, 1),
+        2,
+        [GeneratedSession(date(2027, 2, 1), start_time=time(8), end_time=time(9, 45), units=2, time_window_id=None, constraint_window_index=0)],
     )
 
 
@@ -406,3 +443,263 @@ def test_repository_mutations_flush_without_commit_and_rollback_as_one_unit():
 
     assert get_draft_schedule(db, 1, 1) is None
     assert load_generation_constraints(db, plan, semester).is_custom is False
+
+
+def test_manual_creation_builds_first_draft_appends_and_derives_progress():
+    db = make_session()
+    seed_course(db)
+
+    assert course_semester_progress(db, 1, 1) == (20, 0, 20)
+    first = create_manual_draft_session(
+        db, 1, 1,
+        session_date=date(2026, 9, 7), start_time=time(8), end_time=time(9, 45), units=2, room_id=2,
+    )
+    assert first.revision == 1
+    assert first.course_name_snapshot == "Planning 101"
+    assert first.sessions[0].lecturer_id == 1
+    assert first.sessions[0].cohort_id == 1
+    assert first.sessions[0].room_id == 2
+    assert first.sessions[0].time_window_id is None
+    assert course_semester_progress(db, 1, 1) == (20, 2, 18)
+
+    second = create_manual_draft_session(
+        db, 1, 1,
+        session_date=date(2026, 9, 14), start_time=time(9), end_time=time(10), units=4, room_id=1,
+    )
+    assert second.id == first.id
+    assert second.revision == 2
+    assert [session.units for session in second.sessions] == [2, 4]
+    assert course_semester_progress(db, 1, 1) == (20, 6, 14)
+
+
+def test_manual_creation_enforces_every_hard_rule_without_changing_saved_state():
+    db = make_session()
+    seed_course(db)
+    seed_saved_constraints(db)
+    saved = create_manual_draft_session(
+        db, 1, 1,
+        session_date=date(2026, 9, 7), start_time=time(8), end_time=time(9, 45), units=2, room_id=1,
+    )
+    db.commit()
+    original_revision = saved.revision
+
+    invalid = [
+        ({"session_date": date(2026, 9, 1), "start_time": time(8), "end_time": time(9), "units": 1, "room_id": 1}, "INVALID_SESSION_DATE"),
+        ({"session_date": date(2026, 9, 14), "start_time": time(9), "end_time": time(9), "units": 1, "room_id": 1}, "INVALID_SESSION_TIME_RANGE"),
+        ({"session_date": date(2026, 9, 14), "start_time": time(8), "end_time": time(9), "units": 1.5, "room_id": 1}, "INVALID_SESSION_UNITS"),
+        ({"session_date": date(2026, 9, 14), "start_time": time(8), "end_time": time(9), "units": 19, "room_id": 1}, "UNITS_EXCEED_REMAINING"),
+        ({"session_date": date(2026, 9, 7), "start_time": time(10), "end_time": time(11), "units": 1, "room_id": 1}, "DUPLICATE_SESSION_DATE"),
+        ({"session_date": date(2026, 9, 14), "start_time": time(8), "end_time": time(9), "units": 1, "room_id": 3}, "INSUFFICIENT_ROOM_CAPACITY"),
+    ]
+    for values, code in invalid:
+        with pytest.raises(ManualSessionValidationError) as caught:
+            create_manual_draft_session(db, 1, 1, **values)
+        assert caught.value.code == code
+        db.rollback()
+
+    unchanged = get_draft_schedule(db, 1, 1)
+    assert unchanged is not None
+    assert unchanged.revision == original_revision
+    assert len(unchanged.sessions) == 1
+    assert load_generation_constraints(db, load_course_plan(db, 1), load_semester_plan(db, 1)).is_custom is True
+
+
+def test_over_scheduled_progress_is_clamped_and_manual_creation_is_rejected():
+    db = make_session()
+    seed_course(db)
+    seed_over_scheduled_draft(db)
+    assert course_semester_progress(db, 1, 1) == (6, 8, 0)
+    with pytest.raises(ManualSessionValidationError) as caught:
+        create_manual_draft_session(
+            db, 1, 1,
+            session_date=date(2026, 9, 21), start_time=time(8), end_time=time(9), units=1, room_id=1,
+        )
+    assert caught.value.code == "UNITS_EXCEED_REMAINING"
+
+
+def test_concurrent_append_revalidates_remaining_units_against_the_winning_revision(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'concurrent.db'}", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+    seed = SessionLocal()
+    seed_course(seed)
+    seed.get(Course, 1).total_units = 4
+    first = create_manual_draft_session(
+        seed, 1, 1,
+        session_date=date(2026, 9, 7), start_time=time(8), end_time=time(9, 45), units=2, room_id=1,
+    )
+    seed.commit()
+
+    winner = SessionLocal()
+    stale_reader = SessionLocal()
+    assert get_draft_schedule(winner, 1, 1).revision == first.revision
+    assert get_draft_schedule(stale_reader, 1, 1).revision == first.revision
+
+    create_manual_draft_session(
+        winner, 1, 1,
+        session_date=date(2026, 9, 14), start_time=time(8), end_time=time(9, 45), units=2, room_id=1,
+    )
+    winner.commit()
+
+    with pytest.raises(ManualSessionValidationError) as caught:
+        create_manual_draft_session(
+            stale_reader, 1, 1,
+            session_date=date(2026, 9, 21), start_time=time(8), end_time=time(9), units=1, room_id=1,
+        )
+    assert caught.value.code == "UNITS_EXCEED_REMAINING"
+    stale_reader.rollback()
+    current = get_draft_schedule(stale_reader, 1, 1)
+    assert current is not None
+    assert current.revision == 2
+    assert sum(session.units for session in current.sessions) == 4
+    winner.close()
+    stale_reader.close()
+    seed.close()
+
+
+def test_simultaneous_first_draft_creation_never_exceeds_remaining_units(tmp_path):
+    for attempt in range(10):
+        engine = create_engine(
+            f"sqlite:///{tmp_path / f'first-draft-{attempt}.db'}",
+            connect_args={"check_same_thread": False, "timeout": 2},
+        )
+        Base.metadata.create_all(engine)
+        SessionLocal = sessionmaker(bind=engine)
+        seed = SessionLocal()
+        seed_course(seed)
+        seed.get(Course, 1).total_units = 2
+        seed.commit()
+        seed.close()
+        barrier = Barrier(2)
+
+        def create_on(day: int) -> str:
+            db = SessionLocal()
+            try:
+                barrier.wait()
+                create_manual_draft_session(
+                    db,
+                    1,
+                    1,
+                    session_date=date(2026, 9, day),
+                    start_time=time(8),
+                    end_time=time(9, 45),
+                    units=2,
+                    room_id=1,
+                )
+                db.commit()
+                return "CREATED"
+            except ManualSessionValidationError as exc:
+                db.rollback()
+                return exc.code
+            finally:
+                db.close()
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            outcomes = list(pool.map(create_on, (7, 14)))
+
+        check = SessionLocal()
+        saved = get_draft_schedule(check, 1, 1)
+        assert saved is not None
+        assert outcomes.count("CREATED") == 1
+        assert outcomes.count("UNITS_EXCEED_REMAINING") == 1
+        assert sum(session.units for session in saved.sessions) == 2
+        check.close()
+        engine.dispose()
+
+
+def test_single_session_deletion_removes_only_target_and_last_deletion_removes_parent():
+    db = make_session()
+    seed_course(db)
+    seed_saved_constraints(db)
+    draft = seed_draft(db)
+    db.commit()
+    first_id, second_id = [session.id for session in draft.sessions]
+
+    surviving, course_id, semester_id = delete_draft_session(
+        db, first_id, expected_draft_schedule_id=draft.id, expected_revision=draft.revision,
+    )
+    assert (course_id, semester_id) == (1, 1)
+    assert surviving is not None
+    assert surviving.revision == 2
+    assert [session.id for session in surviving.sessions] == [second_id]
+    assert course_semester_progress(db, 1, 1) == (20, 4, 16)
+
+    removed, _, _ = delete_draft_session(
+        db, second_id, expected_draft_schedule_id=surviving.id, expected_revision=surviving.revision,
+    )
+    assert removed is None
+    assert get_draft_schedule(db, 1, 1) is None
+    assert course_semester_progress(db, 1, 1) == (20, 0, 20)
+    assert load_generation_constraints(db, load_course_plan(db, 1), load_semester_plan(db, 1)).is_custom is True
+
+
+def test_single_session_deletion_rejects_stale_or_missing_confirmed_target_without_changes():
+    db = make_session()
+    seed_course(db)
+    draft = seed_draft(db)
+    db.commit()
+    target_id = draft.sessions[0].id
+    original_ids = [session.id for session in draft.sessions]
+
+    with pytest.raises(StaleDraftError) as stale:
+        delete_draft_session(db, target_id, expected_draft_schedule_id=draft.id, expected_revision=draft.revision + 1)
+    assert stale.value.current_revision == draft.revision
+
+    with pytest.raises(StaleDraftError):
+        delete_draft_session(db, 9999, expected_draft_schedule_id=draft.id, expected_revision=draft.revision)
+
+    current = get_draft_schedule(db, 1, 1)
+    assert current is not None
+    assert [session.id for session in current.sessions] == original_ids
+
+
+def test_single_deletion_recomputes_progress_from_over_scheduled_state():
+    db = make_session()
+    seed_course(db)
+    draft = seed_over_scheduled_draft(db)
+    db.commit()
+    surviving, _, _ = delete_draft_session(
+        db, draft.sessions[0].id, expected_draft_schedule_id=draft.id, expected_revision=draft.revision,
+    )
+    assert surviving is not None
+    assert course_semester_progress(db, 1, 1) == (6, 4, 2)
+
+
+def test_clear_course_draft_removes_parent_and_sessions_but_preserves_other_semester_and_constraints():
+    db = make_session()
+    seed_course(db)
+    seed_saved_constraints(db)
+    target = seed_draft(db)
+    other_semester = seed_cross_semester_draft(db)
+    db.commit()
+
+    course_id, semester_id = clear_course_draft(
+        db,
+        1,
+        1,
+        expected_draft_schedule_id=target.id,
+        expected_revision=target.revision,
+    )
+    assert (course_id, semester_id) == (1, 1)
+    assert get_draft_schedule(db, 1, 1) is None
+    assert get_draft_schedule(db, 1, 2).id == other_semester.id
+    assert course_semester_progress(db, 1, 1) == (20, 0, 20)
+    assert load_generation_constraints(db, load_course_plan(db, 1), load_semester_plan(db, 1)).is_custom is True
+
+
+def test_clear_course_draft_rejects_stale_or_missing_confirmation_without_deleting_current_state():
+    db = make_session()
+    seed_course(db)
+    target = seed_draft(db)
+    db.commit()
+    original_ids = [session.id for session in target.sessions]
+
+    with pytest.raises(StaleDraftError) as stale:
+        clear_course_draft(db, 1, 1, expected_draft_schedule_id=target.id, expected_revision=target.revision + 1)
+    assert stale.value.current_revision == target.revision
+    with pytest.raises(StaleDraftError):
+        clear_course_draft(db, 1, 1, expected_draft_schedule_id=9999, expected_revision=1)
+
+    current = get_draft_schedule(db, 1, 1)
+    assert current is not None
+    assert [session.id for session in current.sessions] == original_ids
