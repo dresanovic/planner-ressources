@@ -118,6 +118,35 @@ export type SessionEditFailure = {
   message: string
 }
 
+export type CourseSemesterProgress = {
+  totalUnits: number
+  scheduledUnits: number
+  remainingUnits: number
+}
+
+export type DraftScheduleMutationResult = {
+  courseId: number
+  semesterId: number
+  scheduledUnits: number
+  remainingUnits: number
+  draftSchedule: DraftSchedule | null
+}
+
+export type MutationFailure = {
+  code: string
+  message: string
+  currentRevision?: number | null
+}
+
+export type CreateManualDraftSessionRequest = {
+  semesterId: number
+  date: string
+  startTime: string
+  endTime: string
+  units: number
+  roomId: number
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export async function generateDraftSchedule(
@@ -202,6 +231,61 @@ export async function updateDraftSession(
     throw [{ code: 'REQUEST_FAILED', message: await response.text() }]
   }
   return response.json()
+}
+
+export async function createManualDraftSession(
+  courseId: number,
+  payload: CreateManualDraftSessionRequest,
+): Promise<DraftScheduleMutationResult> {
+  const response = await request(`${API_BASE}/api/courses/${courseId}/draft-schedule/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  return parseMutationResponse(response)
+}
+
+export async function deleteDraftSession(
+  sessionId: number,
+  expectedDraftScheduleId: number,
+  expectedDraftRevision: number,
+): Promise<DraftScheduleMutationResult> {
+  const query = new URLSearchParams({
+    expectedDraftScheduleId: String(expectedDraftScheduleId),
+    expectedDraftRevision: String(expectedDraftRevision),
+  })
+  const response = await request(`${API_BASE}/api/draft-sessions/${sessionId}?${query}`, { method: 'DELETE' })
+  return parseMutationResponse(response)
+}
+
+export async function clearCourseDraft(
+  courseId: number,
+  semesterId: number,
+  expectedDraftScheduleId: number,
+  expectedDraftRevision: number,
+): Promise<DraftScheduleMutationResult> {
+  const query = new URLSearchParams({
+    semesterId: String(semesterId),
+    expectedDraftScheduleId: String(expectedDraftScheduleId),
+    expectedDraftRevision: String(expectedDraftRevision),
+  })
+  const response = await request(`${API_BASE}/api/courses/${courseId}/draft-schedule?${query}`, { method: 'DELETE' })
+  return parseMutationResponse(response)
+}
+
+async function parseMutationResponse(response: Response): Promise<DraftScheduleMutationResult> {
+  if (response.ok) return response.json()
+  let payload: { errors?: MutationFailure[]; detail?: string } = {}
+  try {
+    payload = await response.json()
+  } catch {
+    // Use the stable fallback below when the backend did not return JSON.
+  }
+  if (payload.errors?.length) throw payload.errors
+  throw [{
+    code: response.status === 404 ? 'NOT_FOUND' : 'REQUEST_FAILED',
+    message: payload.detail ?? 'The requested Draft Schedule change could not be completed.',
+  }] satisfies MutationFailure[]
 }
 
 async function request(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {

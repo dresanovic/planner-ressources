@@ -63,8 +63,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DraftScheduleMutationResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/StaleDraft'
   /api/courses/{course_id}/draft-schedule:
@@ -87,8 +85,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DraftScheduleMutationResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/StaleDraft'
 components:
@@ -125,7 +121,7 @@ components:
         minimum: 1
   responses:
     NotFound:
-      description: Required planning input, Draft Schedule, or Draft Session does not exist
+      description: A required current source planning input for manual creation does not exist
       content:
         application/json:
           schema:
@@ -137,7 +133,7 @@ components:
           schema:
             $ref: '#/components/schemas/MutationFailureResponse'
     StaleDraft:
-      description: Draft contents changed after confirmation was displayed; no deletion occurred
+      description: The confirmed deletion target or expected parent identity/revision is missing or changed; no deletion occurred
       content:
         application/json:
           schema:

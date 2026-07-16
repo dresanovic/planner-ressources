@@ -7,7 +7,7 @@ import type { CourseOption } from '../api/planningOptions'
 
 const entity = (id: number, name: string) => ({ id, name })
 const courses: CourseOption[] = [1, 2, 3].map((id) => ({
-  id, name: `Course ${id}`, totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4,
+  id, name: `Course ${id}`, totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4, cohortSize: 30,
   lecturer: entity(id, `L${id}`), cohort: entity(id, `C${id}`), room: entity(id, `R${id}`), studyType: entity(1, 'Full-time'),
 }))
 

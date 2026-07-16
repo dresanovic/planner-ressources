@@ -418,6 +418,40 @@ button:disabled {
   width: 100%;
 }
 
+.manual-session-editor {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #dfe4eb;
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.manual-time-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mutation-feedback {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-left: 4px solid #2869a8;
+  background: #edf6ff;
+  color: #173b5f;
+}
+
 .mode-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -669,6 +703,25 @@ button:disabled {
   padding: 7px 10px;
 }
 
+.session-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.destructive-button {
+  background: #a62b1f;
+  color: #ffffff;
+}
+
+.deletion-consequence {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.deletion-consequence p { margin: 0; }
+
 .edit-actions {
   display: grid;
   gap: 6px;
@@ -858,6 +911,8 @@ button:disabled {
   .input-summary .constraint-window-row {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
+
+  .manual-time-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 360px) {

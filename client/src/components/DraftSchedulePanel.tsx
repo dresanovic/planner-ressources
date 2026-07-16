@@ -26,6 +26,7 @@ type DraftSchedulePanelProps = {
   lecturers?: LecturerRecord[]
   courseResources?: PlanningOptions['courseResources']
   onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
+  onDeleteSession?: (session: DraftSession, schedule: DraftSchedule) => void
   resetKey?: number
   isBusy?: boolean
 }
@@ -40,6 +41,7 @@ function DraftSchedulePanelStateful({
   lecturers = [],
   courseResources = [],
   onUpdateSession,
+  onDeleteSession,
   isBusy = false,
 }: DraftSchedulePanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
@@ -62,7 +64,7 @@ function DraftSchedulePanelStateful({
     <section className={`planner-panel ${isBusy ? 'overview-busy' : ''}`} aria-labelledby="courses-overview-title" aria-busy={isBusy}>
       <div className="panel-toolbar">
         <div>
-          <p className="eyebrow">Generated plans</p>
+          <p className="eyebrow">Draft plans</p>
           <h2 id="courses-overview-title">Courses overview</h2>
         </div>
       </div>
@@ -130,7 +132,7 @@ function DraftSchedulePanelStateful({
           {visibleSessions.length === 0 ? (
             <p className="empty-state">No sessions match the active filters.</p>
           ) : viewMode === 'list' ? (
-            <div className="session-table" aria-label="Generated draft sessions">
+            <div className="session-table" aria-label="Draft sessions">
               <div className="session-row session-header">
                 <span>Date</span>
                 <span>Time</span>
@@ -149,6 +151,7 @@ function DraftSchedulePanelStateful({
                       session={session}
                       draft={editDraft}
                       isSaving={isSavingEdit}
+                      isDisabled={isBusy}
                       errors={editErrors}
                       onChange={setEditDraft}
                       onCancel={closeEdit}
@@ -169,9 +172,12 @@ function DraftSchedulePanelStateful({
                       <span>{resourceLabel(session.lecturer)}</span>
                       <span>{resourceLabel(session.room)}</span>
                       <span>{session.context.studyType.name}</span>
-                      <span>
-                        <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)}>
+                      <span className="session-actions">
+                        <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
                           Edit
+                        </button>
+                        <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>
+                          Delete
                         </button>
                       </span>
                     </>
@@ -180,7 +186,7 @@ function DraftSchedulePanelStateful({
               ))}
             </div>
           ) : (
-            <div className="weekly-review" aria-label="Generated draft sessions by week">
+            <div className="weekly-review" aria-label="Draft sessions by week">
               {groupSessionsByWeek(visibleSessions).map((week) => (
                 <section className="week-group" key={week.weekStart}>
                   <h3>Week of {week.weekStart}</h3>
@@ -200,8 +206,11 @@ function DraftSchedulePanelStateful({
                             <span>{resourceLabel(session.room)}</span>
                             <span>{session.context.studyType.name}</span>
                             <SessionAlerts alerts={session.validationAlerts} />
-                            <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)}>
+                            <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
                               Edit
+                            </button>
+                            <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>
+                              Delete
                             </button>
                           </article>
                         ))}
@@ -214,7 +223,7 @@ function DraftSchedulePanelStateful({
           )}
         </>
       ) : (
-        <p className="empty-state">No generated draft schedules for this semester yet.</p>
+        <p className="empty-state">No Draft Schedules for this semester yet.</p>
       )}
     </section>
   )
@@ -227,6 +236,7 @@ function DraftSchedulePanelStateful({
   }
 
   function openEdit(session: OverviewSession) {
+    if (isBusy) return
     setViewMode('list')
     setEditingSessionId(session.id)
     setEditDraft({
@@ -237,6 +247,11 @@ function DraftSchedulePanelStateful({
       roomId: session.roomId,
     })
     setEditErrors([])
+  }
+
+  function requestDelete(session: OverviewSession) {
+    const schedule = schedules.find((item) => item.draftScheduleId === session.draftScheduleId)
+    if (schedule && onDeleteSession) onDeleteSession(session, schedule)
   }
 
   function closeEdit() {
@@ -293,6 +308,7 @@ type SessionEditFieldsProps = {
   session: OverviewSession
   draft: UpdateDraftSessionRequest
   isSaving: boolean
+  isDisabled: boolean
   errors: SessionEditFailure[]
   onChange: (draft: UpdateDraftSessionRequest) => void
   onCancel: () => void
@@ -303,6 +319,7 @@ function SessionEditFields({
   session,
   draft,
   isSaving,
+  isDisabled,
   errors,
   onChange,
   onCancel,
@@ -322,6 +339,7 @@ function SessionEditFields({
         <input
           type="date"
           value={draft.date}
+          disabled={isDisabled}
           onChange={(event) => onChange({ ...draft, date: event.target.value })}
         />
       </label>
@@ -330,6 +348,7 @@ function SessionEditFields({
         <input
           type="time"
           value={draft.startTime}
+          disabled={isDisabled}
           onChange={(event) => onChange({ ...draft, startTime: event.target.value })}
         />
       </label>
@@ -338,6 +357,7 @@ function SessionEditFields({
         <input
           type="time"
           value={draft.endTime}
+          disabled={isDisabled}
           onChange={(event) => onChange({ ...draft, endTime: event.target.value })}
         />
       </label>
@@ -348,6 +368,7 @@ function SessionEditFields({
         <span>Lecturer</span>
         <select
           value={draft.lecturerId}
+          disabled={isDisabled}
           onChange={(event) => onChange({ ...draft, lecturerId: Number(event.target.value) })}
         >
           {availableLecturers.map((lecturer) => (
@@ -359,6 +380,7 @@ function SessionEditFields({
         <span>Room</span>
         <select
           value={draft.roomId}
+          disabled={isDisabled}
           onChange={(event) => onChange({ ...draft, roomId: Number(event.target.value) })}
         >
           {availableRooms.map((room) => (
@@ -370,7 +392,7 @@ function SessionEditFields({
         </select>
       </label>
       <div className="edit-actions">
-        <button type="button" onClick={onSave} disabled={isSaving}>
+        <button type="button" onClick={onSave} disabled={isSaving || isDisabled}>
           Save
         </button>
         <button type="button" className="secondary-button" onClick={onCancel} disabled={isSaving}>

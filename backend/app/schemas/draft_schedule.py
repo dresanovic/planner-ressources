@@ -1,5 +1,6 @@
 from datetime import date
 from enum import StrEnum
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -178,6 +179,57 @@ class DraftScheduleResponse(BaseModel):
     semester_id: int = Field(alias="semesterId")
     context: DraftScheduleContextResponse
     sessions: list[DraftSessionResponse]
+
+
+class ManualSessionFailureCode(StrEnum):
+    INVALID_SESSION_DATE = "INVALID_SESSION_DATE"
+    INVALID_SESSION_TIME_RANGE = "INVALID_SESSION_TIME_RANGE"
+    INVALID_SESSION_UNITS = "INVALID_SESSION_UNITS"
+    UNITS_EXCEED_REMAINING = "UNITS_EXCEED_REMAINING"
+    DUPLICATE_SESSION_DATE = "DUPLICATE_SESSION_DATE"
+    INSUFFICIENT_ROOM_CAPACITY = "INSUFFICIENT_ROOM_CAPACITY"
+
+
+class CreateManualDraftSessionRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    semester_id: int = Field(alias="semesterId")
+    date: str
+    start_time: str = Field(alias="startTime")
+    end_time: str = Field(alias="endTime")
+    units: Any = Field(json_schema_extra={"type": "integer", "minimum": 1})
+    room_id: int = Field(alias="roomId")
+
+
+class DraftScheduleMutationResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    course_id: int = Field(alias="courseId")
+    semester_id: int = Field(alias="semesterId")
+    scheduled_units: int = Field(alias="scheduledUnits")
+    remaining_units: int = Field(alias="remainingUnits")
+    draft_schedule: DraftScheduleResponse | None = Field(alias="draftSchedule")
+
+
+class ManualSessionFailure(BaseModel):
+    code: ManualSessionFailureCode
+    message: str
+
+
+class ManualSessionFailureResponse(BaseModel):
+    errors: list[ManualSessionFailure]
+
+
+class StaleDraftFailure(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    code: Literal["STALE_DRAFT"] = "STALE_DRAFT"
+    message: str
+    current_revision: int | None = Field(default=None, alias="currentRevision")
+
+
+class StaleDraftResponse(BaseModel):
+    errors: list[StaleDraftFailure]
 
 
 class GenerationFailure(BaseModel):

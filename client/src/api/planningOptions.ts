@@ -12,6 +12,7 @@ export type CourseOption = {
   availability?: Availability
   lecturer: PlanningEntity | null
   cohort: PlanningEntity
+  cohortSize: number
   room: PlanningEntity | null
   studyType: PlanningEntity
 }
