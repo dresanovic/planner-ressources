@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   createCohort, createCourse, createSemester, createStudyType, createTimeWindow,
   deleteAcademicRecord, setAcademicLifecycle,
@@ -24,18 +24,11 @@ import { ResourceEditor } from '../components/ResourceEditor'
 import { ResourceRemovalDialog } from '../components/ResourceRemovalDialog'
 import { ResourceAvailabilityEditor } from '../components/ResourceAvailabilityEditor'
 import { CourseResourceEligibilityEditor } from '../components/CourseResourceEligibilityEditor'
+import { ACADEMIC_DATA_CATEGORIES, type AcademicDataCategory } from '../components/ApplicationNavigation'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
 
-type PageCategory = AcademicCategory | 'lecturers' | 'rooms'
-const categories: Array<{ id: PageCategory; label: string; singular: string }> = [
-  { id: 'semesters', label: 'Semesters', singular: 'semester' },
-  { id: 'cohorts', label: 'Cohorts', singular: 'cohort' },
-  { id: 'courses', label: 'Courses', singular: 'course' },
-  { id: 'study-types', label: 'Study types', singular: 'study type' },
-  { id: 'time-windows', label: 'Time windows', singular: 'time window' },
-  { id: 'lecturers', label: 'Lecturers', singular: 'lecturer' },
-  { id: 'rooms', label: 'Rooms', singular: 'room' },
-]
+type PageCategory = AcademicDataCategory
+const categories: ReadonlyArray<{ id: PageCategory; label: string; singular: string }> = ACADEMIC_DATA_CATEGORIES
 type DisplayRecord = CatalogAudit & { id: number; name: string; usage: UsageSummary; [key: string]: unknown }
 type Option = { id: number; name: string }
 type Options = { semesters: Option[]; cohorts: Option[]; studyTypes: Option[]; lecturers: Option[]; rooms: Option[] }
@@ -58,8 +51,7 @@ async function loadAllResourcePages<T>(request: (page: number, pageSize: number)
   return loadAllPages(request)
 }
 
-export function AcademicDataPage({ onCatalogChanged }: { onCatalogChanged: () => void }) {
-  const [category, setCategory] = useState<PageCategory>('semesters')
+export function AcademicDataPage({ category, onCatalogChanged }: { category: AcademicDataCategory; onCatalogChanged: () => void }) {
   const [records, setRecords] = useState<DisplayRecord[]>([])
   const [options, setOptions] = useState<Options>(emptyOptions)
   const [loading, setLoading] = useState(true)
@@ -78,6 +70,7 @@ export function AcademicDataPage({ onCatalogChanged }: { onCatalogChanged: () =>
   const eligibilityRequestId = useRef(0)
   const availabilityRequestId = useRef(0)
   const selectedResourceKey = useRef('')
+  const [renderedCategory, setRenderedCategory] = useState(category)
 
   const load = useCallback(async (selected: PageCategory) => {
     setLoading(true)
@@ -119,6 +112,21 @@ export function AcademicDataPage({ onCatalogChanged }: { onCatalogChanged: () =>
       }
     } finally { setLoading(false) }
   }, [resourceQuery, resourceStatus, status])
+
+  if (renderedCategory !== category) {
+    setRenderedCategory(category)
+    setSelected(null)
+    setSelectedResource(null)
+    setAvailabilityPeriods([])
+    setCourseResources(null)
+    setMessage('')
+  }
+
+  useLayoutEffect(() => {
+    eligibilityRequestId.current += 1
+    availabilityRequestId.current += 1
+    selectedResourceKey.current = ''
+  }, [category])
 
   useEffect(() => {
     let current = true
@@ -346,17 +354,7 @@ export function AcademicDataPage({ onCatalogChanged }: { onCatalogChanged: () =>
   }
 
   const current = categories.find((item) => item.id === category)!
-  function selectCategory(next: PageCategory) {
-    eligibilityRequestId.current += 1
-    clearSelectedResource()
-    setCategory(next)
-    setSelected(null)
-    setCourseResources(null)
-    setMessage('')
-    if (next === 'lecturers' || next === 'rooms') setStatus('active')
-  }
-  if (category === 'lecturers' || category === 'rooms') return <main className="planner-shell">
-    <aside className="sidebar"><div className="brand-mark">RP</div><nav aria-label="Academic categories">{categories.map((item) => <button className={category === item.id ? 'active' : ''} key={item.id} onClick={() => selectCategory(item.id)}>{item.label}</button>)}</nav></aside>
+  if (category === 'lecturers' || category === 'rooms') return <>
     <section className="workbench">
       <header className="page-header"><div><p className="eyebrow">Planner administration</p><h1>Academic Data</h1></div><label className="catalog-field">Show<select value={resourceStatus} onChange={(event) => setResourceStatus(event.target.value as typeof resourceStatus)}><option value="all">All records</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label></header>
       {message && <p role="status">{message}</p>}
@@ -367,6 +365,6 @@ export function AcademicDataPage({ onCatalogChanged }: { onCatalogChanged: () =>
       </div>
     </section>
     {removingResource && <ResourceRemovalDialog resourceName={`${removingResource.record.name} · ${removingResource.record.referenceCode}`} assessment={removingResource.assessment} onClose={() => setRemovingResource(null)} onConfirm={() => void confirmResourceRemoval()} />}
-  </main>
-  return <main className="planner-shell"><aside className="sidebar"><div className="brand-mark">RP</div><nav aria-label="Academic categories">{categories.map((item) => <button className={category === item.id ? 'active' : ''} key={item.id} onClick={() => selectCategory(item.id)}>{item.label}</button>)}</nav></aside><section className="workbench"><header className="page-header"><div><p className="eyebrow">Planner administration</p><h1>Academic Data</h1></div><label className="catalog-field">Show<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">All records</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label></header>{message && <p role="status">{message}</p>}<div className="catalog-grid"><section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Loading…</p> : <AcademicCatalogList records={records} emptyLabel={`No ${current.label.toLowerCase()} yet`} onEdit={(record) => void selectAcademicRecord(record as DisplayRecord)} onDelete={(record) => setDeleting(record as DisplayRecord)} onLifecycle={(record) => void lifecycle(record as DisplayRecord)} />}</section><section className="planner-panel"><h2>{selected ? 'Edit' : 'Create'} {current.singular}</h2>{selected?.nameRepairRequired === true && <p role="alert">This legacy name conflicts with another record. Enter a unique name to complete repair.</p>}{category === 'courses' && selected && selected.semester == null && <p role="alert">Assign a Semester to complete repair before saving this Course.</p>}<AcademicRecordEditor key={`${category}-${selected?.id ?? 'new'}-${selected?.revision ?? 0}-${editorGeneration}`} category={category} options={options} initialValues={selected ? editValues(selected) : {}} submitLabel={selected ? 'Save changes' : 'Create'} includeCourseResources={!selected} onSubmit={save} />{selected && <button type="button" className="secondary-button" onClick={() => setSelected(null)}>Cancel edit</button>}{category === 'courses' && selected && courseResources?.courseId === selected.id && <CourseResourceEligibilityEditor key={`${courseResources.courseId}-${courseResources.courseRevision}`} configuration={courseResources} onSave={saveCourseResources} onCancel={() => void selectAcademicRecord(selected)} />}</section></div></section>{deleting && <ProtectedDeleteDialog name={deleting.name} usage={deleting.usage} canArchive={deleting.isActive} onClose={() => setDeleting(null)} onArchive={() => void lifecycle(deleting).then((changed) => { if (changed) setDeleting(null) })} onDelete={() => void remove(deleting)} />}</main>
+  </>
+  return <><section className="workbench"><header className="page-header"><div><p className="eyebrow">Planner administration</p><h1>Academic Data</h1></div><label className="catalog-field">Show<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">All records</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label></header>{message && <p role="status">{message}</p>}<div className="catalog-grid"><section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Loading…</p> : <AcademicCatalogList records={records} emptyLabel={`No ${current.label.toLowerCase()} yet`} onEdit={(record) => void selectAcademicRecord(record as DisplayRecord)} onDelete={(record) => setDeleting(record as DisplayRecord)} onLifecycle={(record) => void lifecycle(record as DisplayRecord)} />}</section><section className="planner-panel"><h2>{selected ? 'Edit' : 'Create'} {current.singular}</h2>{selected?.nameRepairRequired === true && <p role="alert">This legacy name conflicts with another record. Enter a unique name to complete repair.</p>}{category === 'courses' && selected && selected.semester == null && <p role="alert">Assign a Semester to complete repair before saving this Course.</p>}<AcademicRecordEditor key={`${category}-${selected?.id ?? 'new'}-${selected?.revision ?? 0}-${editorGeneration}`} category={category as AcademicCategory} options={options} initialValues={selected ? editValues(selected) : {}} submitLabel={selected ? 'Save changes' : 'Create'} includeCourseResources={!selected} onSubmit={save} />{selected && <button type="button" className="secondary-button" onClick={() => setSelected(null)}>Cancel edit</button>}{category === 'courses' && selected && courseResources?.courseId === selected.id && <CourseResourceEligibilityEditor key={`${courseResources.courseId}-${courseResources.courseRevision}`} configuration={courseResources} onSave={saveCourseResources} onCancel={() => void selectAcademicRecord(selected)} />}</section></div></section>{deleting && <ProtectedDeleteDialog name={deleting.name} usage={deleting.usage} canArchive={deleting.isActive} onClose={() => setDeleting(null)} onArchive={() => void lifecycle(deleting).then((changed) => { if (changed) setDeleting(null) })} onDelete={() => void remove(deleting)} />}</>
 }

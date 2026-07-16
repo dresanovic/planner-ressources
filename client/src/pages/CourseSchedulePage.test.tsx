@@ -62,6 +62,14 @@ function button(label: string) {
 }
 
 describe('CourseSchedulePage multi-course mode', () => {
+  it('renders scheduling content without page-owned or dead hash navigation', async () => {
+    await renderPage()
+    expect(document.querySelector('nav')).toBeNull()
+    expect(document.querySelectorAll('a[href^="#"]')).toHaveLength(0)
+    expect(document.body.textContent).not.toContain('Dashboard')
+    expect(document.body.textContent).toContain('Resource Planner')
+  })
+
   it('keeps focused single-course constraints isolated while selecting and generating several courses', async () => {
     mocks.prepare.mockResolvedValue({
       semesterId: 1, operationKind: 'initial', replacementCourseIds: [],

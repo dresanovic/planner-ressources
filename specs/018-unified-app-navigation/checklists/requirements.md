@@ -31,7 +31,7 @@
 
 ## Notes
 
-- Validation completed on 2026-07-16 in two review iterations; the second made accessibility thresholds and dependencies explicit.
+- Validation completed on 2026-07-16 in four review iterations; the fourth removed the final availability terminology and made assistive-technology acceptance deterministic with NVDA and Firefox on Windows.
 - Expansion persistence is resolved as current-application-use state, including while Schedule is active; an active Academic Data child always forces expansion.
 - Narrow-screen behavior is resolved as one temporary overlay navigation panel exposing the same hierarchy and state as the wide sidebar.
 - The authoritative image was reviewed for hierarchy and shell; its illustrative records, forms, Help & Support item, and other page content do not expand FS-018.

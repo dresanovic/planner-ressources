@@ -18,6 +18,8 @@ The primary navigation exposes one hierarchy in this order:
 
 Dashboard, Help & Support, duplicate Schedule links, hash placeholders, and any unimplemented destination are not part of this contract.
 
+All seven Academic Data children are fixed implemented destinations. The navigation contract has no runtime availability flag, child filtering, or fallback destination.
+
 ## Control contract
 
 | Control | Role | Activation result | Semantic state |
@@ -77,7 +79,6 @@ All controls use native keyboard activation. Academic Data activation never choo
 
 ## Failure and boundary contract
 
-- If a configured child has no implemented view, it is omitted as an operable destination rather than rendered as a dead control.
-- If the current child becomes unavailable, it loses current/operable state and the shell returns to valid Schedule context without inventing a destination.
+- Dashboard, Help & Support, hash placeholders, and any destination outside the confirmed hierarchy are not rendered as operable primary navigation.
 - Icons, decorative markers, or connector lines may fail without removing text labels, hierarchy, current state, expansion state, or visible focus.
 - Repeated responsive transitions never leave duplicate operable navigation, inert visible content, hidden focus, or a stale overlay.

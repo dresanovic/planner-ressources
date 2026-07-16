@@ -11,7 +11,6 @@ Represents one implemented Academic Data child destination.
 | `id` | Stable client identifier | Exactly one of `semesters`, `cohorts`, `courses`, `study-types`, `time-windows`, `lecturers`, `rooms` |
 | `label` | Visible destination label | Exactly Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, or Rooms |
 | `position` | Place beneath Academic Data | Unique integer 1–7 matching the confirmed order |
-| `available` | Whether the implemented view can be selected | `true` for all seven FS-007/FS-008 views; an unavailable child is not rendered as operable navigation |
 
 ### Fixed ordered set
 
@@ -23,7 +22,7 @@ Represents one implemented Academic Data child destination.
 6. `lecturers` — Lecturers
 7. `rooms` — Rooms
 
-The ordered set is the shared source for navigation rendering and Academic Data category typing; it does not describe catalog records.
+The ordered set is the shared source for navigation rendering and Academic Data category typing; all seven children are fixed implemented destinations, and no runtime availability state is modeled. It does not describe catalog records.
 
 ## Current Destination
 
@@ -38,7 +37,7 @@ Identifies the one leaf whose content is displayed and whose navigation control 
 
 - Exactly one variant is current.
 - Academic Data itself is never a current destination because it is disclosure-only.
-- An Academic Data current destination always references one available category.
+- An Academic Data current destination always references one of the seven fixed categories.
 - Choosing the already-current variant is a no-op.
 
 ## Navigation State
@@ -76,7 +75,7 @@ Focus is transient interaction context rather than stored product data.
 
 | From | Event | To | Additional effects |
 |---|---|---|---|
-| Initial Schedule, collapsed | Activate Academic Data | Schedule, expanded | Children become available; no content changes |
+| Initial Schedule, collapsed | Activate Academic Data | Schedule, expanded | Children become visible; no content changes |
 | Schedule, expanded | Activate Academic Data | Schedule, collapsed | Focus remains/moves to disclosure; no child is current |
 | Any Schedule state | Select Academic child | Academic child, expanded | Store category; close narrow panel; focus content |
 | Academic child, expanded | Activate Academic Data | Unchanged | Collapse is refused so active context remains visible |

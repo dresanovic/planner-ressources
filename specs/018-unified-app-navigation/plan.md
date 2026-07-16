@@ -18,7 +18,7 @@ Replace the fixed top Schedule/Academic Data switcher and both page-owned sideba
 
 **Storage**: N/A for persistent storage; current view, selected category, expansion state, and narrow-panel state remain in mounted client state for the current application use
 
-**Testing**: Vitest 4.1.10 with jsdom for component/page behavior; TypeScript production build and ESLint 10; manual browser checks for layout, zoom, focus visibility, and responsive transitions
+**Testing**: Vitest 4.1.10 with jsdom for component/page behavior; TypeScript production build and ESLint 10; manual browser checks for layout, zoom, focus visibility, and responsive transitions; NVDA with Firefox on Windows for announced navigation purpose, expanded state, and current destination
 
 **Target Platform**: Existing modern-browser planner client, including the specified 320 CSS-pixel narrow acceptance case and text zoom through 200%
 
@@ -29,6 +29,8 @@ Replace the fixed top Schedule/Academic Data switcher and both page-owned sideba
 **Constraints**: Preserve FS-007/FS-008 workflows and all current API behavior; retain Schedule state while it is hidden; keep Academic Data category order exact; Academic Data is disclosure-only; do not add a Dashboard, router, deep-link redesign, state library, focus-management library, icon package, backend work, or persisted preference; use the authoritative navigation image for the wide shell; ensure one operable navigation, semantic current/expanded state, non-color location/focus indicators, contained narrow-panel focus, Escape/close behavior, and unobstructed headers
 
 **Scale/Scope**: One planner role; one Schedule leaf destination plus seven Academic Data leaf destinations; one disclosure parent; two responsive presentations of the same navigation; two existing page workflows; client-only state with no domain-data volume impact
+
+**External Acceptance Dependency**: The product owner supplies at least 10 representative planners or designated acceptance reviewers for SC-003 and SC-004. Automated implementation may finish beforehand, but FS-018 cannot be marked complete until T032 passes. Results must be recorded without fabricated participants or outcomes; reviewer unavailability is a completion blocker.
 
 ## Constitution Check
 
@@ -106,6 +108,7 @@ client/
 ### One hierarchy and active-state semantics
 
 - Render Schedule as the sole top-level content destination and Academic Data as a disclosure button followed by exactly seven child buttons in the specified order.
+- Treat all seven confirmed Academic Data children as fixed, implemented destinations; do not introduce a runtime availability flag, filter, or fallback destination.
 - Activating Academic Data only changes expansion while Schedule is current. When an Academic Data child is current, Academic Data stays expanded and a collapse request is ignored so parent/child context cannot be hidden.
 - Apply semantic current state only to Schedule or the current Academic Data child. The Academic Data parent exposes `aria-expanded` and a distinct active-parent visual treatment, but never a second current-page state.
 - Use text, weight/shape or a leading marker, and spacing/hierarchy in addition to color. Use a separate high-contrast focus outline so focus and current location are distinguishable.
@@ -147,4 +150,4 @@ npm run lint
 npm run build
 ```
 
-Manual acceptance evidence must cover the authoritative wide shell, exact label order, all eight leaf destinations, absence of duplicate/dead navigation, active parent/current child distinction without color, visible focus, keyboard-only traversal, 3:1 focus-indicator contrast measurement, initial and retained expansion, unchanged current-leaf activation, narrow open/close/Escape/focus containment, focus restoration and destination handoff, background interaction blocking, repeated wide/narrow transitions around 820px, a 320 CSS-pixel viewport, 200% text zoom, long header controls, and unchanged Schedule/Academic Data workflows. Record the completed acceptance matrix under this feature directory before completion.
+Manual acceptance evidence must cover the authoritative wide shell, exact label order, all eight leaf destinations, absence of duplicate/dead navigation, active parent/current child distinction without color, visible focus, keyboard-only traversal, NVDA with Firefox on Windows announcing primary-navigation purpose, Academic Data expanded state, and the sole current destination, 3:1 focus-indicator contrast measurement, initial and retained expansion, unchanged current-leaf activation, narrow open/close/Escape/focus containment, focus restoration and destination handoff, background interaction blocking, repeated wide/narrow transitions around 820px, a 320 CSS-pixel viewport, 200% text zoom, long header controls, and unchanged Schedule/Academic Data workflows. Record the completed acceptance matrix under this feature directory before completion.

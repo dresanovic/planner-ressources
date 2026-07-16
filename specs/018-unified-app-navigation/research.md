@@ -26,7 +26,7 @@
 
 ## Decision 3: Keep Academic Data as a controlled disclosure hierarchy
 
-**Decision**: Schedule is the sole top-level leaf; Academic Data is a disclosure-only parent; its seven children are controlled leaf destinations in this exact order: Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, Rooms.
+**Decision**: Schedule is the sole top-level leaf; Academic Data is a disclosure-only parent; its seven children are fixed implemented leaf destinations in this exact order: Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, Rooms. No runtime availability flag or fallback destination is introduced.
 
 **Rationale**: This implements the clarification without inventing a landing view or default navigation side effect. Passing the selected category into `AcademicDataPage` lets the application navigation be authoritative while preserving the page's existing category-specific loading and editors.
 

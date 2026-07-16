@@ -18,7 +18,7 @@
 
 **Purpose**: Isolate the customer-facing implementation and preserve evidence of the known-good client baseline.
 
-- [ ] T001 Record the isolated implementation branch/worktree, pre-existing change boundaries, locked client versions, and the passing 22-test focused baseline command in `specs/018-unified-app-navigation/validation/pre-implementation.md`
+- [X] T001 Record the isolated implementation branch/worktree, pre-existing change boundaries, locked client versions, and the passing 22-test focused baseline command in `specs/018-unified-app-navigation/validation/pre-implementation.md`
 
 ---
 
@@ -28,10 +28,10 @@
 
 **CRITICAL**: Complete this phase before any user-story implementation. Write and observe each focused test fail before its paired production change.
 
-- [ ] T002 [P] Add failing characterization tests for externally selected Academic Data categories, category-transition editor/resource cleanup, existing category loading, and absence of page-local category navigation in `client/src/pages/AcademicDataPage.test.tsx`
-- [ ] T003 [P] Define the shared Academic Data category type/fixed metadata in `client/src/components/ApplicationNavigation.tsx`, then make `AcademicDataPage` consume that type as controlled selection, preserve current category-transition cleanup/loading, and return content/dialogs without its own shell/sidebar in `client/src/pages/AcademicDataPage.tsx` (depends on T002)
-- [ ] T004 [P] Add failing characterization tests proving the Schedule workflow renders without Dashboard/Courses/Cohorts/Rooms/Schedule hash navigation and retains existing scheduling behavior in `client/src/pages/CourseSchedulePage.test.tsx`
-- [ ] T005 [P] Return the existing Schedule workbench/dialog content without its page-owned application shell or dead hash-link sidebar in `client/src/pages/CourseSchedulePage.tsx` (depends on T004)
+- [X] T002 [P] Add failing tests for the exact seven Academic Data category IDs, labels, and order in `client/src/components/ApplicationNavigation.test.tsx`; also add failing controlled-category, transition-cleanup, existing-loading, and page-local-navigation-removal tests in `client/src/pages/AcademicDataPage.test.tsx`
+- [X] T003 [P] Define the shared Academic Data category type/fixed metadata in `client/src/components/ApplicationNavigation.tsx`, then make `AcademicDataPage` consume that type as controlled selection, preserve current category-transition cleanup/loading, and return content/dialogs without its own shell/sidebar in `client/src/pages/AcademicDataPage.tsx` (depends on T002)
+- [X] T004 [P] Add failing characterization tests proving the Schedule workflow renders without Dashboard/Courses/Cohorts/Rooms/Schedule hash navigation and retains existing scheduling behavior in `client/src/pages/CourseSchedulePage.test.tsx`
+- [X] T005 [P] Return the existing Schedule workbench/dialog content without its page-owned application shell or dead hash-link sidebar in `client/src/pages/CourseSchedulePage.tsx` (depends on T004)
 
 **Checkpoint**: Both workflows are content-only, Academic Data can be driven by a shared category value, and their focused page tests pass without backend/API changes.
 
@@ -41,19 +41,19 @@
 
 **Goal**: Replace all competing navigation with one application-owned hierarchy that reaches Schedule and the seven ordered Academic Data categories.
 
-**Independent Test**: Start on Schedule, use only the shared navigation to expand Academic Data, visit Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, and Rooms in order, and return to Schedule; verify the fixed switcher, dead links, duplicate navigation, and unavailable placeholders are absent.
+**Independent Test**: Start on Schedule, use only the shared navigation to expand Academic Data, visit Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, and Rooms in order, and return to Schedule; verify the fixed switcher, dead links, duplicate navigation, Dashboard, and other out-of-scope placeholders are absent.
 
 ### Tests for User Story 1 (write before implementation)
 
-- [ ] T006 [P] [US1] Create failing component tests for the single primary-navigation landmark, Schedule leaf, disclosure-only Academic Data parent, exact seven-child label/order contract, expansion without navigation, child selection, and omission of unavailable children in `client/src/components/ApplicationNavigation.test.tsx`
-- [ ] T007 [P] [US1] Replace the fixed-switcher test with failing application integration tests for initial Schedule content, all eight reachable leaf destinations, correct controlled Academic Data category content, Schedule remaining mounted, catalog-revision refresh, and absence of duplicate/dead navigation in `client/src/App.test.tsx`
+- [X] T006 [P] [US1] Add failing component tests for the single primary-navigation landmark, Schedule leaf, disclosure-only Academic Data parent, rendering of all seven fixed children, expansion without navigation, child selection, and omission of Dashboard and other out-of-scope placeholders in `client/src/components/ApplicationNavigation.test.tsx`
+- [X] T007 [P] [US1] Replace the fixed-switcher test with failing application integration tests for initial Schedule content, all eight reachable leaf destinations, correct controlled Academic Data category content, Schedule remaining mounted, catalog-revision refresh, and absence of duplicate/dead navigation in `client/src/App.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Extend the foundational Academic Data metadata into the basic shared hierarchy with Schedule selection, disclosure-only Academic Data expansion, child selection, availability filtering, and one primary-navigation landmark in `client/src/components/ApplicationNavigation.tsx` (depends on T003, T006)
-- [ ] T009 [US1] Make `App` own current view, selected Academic Data category, and expansion state; render one application shell/navigation around the content-only pages; retain the mounted Schedule/catalog-revision behavior; and remove the fixed top switcher in `client/src/App.tsx` (depends on T003, T005, T007, T008)
-- [ ] T010 [US1] Replace `.view-navigation` and page-local shell/sidebar styling with the authoritative persistent wide two-column application shell and ordered child hierarchy while preserving existing workbench/header/content styles in `client/src/App.css` (depends on T009)
-- [ ] T011 [US1] Run the focused US1 component, application, and page suites and record the command output plus hierarchy/dead-link assertions in `specs/018-unified-app-navigation/validation/us1-single-hierarchy.md`
+- [X] T008 [US1] Extend the foundational Academic Data metadata into the basic shared hierarchy with Schedule selection, disclosure-only Academic Data expansion, all seven fixed child destinations, child selection, and one primary-navigation landmark in `client/src/components/ApplicationNavigation.tsx` (depends on T003, T006)
+- [X] T009 [US1] Make `App` own current view, selected Academic Data category, and expansion state; render one application shell/navigation around the content-only pages; retain the mounted Schedule/catalog-revision behavior; and remove the fixed top switcher in `client/src/App.tsx` (depends on T003, T005, T007, T008)
+- [X] T010 [US1] Replace `.view-navigation` and page-local shell/sidebar styling with the authoritative persistent wide two-column application shell and ordered child hierarchy while preserving existing workbench/header/content styles in `client/src/App.css` (depends on T009)
+- [X] T011 [US1] Run the focused US1 component, application, and page suites and record the command output plus hierarchy/dead-link assertions in `specs/018-unified-app-navigation/validation/us1-single-hierarchy.md`
 
 **Checkpoint**: User Story 1 is a demonstrable MVP—one wide sidebar reaches all eight leaves and no competing or dead primary navigation remains.
 
@@ -67,15 +67,15 @@
 
 ### Tests for User Story 2 (write before implementation)
 
-- [ ] T012 [P] [US2] Add failing tests for sole `aria-current` leaf semantics, Academic Data active-parent/expanded semantics, initial collapsed Schedule state, forced expansion and collapse refusal for an active child, and focus fallback when a permitted collapse hides children in `client/src/components/ApplicationNavigation.test.tsx`
-- [ ] T013 [P] [US2] Add failing integration tests for selected-category and expansion persistence across Schedule round trips, automatic expansion on Academic child selection, and no state/domain-request reset when the current leaf is selected again in `client/src/App.test.tsx`
+- [X] T012 [P] [US2] Add failing tests for sole `aria-current` leaf semantics, Academic Data active-parent/expanded semantics, initial collapsed Schedule state, and forced expansion and collapse refusal for an active child in `client/src/components/ApplicationNavigation.test.tsx`
+- [X] T013 [P] [US2] Add failing integration tests for selected-category and expansion persistence across Schedule round trips, automatic expansion on Academic child selection, and no state/domain-request reset when the current leaf is selected again in `client/src/App.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Implement sole-current-leaf semantics, active-parent state, forced expansion for Academic content, permitted Schedule-only collapse, and disclosure focus fallback in `client/src/components/ApplicationNavigation.tsx` (depends on T012)
-- [ ] T015 [US2] Implement retained permitted expansion/category state and repeated-current-leaf no-op behavior in `client/src/App.tsx` (depends on T013, T014)
-- [ ] T016 [US2] Add distinct active-parent, current-leaf, expanded-child-rail, and non-color marker treatments that remain distinguishable from hover and preserve the ground-truth hierarchy in `client/src/App.css` (depends on T014)
-- [ ] T017 [US2] Run the focused US2 semantic/state suites and record current-leaf counts, expanded-state assertions, round-trip persistence, and repeated-selection results in `specs/018-unified-app-navigation/validation/us2-location-context.md`
+- [X] T014 [US2] Implement sole-current-leaf semantics, active-parent state, forced expansion for Academic content, and permitted Schedule-only collapse in `client/src/components/ApplicationNavigation.tsx` (depends on T012)
+- [X] T015 [US2] Implement retained permitted expansion/category state and repeated-current-leaf no-op behavior in `client/src/App.tsx` (depends on T013, T014)
+- [X] T016 [US2] Add distinct active-parent, current-leaf, expanded-child-rail, and non-color marker treatments that remain distinguishable from hover and preserve the ground-truth hierarchy in `client/src/App.css` (depends on T014)
+- [X] T017 [US2] Run the focused US2 semantic/state suites and record current-leaf counts, expanded-state assertions, round-trip persistence, and repeated-selection results in `specs/018-unified-app-navigation/validation/us2-location-context.md`
 
 **Checkpoint**: User Stories 1 and 2 independently pass; every view exposes one unambiguous current leaf and Academic Data retains visible parent/child context.
 
@@ -89,15 +89,15 @@
 
 ### Tests for User Story 3 (write before implementation)
 
-- [ ] T018 [P] [US3] Add failing keyboard tests for native disclosure/leaf activation, logical forward/reverse traversal, exclusion of collapsed children, focus movement to Academic Data before child collapse, and no hidden focused item in `client/src/components/ApplicationNavigation.test.tsx`
-- [ ] T019 [P] [US3] Add failing application tests for focus moving to the shared content start after a different leaf selection, no content jump for repeated-current selection, and valid focus after Schedule/Academic content changes in `client/src/App.test.tsx`
+- [X] T018 [P] [US3] Add failing keyboard tests for native disclosure/leaf activation, logical forward/reverse traversal, exclusion of collapsed children, focus movement to Academic Data before child collapse, and no hidden focused item in `client/src/components/ApplicationNavigation.test.tsx`
+- [X] T019 [P] [US3] Add failing application tests for focus moving to the shared content start after a different leaf selection, no content jump for repeated-current selection, and valid focus after Schedule/Academic content changes in `client/src/App.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Complete keyboard-safe disclosure and child visibility focus handling using native controls and direct focus management in `client/src/components/ApplicationNavigation.tsx` (depends on T018)
-- [ ] T021 [US3] Add the programmatically focusable current-content target and actual-destination-change focus handoff without remounting Schedule or resetting page state in `client/src/App.tsx` (depends on T019, T020)
-- [ ] T022 [US3] Add a focus indicator visually distinct from current/active states and capable of the specified 3:1 adjacent-color contrast in all hierarchy states in `client/src/App.css` (depends on T020)
-- [ ] T023 [US3] Run the focused keyboard/assistive-technology suites and record traversal, semantic-tree, destination-handoff, hidden-focus, and repeated-selection results in `specs/018-unified-app-navigation/validation/us3-keyboard-accessibility.md`
+- [X] T020 [US3] Complete keyboard-safe disclosure and child visibility focus handling using native controls and direct focus management in `client/src/components/ApplicationNavigation.tsx` (depends on T018)
+- [X] T021 [US3] Add the programmatically focusable current-content target and actual-destination-change focus handoff without remounting Schedule or resetting page state in `client/src/App.tsx` (depends on T019, T020)
+- [X] T022 [US3] Add a focus indicator visually distinct from current/active states and capable of the specified 3:1 adjacent-color contrast in all hierarchy states in `client/src/App.css` (depends on T020)
+- [X] T023 [US3] Run the focused keyboard/assistive-technology suites and record traversal, semantic-tree, destination-handoff, hidden-focus, and repeated-selection results in `specs/018-unified-app-navigation/validation/us3-keyboard-accessibility.md`
 
 **Checkpoint**: User Stories 1–3 pass with complete keyboard access, correct semantic state, and predictable focus behavior in the wide presentation.
 
@@ -111,15 +111,15 @@
 
 ### Tests for User Story 4 (write before implementation)
 
-- [ ] T024 [P] [US4] Add failing narrow-panel tests for the labeled opener, named modal panel, initial focus, Tab/Shift+Tab containment, Escape/explicit-close restoration, leaf-selection dismissal, current-leaf dismissal, and resize-to-wide cleanup in `client/src/components/ApplicationNavigation.test.tsx`
-- [ ] T025 [P] [US4] Add failing application integration tests for background interaction blocking while open, content focus after narrow leaf selection, and destination/category/expansion preservation across mocked 820px responsive transitions in `client/src/App.test.tsx`
+- [X] T024 [P] [US4] Add failing narrow-panel tests for the labeled opener, named modal panel, initial focus, Tab/Shift+Tab containment, Escape/explicit-close restoration, leaf-selection dismissal, current-leaf dismissal, and resize-to-wide cleanup in `client/src/components/ApplicationNavigation.test.tsx`
+- [X] T025 [P] [US4] Add failing application integration tests for background interaction blocking while open, content focus after narrow leaf selection, and destination/category/expansion preservation across mocked 820px responsive transitions in `client/src/App.test.tsx`
 
 ### Implementation for User Story 4
 
-- [ ] T026 [US4] Implement the narrow opener/panel, modal naming, opener restoration, direct focus loop, Escape/close/selection dismissal, and existing-820px media-transition cleanup in `client/src/components/ApplicationNavigation.tsx` (depends on T024)
-- [ ] T027 [US4] Integrate temporary-panel open state with application content interaction blocking and destination focus handoff while preserving shared navigation state in `client/src/App.tsx` (depends on T025, T026)
-- [ ] T028 [US4] Implement the 820px-and-below fixed overlay/backdrop, hidden-when-closed sidebar, visible narrow opener, scrollable 320px-safe hierarchy, header/control reflow, and removal of the former stacked-sidebar behavior in `client/src/App.css` (depends on T026, T027)
-- [ ] T029 [US4] Run the focused responsive component/application suites and record panel semantics, focus containment/restoration, background blocking, selection dismissal, and repeated breakpoint-transition results in `specs/018-unified-app-navigation/validation/us4-responsive-access.md`
+- [X] T026 [US4] Implement the narrow opener/panel, modal naming, opener restoration, direct focus loop, Escape/close/selection dismissal, and existing-820px media-transition cleanup in `client/src/components/ApplicationNavigation.tsx` (depends on T024)
+- [X] T027 [US4] Integrate temporary-panel open state with application content interaction blocking and destination focus handoff while preserving shared navigation state in `client/src/App.tsx` (depends on T025, T026)
+- [X] T028 [US4] Implement the 820px-and-below fixed overlay/backdrop, hidden-when-closed sidebar, visible narrow opener, scrollable 320px-safe hierarchy, header/control reflow, and removal of the former stacked-sidebar behavior in `client/src/App.css` (depends on T026, T027)
+- [X] T029 [US4] Run the focused responsive component/application suites and record panel semantics, focus containment/restoration, background blocking, selection dismissal, and repeated breakpoint-transition results in `specs/018-unified-app-navigation/validation/us4-responsive-access.md`
 
 **Checkpoint**: All four user stories independently pass; wide and narrow presentations expose one consistent hierarchy and preserve state/focus without header overlap.
 
@@ -129,12 +129,12 @@
 
 **Purpose**: Complete visual, usability, regression, documentation, scope, and constitution evidence across the delivered slice.
 
-- [ ] T030 [P] Update navigation, responsive access, keyboard behavior, and the unchanged backend/API boundary while removing obsolete fixed-switcher/sidebar wording in `client/README.md`
-- [ ] T031 [P] Execute all six `quickstart.md` browser scenarios at wide, 820px, 320px, and 200% text zoom; measure 3:1 focus contrast; inspect accessibility semantics; verify long Schedule and Academic Data headers; and record screenshots/results in `specs/018-unified-app-navigation/validation/navigation-acceptance.md`
-- [ ] T032 [P] Conduct the SC-003/SC-004 unaided review with at least 10 representative planners or acceptance reviewers and record first-attempt navigation plus five-second location-identification outcomes in `specs/018-unified-app-navigation/validation/usability-review.md`
-- [ ] T033 Run `npm test -- src/components/ApplicationNavigation.test.tsx src/App.test.tsx`, both focused page suites, and the complete `npm test` command from `client/`, then record passing counts and FS-007/FS-008 regression evidence in `specs/018-unified-app-navigation/validation/client-test-results.md`
-- [ ] T034 Run `npm run lint` and `npm run build` from `client/` and record commands, versions, durations, warnings, and final outcomes in `specs/018-unified-app-navigation/validation/client-quality-results.md`
-- [ ] T035 Compare the final diff with `spec.md`, `plan.md`, `contracts/application-navigation.md`, the authoritative image, and the Simplicity Check; confirm no backend/API/domain/routing/dependency changes or unavailable destinations were introduced; and record the final constitution/scope review in `specs/018-unified-app-navigation/validation/final-review.md` (depends on T030–T034)
+- [X] T030 [P] Update navigation, responsive access, keyboard behavior, and the unchanged backend/API boundary while removing obsolete fixed-switcher/sidebar wording in `client/README.md`
+- [ ] T031 [P] Execute all six `quickstart.md` browser scenarios at wide, 820px, 320px, and 200% text zoom; measure 3:1 focus contrast; inspect accessibility semantics; verify long Schedule and Academic Data headers; use NVDA with Firefox on Windows to verify announced primary-navigation purpose, Academic Data expanded state, and the sole current destination; and record tool versions, screenshots, announcements, and results in `specs/018-unified-app-navigation/validation/navigation-acceptance.md`
+- [ ] T032 [P] **BLOCKED — representative reviewers unavailable:** Conduct the SC-003/SC-004 review with at least 10 product-owner-provided representative planners or designated acceptance reviewers; record anonymized reviewer roles, protocol, first-attempt navigation results, five-second location-identification results, and pass/fail outcome in `specs/018-unified-app-navigation/validation/usability-review.md`; mark the task blocked if reviewers are unavailable
+- [X] T033 Run `npm test -- src/components/ApplicationNavigation.test.tsx src/App.test.tsx`, both focused page suites, and the complete `npm test` command from `client/`, then record passing counts and FS-007/FS-008 regression evidence in `specs/018-unified-app-navigation/validation/client-test-results.md`
+- [X] T034 Run `npm run lint` and `npm run build` from `client/` and record commands, versions, durations, warnings, and final outcomes in `specs/018-unified-app-navigation/validation/client-quality-results.md`
+- [ ] T035 Compare the final diff with `spec.md`, `plan.md`, `contracts/application-navigation.md`, the authoritative image, and the Simplicity Check; confirm no backend/API/domain/routing/dependency changes or out-of-scope destinations were introduced; and record the final constitution/scope review in `specs/018-unified-app-navigation/validation/final-review.md` (depends on T030–T034)
 
 ---
 

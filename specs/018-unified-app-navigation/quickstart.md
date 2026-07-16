@@ -10,6 +10,7 @@ Use this guide after implementation to prove the shared navigation works end to 
 - Install the repository's locked client dependencies.
 - For manual workflow checks, start the existing backend with representative FS-007/FS-008 data and configure the client as described in `client/README.md`.
 - Use a browser with developer tools capable of viewport emulation, text zoom, accessibility-tree inspection, keyboard focus inspection, and color-contrast measurement.
+- Use NVDA with Firefox on Windows for the SC-006 assistive-technology acceptance check, and record both product versions with the results.
 
 ## Automated verification
 
@@ -74,6 +75,15 @@ Expected:
 - Re-selecting the current leaf does not reset the page or create an unexpected content focus jump.
 - Contrast measurement confirms the focus indicator is at least 3:1 against adjacent colors in inactive, active, and current states.
 
+### NVDA and Firefox acceptance
+
+1. Start NVDA on Windows and open the application in Firefox.
+2. Move to the primary navigation and confirm its purpose is announced.
+3. Focus Academic Data before and after expansion and confirm the changed expanded state is announced.
+4. Select Schedule and at least one Academic Data child and confirm exactly the displayed leaf is announced as current.
+
+Expected: NVDA accurately announces the primary-navigation purpose, Academic Data expanded/collapsed state, and the sole current destination in every checked state.
+
 ## Scenario 4: Narrow temporary panel
 
 1. Set the viewport to 820px or narrower.
@@ -124,6 +134,7 @@ Expected:
 - Output from the five verification commands.
 - Browser/viewport matrix including wide, 820px, 320px, and 200% text zoom.
 - Keyboard/focus and accessibility-tree results for Schedule and one Academic child.
+- NVDA and Firefox versions plus announced primary-navigation, expanded-state, and current-destination results.
 - Focus-indicator contrast measurements.
 - Screenshots showing the authoritative wide hierarchy and unobstructed headers in wide and narrow states.
 - Notes confirming all eight leaves and the existing Schedule/Academic Data workflows were exercised.

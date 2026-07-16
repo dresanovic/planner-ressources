@@ -265,15 +265,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   }
 
   return (
-    <main className="planner-shell">
-      <aside className="sidebar">
-        <div className="brand-mark">RP</div>
-        <nav aria-label="Planner navigation">
-          <a href="#dashboard">Dashboard</a><a href="#courses">Courses</a><a href="#cohorts">Cohorts</a>
-          <a href="#rooms">Rooms</a><a className="active" href="#schedule">Schedule</a>
-        </nav>
-      </aside>
-
+    <>
       <section className="workbench">
         <header className="page-header">
           <div><h1>Resource Planner</h1><p>Draft schedule generation for one or several courses</p></div>
@@ -340,7 +332,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
           onConfirm={() => void executeBatch(batchPreparation, true)}
         />
       )}
-    </main>
+    </>
   )
 }
 

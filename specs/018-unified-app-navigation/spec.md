@@ -23,7 +23,7 @@ independent test paths.
 
 ### User Story 1 - Navigate Through One Application Hierarchy (Priority: P1)
 
-A planner uses one shared application navigation to move between Schedule and any Academic Data category without encountering duplicate, unavailable, or competing destinations.
+A planner uses one shared application navigation to move between Schedule and any Academic Data category without encountering duplicate, dead, or competing destinations.
 
 **Why this priority**: A single reliable hierarchy is the core user outcome and removes the current ambiguity between the sidebars and fixed top switcher.
 
@@ -36,7 +36,7 @@ A planner uses one shared application navigation to move between Schedule and an
 3. **Given** Academic Data is expanded or collapsed, **When** the planner activates the Academic Data parent, **Then** only its expansion state changes and no content view opens.
 4. **Given** the Academic Data children are visible, **When** the planner selects each child in turn, **Then** the corresponding existing administration view opens without changing its established data or workflow behavior.
 5. **Given** an Academic Data category is active, **When** the planner selects Schedule, **Then** the existing Schedule view opens through the same sidebar and no non-working Schedule destination remains elsewhere in the navigation.
-6. **Given** a destination is unavailable because its underlying view is not part of the implemented product, **When** the navigation is displayed, **Then** that destination is not presented as an operable navigation choice.
+6. **Given** Dashboard and other out-of-scope destinations have no implemented in-scope view, **When** navigation is displayed, **Then** they are not presented as operable choices.
 
 ---
 
@@ -53,7 +53,7 @@ A planner can identify the active top-level destination and, within Academic Dat
 1. **Given** Schedule is active, **When** the planner inspects the navigation, **Then** Schedule is identified as the current destination by a visible treatment that includes at least one non-color indicator and by a semantic current-state announcement.
 2. **Given** Courses is active, **When** the planner inspects the navigation, **Then** Academic Data is visibly identified as the active parent, Courses is visibly identified as the active child, both states include a non-color indicator, and Courses is semantically exposed as current.
 3. **Given** an Academic Data child is active, **When** the planner attempts to collapse Academic Data, **Then** the active parent and child context remains visible rather than hiding the current location.
-4. **Given** the planner moves from an Academic Data child to Schedule and later returns to Academic Data, **When** the navigation is shown, **Then** the Academic Data expansion state retained from the earlier view is restored and the destination matching the current view is identified.
+4. **Given** the planner moves from an Academic Data child to Schedule, **When** the planner selects that same Academic Data child again, **Then** the retained expansion state is restored and that child is identified as current.
 
 ---
 
@@ -97,7 +97,6 @@ A planner using a supported narrow viewport opens the same navigation hierarchy 
 - The current view is Schedule while Academic Data is expanded. Schedule remains the sole current destination; the expanded children do not imply that an Academic Data child is active.
 - The current view is Schedule and no expansion state has yet been established. Academic Data starts collapsed.
 - The current view is an Academic Data child while the saved expansion state is collapsed or absent. Academic Data opens automatically so the active parent and child remain visible.
-- The current Academic Data category becomes unavailable. The navigation does not show it as active or operable, and the application exposes the nearest valid top-level context without inventing a new destination.
 - The viewport crosses repeatedly between wide and narrow states. Only one presentation of the primary navigation is operable at a time, and current, selected, and expanded state do not reset.
 - A page title or header contains long content or controls. Navigation never covers, clips, or prevents operation of those controls at any supported viewport.
 - The planner opens the narrow-screen panel and then changes viewport size. The resulting navigation remains operable, preserves location context, and does not leave focus trapped in hidden content.
@@ -116,7 +115,7 @@ A planner using a supported narrow viewport opens the same navigation hierarchy 
 - **FR-004**: Academic Data MUST be expandable; activating it MUST change only its permitted expansion state and MUST NOT open a content view or choose a child destination; it MUST contain exactly these child destinations in this order: Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, and Rooms.
 - **FR-005**: Each navigation destination MUST open its corresponding existing Schedule or Academic Data view without altering the established workflow or domain-data behavior of that view.
 - **FR-006**: The separate fixed Schedule/Academic Data switcher MUST be removed from every in-scope view.
-- **FR-007**: Duplicate or non-working Schedule links and any unavailable placeholder destination MUST NOT be presented as operable primary navigation.
+- **FR-007**: Dashboard, duplicate or non-working Schedule links, and any other destination without an implemented in-scope view MUST NOT be presented as operable primary navigation.
 - **FR-008**: Exactly one destination matching the displayed view MUST be identified as current at a time.
 - **FR-009**: When Schedule is current, Schedule MUST have a visible and semantic current state and no Academic Data child MUST be identified as current.
 - **FR-010**: When an Academic Data child is current, Academic Data MUST remain visibly identified as its active parent, the child MUST remain visible and identified as current, and Academic Data MUST be expanded.
@@ -131,7 +130,7 @@ A planner using a supported narrow viewport opens the same navigation hierarchy 
 - **FR-019**: When no expansion state has yet been established, Academic Data MUST start collapsed on Schedule and expanded on any Academic Data child; during the current application use, it MUST retain its most recent permitted expansion state when the planner moves to Schedule and back; opening an Academic Data child MUST override a collapsed or absent state by expanding the parent.
 - **FR-020**: At supported narrow viewports where the wide sidebar would obstruct content or controls, the product MUST replace the always-visible presentation with a clearly labeled control that opens the same hierarchy in a temporary navigation panel.
 - **FR-021**: Only one presentation of the primary navigation MUST be operable at a time.
-- **FR-022**: The narrow-screen panel MUST expose the same labels, order, destination availability, active parent, current child, and expanded state as the wide sidebar.
+- **FR-022**: The narrow-screen panel MUST expose the same labels, order, fixed destinations, active parent, current child, and expanded state as the wide sidebar.
 - **FR-023**: When the narrow-screen panel opens, keyboard focus MUST enter it and remain within it until the panel closes.
 - **FR-024**: The narrow-screen panel MUST close when the planner selects a destination, activates its explicit close control, or presses Escape.
 - **FR-025**: Closing the narrow-screen panel without selecting a destination MUST preserve the current view and return focus to the control that opened it.
@@ -147,7 +146,7 @@ A planner using a supported narrow viewport opens the same navigation hierarchy 
 
 - **AR-001**: All navigation text, current-location indicators, expansion controls, focus indicators, and narrow-screen controls MUST remain perceivable at up to 200% text zoom and at a viewport width equivalent to 320 CSS pixels without loss of destinations or actions.
 - **AR-002**: The visible focus indicator MUST have a contrast ratio of at least 3:1 against adjacent colors in inactive, active, expanded, and current states.
-- **AR-003**: Navigation labels and semantic states MUST provide an understandable hierarchy without relying on icons, indentation, connector lines, or color alone.
+- **AR-003**: Navigation labels, parent/child relationships, and current/expanded states MUST remain understandable when decorative icons and connector lines are absent, and the hierarchy MUST be communicated programmatically in addition to visual indentation.
 - **AR-004**: The narrow-screen navigation panel MUST expose an understandable name and open/closed state to assistive technology.
 - **AR-005**: Opening, closing, expanding, collapsing, and selecting navigation MUST not cause unexpected focus loss or move focus to content hidden from the planner.
 - **AR-006**: Motion or visual transition used to reveal navigation MUST not be required to understand location, expansion, or completion of a navigation action.
@@ -162,7 +161,7 @@ A planner using a supported narrow viewport opens the same navigation hierarchy 
 ### Test Requirements *(mandatory)*
 
 - **TR-001**: Tests MUST be created or updated before production behavior for each user story where automated testing is practical.
-- **TR-002**: Automated coverage MUST verify the exact top-level destinations, exact Academic Data child labels and order, successful access to all eight destinations, and absence of the fixed top switcher, duplicate Schedule links, and unavailable placeholders.
+- **TR-002**: Automated coverage MUST verify the exact top-level destinations, exact Academic Data child labels and order, successful access to all eight destinations, and absence of the fixed top switcher, duplicate Schedule links, Dashboard, and other out-of-scope placeholders.
 - **TR-003**: Automated coverage MUST verify Schedule current state and every Academic Data parent/child active-state combination, including semantic current and expanded states.
 - **TR-004**: Automated coverage MUST verify keyboard traversal, expansion, permitted collapse, activation, focus visibility, destination focus placement, and protection against focus entering hidden items.
 - **TR-005**: Automated coverage MUST verify the initial collapsed state on Schedule, initial and automatic expansion for an active Academic Data child, expansion persistence when moving to Schedule, and state preservation across wide/narrow transitions.
@@ -183,11 +182,11 @@ A planner using a supported narrow viewport opens the same navigation hierarchy 
 ### Measurable Outcomes
 
 - **SC-001**: In 100% of acceptance cases, Schedule and all seven Academic Data categories are reachable from the single primary navigation and open the correct existing view.
-- **SC-002**: In 100% of inspected in-scope views, no fixed Schedule/Academic Data switcher, duplicate non-working Schedule link, or unavailable placeholder destination is presented as operable navigation.
+- **SC-002**: In 100% of inspected in-scope views, no fixed Schedule/Academic Data switcher, duplicate non-working Schedule link, Dashboard, or other out-of-scope placeholder is presented as operable navigation.
 - **SC-003**: In an unaided usability review with at least 10 representative planners or acceptance reviewers familiar with the product, at least 90% can move from Schedule to a named Academic Data category and back to Schedule on their first attempt without using browser controls or receiving guidance.
 - **SC-004**: In the same review, at least 90% of participants can correctly identify their current top-level destination and, for Academic Data, their current child category within five seconds at every tested destination.
 - **SC-005**: In 100% of keyboard acceptance paths, a planner can open the navigation when necessary, reach and activate every destination, expand Academic Data, dismiss the narrow panel, and continue into page content without a pointer or focus loss.
-- **SC-006**: In 100% of assistive-technology acceptance checks, the primary-navigation purpose, Academic Data expanded state, and single current destination are communicated accurately.
+- **SC-006**: In 100% of acceptance checks using NVDA with Firefox on Windows, the primary-navigation purpose, Academic Data expanded state, and single current destination MUST be announced accurately.
 - **SC-007**: At every supported viewport in the acceptance matrix, including a width equivalent to 320 CSS pixels, and at text zoom up to 200%, all eight destinations and all existing page-header controls remain visible or reachable, unobstructed, and operable.
 - **SC-008**: In 100% of transitions between supported wide and narrow states, the current view, selected Academic Data category, and permitted expansion context are preserved and exactly one navigation presentation is operable.
 - **SC-009**: In 100% of navigation regression cases, selecting, re-selecting, expanding, collapsing, opening, or dismissing navigation causes no academic or scheduling domain-data change and does not reset existing workflow state solely due to navigation interaction.
@@ -211,3 +210,4 @@ A planner using a supported narrow viewport opens the same navigation hierarchy 
 - The authoritative image governs navigation hierarchy, relative shell placement, and active-context treatment. Its page content, mock records, forms, statuses, Help & Support item, and decorative details are illustrative unless required elsewhere.
 - Existing page titles, filters, create/edit controls, tables, calendars, and forms remain behavioral references and must not be moved, removed, or redesigned beyond what is necessary to keep them unobstructed by navigation.
 - Broader URL structure, direct deep-link creation, browser-history redesign, and restoration across a new application session remain outside this slice.
+- The product owner supplies at least 10 representative planners or designated acceptance reviewers for SC-003 and SC-004. Automated implementation may finish beforehand, but FS-018 cannot be marked complete until that review passes; unavailable reviewers are reported as a blocker rather than replaced with fabricated participants or outcomes.
