@@ -55,6 +55,7 @@ Lecturer collaboration, authenticated role separation, and external data synchro
 - Conflict-aware exam generation for explicitly enabled courses.
 - Versioned `Draft → Ready for review → Published` lifecycle controlled by the planner.
 - A calendar-centered operational workspace based incrementally on the saved UI reference.
+- One consistent application navigation for Schedule and Academic Data without duplicate, dead, or overlapping controls.
 
 ### Out of scope
 
@@ -95,7 +96,8 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 - `docs/designs/resource-planner-calendar-screen-reference.png` is the confirmed visual inspiration for the future primary planner workspace.
 - The reference shows a navigation rail, remaining-hours/course list, validation summaries, filterable week calendar, schedule cards, and a session detail editor. It is inspiration rather than a pixel-perfect mandate.
 - Its elements should be introduced gradually through relevant slices instead of through one disruptive redesign.
-- No additional mockups, wireframes, prototypes, or process diagrams are currently confirmed.
+- `docs/designs/resource-planner-unified-navigation-ground-truth.png` is the confirmed UX ground truth for the shared application navigation and its relationship to Academic Data screens.
+- The navigation reference is authoritative for hierarchy, active-state treatment, and removal of the separate top view switcher; it does not expand the underlying administration workflows or data fields.
 
 ## Product-level constraints and assumptions
 
@@ -121,18 +123,19 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 5 | FS-005 | Conflict Detection | See non-blocking schedule validation alerts | FS-003, FS-004 | Implemented |
 | 6 | FS-006 | Multi-Course Draft Generation | Generate several course drafts in one operation | FS-003, FS-005 | Implemented |
 | 7 | FS-007 | Academic Planning Data Administration | Maintain academic scheduling inputs in the UI | FS-006 | Implemented |
-| 8 | FS-008 | Resource Eligibility and Availability | Maintain eligible resources and availability | FS-007 | Ready for specification |
-| 9 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Ready for specification |
-| 10 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Proposed |
-| 11 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Proposed |
-| 12 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Proposed |
-| 13 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Proposed |
-| 14 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013 | Proposed |
-| 15 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Proposed — later release |
-| 16 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015 | Proposed — later release |
-| 17 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
+| 8 | FS-008 | Resource Eligibility and Availability | Maintain eligible resources and availability | FS-007 | Implemented |
+| 9 | FS-018 | Unified Application Navigation | Move consistently between Schedule and Academic Data | FS-007, FS-008 | Ready for specification |
+| 10 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Ready for specification |
+| 11 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Proposed |
+| 12 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Proposed |
+| 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Proposed |
+| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Proposed |
+| 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Proposed |
+| 16 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Proposed — later release |
+| 17 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015 | Proposed — later release |
+| 18 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
-**Recommended first slice:** `FS-007 – Academic Planning Data Administration`
+**Recommended first slice:** `FS-018 – Unified Application Navigation`
 
 ## Development slices
 
@@ -713,7 +716,7 @@ A planner can prepare and maintain the academic input catalog for scheduling ent
 
 #### Specification status
 
-Ready for specification.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -841,12 +844,12 @@ The planner can express who and what may be scheduled for a course and when thos
 
 #### Specification status
 
-Proposed.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
 ```text
-Use $speckit-specify to create the specification for FS-008: Resource Eligibility and Availability.
+Use $speckit-specify to recreate or revise the specification for FS-008: Resource Eligibility and Availability.
 
 Product context: Planner users must manually maintain scheduling resources before conflict-aware optimization can choose among them.
 Outcome: Maintain lecturers, rooms, capacity, availability, and multiple eligible lecturers/rooms per course.
@@ -1400,16 +1403,18 @@ None.
 #### UI references
 
 - `docs/designs/resource-planner-calendar-screen-reference.png` is the primary visual inspiration.
+- `docs/designs/resource-planner-unified-navigation-ground-truth.png` defines the shared application navigation delivered by FS-018 and reused by this workspace.
 - Existing Courses overview, list/week views, filters, result summaries, alerts, and editor remain behavioral references.
 
 #### Constraints and assumptions
 
 - The reference's elements are introduced gradually and adapted to the product's real terminology and workflows.
+- The workspace must reuse FS-018 navigation rather than introduce another global navigation model.
 - Accessibility, responsive behavior, and workable performance for the supported semester scale must be measurable in the specification.
 
 #### Dependencies
 
-- FS-009 through FS-013.
+- FS-009 through FS-013 and FS-018.
 
 #### Completion outcome
 
@@ -1419,7 +1424,6 @@ The planner can understand and act on the complete semester planning state from 
 
 - Required calendar modes and whether drag/drop/resize is included now or later.
 - Exact dashboard aggregation definitions and the meaning of “needs review.”
-- Whether navigation entries for catalogs are part of this slice or remain within earlier administration screens.
 
 #### Specification status
 
@@ -1434,10 +1438,10 @@ Outcome: Give planner users one calendar-centered semester workspace for schedul
 In scope: Calendar navigation; filters by planning/resource/session/state context; teaching and exam cards; alerts; unscheduled units/hours; conflicts; capacity issues; failures; schedules needing review; traceable summary-to-item navigation; session detail and existing correction actions; current/published revision distinction; responsive and failure states.
 Out of scope: A pixel-perfect clone, lecturer access, new optimization, external synchronization, and unconfirmed drag/drop/resize behavior.
 Rules: Calendar and summaries use the same revision context; filters do not mutate data; every metric is traceable to affected records.
-Dependencies: FS-009 through FS-013.
-UI reference: docs/designs/resource-planner-calendar-screen-reference.png plus the existing Courses overview behavior. Introduce the reference elements gradually.
+Dependencies: FS-009 through FS-013 and FS-018.
+UI reference: docs/designs/resource-planner-calendar-screen-reference.png for the calendar workspace, docs/designs/resource-planner-unified-navigation-ground-truth.png for shared application navigation, plus the existing Courses overview behavior. Introduce the reference elements gradually.
 Completion: A planner can understand and act on the complete semester state from one workspace.
-Clarification topics: Calendar modes, drag/drop scope, aggregation definitions, “needs review,” and administration navigation.
+Clarification topics: Calendar modes, drag/drop scope, aggregation definitions, and “needs review.”
 
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define scenarios, requirements, edge cases, assumptions, accessibility expectations, and measurable success criteria without implementation details.
 ```
@@ -1727,6 +1731,108 @@ Clarification topics: Provider, protocol, authentication, direction, frequency, 
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Do not proceed while product-level integration questions remain unresolved, and do not prescribe implementation before requirements are confirmed.
 ```
 
+### FS-018: Unified Application Navigation
+
+#### User or business outcome
+
+A planner can move consistently between Schedule and Academic Data through one familiar navigation hierarchy without redundant, non-working, or overlapping controls.
+
+#### Rationale for this slice boundary
+
+Shared navigation is an independently visible cross-workflow outcome. It builds on the implemented Schedule and Academic Data views without reopening their scheduling or administration behavior, and it establishes the shell that the later calendar workspace must reuse.
+
+#### Primary actors
+
+- Planner user.
+
+#### Preconditions
+
+- FS-007 and FS-008 provide the implemented Schedule and Academic Data views and administration categories, including Lecturers and Rooms.
+
+#### In scope
+
+- One persistent left sidebar shared by Schedule and Academic Data.
+- Schedule and Academic Data as the only top-level destinations.
+- An expandable Academic Data parent containing Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, and Rooms.
+- Clear active states for the current top-level destination and Academic Data child.
+- Removal of the separate fixed Schedule/Academic Data switcher and non-working Schedule sidebar links.
+- Header controls that remain fully visible and operable without navigation overlap at supported viewport sizes.
+- Keyboard-operable expansion and selection, visible focus, and semantic expanded/current state communication.
+- Responsive navigation behavior that preserves access to every destination.
+
+#### Out of scope
+
+- New Dashboard functionality, new administration categories, changes to scheduling or catalog business behavior, a redesign of the calendar workspace, authentication, and a broader URL-routing or deep-linking redesign.
+
+#### Main workflow
+
+The planner opens Schedule, uses the persistent sidebar to expand Academic Data, selects an administration category, sees both parent and child context, completes the existing task, and returns to Schedule without encountering a second navigation model or covered header control.
+
+#### Business rules
+
+- The product exposes one primary application navigation model.
+- Academic Data shows exactly the confirmed child destinations in the confirmed order.
+- When an Academic Data child is active, that child and its parent context remain visible.
+- Unavailable placeholder destinations are not shown as working navigation.
+- Current location and focus are communicated by more than color alone.
+
+#### Data inputs and outputs
+
+Inputs are the current view, selected Academic Data category, and expansion state. Output is visible navigation and location state; no academic or scheduling domain data is created or changed by this slice.
+
+#### Integrations
+
+None.
+
+#### UI references
+
+- `docs/designs/resource-planner-unified-navigation-ground-truth.png` is the authoritative UX reference for navigation hierarchy, active states, spacing, and removal of the top switcher.
+- Existing Schedule and Academic Data screens remain behavioral references for their underlying workflows.
+
+#### Constraints and assumptions
+
+- The existing visual language, terminology, and planner-only role remain authoritative.
+- The approved image governs the navigation and shell; its illustrative table rows and form contents do not add new administration requirements.
+- Accessibility and responsive behavior must be measurable in the specification.
+
+#### Dependencies
+
+- FS-007 and FS-008.
+
+#### Completion outcome
+
+The planner can reach Schedule and every Academic Data category from one consistent, accessible sidebar, with no dead duplicate destinations and no top-right control overlap.
+
+#### Open clarification topics
+
+- Whether Academic Data remains expanded after switching back to Schedule.
+- The exact narrow-screen presentation, such as a drawer or another compact pattern.
+
+#### Specification status
+
+Ready for specification.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for FS-018: Unified Application Navigation.
+
+Product context: The Resource Planner has implemented Schedule and Academic Data views, but currently uses competing sidebars plus a fixed top view switcher that overlaps page-header controls. FS-018 replaces those navigation models without changing the underlying scheduling or administration workflows.
+Outcome: Let a planner move consistently between Schedule and Academic Data through one familiar, accessible navigation hierarchy.
+Actor: Planner user.
+In scope: One persistent left sidebar; Schedule and Academic Data as top-level destinations; expandable Academic Data children in this order: Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, Rooms; clear parent/child active states; removal of the fixed top switcher and non-working Schedule links; unobstructed header controls; keyboard operation; visible focus; semantic expanded/current states; responsive access to all destinations.
+Out of scope: Dashboard functionality, new categories, scheduling or catalog business changes, calendar-workspace redesign, authentication, and broader URL-routing or deep-linking redesign.
+Rules: Expose one primary navigation model; keep active Academic Data parent/child context visible; do not present unavailable destinations as working navigation; communicate location and focus by more than color.
+Data: Current view, selected category, and expansion state only; no domain-data behavior changes.
+Integrations: None.
+Dependencies: FS-007 and FS-008.
+UI reference: docs/designs/resource-planner-unified-navigation-ground-truth.png is authoritative for the navigation hierarchy and shell. Existing screens remain behavioral references, and illustrative mock data does not expand scope.
+Completion: Schedule and every Academic Data category are reachable from one consistent sidebar, with no dead duplicate destinations and no header overlap.
+Clarification topics: Expansion persistence when returning to Schedule and the exact narrow-screen presentation.
+
+Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define scenarios, functional requirements, accessibility behavior, responsive states, edge cases, assumptions, and measurable success criteria without implementation details.
+```
+
 ## Deferred scope
 
 - **Automated email delivery**: FS-015 deliberately uses planner-copied links; an email provider is not yet selected or required.
@@ -1752,3 +1858,5 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
 | 2026-07-14 | Ground-truth creation | FS-001–FS-017 | Reconstructed implemented FS-001–FS-006 and replaced the old roadmap with a validated planner-MVP and later-release slice map. | Preserve implemented behavior while defining conflict-aware planning, manual administration, exams, publication, calendar operations, lecturer review, identity, and future integration as coherent vertical slices. |
+| 2026-07-16 | New slice, reordered slice, updated slice | FS-007, FS-014, FS-018 | Added unified application navigation as the recommended next slice, recorded the approved UX ground truth, and made the later calendar workspace reuse that navigation. | Separate the confirmed cross-workflow navigation outcome from implemented academic administration and remove the navigation ambiguity from FS-014. |
+| 2026-07-16 | Reordered slice, status correction | FS-008, FS-018 | Recorded FS-008 as implemented, placed FS-018 after the completed FS-008 baseline, and added FS-008 as an FS-018 dependency. | Reflect completed resource administration work and the Lecturer and Room destinations that unified navigation must preserve. |

@@ -2,6 +2,14 @@
 
 React/Vite frontend for the resource planner.
 
+## Unified Application Navigation (FS-018)
+
+The application exposes one primary left navigation hierarchy. **Schedule** is a top-level destination. **Academic Data** is a disclosure with, in order, Semesters, Cohorts, Courses, Study types, Time windows, Lecturers, and Rooms. The current leaf and its Academic Data parent context are conveyed semantically and with text/shape treatments in addition to color. The former fixed top switcher and page-owned sidebars are removed.
+
+On screens wider than 820px the hierarchy remains in a persistent sidebar. At 820px and below, **Menu** opens the same hierarchy as a named modal panel. Focus enters the panel, remains contained while it is open, and returns to the opener when dismissed with Escape or **Close menu**. Selecting a destination closes the panel and moves focus to the resulting content; selecting the already-current leaf closes it without resetting page state. All controls are native keyboard-operable controls with visible focus indicators.
+
+FS-018 changes only the client shell and the current view/category/expansion state. It adds no route, dependency, backend endpoint, API contract, authentication behavior, scheduling rule, or catalog rule.
+
 ## Resource Eligibility and Availability (FS-008)
 
 The **Academic Data** workspace includes coded Lecturer and Room administration. Active resources are shown by default; planners can search by name/code, inspect inactive records, maintain Room capacity and recurring/dated unavailable periods, review usage before removal, and reactivate retired resources. Unreferenced resources are permanently deleted; resources used by active Courses or saved sessions are retained inactive with the affected Courses explained.
@@ -55,11 +63,11 @@ Automatic conflict resolution, conflict-aware generation, room occupancy blockin
 
 ## Academic Data Administration
 
-Use the top-level **Academic Data** view to create, review, edit, archive/reactivate, and safely delete Semesters, Cohorts, Courses, Study Types, Time Windows, Lecturers, and Rooms. Category lists retain last-known content during refresh, support active/inactive filtering, and use controlled forms so entered values survive backend validation. Course forms establish initial resources and expose the complete maintained eligibility sets while editing.
+Use the **Academic Data** navigation hierarchy to create, review, edit, archive/reactivate, and safely delete Semesters, Cohorts, Courses, Study Types, Time Windows, Lecturers, and Rooms. Category lists retain last-known content during refresh, support active/inactive filtering, and use controlled forms so entered values survive backend validation. Course forms establish initial resources and expose the complete maintained eligibility sets while editing.
 
 Each record exposes usage-aware actions. Permanent deletion opens a keyboard-operable dialog that separates dependent-record blockers from saved-schedule blockers and offers Archive without changing dependent lifecycle state. Revision conflicts and validation failures are announced without silently replacing local form input. Legacy name-repair records show rename guidance.
 
-Returning to **Schedule** remounts and refetches planning options. Course choices are limited to the selected current Semester; invalid prior selections are retained and flagged, and visible unavailable Courses show their reason. Generation remains disabled until the planner selects an eligible Course. No client router, form library, or external state library is required.
+Returning to **Schedule** keeps its mounted state and applies catalog-revision refreshes after Academic Data mutations. Course choices are limited to the selected current Semester; invalid prior selections are retained and flagged, and visible unavailable Courses show their reason. Generation remains disabled until the planner selects an eligible Course. No client router, form library, or external state library is required.
 
 The academic administration client uses `/api/academic` for Courses and eligibility and `/api/resources` for Lecturer/Room lifecycle and unavailable periods. Authentication, imports, and external synchronization remain outside this slice.
 
