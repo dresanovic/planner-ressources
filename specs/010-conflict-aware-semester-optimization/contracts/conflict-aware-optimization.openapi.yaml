@@ -1,0 +1,360 @@
+openapi: 3.1.0
+info:
+  title: FS-010 Conflict-Aware Semester Optimization Contract
+  version: 1.0.0
+  description: >-
+    Additive prepare-and-generate contract for globally optimizing selected courses
+    in one semester. Existing single-course and independent batch routes remain unchanged.
+paths:
+  /api/draft-schedules/optimization/prepare:
+    post:
+      summary: Prepare selected courses and replacement confirmation scope
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizationPreparationRequest'
+      responses:
+        '200':
+          description: Current preparation and opaque material-input snapshots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationPreparationResponse'
+        '404':
+          description: Semester not found
+        '422':
+          $ref: '#/components/responses/RequestFailure'
+  /api/draft-schedules/optimization/generate:
+    post:
+      summary: Prove and save a conflict-aware optimized semester result
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizationGenerationRequest'
+      responses:
+        '200':
+          description: Mixed per-course results derived from final saved state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationGenerationResult'
+        '409':
+          description: Replacement confirmation is required before solving
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplacementConfirmationRequired'
+        '422':
+          $ref: '#/components/responses/RequestFailure'
+        '503':
+          description: A proven optimal result was not available within the bounded operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationOperationFailure'
+        '500':
+          description: Unexpected operation failure; no uncommitted result is retained
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationOperationFailure'
+components:
+  responses:
+    RequestFailure:
+      description: Invalid semester/course selection or malformed preparation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RequestFailureResponse'
+  schemas:
+    OptimizationPreparationRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, courseIds, unavailableDates]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        courseIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+        unavailableDates:
+          type: array
+          description: Duplicate values are accepted and canonically deduplicated during preparation.
+          items:
+            type: string
+            format: date
+    OptimizationPreparationResponse:
+      type: object
+      additionalProperties: false
+      required: [semesterId, unavailableDates, sharedSnapshotToken, courses, replacementCourseIds]
+      properties:
+        semesterId:
+          type: integer
+        unavailableDates:
+          type: array
+          items:
+            type: string
+            format: date
+        sharedSnapshotToken:
+          type: string
+          minLength: 1
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PreparedOptimizationCourse'
+        replacementCourseIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+    PreparedOptimizationCourse:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - courseName
+        - available
+        - draftScheduleId
+        - draftRevision
+        - scheduledUnits
+        - remainingUnits
+        - replacementRequired
+        - inputSnapshotToken
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          oneOf: [{type: string}, {type: 'null'}]
+        available:
+          type: boolean
+        draftScheduleId:
+          oneOf: [{type: integer, minimum: 1}, {type: 'null'}]
+        draftRevision:
+          oneOf: [{type: integer, minimum: 1}, {type: 'null'}]
+        scheduledUnits:
+          type: integer
+          minimum: 0
+        remainingUnits:
+          type: integer
+          minimum: 0
+        replacementRequired:
+          type: boolean
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+    OptimizationGenerationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - unavailableDates
+        - sharedSnapshotToken
+        - replacementConfirmed
+        - courses
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        unavailableDates:
+          type: array
+          description: Must echo the canonical deduplicated values returned by preparation.
+          items:
+            type: string
+            format: date
+        sharedSnapshotToken:
+          type: string
+          minLength: 1
+        replacementConfirmed:
+          type: boolean
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PreparedOptimizationCourseInput'
+    PreparedOptimizationCourseInput:
+      type: object
+      additionalProperties: false
+      required: [courseId, expectedDraftScheduleId, expectedDraftRevision, inputSnapshotToken]
+      properties:
+        courseId:
+          type: integer
+          minimum: 1
+        expectedDraftScheduleId:
+          oneOf: [{type: integer, minimum: 1}, {type: 'null'}]
+        expectedDraftRevision:
+          oneOf: [{type: integer, minimum: 1}, {type: 'null'}]
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+    OptimizationGenerationResult:
+      type: object
+      additionalProperties: false
+      required: [semesterId, summary, outcomes]
+      properties:
+        semesterId:
+          type: integer
+        summary:
+          $ref: '#/components/schemas/OptimizationSummary'
+        outcomes:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/CourseOptimizationOutcome'
+    OptimizationSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - total
+        - complete
+        - improvedPartial
+        - unchanged
+        - failed
+        - stale
+        - scheduledUnits
+        - remainingUnits
+        - elapsedMilliseconds
+        - optimalForPreparedSnapshot
+      properties:
+        total: {type: integer, minimum: 1, maximum: 20}
+        complete: {type: integer, minimum: 0}
+        improvedPartial: {type: integer, minimum: 0}
+        unchanged: {type: integer, minimum: 0}
+        failed: {type: integer, minimum: 0}
+        stale: {type: integer, minimum: 0}
+        scheduledUnits: {type: integer, minimum: 0}
+        remainingUnits: {type: integer, minimum: 0}
+        elapsedMilliseconds: {type: integer, minimum: 0, maximum: 60000}
+        optimalForPreparedSnapshot:
+          type: boolean
+          description: >-
+            True only when all objective stages were proven optimal for the
+            prepared snapshot. False when stale or unavailable preparation data
+            prevented a solver run. A true value with stale post-solve outcomes
+            does not claim that refreshed final semester state is globally optimal.
+    CourseOptimizationOutcome:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - courseName
+        - status
+        - draftScheduleId
+        - draftRevision
+        - scheduledUnits
+        - remainingUnits
+        - saved
+        - improvement
+        - reasons
+        - errors
+      properties:
+        courseId: {type: integer}
+        courseName:
+          oneOf: [{type: string}, {type: 'null'}]
+        status:
+          type: string
+          enum: [complete, improved_partial, unchanged, failed, stale]
+        draftScheduleId:
+          oneOf: [{type: integer, minimum: 1}, {type: 'null'}]
+        draftRevision:
+          oneOf: [{type: integer, minimum: 1}, {type: 'null'}]
+        scheduledUnits: {type: integer, minimum: 0}
+        remainingUnits: {type: integer, minimum: 0}
+        saved: {type: boolean}
+        improvement:
+          oneOf:
+            - $ref: '#/components/schemas/ArrangementImprovement'
+            - type: 'null'
+        reasons:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/BlockingReason'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationError'
+    ArrangementImprovement:
+      type: object
+      additionalProperties: false
+      required: [addedUnits, reducedConflicts, reducedLecturerChanges, reducedRoomChanges]
+      properties:
+        addedUnits: {type: integer, minimum: 0}
+        reducedConflicts: {type: integer, minimum: 0}
+        reducedLecturerChanges: {type: integer, minimum: 0}
+        reducedRoomChanges: {type: integer, minimum: 0}
+    BlockingReason:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - LECTURER_OCCUPIED
+            - ROOM_OCCUPIED
+            - COHORT_OCCUPIED
+            - LECTURER_UNAVAILABLE
+            - ROOM_UNAVAILABLE
+            - NO_ELIGIBLE_LECTURER
+            - NO_ELIGIBLE_ROOM
+            - INSUFFICIENT_ROOM_CAPACITY
+            - UNAVAILABLE_DATE
+            - NO_ALLOWED_DATE_OR_WINDOW
+            - COURSE_CONSTRAINT
+            - SELECTED_COURSE_COMPETITION
+            - INVALID_PLANNING_INPUT
+            - STALE_PLANNING_INPUT
+        message: {type: string, minLength: 1}
+        relatedCount: {type: integer, minimum: 1}
+    OperationError:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string}
+    ReplacementConfirmationRequired:
+      type: object
+      additionalProperties: false
+      required: [code, message, replacementCourseIds]
+      properties:
+        code: {type: string, const: REPLACEMENT_CONFIRMATION_REQUIRED}
+        message: {type: string}
+        replacementCourseIds:
+          type: array
+          minItems: 1
+          items: {type: integer}
+    RequestFailureResponse:
+      type: object
+      additionalProperties: false
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OperationError'
+    OptimizationOperationFailure:
+      type: object
+      additionalProperties: false
+      required: [code, message, saved]
+      properties:
+        code:
+          type: string
+          enum: [OPTIMAL_RESULT_NOT_PROVEN, OPTIMIZATION_MODEL_INVALID, OPTIMIZATION_OPERATION_FAILED]
+        message: {type: string}
+        saved: {type: boolean, const: false}

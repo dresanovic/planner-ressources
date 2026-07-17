@@ -27,9 +27,9 @@ vi.mock('../api/draftSchedule', () => ({
   deleteDraftSession: mocks.deleteDraftSession,
   clearCourseDraft: mocks.clearCourseDraft,
 }))
-vi.mock('../api/multiCourseDraftGeneration', () => ({
-  prepareMultiCourseGeneration: mocks.prepare,
-  generateMultiCourseDrafts: mocks.generateBatch,
+vi.mock('../api/conflictAwareGeneration', () => ({
+  prepareConflictAwareGeneration: mocks.prepare,
+  generateConflictAwareSchedules: mocks.generateBatch,
 }))
 
 import { CourseSchedulePage } from './CourseSchedulePage'
@@ -83,34 +83,63 @@ describe('CourseSchedulePage multi-course mode', () => {
 
   it('keeps focused single-course constraints isolated while selecting and generating several courses', async () => {
     mocks.prepare.mockResolvedValue({
-      semesterId: 1, operationKind: 'initial', replacementCourseIds: [],
-      courses: [1, 2].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, available: true, draftScheduleId: null, draftRevision: null, replacementRequired: false })),
+      semesterId: 1, unavailableDates: ['2026-10-26', '2026-11-02'], sharedSnapshotToken: 'shared', replacementCourseIds: [],
+      courses: [1, 2].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, available: true, draftScheduleId: null, draftRevision: null, scheduledUnits: 0, remainingUnits: 8, replacementRequired: false, inputSnapshotToken: `course-${courseId}` })),
     })
     mocks.generateBatch.mockResolvedValue({
-      semesterId: 1, operationKind: 'initial', summary: { total: 2, succeeded: 2, failed: 0 },
-      outcomes: [1, 2].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, status: 'succeeded', draftScheduleId: courseId, draftRevision: 1, errors: [] })),
+      semesterId: 1, summary: { total: 2, complete: 2, improvedPartial: 0, unchanged: 0, failed: 0, stale: 0, scheduledUnits: 16, remainingUnits: 0, elapsedMilliseconds: 100, optimalForPreparedSnapshot: true },
+      outcomes: [1, 2].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, status: 'complete', draftScheduleId: courseId, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] })),
     })
     await renderPage()
     act(() => button('Several courses')?.click())
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click() })
+    const unavailableDates = document.querySelector<HTMLInputElement>('input[type="text"]')
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(unavailableDates, '2026-11-02, 2026-10-26, 2026-10-26')
+      unavailableDates?.dispatchEvent(new Event('input', { bubbles: true }))
+    })
     expect(document.body.textContent).toContain('2 selected')
     await act(async () => {
-      button('Generate selected courses')?.click()
+      button('Optimize selected courses')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(mocks.prepare).toHaveBeenCalledWith(1, 'initial', [1, 2])
+    expect(mocks.prepare).toHaveBeenCalledWith(1, [1, 2], ['2026-10-26', '2026-11-02'])
     expect(mocks.generateBatch).toHaveBeenCalledOnce()
-    expect(document.body.textContent).toContain('2 succeeded · 0 failed · 2 total')
+    expect(document.body.textContent).toContain('2 complete · 0 improved partial')
     expect(mocks.getGenerationConstraints).toHaveBeenCalledTimes(1)
+  })
+
+  it('clears the batch selection when the semester changes', async () => {
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      semesters: [...options.semesters, { id: 2, name: 'Spring 2027', startDate: '2027-02-01', endDate: '2027-06-20' }],
+      courses: [
+        { ...options.courses[0], semesterId: 1, availability: { available: true, reasons: [] } },
+        { ...options.courses[1], semesterId: 2, availability: { available: true, reasons: [] } },
+      ],
+    })
+    await renderPage()
+    act(() => button('Several courses')?.click())
+    act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click())
+    expect(document.body.textContent).toContain('1 selected')
+
+    const semesterSelect = document.querySelector<HTMLSelectElement>('.planning-selectors select')
+    await act(async () => {
+      if (semesterSelect) semesterSelect.value = '2'
+      semesterSelect?.dispatchEvent(new Event('change', { bubbles: true }))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.body.textContent).toContain('0 selected')
   })
 
   it('cancels replacement confirmation without execution', async () => {
     mocks.prepare.mockResolvedValue({
-      semesterId: 1, operationKind: 'initial', replacementCourseIds: [1],
+      semesterId: 1, unavailableDates: [], sharedSnapshotToken: 'shared', replacementCourseIds: [1],
       courses: [
-        { courseId: 1, courseName: 'Course 1', available: true, draftScheduleId: 5, draftRevision: 2, replacementRequired: true },
-        { courseId: 2, courseName: 'Course 2', available: true, draftScheduleId: null, draftRevision: null, replacementRequired: false },
+        { courseId: 1, courseName: 'Course 1', available: true, draftScheduleId: 5, draftRevision: 2, scheduledUnits: 4, remainingUnits: 4, replacementRequired: true, inputSnapshotToken: 'course-1' },
+        { courseId: 2, courseName: 'Course 2', available: true, draftScheduleId: null, draftRevision: null, scheduledUnits: 0, remainingUnits: 8, replacementRequired: false, inputSnapshotToken: 'course-2' },
       ],
     })
     await renderPage()
@@ -118,13 +147,121 @@ describe('CourseSchedulePage multi-course mode', () => {
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click() })
     await act(async () => {
-      button('Generate selected courses')?.click()
+      button('Optimize selected courses')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(document.body.textContent).toContain('Replace existing Draft Schedules?')
+    expect(document.body.textContent).toContain('Optimize existing Draft Schedules?')
     act(() => button('Cancel')?.click())
     expect(mocks.generateBatch).not.toHaveBeenCalled()
-    expect(document.body.textContent).not.toContain('Replace existing Draft Schedules?')
+    expect(document.body.textContent).not.toContain('Optimize existing Draft Schedules?')
+  })
+
+  it('re-prepares failed and stale courses before retrying and refreshes each result', async () => {
+    const preparation = {
+      semesterId: 1, unavailableDates: [], sharedSnapshotToken: 'shared', replacementCourseIds: [],
+      courses: [{ courseId: 1, courseName: 'Course 1', available: true, draftScheduleId: null, draftRevision: null, scheduledUnits: 0, remainingUnits: 8, replacementRequired: false, inputSnapshotToken: 'course-1' }],
+    }
+    mocks.prepare.mockResolvedValue(preparation)
+    mocks.generateBatch
+      .mockResolvedValueOnce({
+        semesterId: 1,
+        summary: { total: 1, complete: 0, improvedPartial: 0, unchanged: 0, failed: 0, stale: 1, scheduledUnits: 0, remainingUnits: 8, elapsedMilliseconds: 100, optimalForPreparedSnapshot: false },
+        outcomes: [{ courseId: 1, courseName: 'Course 1', status: 'stale', draftScheduleId: null, draftRevision: null, scheduledUnits: 0, remainingUnits: 8, saved: false, improvement: null, reasons: [{ code: 'STALE_PLANNING_INPUT', message: 'Refresh.', relatedCount: 1 }], errors: [] }],
+      })
+      .mockResolvedValueOnce({
+        semesterId: 1,
+        summary: { total: 1, complete: 1, improvedPartial: 0, unchanged: 0, failed: 0, stale: 0, scheduledUnits: 8, remainingUnits: 0, elapsedMilliseconds: 100, optimalForPreparedSnapshot: true },
+        outcomes: [{ courseId: 1, courseName: 'Course 1', status: 'complete', draftScheduleId: 1, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] }],
+      })
+    await renderPage()
+    act(() => button('Several courses')?.click())
+    act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click())
+    await act(async () => {
+      button('Optimize selected courses')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(document.body.textContent).toContain('1 stale')
+
+    await act(async () => {
+      button('Retry failed or stale courses')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(mocks.prepare).toHaveBeenCalledTimes(2)
+    expect(mocks.prepare).toHaveBeenLastCalledWith(1, [1], [])
+    expect(mocks.generateBatch).toHaveBeenCalledTimes(2)
+    expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(3)
+    expect(document.body.textContent).toContain('1 complete')
+  })
+
+  it('confirms replacement, shows mixed outcomes, and requires renewed confirmation for retry', async () => {
+    const thirdCourse = { ...options.courses[1], id: 3, name: 'Course 3', lecturer: entity(3, 'L3'), cohort: entity(3, 'C3'), room: entity(3, 'R3') }
+    mocks.getPlanningOptions.mockResolvedValue({ ...options, courses: [...options.courses, thirdCourse] })
+    const initialPreparation = {
+      semesterId: 1, unavailableDates: [], sharedSnapshotToken: 'shared-1', replacementCourseIds: [1],
+      courses: [
+        { courseId: 1, courseName: 'Course 1', available: true, draftScheduleId: 5, draftRevision: 2, scheduledUnits: 4, remainingUnits: 4, replacementRequired: true, inputSnapshotToken: 'course-1' },
+        { courseId: 2, courseName: 'Course 2', available: true, draftScheduleId: null, draftRevision: null, scheduledUnits: 0, remainingUnits: 8, replacementRequired: false, inputSnapshotToken: 'course-2' },
+        { courseId: 3, courseName: 'Course 3', available: true, draftScheduleId: null, draftRevision: null, scheduledUnits: 0, remainingUnits: 8, replacementRequired: false, inputSnapshotToken: 'course-3' },
+      ],
+    }
+    const retryPreparation = {
+      semesterId: 1, unavailableDates: [], sharedSnapshotToken: 'shared-2', replacementCourseIds: [1],
+      courses: [
+        { ...initialPreparation.courses[0], draftRevision: 3, inputSnapshotToken: 'course-1-fresh' },
+        { ...initialPreparation.courses[2], inputSnapshotToken: 'course-3-fresh' },
+      ],
+    }
+    mocks.prepare.mockResolvedValueOnce(initialPreparation).mockResolvedValueOnce(retryPreparation)
+    mocks.generateBatch
+      .mockResolvedValueOnce({
+        semesterId: 1,
+        summary: { total: 3, complete: 1, improvedPartial: 0, unchanged: 0, failed: 1, stale: 1, scheduledUnits: 8, remainingUnits: 12, elapsedMilliseconds: 100, optimalForPreparedSnapshot: true },
+        outcomes: [
+          { courseId: 1, courseName: 'Course 1', status: 'stale', draftScheduleId: 5, draftRevision: 3, scheduledUnits: 4, remainingUnits: 4, saved: false, improvement: null, reasons: [{ code: 'STALE_PLANNING_INPUT', message: 'Refresh.', relatedCount: 1 }], errors: [] },
+          { courseId: 2, courseName: 'Course 2', status: 'complete', draftScheduleId: 6, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] },
+          { courseId: 3, courseName: 'Course 3', status: 'failed', draftScheduleId: null, draftRevision: null, scheduledUnits: 0, remainingUnits: 8, saved: false, improvement: null, reasons: [], errors: [{ code: 'INVALID_PLANNING_INPUT', message: 'Unavailable.' }] },
+        ],
+      })
+      .mockResolvedValueOnce({
+        semesterId: 1,
+        summary: { total: 2, complete: 2, improvedPartial: 0, unchanged: 0, failed: 0, stale: 0, scheduledUnits: 16, remainingUnits: 0, elapsedMilliseconds: 100, optimalForPreparedSnapshot: true },
+        outcomes: [1, 3].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, status: 'complete', draftScheduleId: courseId + 10, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] })),
+      })
+    await renderPage()
+    act(() => button('Several courses')?.click())
+    const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
+    act(() => { boxes[0].click(); boxes[1].click(); boxes[2].click() })
+    await act(async () => {
+      button('Optimize selected courses')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(document.body.textContent).toContain('Optimize existing Draft Schedules?')
+
+    await act(async () => {
+      button('Confirm optimization')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(mocks.generateBatch).toHaveBeenLastCalledWith(initialPreparation, true)
+    expect(document.body.textContent).toContain('1 complete')
+    expect(document.body.textContent).toContain('1 failed')
+    expect(document.body.textContent).toContain('1 stale')
+
+    await act(async () => {
+      button('Retry failed or stale courses')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(mocks.prepare).toHaveBeenLastCalledWith(1, [1, 3], [])
+    expect(mocks.generateBatch).toHaveBeenCalledTimes(1)
+    expect(document.body.textContent).toContain('Optimize existing Draft Schedules?')
+
+    await act(async () => {
+      button('Confirm optimization')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(mocks.generateBatch).toHaveBeenLastCalledWith(retryPreparation, true)
+    expect(mocks.generateBatch).toHaveBeenCalledTimes(2)
+    expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(3)
   })
 })
 

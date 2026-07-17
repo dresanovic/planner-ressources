@@ -15,12 +15,12 @@ import {
   updateDraftSession,
 } from '../api/draftSchedule'
 import {
-  generateMultiCourseDrafts,
-  prepareMultiCourseGeneration,
-  type BatchApiError,
-  type BatchGenerationResult,
-  type BatchPreparation,
-} from '../api/multiCourseDraftGeneration'
+  generateConflictAwareSchedules,
+  prepareConflictAwareGeneration,
+  type OptimizationError,
+  type OptimizationGenerationResult,
+  type OptimizationPreparation,
+} from '../api/conflictAwareGeneration'
 import {
   getPlanningOptions,
   type CourseOption,
@@ -58,9 +58,10 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const [mode, setMode] = useState<GenerationMode>('single')
   const [selectedBatchCourseIds, setSelectedBatchCourseIds] = useState<number[]>([])
   const [errors, setErrors] = useState<GenerationFailure[]>([])
-  const [batchErrors, setBatchErrors] = useState<BatchApiError[]>([])
-  const [batchPreparation, setBatchPreparation] = useState<BatchPreparation | null>(null)
-  const [batchResult, setBatchResult] = useState<BatchGenerationResult | null>(null)
+  const [batchErrors, setBatchErrors] = useState<OptimizationError[]>([])
+  const [batchPreparation, setBatchPreparation] = useState<OptimizationPreparation | null>(null)
+  const [batchResult, setBatchResult] = useState<OptimizationGenerationResult | null>(null)
+  const [unavailableDatesInput, setUnavailableDatesInput] = useState('')
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [constraintsLoading, setConstraintsLoading] = useState(false)
   const [overviewLoading, setOverviewLoading] = useState(false)
@@ -107,6 +108,10 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
       ? deriveCourseProgress(selectedCourse.totalUnits, schedules, selectedCourse.id, selectedSemesterId)
       : null,
     [selectedCourse, selectedSemesterId, loadedOverviewSemesterId, overviewLoading, overviewRefreshError, schedules],
+  )
+  const unavailableDates = useMemo(
+    () => [...new Set(unavailableDatesInput.split(',').map((value) => value.trim()).filter(Boolean))].sort(),
+    [unavailableDatesInput],
   )
   const selectedDraft = useMemo(
     () => schedules.find((schedule) => schedule.courseId === selectedCourseId && schedule.semesterId === selectedSemesterId) ?? null,
@@ -241,12 +246,12 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     }
   }
 
-  async function startBatch(courseIds = selectedBatchCourseIds, operationKind: 'initial' | 'retry' = 'initial') {
+  async function startBatch(courseIds = selectedBatchCourseIds) {
     if (!selectedSemesterId) return
     setBatchPreparing(true)
     setBatchErrors([])
     try {
-      const prepared = await prepareMultiCourseGeneration(selectedSemesterId, operationKind, courseIds)
+      const prepared = await prepareConflictAwareGeneration(selectedSemesterId, courseIds, unavailableDates)
       if (prepared.replacementCourseIds.length > 0) {
         setBatchPreparation(prepared)
       } else {
@@ -259,15 +264,15 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     }
   }
 
-  async function executeBatch(preparation: BatchPreparation, confirmed: boolean) {
+  async function executeBatch(preparation: OptimizationPreparation, confirmed: boolean) {
     setBatchExecuting(true)
     setBatchErrors([])
     try {
-      const result = await generateMultiCourseDrafts(preparation, confirmed)
+      const result = await generateConflictAwareSchedules(preparation, confirmed)
       setBatchResult(result)
       setBatchPreparation(null)
       if (selectedSemesterId !== result.semesterId) setSelectedSemesterId(result.semesterId)
-      await refreshOverview(result.semesterId)
+      await refreshOverview(result.semesterId, false)
     } catch (error) {
       setBatchErrors(toBatchErrors(error))
     } finally {
@@ -277,7 +282,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
 
   async function retryFailedCourses() {
     if (!batchResult) return
-    const failedIds = batchResult.outcomes.filter((outcome) => outcome.status === 'failed').map((outcome) => outcome.courseId)
+    const failedIds = batchResult.outcomes.filter((outcome) => outcome.status === 'failed' || outcome.status === 'stale').map((outcome) => outcome.courseId)
     setSelectedSemesterId(batchResult.semesterId)
     setSelectedBatchCourseIds(failedIds)
     await startBatchForSemester(batchResult.semesterId, failedIds)
@@ -287,7 +292,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     setBatchPreparing(true)
     setBatchErrors([])
     try {
-      const prepared = await prepareMultiCourseGeneration(semesterId, 'retry', courseIds)
+      const prepared = await prepareConflictAwareGeneration(semesterId, courseIds, unavailableDates)
       if (prepared.replacementCourseIds.length > 0) setBatchPreparation(prepared)
       else await executeBatch(prepared, false)
     } catch (error) {
@@ -466,7 +471,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
                 </div>
                 <div className="planning-selectors">
                   {mode === 'single' && <SelectField label="Course" value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ` — unavailable: ${course.availability.reasons.join(', ')}` : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — not assigned to selected Semester' : ''}`} onChange={(value) => setSelectedCourseId(Number(value))} disabled={contextBusy} />}
-                  <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — unavailable' : ''}`} onChange={(value) => { setSemesterSelectionMissing(false); setSelectedSemesterId(Number(value)) }} disabled={contextBusy} />
+                  <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — unavailable' : ''}`} onChange={(value) => { setSemesterSelectionMissing(false); setSelectedSemesterId(Number(value)); setSelectedBatchCourseIds([]) }} disabled={contextBusy} />
                 </div>
                 {mode === 'single' ? (
                   <>
@@ -494,7 +499,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
                     </button>
                   </>
                 ) : (
-                  <MultiCourseGenerationPanel courses={semesterCourses} selectedCourseIds={selectedBatchCourseIds} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
+                  <MultiCourseGenerationPanel courses={semesterCourses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
                 )}
                 {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
               </>
@@ -562,8 +567,8 @@ function toFailures(error: unknown, fallback: string): GenerationFailure[] {
   return Array.isArray(error) ? error : [{ code: 'UNKNOWN', message: fallback }]
 }
 
-function toBatchErrors(error: unknown): BatchApiError[] {
-  return Array.isArray(error) ? error : [{ code: 'BATCH_OPERATION_FAILED', message: 'Multi-course generation failed.' }]
+function toBatchErrors(error: unknown): OptimizationError[] {
+  return Array.isArray(error) ? error : [{ code: 'OPTIMIZATION_OPERATION_FAILED', message: 'Semester optimization failed.' }]
 }
 
 type Selectable = { id: number }

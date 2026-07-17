@@ -33,6 +33,8 @@ The page calls the backend draft schedule endpoints:
 - `PATCH /api/draft-sessions/{sessionId}`
 - `POST /api/draft-schedules/batch/prepare`
 - `POST /api/draft-schedules/batch/generate`
+- `POST /api/draft-schedules/optimization/prepare`
+- `POST /api/draft-schedules/optimization/generate`
 
 Course and semester controls are loaded from backend planning data instead of being hardcoded in the client. The generation constraints panel lives in the planning input sidebar, loads defaults from the selected semester and course study type, then lets office staff override the planning period and allowed weekly teaching windows before generation. Those controls affect the next generated draft for the selected planning input; they are separate from overview filters.
 
@@ -53,13 +55,15 @@ The review panel supports:
 
 Manual edits update the saved draft schedule returned to the overview, so changed sessions and validation alerts remain visible while switching filters or list/weekly review modes. Validation alerts do not block generation or otherwise valid manual edits.
 
-The page has separate **One course** and **Several courses** modes. Batch selection never changes the focused Course editor or sends its unsaved local values. Staff can select 2-50 Courses, see the selected count, and clear the selection. The UI explains that every selected Course uses its own saved constraints or defaults.
+The page has separate **One course** and **Several courses** modes. The several-course mode now exposes **Optimize selected courses** for 1-20 Courses and optional comma-separated future unavailable dates. Selection remains visible during preparation, confirmation, solving, errors, and retry. Duplicate unavailable dates are deduplicated before the backend preparation is echoed.
 
 Before replacing same-semester Draft Schedules, the client shows the canonical preparation result and warns that manual edits will be lost. Cancel closes the dialog without an execution request. A normal execution displays aggregate counts and one ordered result row per Course, including all understandable failure reasons. **Retry failed courses** performs a fresh retry preparation for failed IDs only, including a single failed Course, without regenerating successes.
 
 Batch results are retained only in mounted React state. After every normal result, the complete selected-semester Courses overview refreshes once so existing non-blocking conflict alerts are recalculated across generated and pre-existing schedules. During refresh the last known overview remains mounted; a failed refresh preserves both the result and previous overview and offers a retry. A successful refresh resets overview filters and any open edit so new schedules are visible.
 
-Automatic conflict resolution, conflict-aware generation, room occupancy blocking, holiday warnings, exam controls, dashboard summaries, source planning-record editing, session creation/deletion/splitting/merging, persisted batch history, and background processing remain out of scope.
+The optimized result shows complete, improved partial, unchanged, failed, and stale counts; scheduled/remaining units; arrangement improvements; all returned blocking reasons; elapsed time; and prepared-snapshot proof wording. Existing/manual drafts are listed in a confirmation dialog and cannot lose units. Failed and stale retry always starts a fresh preparation. The complete semester overview and validation alerts refresh after a result while current review filters remain usable.
+
+Holiday administration, exams, automatic movement/deletion of unselected sessions, persisted optimization history, algorithm selection, fairness quotas, and background processing remain out of scope. The legacy FS-006 independent batch API remains available and unchanged even though the primary several-course screen uses conflict-aware optimization.
 
 ## Academic Data Administration
 

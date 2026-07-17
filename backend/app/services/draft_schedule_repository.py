@@ -144,7 +144,10 @@ def load_time_windows(db: Session, study_type_id: int) -> list[TimeWindowPlan]:
     rows = (
         db.execute(
             select(StudyTypeTimeWindow)
-            .where(StudyTypeTimeWindow.study_type_id == study_type_id)
+            .where(
+                StudyTypeTimeWindow.study_type_id == study_type_id,
+                StudyTypeTimeWindow.is_active.is_(True),
+            )
             .order_by(StudyTypeTimeWindow.sort_order, StudyTypeTimeWindow.weekday)
         )
         .scalars()

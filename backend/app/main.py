@@ -12,6 +12,7 @@ from app.api.draft_schedule import (
 from app.api.planning_options import router as planning_options_router
 from app.api.academic_catalog import router as academic_catalog_router
 from app.api.multi_course_generation import router as multi_course_router
+from app.api.conflict_aware_generation import router as conflict_aware_router
 from app.api.resource_catalog import academic_router as academic_resource_router, router as resource_catalog_router
 from app.db.schema import initialize_database
 from app.db.session import engine, get_db
@@ -40,6 +41,7 @@ app.include_router(constraints_router)
 app.include_router(overview_router)
 app.include_router(session_router)
 app.include_router(multi_course_router)
+app.include_router(conflict_aware_router)
 app.include_router(planning_options_router)
 app.include_router(academic_catalog_router)
 app.include_router(resource_catalog_router)

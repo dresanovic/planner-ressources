@@ -66,6 +66,27 @@ Every available Course is generated independently with its own saved Course-Seme
 
 Execution uses one outer transaction and a nested savepoint per successful Course candidate. Repository mutation helpers flush but do not commit; API boundaries own commit and rollback. Changed Draft Schedule or active constraint snapshots return stale Course failures. Any unexpected orchestration or persistence exception rolls back the complete attempt and returns `BATCH_OPERATION_FAILED` without uncommitted success outcomes. Batch results and retry sets are response/UI state only and are not persisted.
 
+## Conflict-Aware Semester Optimization (FS-010)
+
+FS-010 is an additive workflow; the existing single-course and independent FS-006 batch routes keep their established behavior. The new synchronous endpoints are:
+
+- `POST /api/draft-schedules/optimization/prepare`
+- `POST /api/draft-schedules/optimization/generate`
+
+Preparation accepts 1-20 distinct courses in one semester and optional unavailable dates. Duplicate unavailable dates are accepted and canonically deduplicated. It returns opaque shared/per-course snapshot tokens plus the exact existing drafts that require confirmation. Generation echoes that preparation and globally maximizes scheduled teaching units while treating unselected schedules and retained selected schedules as fixed occupancy. Generated sessions never introduce lecturer, room, or cohort overlaps and use only active, eligible, available, capacity-sufficient resources.
+
+The comparison order is strict: total units, retained conflict count, adjacent lecturer changes, adjacent room changes, complete-draft preservation, then canonical rank. The actual units already saved in each current draft are the replacement floor, including over-scheduled drafts. Equal-unit replacement occurs only for a strict higher-priority arrangement improvement; otherwise the draft and manual edits remain unchanged. Existing custom constraints and source academic/resource records are preserved. A successfully generated course that had no constraint set saves the exact defaults used.
+
+Only a result proven `OPTIMAL` at every comparison stage may save. Timeout, feasible-only, unknown, invalid-model, or unexpected operation failures roll back and return a no-save error. Inputs are fingerprinted before solve and reloaded before writes; stale courses remain unchanged, and exact unaffected results save only when they still validate without a second solve. `optimalForPreparedSnapshot` is true only when a solve completed and deliberately describes the prepared proof scope, not a refreshed-state global claim.
+
+Install the pinned solver runtime with `pip install -r requirements.txt`. Run focused verification from `backend/` with:
+
+```text
+python -m pytest tests/services/test_semester_optimization.py
+python -m pytest tests/services/test_conflict_aware_generation.py tests/api/test_conflict_aware_generation.py
+python -m pytest tests/performance/test_semester_optimization_performance.py
+```
+
 ## Migrations
 
 Migration scripts live in `backend/app/db/migrations/`. Migration `0002_course_semester_drafts` backfills optimistic revisions and changes Draft Schedule identity from Course-only to the `(course_id, semester_id)` pair using SQLite-compatible table recreation.
