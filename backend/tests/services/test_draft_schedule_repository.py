@@ -214,6 +214,49 @@ def test_draft_academic_snapshots_survive_source_edits():
     assert preserved.semester_name_snapshot == "Fall"
 
 
+def test_regeneration_recaptures_current_academic_snapshot():
+    db = make_session()
+    seed_course(db)
+    seed_draft(db)
+
+    course = db.get(Course, 1)
+    cohort = db.get(Cohort, 1)
+    study_type = db.get(StudyType, 1)
+    semester = db.get(Semester, 1)
+    course.name = "KI Grundlagen"
+    course.total_units = 22
+    course.min_session_units = 3
+    course.max_session_units = 5
+    cohort.name = "Data Science 2026"
+    cohort.student_count = 24
+    study_type.name = "Part-time"
+    semester.name = "Fall 2026"
+    semester.start_date = date(2026, 9, 1)
+    semester.end_date = date(2027, 2, 12)
+    db.flush()
+
+    regenerated = replace_draft_schedule(
+        db,
+        load_course_plan(db, 1),
+        1,
+        [GeneratedSession(date(2026, 9, 12), time(9), time(13, 25), 5, 1, 0)],
+    )
+
+    assert regenerated.revision == 2
+    assert regenerated.course_name_snapshot == "KI Grundlagen"
+    assert regenerated.course_total_units_snapshot == 22
+    assert regenerated.course_min_session_units_snapshot == 3
+    assert regenerated.course_max_session_units_snapshot == 5
+    assert regenerated.cohort_id_snapshot == 1
+    assert regenerated.cohort_name_snapshot == "Data Science 2026"
+    assert regenerated.cohort_size_snapshot == 24
+    assert regenerated.study_type_id_snapshot == 1
+    assert regenerated.study_type_name_snapshot == "Part-time"
+    assert regenerated.semester_name_snapshot == "Fall 2026"
+    assert regenerated.semester_start_date_snapshot == date(2026, 9, 1)
+    assert regenerated.semester_end_date_snapshot == date(2027, 2, 12)
+
+
 def test_generation_constraints_default_save_replace_and_clear():
     db = make_session()
     seed_course(db)

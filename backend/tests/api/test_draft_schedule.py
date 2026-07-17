@@ -300,6 +300,20 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
     assert payload["sessions"][0]["room"]["referenceCode"] == "ROOM-001"
 
 
+def test_regeneration_displays_the_current_course_name(client, db_session):
+    seed_valid_course(db_session)
+    first = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+    assert first.status_code == 201
+
+    db_session.get(Course, 1).name = "KI Grundlagen"
+    db_session.flush()
+
+    regenerated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+
+    assert regenerated.status_code == 201
+    assert regenerated.json()["context"]["course"] == {"id": 1, "name": "KI Grundlagen"}
+
+
 def test_create_manual_session_from_empty_and_partial_draft_returns_authoritative_progress(client, db_session):
     seed_valid_course(db_session, total_units=8)
     first = client.post("/api/courses/1/draft-schedule/sessions", json=manual_session_payload())

@@ -299,6 +299,25 @@ def clear_generation_constraints(db: Session, course_id: int, semester_id: int) 
         db.flush()
 
 
+def _capture_academic_snapshot(draft: DraftSchedule, course: Course, semester: Semester) -> None:
+    cohort = course.cohort
+    study_type = course.study_type
+    if cohort is None or study_type is None:
+        raise PlanningInputNotFoundError("Course planning input is incomplete.")
+    draft.course_name_snapshot = course.name
+    draft.course_total_units_snapshot = course.total_units
+    draft.course_min_session_units_snapshot = course.min_session_units
+    draft.course_max_session_units_snapshot = course.max_session_units
+    draft.cohort_id_snapshot = cohort.id
+    draft.cohort_name_snapshot = cohort.name
+    draft.cohort_size_snapshot = cohort.student_count
+    draft.study_type_id_snapshot = study_type.id
+    draft.study_type_name_snapshot = study_type.name
+    draft.semester_name_snapshot = semester.name
+    draft.semester_start_date_snapshot = semester.start_date
+    draft.semester_end_date_snapshot = semester.end_date
+
+
 def replace_draft_schedule(
     db: Session,
     course_plan: CoursePlan,
@@ -311,39 +330,27 @@ def replace_draft_schedule(
     draft = existing_draft
     if draft is _UNSET:
         draft = get_draft_schedule(db, course_plan.id, semester_id)
+    course = db.get(Course, course_plan.id)
+    semester = db.get(Semester, semester_id)
+    if course is None or semester is None:
+        raise PlanningInputNotFoundError("Course or Semester not found.")
+    is_new_draft = draft is None
     if draft is None:
-        course = db.get(Course, course_plan.id)
-        semester = db.get(Semester, semester_id)
-        if course is None or semester is None:
-            raise PlanningInputNotFoundError("Course or Semester not found.")
-        cohort = db.get(Cohort, course.cohort_id)
-        if cohort is None:
-            raise PlanningInputNotFoundError("Course planning input is incomplete.")
         draft = DraftSchedule(
             course_id=course_plan.id,
             semester_id=semester_id,
             selected_time_window_id=None,
             status="generated",
             revision=1,
-            course_name_snapshot=course.name,
-            course_total_units_snapshot=course.total_units,
-            course_min_session_units_snapshot=course.min_session_units,
-            course_max_session_units_snapshot=course.max_session_units,
-            cohort_id_snapshot=cohort.id,
-            cohort_name_snapshot=cohort.name,
-            cohort_size_snapshot=cohort.student_count,
-            study_type_id_snapshot=course.study_type_id,
-            study_type_name_snapshot=course.study_type.name,
-            semester_name_snapshot=semester.name,
-            semester_start_date_snapshot=semester.start_date,
-            semester_end_date_snapshot=semester.end_date,
         )
-        db.add(draft)
     else:
         draft.revision += 1
         db.execute(delete(DraftSession).where(DraftSession.draft_schedule_id == draft.id))
         db.flush()
         db.expire(draft, ["sessions"])
+    _capture_academic_snapshot(draft, course, semester)
+    if is_new_draft:
+        db.add(draft)
     draft.sessions = [
         DraftSession(
             course_id=course_plan.id,
@@ -455,19 +462,8 @@ def create_manual_draft_session(
                 selected_time_window_id=None,
                 status="draft",
                 revision=1,
-                course_name_snapshot=course.name,
-                course_total_units_snapshot=course.total_units,
-                course_min_session_units_snapshot=course.min_session_units,
-                course_max_session_units_snapshot=course.max_session_units,
-                cohort_id_snapshot=course.cohort.id,
-                cohort_name_snapshot=course.cohort.name,
-                cohort_size_snapshot=course.cohort.student_count,
-                study_type_id_snapshot=course.study_type.id,
-                study_type_name_snapshot=course.study_type.name,
-                semester_name_snapshot=semester.name,
-                semester_start_date_snapshot=semester.start_date,
-                semester_end_date_snapshot=semester.end_date,
             )
+            _capture_academic_snapshot(candidate, course, semester)
             candidate.sessions.append(
                 DraftSession(
                     course_id=course.id,
