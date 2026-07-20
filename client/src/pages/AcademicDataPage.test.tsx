@@ -367,8 +367,8 @@ describe('AcademicDataPage', () => {
   it('reports saved-session usage when it is the only resource retirement blocker', async () => {
     const lecturer = { id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 }
     mocks.listLecturers.mockResolvedValue(page([lecturer]))
-    mocks.getResourceUsage.mockResolvedValue({ resourceId: 1, revision: 1, disposition: 'inactivate', activeCourses: [], inactiveCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 } })
-    mocks.removeResource.mockResolvedValue({ outcome: 'inactivated', resource: { ...lecturer, isActive: false, revision: 2 }, activeCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 } })
+    mocks.getResourceUsage.mockResolvedValue({ resourceId: 1, revision: 1, disposition: 'inactivate', activeCourses: [], inactiveCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 }, examUsage: { examSessionCount: 0, currentConfigurationCount: 0 } })
+    mocks.removeResource.mockResolvedValue({ outcome: 'inactivated', resource: { ...lecturer, isActive: false, revision: 2 }, activeCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 }, examUsage: { examSessionCount: 0, currentConfigurationCount: 0 } })
 
     await renderPage('lecturers')
     await act(async () => { button('Remove')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })

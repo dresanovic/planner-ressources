@@ -13,6 +13,7 @@ from app.models.planning import (
     CourseEligibleRoom,
     DraftSchedule,
     DraftSession,
+    ExamSession,
     Lecturer,
     ResourceUnavailabilityPeriod,
     Room,
@@ -34,6 +35,7 @@ from app.services.resource_catalog import (
     get_course_resource_configuration,
     replace_course_eligibility,
 )
+from app.services.exam_scheduling import create_manual_exam, get_exam_planning_overview, save_exam_configuration
 
 
 @pytest.fixture()
@@ -61,6 +63,25 @@ def _add_saved_session(db: Session, course: Course, lecturer: Lecturer, room: Ro
     db.add(draft); db.flush()
     db.add(DraftSession(draft_schedule_id=draft.id, course_id=course.id, lecturer_id=lecturer.id, cohort_id=course.cohort_id, room_id=room.id, date=date(2026, 9, 7), start_time=time(8), end_time=time(10), units=2, constraint_window_index=0))
     db.flush()
+
+
+def test_exam_history_forces_resource_inactivation_and_is_preserved(db):
+    lecturer, _ = create_resource(db, Lecturer, name="Ada", reference_code="A")
+    room, _ = create_resource(db, Room, name="Room", reference_code="R", capacity=60)
+    course = _add_course(db, lecturer, room)
+    _add_saved_session(db, course, lecturer, room)
+    state, _ = save_exam_configuration(db, course_id=course.id, semester_id=course.current_semester_id, enabled=True, expected_revision=None, configuration={"identifier": "Exam", "duration_minutes": 60, "recommended_start_override": None, "recommended_end_override": None, "required_capacity": 40, "exam_type": "Written", "responsible_lecturer_id": lecturer.id}, today=date(2026, 9, 1))
+    create_manual_exam(db, course_id=course.id, semester_id=course.current_semester_id, exam_date=date(2026, 9, 21), start_time=time(12), lecturer_id=lecturer.id, room_id=room.id, expected_configuration_revision=1, input_snapshot_token=state["inputSnapshotToken"], today=date(2026, 9, 1))
+    db.flush()
+    lecturer_usage = assess_resource_usage(db, lecturer)
+    room_usage = assess_resource_usage(db, room)
+    assert lecturer_usage["disposition"] == "inactivate"
+    assert room_usage["disposition"] == "inactivate"
+    assert lecturer_usage["examUsage"] == {"examSessionCount": 1, "currentConfigurationCount": 1}
+    assert room_usage["examUsage"] == {"examSessionCount": 1, "currentConfigurationCount": 0}
+    exam_id = db.query(ExamSession.id).scalar()
+    remove_resource(db, lecturer, expected_revision=lecturer.revision, confirmed=True)
+    assert db.get(ExamSession, exam_id) is not None
 
 
 def test_create_allows_duplicate_names_but_rejects_normalized_code_and_invalid_fields(db):

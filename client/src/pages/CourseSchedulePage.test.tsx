@@ -14,6 +14,11 @@ const mocks = vi.hoisted(() => ({
   clearCourseDraft: vi.fn(),
   prepare: vi.fn(),
   generateBatch: vi.fn(),
+  getExamPlanningOverview: vi.fn(),
+  saveExamConfiguration: vi.fn(),
+  createManualExam: vi.fn(),
+  updateExam: vi.fn(),
+  deleteExam: vi.fn(),
 }))
 
 vi.mock('../api/planningOptions', () => ({ getPlanningOptions: mocks.getPlanningOptions }))
@@ -31,6 +36,13 @@ vi.mock('../api/conflictAwareGeneration', () => ({
   prepareConflictAwareGeneration: mocks.prepare,
   generateConflictAwareSchedules: mocks.generateBatch,
 }))
+vi.mock('../api/examScheduling', () => ({
+  getExamPlanningOverview: mocks.getExamPlanningOverview,
+  saveExamConfiguration: mocks.saveExamConfiguration,
+  createManualExam: mocks.createManualExam,
+  updateExam: mocks.updateExam,
+  deleteExam: mocks.deleteExam,
+}))
 
 import { CourseSchedulePage } from './CourseSchedulePage'
 import { draftScheduleFixture, generationConstraintsFixture } from '../test/draftScheduleFixtures'
@@ -44,12 +56,31 @@ const options = {
   semesters: [{ id: 1, name: 'Fall 2026', startDate: '2026-09-07', endDate: '2026-12-20' }],
   timeWindows: [], rooms: [{ id: 3, name: 'Large room', referenceCode: 'ROOM-003', capacity: 40, isActive: true, revision: 1 }], lecturers: [], courseResources: [],
 }
+const examOverview = {
+  semesterId: 1,
+  institutionToday: '2026-07-20',
+  courses: [1, 2].map((courseId) => ({
+    courseId,
+    courseName: `Course ${courseId}`,
+    semesterId: 1,
+    cohortId: courseId,
+    cohortName: `C${courseId}`,
+    enabled: false,
+    configuration: null,
+    finalTeachingAnchor: null,
+    activeExam: null,
+    pastExams: [],
+    generationEligibility: { eligible: false, code: 'DISABLED', message: 'Exam planning is disabled.' },
+    inputSnapshotToken: `exam-course-${courseId}`,
+  })),
+}
 
 beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset())
   mocks.getPlanningOptions.mockResolvedValue(options)
   mocks.getGenerationConstraints.mockResolvedValue(generationConstraintsFixture)
   mocks.getDraftSchedules.mockResolvedValue([])
+  mocks.getExamPlanningOverview.mockResolvedValue(examOverview)
 })
 
 afterEach(() => { document.body.innerHTML = '' })
@@ -73,6 +104,60 @@ function summaryValue(label: string) {
 }
 
 describe('CourseSchedulePage multi-course mode', () => {
+  it('blocks further exam writes when an authoritative post-save refresh fails', async () => {
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      lecturers: [{ id: 1, name: 'Ada', referenceCode: 'L-1', isActive: true, revision: 1 }],
+      courseResources: [{
+        courseId: 1,
+        eligibleLecturers: [{ id: 1, name: 'Ada', referenceCode: 'L-1', kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [] }],
+        eligibleRooms: [{ id: 3, name: 'Large room', referenceCode: 'ROOM-003', kind: 'room', capacity: 40, isActive: true, isEligible: true, isUsable: true, reasons: [] }],
+        preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true },
+      }],
+    })
+    const savedState = {
+      ...examOverview.courses[0], enabled: true,
+      configuration: { id: 10, revision: 1, identifier: 'Exam', durationMinutes: 90, recommendedStartOverride: null, recommendedEndOverride: null, requiredCapacity: 1, examType: 'Written', responsibleLecturerId: 1, configurationConsumed: false, recommendedStartDate: null, recommendedEndDate: null, recommendationWasOverridden: false },
+      generationEligibility: { eligible: false, code: 'FINAL_TEACHING_SESSION_MISSING', message: 'Save teaching first.' },
+    }
+    mocks.saveExamConfiguration.mockResolvedValue(savedState)
+    await renderPage()
+    mocks.getExamPlanningOverview.mockRejectedValueOnce(new Error('refresh failed'))
+    const requirement = [...document.querySelectorAll('label')].find((item) => item.textContent?.includes('This course requires an exam'))?.querySelector<HTMLInputElement>('input')
+    await act(async () => requirement?.click())
+    await act(async () => { button('Save exam requirement')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('saved, but the semester review could not be refreshed')
+    expect(requirement?.disabled).toBe(true)
+    expect(button('Saving…')?.disabled).toBe(true)
+  })
+
+  it('does not warn for disabled courses and explains an enabled course without a final teaching anchor', async () => {
+    const root = await renderPage()
+    expect(document.body.textContent).not.toContain('No final teaching session is saved yet.')
+
+    await act(async () => root.unmount())
+    document.body.innerHTML = ''
+
+    mocks.getExamPlanningOverview.mockResolvedValue({
+      ...examOverview,
+      courses: examOverview.courses.map((course) => course.courseId === 1 ? {
+        ...course,
+        enabled: true,
+        configuration: {
+          id: 10, revision: 1, identifier: 'Final exam', durationMinutes: 90,
+          recommendedStartOverride: null, recommendedEndOverride: null,
+          requiredCapacity: 30, examType: 'Written', responsibleLecturerId: 1,
+          configurationConsumed: false, recommendedStartDate: null,
+          recommendedEndDate: null, recommendationWasOverridden: false,
+        },
+        generationEligibility: { eligible: false, code: 'FINAL_TEACHING_SESSION_MISSING', message: 'A final teaching session is required.' },
+      } : course),
+    })
+    await renderPage()
+    expect(document.body.textContent).toContain('No final teaching session is saved yet.')
+    expect(document.body.textContent).toContain('automatic and manual placement remain unavailable')
+  })
+
   it('renders scheduling content without page-owned or dead hash navigation', async () => {
     await renderPage()
     expect(document.querySelector('nav')).toBeNull()

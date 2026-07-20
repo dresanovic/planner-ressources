@@ -7,6 +7,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Time,
@@ -212,6 +213,10 @@ class Course(Base):
         cascade="all, delete-orphan",
         order_by="CourseEligibleRoom.room_id",
     )
+    exam_configurations: Mapped[list["CourseExamConfiguration"]] = relationship(
+        back_populates="course", cascade="all, delete-orphan"
+    )
+    exam_sessions: Mapped[list["ExamSession"]] = relationship(back_populates="course")
 
     @property
     def lecturer_id(self) -> int | None:
@@ -428,3 +433,89 @@ class DraftSession(Base):
     constraint_window_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     draft_schedule: Mapped[DraftSchedule] = relationship(back_populates="sessions")
+
+
+class CourseExamConfiguration(Base):
+    __tablename__ = "course_exam_configurations"
+    __table_args__ = (
+        UniqueConstraint("course_id", "semester_id", name="uq_course_exam_configuration_course_semester"),
+        CheckConstraint("duration_minutes IS NULL OR duration_minutes > 0", name="ck_exam_configuration_duration_positive"),
+        CheckConstraint("required_capacity IS NULL OR required_capacity > 0", name="ck_exam_configuration_capacity_positive"),
+        CheckConstraint("revision > 0", name="ck_exam_configuration_revision_positive"),
+        CheckConstraint(
+            "(recommended_start_override IS NULL AND recommended_end_override IS NULL) OR "
+            "(recommended_start_override IS NOT NULL AND recommended_end_override IS NOT NULL AND recommended_end_override >= recommended_start_override)",
+            name="ck_exam_configuration_recommendation_pair",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False)
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    identifier: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    recommended_start_override: Mapped[date | None] = mapped_column(Date, nullable=True)
+    recommended_end_override: Mapped[date | None] = mapped_column(Date, nullable=True)
+    required_capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    exam_type: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    responsible_lecturer_id: Mapped[int | None] = mapped_column(ForeignKey("lecturers.id"), nullable=True)
+    configuration_consumed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
+
+    course: Mapped[Course] = relationship(back_populates="exam_configurations")
+    semester: Mapped[Semester] = relationship()
+    responsible_lecturer: Mapped[Lecturer | None] = relationship()
+
+
+class ExamSession(Base):
+    __tablename__ = "exam_sessions"
+    __table_args__ = (
+        CheckConstraint("duration_minutes > 0", name="ck_exam_session_duration_positive"),
+        CheckConstraint("required_capacity > 0", name="ck_exam_session_capacity_positive"),
+        CheckConstraint("revision > 0", name="ck_exam_session_revision_positive"),
+        CheckConstraint("end_time > start_time", name="ck_exam_session_interval"),
+        CheckConstraint("source IN ('generated', 'manual')", name="ck_exam_session_source"),
+        Index("ix_exam_session_course_semester_date", "course_id", "semester_id", "exam_date"),
+        Index("ix_exam_session_lecturer_occupancy", "semester_id", "exam_date", "lecturer_id"),
+        Index("ix_exam_session_room_occupancy", "semester_id", "exam_date", "room_id"),
+        Index("ix_exam_session_cohort_occupancy", "semester_id", "exam_date", "cohort_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), nullable=False)
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id"), nullable=False)
+    lecturer_id: Mapped[int] = mapped_column(ForeignKey("lecturers.id"), nullable=False)
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False)
+    exam_date: Mapped[date] = mapped_column(Date, nullable=False)
+    start_time: Mapped[time] = mapped_column(Time, nullable=False)
+    end_time: Mapped[time] = mapped_column(Time, nullable=False)
+    source: Mapped[str] = mapped_column(String(20), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    configuration_identifier: Mapped[str] = mapped_column(String(200), nullable=False)
+    configuration_revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    exam_type: Mapped[str] = mapped_column(String(200), nullable=False)
+    required_capacity: Mapped[int] = mapped_column(Integer, nullable=False)
+    recommended_start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    recommended_end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    recommendation_was_overridden: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    final_teaching_date: Mapped[date] = mapped_column(Date, nullable=False)
+    final_teaching_end_time: Mapped[time] = mapped_column(Time, nullable=False)
+    final_teaching_session_id_snapshot: Mapped[int] = mapped_column(Integer, nullable=False)
+    course_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
+    semester_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
+    cohort_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
+    lecturer_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
+    lecturer_reference_snapshot: Mapped[str] = mapped_column(String(100), nullable=False)
+    room_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
+    room_reference_snapshot: Mapped[str] = mapped_column(String(100), nullable=False)
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
+
+    course: Mapped[Course] = relationship(back_populates="exam_sessions")
+    semester: Mapped[Semester] = relationship()
+    cohort: Mapped[Cohort] = relationship()
+    lecturer: Mapped[Lecturer] = relationship()
+    room: Mapped[Room] = relationship()

@@ -7,10 +7,11 @@ export type ResourceRecord = LecturerRecord | RoomRecord
 export type ResourcePage<T> = { page: number; pageSize: number; total: number; items: T[] }
 export type CourseIdentity = { id: number; name: string }
 export type SessionUsage = { draftSessionCount: number; draftScheduleCount: number }
-export type ResourceUsageAssessment = { resourceId: number; revision: number; disposition: 'delete' | 'inactivate'; activeCourses: CourseIdentity[]; inactiveCourses: CourseIdentity[]; sessionUsage: SessionUsage }
+export type ExamUsage = { examSessionCount: number; currentConfigurationCount: number }
+export type ResourceUsageAssessment = { resourceId: number; revision: number; disposition: 'delete' | 'inactivate'; activeCourses: CourseIdentity[]; inactiveCourses: CourseIdentity[]; sessionUsage: SessionUsage; examUsage: ExamUsage }
 export type RelationshipStatus = { course: CourseIdentity; resourceId: number; usable: boolean; reasons: string[] }
 export type DeletedResourceResult = { outcome: 'deleted'; resourceId: number; removedInactiveCourseLinks: CourseIdentity[] }
-export type InactivatedResourceResult<T extends ResourceRecord = ResourceRecord> = { outcome: 'inactivated'; resource: T; activeCourses: CourseIdentity[]; sessionUsage: SessionUsage }
+export type InactivatedResourceResult<T extends ResourceRecord = ResourceRecord> = { outcome: 'inactivated'; resource: T; activeCourses: CourseIdentity[]; sessionUsage: SessionUsage; examUsage: ExamUsage }
 export type ResourceRemovalResult<T extends ResourceRecord = ResourceRecord> = DeletedResourceResult | InactivatedResourceResult<T>
 export type ResourceReactivationResult<T extends ResourceRecord = ResourceRecord> = { resource: T; restoredRelationships: CourseIdentity[]; unusableRelationships: RelationshipStatus[] }
 export type RoomMutationResult = { room: RoomRecord; affectedRelationships: RelationshipStatus[] }

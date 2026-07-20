@@ -40,19 +40,30 @@ def initialize_database(engine: Engine) -> None:
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
                     inspector = inspect(connection)
-                if not _is_pre_holiday_schema(inspector):
+                if _is_pre_exam_schema(inspector):
+                    migration = _load_migration("0006_conflict_aware_exam_scheduling.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                    inspector = inspect(connection)
+                elif not _is_pre_holiday_schema(inspector):
                     raise UnsupportedSchemaStateError(
                         "Database schema is not a supported FS-001 through FS-010 state. "
                         "Back up the database and inspect its migration state."
                     )
 
-                migration = _load_migration("0005_institution_holidays.py")
-                migration.op = Operations(MigrationContext.configure(connection))
-                migration.upgrade()
+                if not _is_pre_exam_schema(inspector) and "institution_holidays" not in inspector.get_table_names():
+                    migration = _load_migration("0005_institution_holidays.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                    inspector = inspect(connection)
+                if _is_pre_exam_schema(inspector):
+                    migration = _load_migration("0006_conflict_aware_exam_scheduling.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
 
                 if not _is_current_schema(inspect(connection)):
                     raise UnsupportedSchemaStateError(
-                        "FS-011 database migration completed without producing the expected schema."
+                        "FS-012 database migration completed without producing the expected schema."
                     )
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=ON")
@@ -61,6 +72,24 @@ def initialize_database(engine: Engine) -> None:
 
 
 def _is_current_schema(inspector) -> bool:
+    return (
+        _has_holiday_schema(inspector)
+        and {"course_exam_configurations", "exam_sessions"}.issubset(inspector.get_table_names())
+        and {"course_id", "semester_id", "enabled", "revision"}.issubset(_column_names(inspector, "course_exam_configurations"))
+        and {"exam_date", "start_time", "end_time", "source", "revision", "final_teaching_session_id_snapshot"}.issubset(_column_names(inspector, "exam_sessions"))
+        and _has_unique_columns(inspector, "course_exam_configurations", ("course_id", "semester_id"))
+    )
+
+
+def _is_pre_exam_schema(inspector) -> bool:
+    return (
+        _has_holiday_schema(inspector)
+        and "course_exam_configurations" not in inspector.get_table_names()
+        and "exam_sessions" not in inspector.get_table_names()
+    )
+
+
+def _has_holiday_schema(inspector) -> bool:
     return (
         _is_pre_holiday_schema(inspector)
         and "institution_holidays" in inspector.get_table_names()

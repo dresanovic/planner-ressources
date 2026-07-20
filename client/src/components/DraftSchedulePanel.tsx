@@ -14,6 +14,7 @@ import type {
 } from '../api/draftSchedule'
 import type { PlanningOptions, RoomOption } from '../api/planningOptions'
 import type { LecturerRecord, ResourceCandidate } from '../api/resourceCatalog'
+import type { ExamSession } from '../api/examScheduling'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
 import {
   groupSessionsByWeek,
@@ -29,6 +30,10 @@ type DraftSchedulePanelProps = {
   onDeleteSession?: (session: DraftSession, schedule: DraftSchedule) => void
   resetKey?: number
   isBusy?: boolean
+  exams?: ExamSession[]
+  onEditExam?: (exam: ExamSession) => void
+  onDeleteExam?: (exam: ExamSession) => void
+  examCourseNames?: Record<number, string>
 }
 
 export function DraftSchedulePanel(props: DraftSchedulePanelProps) {
@@ -43,6 +48,10 @@ function DraftSchedulePanelStateful({
   onUpdateSession,
   onDeleteSession,
   isBusy = false,
+  exams = [],
+  onEditExam,
+  onDeleteExam,
+  examCourseNames = {},
 }: DraftSchedulePanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [filters, setFilters] = useState<ReviewFilters>({})
@@ -54,11 +63,17 @@ function DraftSchedulePanelStateful({
     () => flattenSchedules(schedules, rooms, lecturers, courseResources),
     [schedules, rooms, lecturers, courseResources],
   )
-  const filterOptions = useMemo(() => buildFilterOptions(overviewSessions, schedules), [overviewSessions, schedules])
+  const filterOptions = useMemo(() => buildFilterOptions(overviewSessions, schedules, exams, examCourseNames), [overviewSessions, schedules, exams, examCourseNames])
   const visibleSessions = sortSessionsChronologically(
     overviewSessions.filter((session) => matchesFilters(session, filters)),
   )
   const hasActiveFilters = Object.values(filters).some((value) => value !== undefined)
+  const visibleExams = exams.filter((exam) => (
+    (filters.courseId === undefined || exam.courseId === filters.courseId) &&
+    (filters.cohortId === undefined || exam.cohort.id === filters.cohortId) &&
+    (filters.lecturerId === undefined || exam.lecturer.id === filters.lecturerId) &&
+    (filters.roomId === undefined || exam.room.id === filters.roomId)
+  )).sort((left, right) => `${left.date}-${left.startTime}-${left.id}`.localeCompare(`${right.date}-${right.startTime}-${right.id}`))
 
   return (
     <section className={`planner-panel ${isBusy ? 'overview-busy' : ''}`} aria-labelledby="courses-overview-title" aria-busy={isBusy}>
@@ -69,7 +84,7 @@ function DraftSchedulePanelStateful({
         </div>
       </div>
 
-      {overviewSessions.length > 0 ? (
+      {overviewSessions.length > 0 || exams.length > 0 ? (
         <>
           <div className="filter-bar" aria-label="Draft session filters">
             <FilterSelect
@@ -130,7 +145,7 @@ function DraftSchedulePanelStateful({
           </div>
 
           {visibleSessions.length === 0 ? (
-            <p className="empty-state">No sessions match the active filters.</p>
+            visibleExams.length === 0 && <p className="empty-state">No sessions match the active filters.</p>
           ) : viewMode === 'list' ? (
             <div className="session-table" aria-label="Draft sessions">
               <div className="session-row session-header">
@@ -219,6 +234,19 @@ function DraftSchedulePanelStateful({
                   </div>
                 </section>
               ))}
+            </div>
+          )}
+          {visibleExams.length > 0 && (
+            <div className="session-table exam-session-table" aria-label="Exam sessions">
+              <div className="session-row exam-session-row session-header"><span>Kind</span><span>Date and time</span><span>Lifecycle</span><span>Exam</span><span>Course</span><span>Cohort</span><span>Lecturer</span><span>Room</span><span>Actions</span></div>
+              {visibleExams.map((exam) => <div className="session-row exam-session-row" key={`exam-${exam.id}`}>
+                <span><strong>Exam</strong>{exam.source === 'generated' ? ' · Generated' : ' · Manual'}</span>
+                <span>{exam.date}<br/>{exam.startTime}-{exam.endTime} ({exam.durationMinutes} min)</span>
+                <span className={`exam-lifecycle ${exam.lifecycleStatus}`}>{exam.lifecycleStatus === 'active' ? 'Active' : 'Past'}</span>
+                <span>{exam.configurationIdentifier}<br/>{exam.examType}<small>Recommended {exam.recommendedStartDate}–{exam.recommendedEndDate}{exam.recommendationWasOverridden ? ' (planner override)' : ''}</small><small>Final teaching {exam.finalTeachingAnchor.date} at {exam.finalTeachingAnchor.endTime}</small>{exam.outsideRecommendedWindow && <small className="soft-notice"> Outside recommended window</small>}{exam.validityIssues.map((issue, index) => <small className="validation-alert" key={`${issue.code}-${index}`}>{issue.code.replaceAll('_', ' ')}: {issue.message}</small>)}</span>
+                <span>{examCourseNames[exam.courseId] ?? `Course #${exam.courseId}`}</span><span>{exam.cohort.name}</span><span>{resourceLabel(exam.lecturer)}</span><span>{resourceLabel(exam.room)} · capacity {exam.room.capacity}/{exam.requiredCapacity} required</span>
+                <span className="session-actions"><button type="button" className="secondary-button compact-button" disabled={isBusy} onClick={()=>onEditExam?.(exam)}>Edit</button><button type="button" className="destructive-button compact-button" disabled={isBusy} onClick={()=>onDeleteExam?.(exam)}>Delete</button></span>
+              </div>)}
             </div>
           )}
         </>
@@ -654,12 +682,12 @@ function flattenSchedules(
   )
 }
 
-function buildFilterOptions(sessions: OverviewSession[], schedules: DraftSchedule[]): FilterOptions {
+function buildFilterOptions(sessions: OverviewSession[], schedules: DraftSchedule[], exams: ExamSession[] = [], examCourseNames: Record<number, string> = {}): FilterOptions {
   return {
-    courses: uniqueEntities(schedules.map((schedule) => schedule.context.course)),
-    cohorts: uniqueEntities(schedules.map((schedule) => schedule.context.cohort)),
-    lecturers: uniqueEntities(sessions.map((session) => ({ id: session.lecturerId, name: resourceLabel(session.lecturer) }))),
-    rooms: uniqueEntities(sessions.map((session) => ({ id: session.roomId, name: resourceLabel(session.room) }))),
+    courses: uniqueEntities([...schedules.map((schedule) => schedule.context.course), ...exams.map((exam) => ({ id: exam.courseId, name: examCourseNames[exam.courseId] ?? `Course #${exam.courseId}` }))]),
+    cohorts: uniqueEntities([...schedules.map((schedule) => schedule.context.cohort), ...exams.map((exam) => ({ id: exam.cohort.id, name: exam.cohort.name }))]),
+    lecturers: uniqueEntities([...sessions.map((session) => ({ id: session.lecturerId, name: resourceLabel(session.lecturer) })), ...exams.map((exam) => ({ id: exam.lecturer.id, name: resourceLabel(exam.lecturer) }))]),
+    rooms: uniqueEntities([...sessions.map((session) => ({ id: session.roomId, name: resourceLabel(session.room) })), ...exams.map((exam) => ({ id: exam.room.id, name: resourceLabel(exam.room) }))]),
     studyTypes: uniqueEntities(schedules.map((schedule) => schedule.context.studyType)),
   }
 }
@@ -676,7 +704,7 @@ function editableCandidates(candidates: ResourceCandidate[], current: EditableRe
   return options.some((option) => option.id === current.id) ? options : [current, ...options]
 }
 
-function resourceLabel(resource: { name: string; referenceCode?: string }): string {
+function resourceLabel(resource: { name: string; referenceCode?: string | null }): string {
   return resource.referenceCode ? `${resource.name} Â· ${resource.referenceCode}` : resource.name
 }
 

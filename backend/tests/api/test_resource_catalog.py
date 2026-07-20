@@ -31,6 +31,7 @@ def test_lecturer_crud_search_usage_delete_and_not_found(client):
     assert client.get("/api/resources/lecturers/1").json()["name"] == "Ada"
     usage = client.get("/api/resources/lecturers/1/usage")
     assert usage.json()["disposition"] == "delete"
+    assert usage.json()["examUsage"] == {"examSessionCount": 0, "currentConfigurationCount": 0}
     updated = client.patch("/api/resources/lecturers/1", json={"name": "Ada L.", "referenceCode": "LECT-A", "expectedRevision": 1})
     assert updated.json()["revision"] == 2
     removed = client.delete("/api/resources/lecturers/1?expectedRevision=2&confirmed=true")

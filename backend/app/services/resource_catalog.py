@@ -9,6 +9,8 @@ from app.models.planning import (
     CourseEligibleLecturer,
     CourseEligibleRoom,
     DraftSession,
+    ExamSession,
+    CourseExamConfiguration,
     Lecturer,
     Room,
     ResourceUnavailabilityPeriod,
@@ -258,16 +260,24 @@ def assess_resource_usage(db: Session, row) -> dict:
     draft_schedule_count = int(
         db.execute(select(func.count(func.distinct(DraftSession.draft_schedule_id))).where(resource_column == row.id)).scalar_one()
     )
+    exam_column = ExamSession.lecturer_id if isinstance(row, Lecturer) else ExamSession.room_id
+    exam_session_count = int(
+        db.execute(select(func.count()).select_from(ExamSession).where(exam_column == row.id)).scalar_one()
+    )
+    configured_count = 0
+    if isinstance(row, Lecturer):
+        configured_count = int(db.execute(select(func.count()).select_from(CourseExamConfiguration).where(CourseExamConfiguration.responsible_lecturer_id == row.id, CourseExamConfiguration.enabled.is_(True))).scalar_one())
     return {
         "resourceId": row.id,
         "revision": row.revision,
-        "disposition": "inactivate" if active_courses or draft_session_count else "delete",
+        "disposition": "inactivate" if active_courses or draft_session_count or exam_session_count or configured_count else "delete",
         "activeCourses": active_courses,
         "inactiveCourses": inactive_courses,
         "sessionUsage": {
             "draftSessionCount": draft_session_count,
             "draftScheduleCount": draft_schedule_count,
         },
+        "examUsage": {"examSessionCount": exam_session_count, "currentConfigurationCount": configured_count},
     }
 
 
@@ -300,6 +310,7 @@ def remove_resource(
         "resource": row,
         "activeCourses": usage["activeCourses"],
         "sessionUsage": usage["sessionUsage"],
+        "examUsage": usage["examUsage"],
     }
 
 

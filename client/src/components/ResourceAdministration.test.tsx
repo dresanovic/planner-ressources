@@ -41,9 +41,11 @@ describe('resource administration components', () => {
   it('shows consequences and cancellation issues no removal request', async () => {
     const onConfirm = vi.fn()
     const onClose = vi.fn()
-    await render(<ResourceRemovalDialog resourceName="Ada · A-1" assessment={{ resourceId: 1, revision: 1, disposition: 'inactivate', activeCourses: [{ id: 2, name: 'Scheduling' }], inactiveCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 } }} onConfirm={onConfirm} onClose={onClose} />)
+    await render(<ResourceRemovalDialog resourceName="Ada · A-1" assessment={{ resourceId: 1, revision: 1, disposition: 'inactivate', activeCourses: [{ id: 2, name: 'Scheduling' }], inactiveCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 }, examUsage: { examSessionCount: 3, currentConfigurationCount: 1 } }} onConfirm={onConfirm} onClose={onClose} />)
     expect(document.body.textContent).toContain('Scheduling')
     expect(document.body.textContent).toContain('2 saved sessions')
+    expect(document.body.textContent).toContain('3 saved exams')
+    expect(document.body.textContent).toContain('1 enabled exam configuration')
     await act(async () => { button('Cancel')?.click() })
     expect(onClose).toHaveBeenCalledOnce()
     expect(onConfirm).not.toHaveBeenCalled()
@@ -57,7 +59,7 @@ describe('resource administration components', () => {
     const root = createRoot(host)
     const onClose = vi.fn(() => root.render(null))
     await act(async () => {
-      root.render(<ResourceRemovalDialog resourceName="Ada · A-1" assessment={{ resourceId: 1, revision: 1, disposition: 'delete', activeCourses: [], inactiveCourses: [], sessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }} onConfirm={vi.fn()} onClose={onClose} />)
+      root.render(<ResourceRemovalDialog resourceName="Ada · A-1" assessment={{ resourceId: 1, revision: 1, disposition: 'delete', activeCourses: [], inactiveCourses: [], sessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 }, examUsage: { examSessionCount: 0, currentConfigurationCount: 0 } }} onConfirm={vi.fn()} onClose={onClose} />)
       await Promise.resolve()
     })
     const cancel = button('Cancel')!

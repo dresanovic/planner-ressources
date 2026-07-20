@@ -11,6 +11,8 @@ from app.models.planning import (
     CourseEligibleRoom,
     DraftSchedule,
     DraftSession,
+    ExamSession,
+    CourseExamConfiguration,
     GenerationConstraintSet,
     GenerationConstraintWindow,
     Semester,
@@ -325,15 +327,17 @@ def usage_for(db: Session, row) -> dict:
     if isinstance(row, Semester):
         course_count = _count(db, select(func.count()).select_from(Course).where(Course.current_semester_id == row.id))
         constraint_count = _count(db, select(func.count()).select_from(GenerationConstraintSet).where(GenerationConstraintSet.semester_id == row.id))
-        saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.semester_id == row.id))
+        saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.semester_id == row.id)) + _count(db, select(func.count()).select_from(ExamSession).where(ExamSession.semester_id == row.id))
         dependent.extend(({"type": "course", "count": course_count}, {"type": "generation_constraint_set", "count": constraint_count}))
     elif isinstance(row, Cohort):
         course_count = _count(db, select(func.count()).select_from(Course).where(Course.cohort_id == row.id))
-        saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.cohort_id_snapshot == row.id))
+        saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.cohort_id_snapshot == row.id)) + _count(db, select(func.count()).select_from(ExamSession).where(ExamSession.cohort_id == row.id))
         dependent.append({"type": "course", "count": course_count})
     elif isinstance(row, Course):
         constraint_count = _count(db, select(func.count()).select_from(GenerationConstraintSet).where(GenerationConstraintSet.course_id == row.id))
-        saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.course_id == row.id))
+        saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.course_id == row.id)) + _count(db, select(func.count()).select_from(ExamSession).where(ExamSession.course_id == row.id))
+        configuration_count = _count(db, select(func.count()).select_from(CourseExamConfiguration).where(CourseExamConfiguration.course_id == row.id))
+        dependent.append({"type": "exam_configuration", "count": configuration_count})
         dependent.append({"type": "generation_constraint_set", "count": constraint_count})
     elif isinstance(row, StudyType):
         course_count = _count(db, select(func.count()).select_from(Course).where(Course.study_type_id == row.id))
@@ -365,6 +369,9 @@ def update_semester(db: Session, row: Semester, *, name: str, start_date, end_da
     outside = db.execute(select(DraftSession.date).join(DraftSchedule).where(DraftSchedule.semester_id == row.id, (DraftSession.date < start_date) | (DraftSession.date > end_date)).limit(1)).scalar_one_or_none()
     if outside is not None:
         errors.append(CatalogErrorItem("SAVED_SESSION_OUTSIDE_SEMESTER", "Saved sessions must remain inside the Semester dates.", "startDate", {"sessionDate": outside.isoformat()}))
+    outside_exam = db.execute(select(ExamSession.exam_date).where(ExamSession.semester_id == row.id, (ExamSession.exam_date < start_date) | (ExamSession.exam_date > end_date)).limit(1)).scalar_one_or_none()
+    if outside_exam is not None:
+        errors.append(CatalogErrorItem("SAVED_EXAM_OUTSIDE_SEMESTER", "Saved exams must remain inside the Semester dates.", "startDate", {"examDate": outside_exam.isoformat()}))
     if errors:
         raise AcademicCatalogError(422, errors)
     row.name, row.normalized_name, row.normalized_name_key = display, canonical, canonical

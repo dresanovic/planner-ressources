@@ -13,6 +13,7 @@ import {
 } from '../test/draftScheduleFixtures'
 import type { DraftSchedule, GenerationConstraints, UpdateDraftSessionRequest } from '../api/draftSchedule'
 import type { PlanningOptions } from '../api/planningOptions'
+import type { ExamSession } from '../api/examScheduling'
 
 function renderPanel({
   schedules = [draftScheduleFixture],
@@ -20,12 +21,16 @@ function renderPanel({
   onDeleteSession = vi.fn(),
   courseResources = [],
   isBusy = false,
+  exams = [],
+  examCourseNames = {},
 }: {
   schedules?: DraftSchedule[]
   onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
   onDeleteSession?: (session: DraftSchedule['sessions'][number], schedule: DraftSchedule) => void
   courseResources?: PlanningOptions['courseResources']
   isBusy?: boolean
+  exams?: ExamSession[]
+  examCourseNames?: Record<number, string>
 } = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
@@ -38,6 +43,8 @@ function renderPanel({
         onUpdateSession={onUpdateSession}
         onDeleteSession={onDeleteSession}
         isBusy={isBusy}
+        exams={exams}
+        examCourseNames={examCourseNames}
       />,
     )
   })
@@ -89,6 +96,18 @@ function buttonByText(label: string) {
 }
 
 describe('DraftSchedulePanel', () => {
+  it('shows retained recommendation and final-teaching context for exams', () => {
+    renderPanel({ schedules: [], examCourseNames: { 1: 'Planning 101' }, exams: [{
+      id: 1, revision: 1, courseId: 1, semesterId: 1, configurationIdentifier: 'Final', examType: 'Written', durationMinutes: 90, requiredCapacity: 30,
+      recommendedStartDate: '2026-10-09', recommendedEndDate: '2026-10-16', recommendationWasOverridden: true, outsideRecommendedWindow: false,
+      finalTeachingAnchor: { date: '2026-10-02', endTime: '12:00', teachingSessionId: 42 }, date: '2026-10-16', startTime: '09:00', endTime: '10:30',
+      lecturer: { id: 1, name: 'Ada', referenceCode: 'L-1' }, cohort: { id: 1, name: 'C1', referenceCode: null }, room: { id: 1, name: 'R1', referenceCode: 'R-1', capacity: 40 },
+      lifecycleStatus: 'active', source: 'manual', validityIssues: [], inputSnapshotToken: 'token',
+    }] })
+    expect(document.body.textContent).toContain('Recommended 2026-10-09–2026-10-16 (planner override)')
+    expect(document.body.textContent).toContain('Final teaching 2026-10-02 at 12:00')
+  })
+
   it('renders generated sessions chronologically with planning context', () => {
     renderPanel()
 

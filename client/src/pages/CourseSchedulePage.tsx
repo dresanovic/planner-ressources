@@ -33,6 +33,23 @@ import { MultiCourseGenerationPanel } from '../components/MultiCourseGenerationP
 import { ReplacementConfirmationDialog } from '../components/ReplacementConfirmationDialog'
 import { calculateDefaultEndTime, deriveCourseProgress, isValidSessionTimeRange } from '../components/manualSessionUtils'
 import { ScheduleDeletionDialog, type ScheduleDeletionScope } from '../components/ScheduleDeletionDialog'
+import {
+  createManualExam,
+  deleteExam,
+  getExamPlanningOverview,
+  saveExamConfiguration,
+  updateExam,
+  type CreateManualExamRequest,
+  type ExamPlanningOverview,
+  type ExamSession,
+  type ExamSchedulingApiError,
+  type SaveExamConfigurationRequest,
+  type UpdateExamRequest,
+} from '../api/examScheduling'
+import { ExamRequirementEditor } from '../components/ExamRequirementEditor'
+import { ExamGenerationPanel } from '../components/ExamGenerationPanel'
+import { ExamManualSessionEditor } from '../components/ExamManualSessionEditor'
+import { ExamDeletionDialog } from '../components/ExamDeletionDialog'
 
 type GenerationMode = 'single' | 'batch'
 type SessionDeletionConfirmation = {
@@ -81,6 +98,12 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const [deletionBusy, setDeletionBusy] = useState(false)
   const [deletionErrors, setDeletionErrors] = useState<GenerationFailure[]>([])
   const [deletionNotice, setDeletionNotice] = useState('')
+  const [examOverview, setExamOverview] = useState<ExamPlanningOverview | null>(null)
+  const [examRefreshError, setExamRefreshError] = useState(false)
+  const [examBusy, setExamBusy] = useState(false)
+  const [examError, setExamError] = useState('')
+  const [examEditor, setExamEditor] = useState<'create' | ExamSession | null>(null)
+  const [examDeletion, setExamDeletion] = useState<ExamSession | null>(null)
   const selectedCourseIdRef = useRef<number | null>(null)
   const selectedSemesterIdRef = useRef<number | null>(null)
 
@@ -122,8 +145,15 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     [planningOptions, selectedCourse],
   )
   const mutationBusy = singleGenerating || batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy
-  const contextBusy = mutationBusy || overviewLoading
-  const writeBusy = contextBusy || overviewRefreshError
+  const contextBusy = mutationBusy || overviewLoading || examBusy
+  const writeBusy = contextBusy || overviewRefreshError || examRefreshError
+  const currentExamOverview = examOverview?.semesterId === selectedSemesterId ? examOverview : null
+  const selectedExamState = useMemo(() => currentExamOverview?.courses.find((course) => course.courseId === selectedCourseId) ?? null, [currentExamOverview, selectedCourseId])
+  const selectedCourseResources = useMemo(() => planningOptions?.courseResources.find((item) => item.courseId === selectedCourseId), [planningOptions, selectedCourseId])
+  const examLecturers = useMemo(() => (selectedCourseResources?.eligibleLecturers ?? []).filter((item) => item.isEligible && item.isUsable).map((item) => ({ id: item.id, name: item.name, referenceCode: item.referenceCode })), [selectedCourseResources])
+  const examRooms = useMemo(() => (selectedCourseResources?.eligibleRooms ?? []).filter((item) => item.isEligible && item.isUsable).map((item) => ({ id: item.id, name: item.name, capacity: item.capacity ?? undefined })), [selectedCourseResources])
+  const allExams = useMemo(() => currentExamOverview?.courses.flatMap((course) => [...(course.activeExam ? [course.activeExam] : []), ...course.pastExams]) ?? [], [currentExamOverview])
+  const examCourseNames = useMemo(() => Object.fromEntries((currentExamOverview?.courses ?? []).map((course) => [course.courseId, course.courseName])), [currentExamOverview])
 
   useEffect(() => {
     let current = true
@@ -199,12 +229,47 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     return () => { current = false }
   }, [selectedSemesterId, catalogRevision])
 
+  useEffect(() => {
+    if (!selectedSemesterId) return
+    let current = true
+    void getExamPlanningOverview(selectedSemesterId).then((value) => { if (current) { setExamOverview(value); setExamRefreshError(false) } }).catch(() => { if (current) setExamRefreshError(true) })
+    return () => { current = false }
+  }, [selectedSemesterId, catalogRevision])
+
+  async function refreshExamOverview(semesterId = selectedSemesterId) {
+    if (!semesterId) return false
+    try { const value = await getExamPlanningOverview(semesterId); if (selectedSemesterIdRef.current === semesterId) { setExamOverview(value); setExamRefreshError(false) }; return true } catch { if (selectedSemesterIdRef.current === semesterId) setExamRefreshError(true); return false }
+  }
+
+  async function handleExamConfiguration(request: SaveExamConfigurationRequest) {
+    if (!selectedCourseId) return
+    setExamBusy(true); setExamError('')
+    try { const state=await saveExamConfiguration(selectedCourseId, request); if (!await refreshExamOverview(state.semesterId)) setExamError('The exam requirement was saved, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save exam requirement.'); if (failure.status === 409) await refreshExamOverview(failure.currentState?.semesterId ?? request.semesterId) } finally { setExamBusy(false) }
+  }
+
+  async function handleExamPlacement(request: CreateManualExamRequest | UpdateExamRequest) {
+    if (!selectedCourseId) return
+    setExamBusy(true); setExamError('')
+    try { const state = examEditor === 'create' ? await createManualExam(selectedCourseId, request as CreateManualExamRequest) : await updateExam((examEditor as ExamSession).id, request as UpdateExamRequest); if (!await refreshExamOverview(state.semesterId)) setExamError('The exam placement was saved, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save exam placement.'); if (failure.status === 409) { setExamEditor(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
+  }
+
+  async function confirmExamDeletion() {
+    if (!examDeletion) return
+    setExamBusy(true); setExamError('')
+    try { const result = await deleteExam(examDeletion.id, { confirmed: true, expectedExamRevision: examDeletion.revision, inputSnapshotToken: examDeletion.inputSnapshotToken }); if (!await refreshExamOverview(result.state.semesterId)) setExamError('The exam was deleted, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamDeletion(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not delete exam.'); if (failure.status === 409) { setExamDeletion(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
+  }
+
   async function refreshOverview(semesterId: number, resetInteractions = true) {
     setOverviewLoading(true)
     setOverviewRefreshError(false)
     try {
-      const current = await getDraftSchedules(semesterId)
+      const [current, currentExams] = await Promise.all([
+        getDraftSchedules(semesterId),
+        getExamPlanningOverview(semesterId),
+      ])
       setSchedules(current)
+      setExamOverview(currentExams)
+      setExamRefreshError(false)
       setLoadedOverviewSemesterId(semesterId)
       setDeletionNotice('')
       if (resetInteractions) setOverviewResetKey((key) => key + 1)
@@ -476,6 +541,9 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
                 {mode === 'single' ? (
                   <>
                     <PlanningSummary course={selectedCourse} semester={selectedSemester} progress={selectedProgress} progressUnavailableLabel={overviewRefreshError ? 'Unavailable' : 'Loading...'} />
+                    {selectedExamState && <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={writeBusy || examBusy} onSave={handleExamConfiguration} />}
+                    {selectedExamState?.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Place exam manually</button>}
+                    {examError && <div className="alert-item" role="alert">{examError}</div>}
                     {planningSelectionInvalid && <div className="refresh-error" role="alert">{semesterSelectionMissing ? 'The selected Semester is no longer available. Choose another Semester.' : courseSelectionInvalid ? 'This Course is not assigned to the selected Semester. Choose another Course.' : `This Course is unavailable: ${selectedCourse?.availability?.reasons.join(', ')}`}</div>}
                     {selectedCourse && selectedSemester && (
                       <ManualSessionEditor
@@ -515,6 +583,8 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
               </div>
             )}
             {deletionNotice && <div className="refresh-error" role="alert">{deletionNotice}</div>}
+            {examRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh exam planning. The last complete exam view remains visible.</span><button type="button" onClick={()=>void refreshExamOverview()}>Retry exam refresh</button></div>}
+            {selectedSemesterId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshExamOverview(selectedSemesterId) }} />}
             <DraftSchedulePanel
               resetKey={overviewResetKey}
               schedules={schedules}
@@ -524,6 +594,10 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
               onUpdateSession={handleUpdateSession}
               onDeleteSession={beginSessionDeletion}
               isBusy={writeBusy}
+              exams={allExams}
+              onEditExam={(exam)=>{ setSelectedCourseId(exam.courseId); setExamEditor(exam) }}
+              onDeleteExam={setExamDeletion}
+              examCourseNames={examCourseNames}
             />
           </div>
         </div>
@@ -555,6 +629,10 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
           onConfirm={() => void confirmCourseDeletion()}
         />
       )}
+      {examEditor && selectedExamState && (examEditor !== 'create' || selectedExamState.configuration) && (
+        <div className="dialog-backdrop"><div className="replacement-dialog"><ExamManualSessionEditor mode={examEditor === 'create' ? 'create' : 'edit'} configuration={selectedExamState.configuration ?? undefined} exam={examEditor === 'create' ? undefined : examEditor} snapshotToken={examEditor === 'create' ? selectedExamState.inputSnapshotToken : examEditor.inputSnapshotToken} semesterId={selectedExamState.semesterId} lecturers={examLecturers} rooms={examRooms} busy={examBusy} serverError={examError || undefined} onCancel={()=>setExamEditor(null)} onSubmit={handleExamPlacement}/></div></div>
+      )}
+      {examDeletion && <ExamDeletionDialog courseName={examCourseNames[examDeletion.courseId] ?? `Course #${examDeletion.courseId}`} exam={examDeletion} busy={examBusy} error={examError || undefined} onCancel={()=>setExamDeletion(null)} onConfirm={confirmExamDeletion}/>}
     </>
   )
 }

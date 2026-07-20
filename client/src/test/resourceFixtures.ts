@@ -120,4 +120,5 @@ export const inactivatedResourceOutcomeFixture = {
   resource: { ...activeRoomFixture, isActive: false, revision: 2 },
   activeCourses: [{ id: 1, name: 'Planning 101' }],
   sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 },
+  examUsage: { examSessionCount: 0, currentConfigurationCount: 0 },
 }

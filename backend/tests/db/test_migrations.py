@@ -361,6 +361,52 @@ def test_fifth_migration_upgrades_0004_and_downgrade_removes_only_holidays():
         assert existing_tables == remaining_tables
 
 
+def test_current_schema_contains_constrained_exam_tables_and_is_idempotent():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    initialize_database(engine)
+    inspector = inspect(engine)
+    assert {"course_exam_configurations", "exam_sessions"}.issubset(inspector.get_table_names())
+    configuration_columns = _columns_by_name(inspector, "course_exam_configurations")
+    exam_columns = _columns_by_name(inspector, "exam_sessions")
+    assert {"course_id", "semester_id", "enabled", "configuration_consumed", "revision"}.issubset(configuration_columns)
+    assert {"exam_date", "start_time", "end_time", "source", "revision", "configuration_identifier", "final_teaching_session_id_snapshot"}.issubset(exam_columns)
+    assert any(
+        set(item.get("column_names") or []) == {"course_id", "semester_id"}
+        for item in inspector.get_unique_constraints("course_exam_configurations")
+    )
+    index_columns = {
+        tuple(item.get("column_names") or [])
+        for item in inspector.get_indexes("exam_sessions")
+    }
+    assert ("course_id", "semester_id", "exam_date") in index_columns
+    assert ("semester_id", "exam_date", "lecturer_id") in index_columns
+    assert ("semester_id", "exam_date", "room_id") in index_columns
+    assert ("semester_id", "exam_date", "cohort_id") in index_columns
+
+
+def test_sixth_migration_upgrades_0005_and_downgrade_removes_only_exam_tables():
+    engine = create_engine("sqlite://")
+    migrations = (
+        _load_initial_migration(),
+        _load_migration("0002_course_semester_drafts.py", "course_semester_for_exams"),
+        _load_migration("0003_academic_catalog_administration.py", "catalog_for_exams"),
+        _load_migration("0004_resource_eligibility_availability.py", "resources_for_exams"),
+        _load_migration("0005_institution_holidays.py", "holidays_for_exams"),
+        _load_migration("0006_conflict_aware_exam_scheduling.py", "conflict_aware_exams"),
+    )
+    with engine.begin() as connection:
+        for migration in migrations:
+            migration.op = Operations(MigrationContext.configure(connection))
+            migration.upgrade()
+        sixth = migrations[-1]
+        existing_tables = set(inspect(connection).get_table_names()) - {"course_exam_configurations", "exam_sessions"}
+        sixth.downgrade()
+        remaining_tables = set(inspect(connection).get_table_names())
+        assert {"course_exam_configurations", "exam_sessions"}.isdisjoint(remaining_tables)
+        assert existing_tables == remaining_tables
+
+
 def _seed_current_resource_course(engine, *, include_room: bool, include_draft: bool) -> None:
     lecturer = Lecturer(id=7, name="Lecturer", reference_code="LECT-7", normalized_reference_code="lect-7")
     room = Room(id=9, name="Room", reference_code="ROOM-9", normalized_reference_code="room-9", capacity=30)

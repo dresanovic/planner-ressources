@@ -52,6 +52,7 @@ export function ResourceRemovalDialog({ resourceName, assessment, onConfirm, onC
     {assessment.activeCourses.length > 0 && <section><h3>Active courses</h3><ul>{assessment.activeCourses.map((course) => <li key={course.id}>{course.name}</li>)}</ul></section>}
     {assessment.inactiveCourses.length > 0 && <p>{assessment.inactiveCourses.length} inactive course link{assessment.inactiveCourses.length === 1 ? '' : 's'} will be removed on deletion.</p>}
     <p>{assessment.sessionUsage.draftSessionCount} saved sessions across {assessment.sessionUsage.draftScheduleCount} schedules.</p>
+    <p>{assessment.examUsage.examSessionCount} saved exams and {assessment.examUsage.currentConfigurationCount} enabled exam configuration{assessment.examUsage.currentConfigurationCount === 1 ? '' : 's'}.</p>
     <div className="dialog-actions"><button ref={cancelRef} type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" onClick={onConfirm}>{willInactivate ? 'Place inactive' : 'Delete permanently'}</button></div>
   </section></div>
 }

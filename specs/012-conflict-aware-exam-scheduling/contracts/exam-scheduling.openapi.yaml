@@ -1,0 +1,898 @@
+openapi: 3.1.0
+info:
+  title: FS-012 Conflict-Aware Exam Scheduling Contract
+  version: 1.0.0
+  description: >-
+    Planner-only contract for current exam configuration, semester review,
+    conflict-aware generation, and revision-protected manual exam management.
+servers:
+  - url: /
+paths:
+  /api/exam-planning:
+    get:
+      summary: Read authoritative exam planning state for one semester
+      parameters:
+        - $ref: '#/components/parameters/SemesterIdQuery'
+      responses:
+        '200':
+          description: Current configurations, active exams, past exams, and derived validity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamPlanningOverview'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/courses/{course_id}/exam-configuration:
+    put:
+      summary: Create, enable, update, disable, or freshen the current exam configuration
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveExamConfigurationRequest'
+      responses:
+        '200':
+          description: Existing configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamCoursePlanningState'
+        '201':
+          description: Configuration aggregate created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamCoursePlanningState'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+  /api/exams/generation/prepare:
+    post:
+      summary: Prepare enabled course-semesters for joint exam generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamGenerationPreparationRequest'
+      responses:
+        '200':
+          description: Canonical selection and opaque material-input snapshots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamGenerationPreparation'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+  /api/exams/generation:
+    post:
+      summary: Jointly generate conflict-free active exams for prepared course-semesters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateExamsRequest'
+      responses:
+        '200':
+          description: Mixed scheduled, failed, stale, and skipped outcomes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamGenerationResult'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+        '503':
+          description: Proven solver result unavailable within the operation limit; nothing saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/courses/{course_id}/exam-sessions:
+    post:
+      summary: Manually create one active exam from the current configuration
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateManualExamRequest'
+      responses:
+        '201':
+          description: Exam created and authoritative course-semester state returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamCoursePlanningState'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+  /api/exam-sessions/{exam_id}:
+    patch:
+      summary: Correct one active or past exam
+      parameters:
+        - $ref: '#/components/parameters/ExamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExamRequest'
+      responses:
+        '200':
+          description: Exam corrected and authoritative course-semester state returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamCoursePlanningState'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+    delete:
+      summary: Delete exactly one confirmed active or past exam
+      parameters:
+        - $ref: '#/components/parameters/ExamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteExamRequest'
+      responses:
+        '200':
+          description: Selected exam deleted; consequence and authoritative state returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteExamResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  parameters:
+    CourseId:
+      name: course_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    ExamId:
+      name: exam_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    SemesterIdQuery:
+      name: semesterId
+      in: query
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    NotFound:
+      description: Requested current course, semester, configuration, exam, or resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Revision, snapshot, active-exam, or current-state conflict; no requested mutation retained
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConflictResponse'
+    ValidationFailure:
+      description: One or more configuration or exam placement rules failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationFailureResponse'
+  schemas:
+    SaveExamConfigurationRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, enabled, expectedRevision, configuration]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        enabled:
+          type: boolean
+        expectedRevision:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+          description: Null only when no configuration aggregate exists.
+        configuration:
+          oneOf:
+            - $ref: '#/components/schemas/ExamConfigurationInput'
+            - type: 'null'
+          description: Required when enabled is true; ignored for generation when disabled.
+    ExamConfigurationInput:
+      type: object
+      additionalProperties: false
+      required:
+        - identifier
+        - durationMinutes
+        - recommendedStartOverride
+        - recommendedEndOverride
+        - requiredCapacity
+        - examType
+        - responsibleLecturerId
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 200
+        durationMinutes:
+          type: integer
+          minimum: 1
+        recommendedStartOverride:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+        recommendedEndOverride:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+        requiredCapacity:
+          type: integer
+          minimum: 1
+        examType:
+          type: string
+          minLength: 1
+          maxLength: 200
+        responsibleLecturerId:
+          type: integer
+          minimum: 1
+    ExamPlanningOverview:
+      type: object
+      additionalProperties: false
+      required: [semesterId, institutionToday, courses]
+      properties:
+        semesterId:
+          type: integer
+        institutionToday:
+          type: string
+          format: date
+        courses:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamCoursePlanningState'
+    ExamCoursePlanningState:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - courseName
+        - semesterId
+        - cohortId
+        - cohortName
+        - enabled
+        - configuration
+        - finalTeachingAnchor
+        - activeExam
+        - pastExams
+        - generationEligibility
+        - inputSnapshotToken
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          type: string
+        semesterId:
+          type: integer
+        cohortId:
+          type: integer
+        cohortName:
+          type: string
+        enabled:
+          type: boolean
+        configuration:
+          oneOf:
+            - $ref: '#/components/schemas/ExamConfiguration'
+            - type: 'null'
+        finalTeachingAnchor:
+          oneOf:
+            - $ref: '#/components/schemas/FinalTeachingAnchor'
+            - type: 'null'
+        activeExam:
+          oneOf:
+            - $ref: '#/components/schemas/ExamSession'
+            - type: 'null'
+        pastExams:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamSession'
+        generationEligibility:
+          $ref: '#/components/schemas/GenerationEligibility'
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+    ExamConfiguration:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - revision
+        - identifier
+        - durationMinutes
+        - recommendedStartOverride
+        - recommendedEndOverride
+        - requiredCapacity
+        - examType
+        - responsibleLecturerId
+        - configurationConsumed
+        - recommendedStartDate
+        - recommendedEndDate
+        - recommendationWasOverridden
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        revision:
+          type: integer
+          minimum: 1
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 200
+        durationMinutes:
+          type: integer
+          minimum: 1
+        recommendedStartOverride:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+        recommendedEndOverride:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+        requiredCapacity:
+          type: integer
+          minimum: 1
+        examType:
+          type: string
+          minLength: 1
+          maxLength: 200
+        responsibleLecturerId:
+          type: integer
+          minimum: 1
+        configurationConsumed:
+          type: boolean
+        recommendedStartDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+          description: Null while no final teaching anchor exists.
+        recommendedEndDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+          description: Null while no final teaching anchor exists.
+        recommendationWasOverridden:
+          type: boolean
+    FinalTeachingAnchor:
+      type: object
+      additionalProperties: false
+      required: [date, endTime, teachingSessionId]
+      properties:
+        date:
+          type: string
+          format: date
+        endTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        teachingSessionId:
+          type: integer
+          minimum: 1
+    GenerationEligibility:
+      type: object
+      additionalProperties: false
+      required: [eligible, code, message]
+      properties:
+        eligible:
+          type: boolean
+        code:
+          oneOf:
+            - type: string
+              enum: [ELIGIBLE, DISABLED, CONFIGURATION_INCOMPLETE, FINAL_TEACHING_SESSION_MISSING, AUTOMATIC_START_TIME_UNAVAILABLE, ACTIVE_EXAM_EXISTS, CONFIGURATION_CONSUMED]
+            - type: 'null'
+        message:
+          oneOf:
+            - type: string
+            - type: 'null'
+    ExamSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - revision
+        - courseId
+        - semesterId
+        - configurationIdentifier
+        - examType
+        - durationMinutes
+        - requiredCapacity
+        - recommendedStartDate
+        - recommendedEndDate
+        - recommendationWasOverridden
+        - outsideRecommendedWindow
+        - finalTeachingAnchor
+        - date
+        - startTime
+        - endTime
+        - lecturer
+        - cohort
+        - room
+        - lifecycleStatus
+        - source
+        - validityIssues
+        - inputSnapshotToken
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        revision:
+          type: integer
+          minimum: 1
+        courseId:
+          type: integer
+        semesterId:
+          type: integer
+        configurationIdentifier:
+          type: string
+        examType:
+          type: string
+        durationMinutes:
+          type: integer
+          minimum: 1
+        requiredCapacity:
+          type: integer
+          minimum: 1
+        recommendedStartDate:
+          type: string
+          format: date
+        recommendedEndDate:
+          type: string
+          format: date
+        recommendationWasOverridden:
+          type: boolean
+        outsideRecommendedWindow:
+          type: boolean
+        finalTeachingAnchor:
+          $ref: '#/components/schemas/FinalTeachingAnchor'
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        endTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        lecturer:
+          $ref: '#/components/schemas/ResourceReference'
+        cohort:
+          $ref: '#/components/schemas/ResourceReference'
+        room:
+          $ref: '#/components/schemas/RoomReference'
+        lifecycleStatus:
+          type: string
+          enum: [active, past]
+        source:
+          type: string
+          enum: [generated, manual]
+        validityIssues:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamIssue'
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+    ResourceReference:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        referenceCode:
+          oneOf:
+            - type: string
+            - type: 'null'
+    RoomReference:
+      type: object
+      additionalProperties: false
+      required: [id, name, referenceCode, capacity]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        referenceCode:
+          oneOf:
+            - type: string
+            - type: 'null'
+        capacity:
+          type: integer
+          minimum: 1
+    ExamIssue:
+      type: object
+      additionalProperties: false
+      required: [code, message, relatedDate, relatedResource, relatedSessionId, holidayName]
+      properties:
+        code:
+          type: string
+          enum:
+            - FINAL_TEACHING_SESSION_MISSING
+            - BEFORE_FINAL_TEACHING
+            - OUTSIDE_SEMESTER
+            - RESPONSIBLE_LECTURER_INELIGIBLE
+            - ROOM_INELIGIBLE
+            - INSUFFICIENT_ROOM_CAPACITY
+            - LECTURER_UNAVAILABLE
+            - ROOM_UNAVAILABLE
+            - INSTITUTION_HOLIDAY
+            - LECTURER_OCCUPIED
+            - ROOM_OCCUPIED
+            - COHORT_OCCUPIED
+            - DUPLICATE_ACTIVE_EXAM
+            - INVALID_EXAM_INTERVAL
+            - VALIDATION_CONTEXT_UNAVAILABLE
+            - AUTOMATIC_START_TIME_UNAVAILABLE
+        message:
+          type: string
+          minLength: 1
+        relatedDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+        relatedResource:
+          oneOf:
+            - $ref: '#/components/schemas/ResourceReference'
+            - type: 'null'
+        relatedSessionId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        holidayName:
+          oneOf:
+            - type: string
+            - type: 'null'
+    ExamGenerationPreparationRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, courseIds]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        courseIds:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+    ExamGenerationPreparation:
+      type: object
+      additionalProperties: false
+      required: [semesterId, institutionToday, sharedSnapshotToken, courses]
+      properties:
+        semesterId:
+          type: integer
+        institutionToday:
+          type: string
+          format: date
+        sharedSnapshotToken:
+          type: string
+          minLength: 1
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PreparedExamCourse'
+    PreparedExamCourse:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - courseName
+        - configurationId
+        - configurationRevision
+        - inputSnapshotToken
+        - eligibility
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          type: string
+        configurationId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        configurationRevision:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+        eligibility:
+          $ref: '#/components/schemas/GenerationEligibility'
+    GenerateExamsRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, institutionToday, sharedSnapshotToken, courses]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        institutionToday:
+          type: string
+          format: date
+        sharedSnapshotToken:
+          type: string
+          minLength: 1
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PreparedExamCourseInput'
+    PreparedExamCourseInput:
+      type: object
+      additionalProperties: false
+      required: [courseId, configurationId, configurationRevision, inputSnapshotToken]
+      properties:
+        courseId:
+          type: integer
+          minimum: 1
+        configurationId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        configurationRevision:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+    ExamGenerationResult:
+      type: object
+      additionalProperties: false
+      required: [semesterId, summary, outcomes]
+      properties:
+        semesterId:
+          type: integer
+        summary:
+          $ref: '#/components/schemas/ExamGenerationSummary'
+        outcomes:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/ExamGenerationOutcome'
+    ExamGenerationSummary:
+      type: object
+      additionalProperties: false
+      required: [total, scheduled, failed, stale, skippedActive, skippedDisabled, elapsedMilliseconds, optimalForPreparedSnapshot]
+      properties:
+        total:
+          type: integer
+          minimum: 1
+          maximum: 100
+        scheduled:
+          type: integer
+          minimum: 0
+        failed:
+          type: integer
+          minimum: 0
+        stale:
+          type: integer
+          minimum: 0
+        skippedActive:
+          type: integer
+          minimum: 0
+        skippedDisabled:
+          type: integer
+          minimum: 0
+        elapsedMilliseconds:
+          type: integer
+          minimum: 0
+          maximum: 60000
+        optimalForPreparedSnapshot:
+          type: boolean
+    ExamGenerationOutcome:
+      type: object
+      additionalProperties: false
+      required: [courseId, courseName, configurationId, configurationIdentifier, status, saved, exam, reasons]
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          type: string
+        configurationId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        configurationIdentifier:
+          oneOf:
+            - type: string
+            - type: 'null'
+        status:
+          type: string
+          enum: [scheduled, failed, stale, skipped_active, skipped_disabled]
+        saved:
+          type: boolean
+        exam:
+          oneOf:
+            - $ref: '#/components/schemas/ExamSession'
+            - type: 'null'
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExamIssue'
+    CreateManualExamRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, date, startTime, lecturerId, roomId, expectedConfigurationRevision, inputSnapshotToken]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        lecturerId:
+          type: integer
+          minimum: 1
+        roomId:
+          type: integer
+          minimum: 1
+        expectedConfigurationRevision:
+          type: integer
+          minimum: 1
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+    UpdateExamRequest:
+      type: object
+      additionalProperties: false
+      required: [date, startTime, lecturerId, roomId, expectedExamRevision, inputSnapshotToken]
+      properties:
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+        lecturerId:
+          type: integer
+          minimum: 1
+        roomId:
+          type: integer
+          minimum: 1
+        expectedExamRevision:
+          type: integer
+          minimum: 1
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+    DeleteExamRequest:
+      type: object
+      additionalProperties: false
+      required: [confirmed, expectedExamRevision, inputSnapshotToken]
+      properties:
+        confirmed:
+          type: boolean
+          const: true
+        expectedExamRevision:
+          type: integer
+          minimum: 1
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+    DeleteExamResponse:
+      type: object
+      additionalProperties: false
+      required: [deletedExamId, deletedLifecycleStatus, consequence, state]
+      properties:
+        deletedExamId:
+          type: integer
+        deletedLifecycleStatus:
+          type: string
+          enum: [active, past]
+        consequence:
+          type: string
+          enum: [configuration_enabled_unscheduled, historical_exam_only]
+        state:
+          $ref: '#/components/schemas/ExamCoursePlanningState'
+    ValidationFailureResponse:
+      type: object
+      additionalProperties: false
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OperationError'
+    ConflictResponse:
+      type: object
+      additionalProperties: false
+      required: [errors, currentState]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OperationError'
+        currentState:
+          oneOf:
+            - $ref: '#/components/schemas/ExamCoursePlanningState'
+            - type: 'null'
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OperationError'
+    OperationError:
+      type: object
+      additionalProperties: false
+      required: [code, message, field]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        field:
+          oneOf:
+            - type: string
+            - type: 'null'

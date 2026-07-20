@@ -77,6 +77,12 @@ class SessionUsage(BaseModel):
     draft_schedule_count: int = Field(alias="draftScheduleCount")
 
 
+class ExamUsage(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    exam_session_count: int = Field(alias="examSessionCount")
+    current_configuration_count: int = Field(alias="currentConfigurationCount")
+
+
 class ResourceUsageAssessment(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     resource_id: int = Field(alias="resourceId")
@@ -85,6 +91,7 @@ class ResourceUsageAssessment(BaseModel):
     active_courses: list[CourseIdentity] = Field(alias="activeCourses")
     inactive_courses: list[CourseIdentity] = Field(alias="inactiveCourses")
     session_usage: SessionUsage = Field(alias="sessionUsage")
+    exam_usage: ExamUsage = Field(alias="examUsage")
 
 
 class RelationshipStatus(BaseModel):
@@ -108,6 +115,7 @@ class InactivatedLecturerResult(BaseModel):
     resource: LecturerRecord
     active_courses: list[CourseIdentity] = Field(alias="activeCourses")
     session_usage: SessionUsage = Field(alias="sessionUsage")
+    exam_usage: ExamUsage = Field(alias="examUsage")
 
 
 class InactivatedRoomResult(BaseModel):
@@ -116,6 +124,7 @@ class InactivatedRoomResult(BaseModel):
     resource: RoomRecord
     active_courses: list[CourseIdentity] = Field(alias="activeCourses")
     session_usage: SessionUsage = Field(alias="sessionUsage")
+    exam_usage: ExamUsage = Field(alias="examUsage")
 
 
 LecturerRemovalResult = Annotated[
