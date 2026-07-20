@@ -33,4 +33,23 @@ describe('BatchResultSummary', () => {
     expect(document.body.textContent).toContain('No optimality proof was produced')
     expect(document.body.textContent).not.toContain('Proven optimal for the prepared snapshot')
   })
+
+  it('renders separate named evidence for holidays sharing the same reason code', () => {
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    const result = {
+      ...mixedOptimizationResultFixture,
+      outcomes: [{
+        ...mixedOptimizationResultFixture.outcomes[0],
+        reasons: [
+          { code: 'INSTITUTION_HOLIDAY', message: 'Founders Day on 2026-09-07.', relatedCount: 1, holidayDate: '2026-09-07', holidayName: 'Founders Day' },
+          { code: 'INSTITUTION_HOLIDAY', message: 'Winter Holiday on 2026-12-25.', relatedCount: 1, holidayDate: '2026-12-25', holidayName: 'Winter Holiday' },
+        ],
+      }, ...mixedOptimizationResultFixture.outcomes.slice(1)],
+    }
+
+    act(() => root.render(<BatchResultSummary result={result} onRetryFailed={() => undefined} />))
+
+    expect(document.body.textContent).toContain('Founders Day on 2026-09-07')
+    expect(document.body.textContent).toContain('Winter Holiday on 2026-12-25')
+  })
 })

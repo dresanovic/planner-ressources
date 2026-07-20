@@ -1,0 +1,599 @@
+openapi: 3.1.0
+info:
+  title: Resource Planner FS-011 Holiday Calendar Contract
+  version: 0.1.0
+  description: >-
+    Additive contract for current holiday CRUD, hard generation avoidance,
+    holiday-specific generation evidence, and derived session alerts. Existing
+    non-holiday fields and outcome semantics remain unchanged.
+servers:
+  - url: /
+tags:
+  - name: Holidays
+  - name: Draft schedules
+  - name: Generation
+
+paths:
+  /api/holidays:
+    get:
+      tags: [Holidays]
+      summary: List all current institution holidays
+      operationId: listInstitutionHolidays
+      responses:
+        "200":
+          description: Current holidays ordered by date and then stable ID
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 10000
+                items:
+                  $ref: "#/components/schemas/HolidayRecord"
+    post:
+      tags: [Holidays]
+      summary: Create a current institution holiday
+      operationId: createInstitutionHoliday
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HolidayInput"
+      responses:
+        "201":
+          description: Holiday created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidayRecord"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailure"
+
+  /api/holidays/{holidayId}:
+    parameters:
+      - $ref: "#/components/parameters/HolidayId"
+    get:
+      tags: [Holidays]
+      summary: Read one current institution holiday
+      operationId: getInstitutionHoliday
+      responses:
+        "200":
+          description: Current holiday
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidayRecord"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Holidays]
+      summary: Replace the current date and name of one holiday
+      operationId: updateInstitutionHoliday
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HolidayUpdateInput"
+      responses:
+        "200":
+          description: Updated current holiday; prior values are not retained
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidayRecord"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailure"
+    delete:
+      tags: [Holidays]
+      summary: Permanently remove one current holiday
+      operationId: deleteInstitutionHoliday
+      parameters:
+        - name: expectedRevision
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: confirmed
+          in: query
+          required: true
+          description: Must be true after planner confirmation
+          schema:
+            type: boolean
+      responses:
+        "204":
+          description: Holiday removed; no historical holiday record is retained
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailure"
+
+  /api/draft-schedules:
+    get:
+      tags: [Draft schedules]
+      summary: List selected-semester schedules with current derived alerts
+      operationId: listDraftSchedulesWithHolidayAlerts
+      parameters:
+        - name: semesterId
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        "200":
+          description: >-
+            Existing Draft Schedule response. Sessions on current holidays add
+            INSTITUTION_HOLIDAY; no standalone holiday entries are returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DraftSchedule"
+
+  /api/courses/{courseId}/draft-schedule/generate:
+    parameters:
+      - name: courseId
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    post:
+      tags: [Generation]
+      summary: Generate one course while excluding current holidays
+      operationId: generateHolidayAwareCourseSchedule
+      description: >-
+        The existing generation request is unchanged. Holidays are loaded
+        server-side. Existing success and validation semantics remain.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "201":
+          description: Existing Draft Schedule success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DraftSchedule"
+        "409":
+          description: Holiday calendar changed before safe persistence
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "422":
+          description: Existing generation failure plus any substantiated named holidays
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerationFailureEnvelope"
+
+  /api/draft-schedules/batch/generate:
+    post:
+      tags: [Generation]
+      summary: Generate legacy multi-course drafts while excluding current holidays
+      operationId: generateHolidayAwareBatch
+      description: Existing request shape and succeeded/failed outcomes remain unchanged.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Existing batch result with optional holiday context in course errors
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchGenerationResult"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /api/draft-schedules/optimization/prepare:
+    post:
+      tags: [Generation]
+      summary: Prepare FS-010 with current holidays in opaque snapshots
+      operationId: prepareHolidayAwareOptimization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptimizationPreparationRequest"
+      responses:
+        "200":
+          description: >-
+            Existing preparation response. unavailableDates contains only the
+            caller-supplied dates; maintained holidays are not echoed into it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationPreparation"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailure"
+
+  /api/draft-schedules/optimization/generate:
+    post:
+      tags: [Generation]
+      summary: Run FS-010 with maintained holidays and caller unavailable dates
+      operationId: generateHolidayAwareOptimization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Existing confirmed optimization request
+              additionalProperties: true
+      responses:
+        "200":
+          description: Existing optimization result with named holiday blocking reasons
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizationGenerationResult"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationFailure"
+
+components:
+  parameters:
+    HolidayId:
+      name: holidayId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    NotFound:
+      description: Holiday not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    Conflict:
+      description: Duplicate date, stale revision/calendar, or missing delete confirmation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+    ValidationFailure:
+      description: Invalid request field
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorEnvelope"
+
+  schemas:
+    HolidayRecord:
+      type: object
+      additionalProperties: false
+      required: [id, date, name, revision]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        revision:
+          type: integer
+          minimum: 1
+
+    HolidayInput:
+      type: object
+      additionalProperties: false
+      required: [date, name]
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    HolidayUpdateInput:
+      type: object
+      additionalProperties: false
+      required: [date, name, expectedRevision]
+      properties:
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        expectedRevision:
+          type: integer
+          minimum: 1
+
+    ErrorItem:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: >-
+            Existing error code or an FS-011 code such as VALIDATION_ERROR,
+            DUPLICATE_HOLIDAY_DATE, STALE_REVISION,
+            STALE_HOLIDAY_CALENDAR, CONFIRMATION_REQUIRED, or NOT_FOUND.
+        message:
+          type: string
+        field:
+          type: [string, "null"]
+        meta:
+          type: [object, "null"]
+          additionalProperties: true
+
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ErrorItem"
+
+    HolidayEvidenceFields:
+      type: object
+      dependentRequired:
+        holidayDate: [holidayName]
+        holidayName: [holidayDate]
+      properties:
+        holidayDate:
+          type: string
+          format: date
+        holidayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    GenerationFailure:
+      allOf:
+        - type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+        - $ref: "#/components/schemas/HolidayEvidenceFields"
+
+    GenerationFailureEnvelope:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/GenerationFailure"
+
+    ValidationAlert:
+      type: object
+      required: [code, message, relatedSessions]
+      dependentRequired:
+        holidayDate: [holidayName]
+        holidayName: [holidayDate]
+      properties:
+        code:
+          type: string
+          description: Existing alert code or INSTITUTION_HOLIDAY
+        message:
+          type: string
+          description: Holiday alerts include the current holiday name and ISO date
+        relatedSessions:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        holidayDate:
+          type: [string, "null"]
+          format: date
+        holidayName:
+          type: [string, "null"]
+          minLength: 1
+          maxLength: 200
+
+    DraftSession:
+      type: object
+      required: [id, date, validationAlerts]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        validationAlerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationAlert"
+      additionalProperties: true
+
+    DraftSchedule:
+      type: object
+      required: [draftScheduleId, courseId, semesterId, sessions]
+      properties:
+        draftScheduleId:
+          type: integer
+          minimum: 1
+        courseId:
+          type: integer
+          minimum: 1
+        semesterId:
+          type: integer
+          minimum: 1
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/DraftSession"
+      additionalProperties: true
+
+    CourseGenerationFailure:
+      allOf:
+        - $ref: "#/components/schemas/GenerationFailure"
+
+    CourseGenerationOutcome:
+      type: object
+      required: [courseId, status, errors]
+      properties:
+        courseId:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [succeeded, failed]
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseGenerationFailure"
+      additionalProperties: true
+
+    BatchGenerationResult:
+      type: object
+      required: [semesterId, outcomes]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        outcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseGenerationOutcome"
+      additionalProperties: true
+
+    OptimizationPreparationRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, courseIds]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        courseIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+        unavailableDates:
+          type: array
+          description: Caller-supplied exclusions only; maintained holidays remain server-owned
+          default: []
+          uniqueItems: true
+          items:
+            type: string
+            format: date
+
+    OptimizationPreparation:
+      type: object
+      required: [semesterId, unavailableDates, sharedSnapshotToken, courses, replacementCourseIds]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        unavailableDates:
+          type: array
+          description: Echo of canonical caller-supplied exclusions only
+          items:
+            type: string
+            format: date
+        sharedSnapshotToken:
+          type: string
+          minLength: 1
+          description: Opaque token also covering current relevant holiday state
+        courses:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        replacementCourseIds:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+
+    BlockingReason:
+      allOf:
+        - type: object
+          required: [code, message, relatedCount]
+          properties:
+            code:
+              type: string
+              description: Existing reason code, UNAVAILABLE_DATE, or INSTITUTION_HOLIDAY
+            message:
+              type: string
+            relatedCount:
+              type: integer
+              minimum: 0
+        - $ref: "#/components/schemas/HolidayEvidenceFields"
+
+    CourseOptimizationOutcome:
+      type: object
+      required: [courseId, status, reasons, errors]
+      properties:
+        courseId:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [complete, improved_partial, unchanged, failed, stale]
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlockingReason"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorItem"
+      additionalProperties: true
+
+    OptimizationGenerationResult:
+      type: object
+      required: [semesterId, summary, outcomes]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        summary:
+          type: object
+          additionalProperties: true
+        outcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseOptimizationOutcome"
+      additionalProperties: true

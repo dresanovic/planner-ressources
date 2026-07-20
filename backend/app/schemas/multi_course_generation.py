@@ -1,6 +1,7 @@
 from enum import StrEnum
+from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class BatchOperationKind(StrEnum):
@@ -54,8 +55,23 @@ class BatchGenerationRequest(BaseModel):
 
 
 class CourseGenerationFailure(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     code: str
     message: str
+    holiday_date: date | None = Field(default=None, alias="holidayDate")
+    holiday_name: str | None = Field(default=None, alias="holidayName")
+
+    @model_validator(mode="after")
+    def validate_holiday_evidence(self) -> "CourseGenerationFailure":
+        is_holiday = self.code == "INSTITUTION_HOLIDAY"
+        has_both = self.holiday_date is not None and self.holiday_name is not None
+        has_either = self.holiday_date is not None or self.holiday_name is not None
+        if is_holiday and not has_both:
+            raise ValueError("Institution holiday failures require holiday date and name.")
+        if not is_holiday and has_either:
+            raise ValueError("Holiday evidence is only valid for institution holiday failures.")
+        return self
 
 
 class CourseGenerationOutcome(BaseModel):

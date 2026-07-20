@@ -55,6 +55,7 @@ describe('ApplicationNavigation', () => {
   it('defines the exact fixed Academic Data metadata', () => {
     expect(ACADEMIC_DATA_CATEGORIES.map(({ id, label }) => ({ id, label }))).toEqual([
       { id: 'semesters', label: 'Semesters' },
+      { id: 'holidays', label: 'Holidays' },
       { id: 'cohorts', label: 'Cohorts' },
       { id: 'courses', label: 'Courses' },
       { id: 'study-types', label: 'Study types' },

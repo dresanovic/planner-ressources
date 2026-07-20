@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 // eslint-disable-next-line react-refresh/only-export-components
 export const ACADEMIC_DATA_CATEGORIES = [
   { id: 'semesters', label: 'Semesters', singular: 'semester' },
+  { id: 'holidays', label: 'Holidays', singular: 'holiday' },
   { id: 'cohorts', label: 'Cohorts', singular: 'cohort' },
   { id: 'courses', label: 'Courses', singular: 'course' },
   { id: 'study-types', label: 'Study types', singular: 'study type' },

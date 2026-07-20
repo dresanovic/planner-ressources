@@ -33,7 +33,7 @@ def prepare_multi_course_generation(request: BatchPreparationRequest, db: Sessio
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-@router.post("/generate", response_model=BatchGenerationResult)
+@router.post("/generate", response_model=BatchGenerationResult, response_model_exclude_none=True)
 def generate_multi_course_drafts(request: BatchGenerationRequest, db: Session = Depends(get_db)):
     course_ids = [course.course_id for course in request.courses]
     validation = _validate_selection(request.operation_kind.value, course_ids)

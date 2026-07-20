@@ -35,19 +35,24 @@ def initialize_database(engine: Engine) -> None:
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
                     inspector = inspect(connection)
-                if not _is_slice_7_schema(inspector):
+                if _is_slice_7_schema(inspector):
+                    migration = _load_migration("0004_resource_eligibility_availability.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                    inspector = inspect(connection)
+                if not _is_pre_holiday_schema(inspector):
                     raise UnsupportedSchemaStateError(
-                        "Database schema is not a supported FS-001 through FS-007 state. "
+                        "Database schema is not a supported FS-001 through FS-010 state. "
                         "Back up the database and inspect its migration state."
                     )
 
-                migration = _load_migration("0004_resource_eligibility_availability.py")
+                migration = _load_migration("0005_institution_holidays.py")
                 migration.op = Operations(MigrationContext.configure(connection))
                 migration.upgrade()
 
                 if not _is_current_schema(inspect(connection)):
                     raise UnsupportedSchemaStateError(
-                        "FS-008 database migration completed without producing the expected schema."
+                        "FS-011 database migration completed without producing the expected schema."
                     )
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=ON")
@@ -56,6 +61,17 @@ def initialize_database(engine: Engine) -> None:
 
 
 def _is_current_schema(inspector) -> bool:
+    return (
+        _is_pre_holiday_schema(inspector)
+        and "institution_holidays" in inspector.get_table_names()
+        and {"id", "date", "name", "revision"}.issubset(
+            _column_names(inspector, "institution_holidays")
+        )
+        and _has_unique_columns(inspector, "institution_holidays", ("date",))
+    )
+
+
+def _is_pre_holiday_schema(inspector) -> bool:
     tables = set(inspector.get_table_names())
     required_tables = {
         "course_eligible_lecturers",

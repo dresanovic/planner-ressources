@@ -30,6 +30,7 @@ from app.services.draft_schedule_repository import (
     replace_draft_schedule,
     save_generation_constraints,
 )
+from app.services.holiday_calendar import holiday_snapshot
 from app.services.schedule_generation import (
     CoursePlan,
     PlanningPeriodPlan,
@@ -109,6 +110,7 @@ def generate_batch(
     for window in default_windows:
         windows_by_study_type.setdefault(window.study_type_id, []).append(window)
     active_window_types = set(windows_by_study_type)
+    initial_holidays = holiday_snapshot(db, semester.start_date, semester.end_date)
 
     outcomes: list[CourseGenerationOutcome] = []
     candidates: list[tuple[PreparedCourseInput, LoadedBatchInput, object]] = []
@@ -139,6 +141,7 @@ def generate_batch(
             semester=semester_plan,
             planning_period=constraints.planning_period,
             time_windows=constraints.allowed_windows,
+            holidays=initial_holidays.by_date,
         )
         if not generation.ok:
             outcomes.append(
@@ -148,7 +151,15 @@ def generate_batch(
                     status="failed",
                     draftScheduleId=None,
                     draftRevision=None,
-                    errors=[CourseGenerationFailure(code=e.code.value, message=e.message) for e in generation.errors],
+                    errors=[
+                        CourseGenerationFailure(
+                            code=e.code.value,
+                            message=e.message,
+                            holidayDate=e.holiday_date,
+                            holidayName=e.holiday_name,
+                        )
+                        for e in generation.errors
+                    ],
                 )
             )
             continue
@@ -183,6 +194,19 @@ def generate_batch(
             .where(Semester.id == semester_id)
             .values(id=Semester.id)
         )
+    current_holidays = holiday_snapshot(db, semester.start_date, semester.end_date)
+    if current_holidays.token != initial_holidays.token:
+        outcomes = [
+            _failure(
+                outcome.course_id,
+                outcome.course_name,
+                "STALE_HOLIDAY_CALENDAR",
+                "The holiday calendar changed during generation. Review the current calendar and generate again.",
+            )
+            if any(error.code == "INSTITUTION_HOLIDAY" for error in outcome.errors)
+            else outcome
+            for outcome in outcomes
+        ]
     for prepared, loaded, generation in candidates:
         current_course = current_courses_by_id.get(prepared.course_id)
         current_draft = current_drafts_by_course.get(prepared.course_id)
@@ -210,6 +234,19 @@ def generate_batch(
                 loaded.course.name,
                 "STALE_GENERATION_CONSTRAINTS",
                 "Generation constraints changed during the operation. Prepare this course again.",
+            )
+            continue
+        conflicting_session = next(
+            (session for session in generation.sessions if session.date in current_holidays.by_date),
+            None,
+        )
+        if conflicting_session is not None:
+            holiday = current_holidays.by_date[conflicting_session.date]
+            candidate_outcomes[prepared.course_id] = _failure(
+                prepared.course_id,
+                loaded.course.name,
+                "STALE_HOLIDAY_CALENDAR",
+                f"{holiday.name} on {holiday.date.isoformat()} was added while generation was in progress. Generate again.",
             )
             continue
         with db.begin_nested():

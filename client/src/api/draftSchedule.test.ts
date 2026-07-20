@@ -4,9 +4,11 @@ import {
   clearCourseDraft,
   createManualDraftSession,
   deleteDraftSession,
+  generateDraftSchedule,
   getDraftSchedule,
   updateDraftSession,
 } from './draftSchedule'
+import type { ValidationAlert } from './draftSchedule'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -22,6 +24,51 @@ describe('getDraftSchedule', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('/api/courses/2/draft-schedule?semesterId=3', undefined)
     expect(result.revision).toBe(7)
+  })
+})
+
+describe('institution holiday contracts', () => {
+  it('preserves paired holiday evidence and omits it from other generation failures', async () => {
+    const errors = [
+      { code: 'INSUFFICIENT_SEMESTER_CAPACITY', message: 'No capacity.' },
+      { code: 'INSTITUTION_HOLIDAY', message: 'Founders Day.', holidayDate: '2026-09-07', holidayName: 'Founders Day' },
+    ]
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 422, json: async () => ({ errors }) }))
+
+    await expect(generateDraftSchedule(
+      1,
+      1,
+      { startDate: '2026-09-07', endDate: '2026-09-07' },
+      [{ weekday: 0, startTime: '08:00', endTime: '12:00' }],
+    )).rejects.toEqual(errors)
+    expect(errors[0]).not.toHaveProperty('holidayDate')
+    expect(errors[1]).toMatchObject({ holidayDate: '2026-09-07', holidayName: 'Founders Day' })
+  })
+
+  it('exposes current holiday alert context without related sessions', async () => {
+    const alert = {
+      code: 'INSTITUTION_HOLIDAY', message: 'Founders Day.', relatedSessions: [],
+      holidayDate: '2026-09-07', holidayName: 'Founders Day',
+    }
+    const payload = { draftScheduleId: 4, revision: 7, courseId: 2, semesterId: 3, context: {}, sessions: [{ validationAlerts: [alert] }] }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => payload }))
+
+    const result = await getDraftSchedule(2, 3)
+
+    expect(result.sessions[0].validationAlerts[0]).toEqual(alert)
+  })
+
+  it('accepts explicit null holiday context on non-holiday alerts', () => {
+    const alert: ValidationAlert = {
+      code: 'ROOM_CAPACITY',
+      message: 'Room is too small.',
+      relatedSessions: [],
+      holidayDate: null,
+      holidayName: null,
+    }
+
+    expect(alert.holidayDate).toBeNull()
+    expect(alert.holidayName).toBeNull()
   })
 })
 

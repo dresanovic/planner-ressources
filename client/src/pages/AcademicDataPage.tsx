@@ -26,6 +26,7 @@ import { ResourceAvailabilityEditor } from '../components/ResourceAvailabilityEd
 import { CourseResourceEligibilityEditor } from '../components/CourseResourceEligibilityEditor'
 import { ACADEMIC_DATA_CATEGORIES, type AcademicDataCategory } from '../components/ApplicationNavigation'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
+import { HolidayAdministration } from '../components/HolidayAdministration'
 
 type PageCategory = AcademicDataCategory
 const categories: ReadonlyArray<{ id: PageCategory; label: string; singular: string }> = ACADEMIC_DATA_CATEGORIES
@@ -354,6 +355,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
   }
 
   const current = categories.find((item) => item.id === category)!
+  if (category === 'holidays') return <HolidayAdministration onChanged={onCatalogChanged} />
   if (category === 'lecturers' || category === 'rooms') return <>
     <section className="workbench">
       <header className="page-header"><div><p className="eyebrow">Planner administration</p><h1>Academic Data</h1></div><label className="catalog-field">Show<select value={resourceStatus} onChange={(event) => setResourceStatus(event.target.value as typeof resourceStatus)}><option value="all">All records</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label></header>

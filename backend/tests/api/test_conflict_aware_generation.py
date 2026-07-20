@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models.planning import Cohort, Course, DraftSchedule, Room
+from app.models.planning import Cohort, Course, DraftSchedule, Room, GenerationConstraintSet, GenerationConstraintWindow, InstitutionHoliday
 from tests.optimization_fixtures import seed_optimization_planner
 from app.services.draft_schedule_repository import get_draft_schedule, load_course_plan, replace_draft_schedule
 from app.services.schedule_generation import GeneratedSession
@@ -62,6 +62,57 @@ def test_prepare_deduplicates_dates_and_generate_returns_proven_complete_saved_r
     assert generated.status_code == 200
     assert generated.json()["summary"]["complete"] == 2
     assert generated.json()["summary"]["optimalForPreparedSnapshot"] is True
+
+
+def test_optimizer_api_keeps_caller_dates_unchanged_and_returns_named_holiday_reason(client, db_session):
+    seed_optimization_planner(db_session, course_count=1)
+    db_session.add_all([
+        GenerationConstraintSet(
+            course_id=1,
+            semester_id=1,
+            planning_start_date=date(2026, 9, 7),
+            planning_end_date=date(2026, 9, 7),
+            windows=[GenerationConstraintWindow(
+                source_time_window_id=1,
+                weekday=0,
+                start_time=time(8),
+                end_time=time(12),
+                sort_order=1,
+            )],
+        ),
+        InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day"),
+    ])
+    db_session.commit()
+    prepared = client.post(
+        "/api/draft-schedules/optimization/prepare",
+        json={"semesterId": 1, "courseIds": [1], "unavailableDates": ["2026-10-26"]},
+    ).json()
+
+    generated = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
+
+    assert generated.status_code == 200
+    assert prepared["unavailableDates"] == ["2026-10-26"]
+    reason = next(item for item in generated.json()["outcomes"][0]["reasons"] if item["code"] == "INSTITUTION_HOLIDAY")
+    assert reason["holidayDate"] == "2026-09-07"
+    assert reason["holidayName"] == "Founders Day"
+    assert reason["relatedCount"] == 1
+
+
+def test_optimizer_api_rejects_holiday_snapshot_change_without_saving(client, db_session):
+    seed_optimization_planner(db_session, course_count=1)
+    prepared = client.post(
+        "/api/draft-schedules/optimization/prepare",
+        json={"semesterId": 1, "courseIds": [1], "unavailableDates": []},
+    ).json()
+    db_session.add(InstitutionHoliday(date=date(2026, 9, 7), name="New Closure"))
+    db_session.commit()
+
+    generated = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
+
+    assert generated.status_code == 200
+    assert generated.json()["outcomes"][0]["status"] == "stale"
+    assert generated.json()["outcomes"][0]["saved"] is False
+    assert db_session.query(DraftSchedule).count() == 0
 
 
 @pytest.mark.parametrize("course_ids", [[], list(range(1, 22)), [1, 1]])

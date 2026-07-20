@@ -315,6 +315,52 @@ def test_unavailability_database_constraints_reject_invalid_owner_and_weekday():
             )
 
 
+def test_current_schema_contains_constrained_institution_holidays_and_is_idempotent():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    initialize_database(engine)
+    inspector = inspect(engine)
+    assert {"id", "date", "name", "revision"} == set(
+        _columns_by_name(inspector, "institution_holidays")
+    )
+    assert any(
+        set(item.get("column_names") or []) == {"date"}
+        for item in inspector.get_unique_constraints("institution_holidays")
+    )
+    with engine.begin() as connection:
+        connection.execute(text(
+            "INSERT INTO institution_holidays (date, name, revision) "
+            "VALUES ('2026-12-25', 'Winter Holiday', 1)"
+        ))
+        with pytest.raises(Exception):
+            connection.execute(text(
+                "INSERT INTO institution_holidays (date, name, revision) "
+                "VALUES ('2026-12-25', 'Duplicate', 1)"
+            ))
+
+
+def test_fifth_migration_upgrades_0004_and_downgrade_removes_only_holidays():
+    engine = create_engine("sqlite://")
+    migrations = (
+        _load_initial_migration(),
+        _load_migration("0002_course_semester_drafts.py", "course_semester_for_holidays"),
+        _load_migration("0003_academic_catalog_administration.py", "catalog_for_holidays"),
+        _load_migration("0004_resource_eligibility_availability.py", "resources_for_holidays"),
+        _load_migration("0005_institution_holidays.py", "institution_holidays"),
+    )
+    with engine.begin() as connection:
+        for migration in migrations:
+            migration.op = Operations(MigrationContext.configure(connection))
+            migration.upgrade()
+        fifth = migrations[-1]
+        assert "institution_holidays" in inspect(connection).get_table_names()
+        existing_tables = set(inspect(connection).get_table_names()) - {"institution_holidays"}
+        fifth.downgrade()
+        remaining_tables = set(inspect(connection).get_table_names())
+        assert "institution_holidays" not in remaining_tables
+        assert existing_tables == remaining_tables
+
+
 def _seed_current_resource_course(engine, *, include_room: bool, include_draft: bool) -> None:
     lecturer = Lecturer(id=7, name="Lecturer", reference_code="LECT-7", normalized_reference_code="lect-7")
     room = Room(id=9, name="Room", reference_code="ROOM-9", normalized_reference_code="room-9", capacity=30)

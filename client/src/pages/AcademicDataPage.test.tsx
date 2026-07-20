@@ -29,6 +29,9 @@ vi.mock('../api/resourceCatalog', async () => ({
   getCourseResourceConfiguration: mocks.getCourseResourceConfiguration,
   updateCourseResourceEligibility: mocks.updateCourseResourceEligibility,
 }))
+vi.mock('../components/HolidayAdministration', () => ({
+  HolidayAdministration: ({ onChanged }: { onChanged: () => void }) => <section><h2>Holiday administration</h2><button onClick={onChanged}>Mock holiday mutation</button></section>,
+}))
 
 import { AcademicDataPage } from './AcademicDataPage'
 
@@ -54,7 +57,7 @@ beforeEach(() => {
 
 afterEach(() => { document.body.innerHTML = '' })
 
-async function renderPage(category: 'semesters' | 'cohorts' | 'courses' | 'study-types' | 'time-windows' | 'lecturers' | 'rooms' = 'semesters') {
+async function renderPage(category: 'semesters' | 'cohorts' | 'courses' | 'study-types' | 'time-windows' | 'lecturers' | 'rooms' | 'holidays' = 'semesters') {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   await act(async () => { root.render(<AcademicDataPage category={category} onCatalogChanged={() => undefined} />); await new Promise((resolve) => setTimeout(resolve, 0)) })
   return root
@@ -65,6 +68,16 @@ function button(label: string) {
 }
 
 describe('AcademicDataPage', () => {
+  it('mounts holiday administration and forwards only its successful-change signal', async () => {
+    const changed = vi.fn()
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    await act(async () => { root.render(<AcademicDataPage category="holidays" onCatalogChanged={changed} />) })
+
+    expect(document.body.textContent).toContain('Holiday administration')
+    act(() => button('Mock holiday mutation')?.click())
+    expect(changed).toHaveBeenCalledOnce()
+  })
+
   it('renders its controlled category without page-local navigation', async () => {
     await renderPage()
     expect(document.body.textContent).toContain('Semesters')

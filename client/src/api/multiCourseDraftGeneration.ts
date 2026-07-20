@@ -22,7 +22,12 @@ export type PreparedCourseInput = {
   expectedDraftRevision: number | null
 }
 
-export type CourseGenerationFailure = { code: string; message: string }
+export type CourseGenerationFailure = {
+  code: string
+  message: string
+  holidayDate?: string
+  holidayName?: string
+}
 
 export type CourseGenerationOutcome = {
   courseId: number

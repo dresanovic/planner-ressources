@@ -21,6 +21,7 @@ from app.models.planning import (
     Room,
     Semester,
     StudyTypeTimeWindow,
+    InstitutionHoliday,
 )
 from app.schemas.conflict_aware_generation import PreparedOptimizationCourseInput
 from app.services.conflict_aware_generation import generate_optimization, prepare_optimization
@@ -76,6 +77,45 @@ def test_preparation_is_canonical_read_only_and_generation_saves_complete_result
     assert result.summary.optimal_for_prepared_snapshot is True
     assert db.query(DraftSchedule).count() == 2
     assert db.query(GenerationConstraintSet).count() == 2
+
+
+def test_holidays_are_server_authoritative_named_blockers_without_changing_caller_unavailable_dates():
+    db = make_session()
+    seed_optimization_planner(db, course_count=1)
+    save_custom_constraints(db, 1, 0, 1)
+    constraints = db.query(GenerationConstraintSet).filter_by(course_id=1, semester_id=1).one()
+    constraints.planning_end_date = date(2026, 9, 7)
+    db.add(InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day"))
+    db.commit()
+
+    prepared = prepare_optimization(db, 1, [1], ["2026-10-26"])
+    result = generate_optimization(
+        db,
+        1,
+        execution_courses(prepared),
+        prepared.unavailable_dates,
+        prepared.shared_snapshot_token,
+    )
+
+    assert prepared.unavailable_dates == [date(2026, 10, 26)]
+    reason = next(item for item in result.outcomes[0].reasons if item.code == "INSTITUTION_HOLIDAY")
+    assert reason.holiday_date == date(2026, 9, 7)
+    assert reason.holiday_name == "Founders Day"
+    assert result.outcomes[0].saved is False
+
+
+def test_holiday_change_after_preparation_invalidates_snapshot_without_saving():
+    db = make_session()
+    seed_optimization_planner(db, course_count=1)
+    prepared = prepare_optimization(db, 1, [1], [])
+    db.add(InstitutionHoliday(date=date(2026, 9, 7), name="New Closure"))
+    db.commit()
+
+    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+
+    assert result.summary.stale == 1
+    assert result.outcomes[0].saved is False
+    assert db.query(DraftSchedule).count() == 0
 
 
 def test_changed_course_input_is_stale_and_preserved():

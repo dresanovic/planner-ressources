@@ -12,6 +12,7 @@ from app.services.schedule_generation import (
     session_duration_minutes,
 )
 from app.models.planning import ResourceUnavailabilityPeriod, ResourceUnavailabilityWeekday
+from app.services.holiday_calendar import HolidayReference
 
 
 def make_course(**overrides) -> CoursePlan:
@@ -80,6 +81,37 @@ def test_generates_weekly_sessions_with_expected_end_times_and_units():
         date(2026, 9, 28),
         date(2026, 10, 5),
     ]
+
+
+def test_holidays_are_hard_constraints_and_named_when_they_remove_feasibility():
+    holiday = HolidayReference(1, date(2026, 9, 7), "Institution Day", 1)
+    result = generate_schedule(
+        course=make_course(total_units=4, min_session_units=4, max_session_units=4),
+        semester=make_semester(end=date(2026, 9, 7)),
+        planning_period=make_period(end=date(2026, 9, 7)),
+        time_windows=[TimeWindowPlan(id=1, weekday=0, start_time=time(8), end_time=time(12))],
+        holidays={holiday.date: holiday},
+    )
+    assert not result.ok
+    assert [error.code for error in result.errors] == [
+        FailureCode.INSUFFICIENT_SEMESTER_CAPACITY,
+        FailureCode.INSTITUTION_HOLIDAY,
+    ]
+    evidence = [error for error in result.errors if error.code == FailureCode.INSTITUTION_HOLIDAY]
+    assert [(item.holiday_date, item.holiday_name) for item in evidence] == [(date(2026, 9, 7), "Institution Day")]
+
+
+def test_generator_skips_holiday_and_uses_next_allowed_date():
+    holiday = HolidayReference(1, date(2026, 9, 7), "Institution Day", 1)
+    result = generate_schedule(
+        course=make_course(total_units=4, min_session_units=4, max_session_units=4),
+        semester=make_semester(end=date(2026, 9, 14)),
+        planning_period=make_period(end=date(2026, 9, 14)),
+        time_windows=[TimeWindowPlan(id=1, weekday=0, start_time=time(8), end_time=time(12))],
+        holidays={holiday.date: holiday},
+    )
+    assert result.ok
+    assert [item.date for item in result.sessions] == [date(2026, 9, 14)]
 
 
 def test_uses_ordered_allowed_windows_and_falls_back_to_another_allowed_window():
@@ -239,6 +271,31 @@ def test_generation_reports_resource_infeasibility_when_every_candidate_is_block
         make_semester(),
         make_period(start=date(2026, 9, 7), end=date(2026, 9, 9)),
         make_windows(),
+    )
+
+    assert not result.ok
+    assert [error.code for error in result.errors] == [FailureCode.NO_FEASIBLE_RESOURCE]
+
+
+def test_resource_blocked_holiday_is_not_reported_as_generation_evidence():
+    block = ResourceUnavailabilityPeriod(
+        lecturer_id=1,
+        kind="recurring",
+        start_time=time(8),
+        end_time=time(12),
+    )
+    block.weekdays = [ResourceUnavailabilityWeekday(weekday=0), ResourceUnavailabilityWeekday(weekday=2)]
+    holiday = HolidayReference(1, date(2026, 9, 7), "Institution Day", 1)
+    result = generate_schedule(
+        make_course(
+            total_units=4,
+            lecturer_candidates=(ResourceCandidatePlan(id=1, normalized_code="lec-a", unavailable_periods=(block,)),),
+            room_candidates=(ResourceCandidatePlan(id=1, normalized_code="room-a", capacity=40),),
+        ),
+        make_semester(),
+        make_period(start=date(2026, 9, 7), end=date(2026, 9, 9)),
+        make_windows(),
+        holidays={holiday.date: holiday},
     )
 
     assert not result.ok

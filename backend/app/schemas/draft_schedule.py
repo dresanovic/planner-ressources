@@ -2,7 +2,7 @@ from datetime import date
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class FailureCode(StrEnum):
@@ -14,6 +14,8 @@ class FailureCode(StrEnum):
     INVALID_TEACHING_WINDOW = "INVALID_TEACHING_WINDOW"
     MISSING_TEACHING_WINDOW = "MISSING_TEACHING_WINDOW"
     NO_FEASIBLE_RESOURCE = "NO_FEASIBLE_RESOURCE"
+    INSTITUTION_HOLIDAY = "INSTITUTION_HOLIDAY"
+    STALE_HOLIDAY_CALENDAR = "STALE_HOLIDAY_CALENDAR"
 
 
 class SessionEditFailureCode(StrEnum):
@@ -39,6 +41,7 @@ class ValidationAlertCode(StrEnum):
     ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
     LECTURER_INELIGIBLE = "LECTURER_INELIGIBLE"
     ROOM_INELIGIBLE = "ROOM_INELIGIBLE"
+    INSTITUTION_HOLIDAY = "INSTITUTION_HOLIDAY"
 
 
 class UpdateDraftSessionRequest(BaseModel):
@@ -123,6 +126,8 @@ class ValidationAlertResponse(BaseModel):
     code: ValidationAlertCode
     message: str
     related_sessions: list[RelatedSessionResponse] = Field(alias="relatedSessions")
+    holiday_date: date | None = Field(default=None, alias="holidayDate")
+    holiday_name: str | None = Field(default=None, alias="holidayName")
 
 
 class DraftSessionResponse(BaseModel):
@@ -233,8 +238,21 @@ class StaleDraftResponse(BaseModel):
 
 
 class GenerationFailure(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     code: FailureCode
     message: str
+    holiday_date: date | None = Field(default=None, alias="holidayDate")
+    holiday_name: str | None = Field(default=None, alias="holidayName", min_length=1, max_length=200)
+
+    @model_validator(mode="after")
+    def validate_holiday_evidence(self):
+        if self.code == FailureCode.INSTITUTION_HOLIDAY:
+            if self.holiday_date is None or self.holiday_name is None:
+                raise ValueError("Institution holiday evidence requires holidayDate and holidayName.")
+        elif self.holiday_date is not None or self.holiday_name is not None:
+            raise ValueError("Non-holiday failures must omit holiday evidence.")
+        return self
 
 
 class GenerationFailureResponse(BaseModel):

@@ -28,6 +28,22 @@ describe('multi-course generation API', () => {
     })
   })
 
+  it('preserves paired per-course holiday evidence', async () => {
+    const result = {
+      ...batchResultFixture,
+      outcomes: [{
+        ...batchResultFixture.outcomes[0],
+        status: 'failed' as const,
+        errors: [{ code: 'INSTITUTION_HOLIDAY', message: 'Founders Day.', holidayDate: '2026-09-07', holidayName: 'Founders Day' }],
+      }, batchResultFixture.outcomes[1]],
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => result }))
+
+    const received = await generateMultiCourseDrafts(batchPreparationFixture, true)
+
+    expect(received.outcomes[0].errors[0]).toMatchObject({ holidayDate: '2026-09-07', holidayName: 'Founders Day' })
+  })
+
   it('rejects malformed initial and retry sizes before a request', async () => {
     vi.stubGlobal('fetch', vi.fn())
     await expect(prepareMultiCourseGeneration(1, 'initial', [1])).rejects.toEqual([

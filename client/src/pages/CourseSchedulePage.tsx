@@ -197,7 +197,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     }
     void loadOverview()
     return () => { current = false }
-  }, [selectedSemesterId])
+  }, [selectedSemesterId, catalogRevision])
 
   async function refreshOverview(semesterId: number, resetInteractions = true) {
     setOverviewLoading(true)

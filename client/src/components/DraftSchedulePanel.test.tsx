@@ -574,6 +574,30 @@ describe('DraftSchedulePanel', () => {
     expect(document.body.textContent).toContain('LECTURER OVERLAP')
   })
 
+  it('renders a non-blocking named holiday alert only inside the affected session', () => {
+    const holidaySchedule = {
+      ...draftScheduleFixture,
+      sessions: draftScheduleFixture.sessions.map((session, index) => index === 0 ? {
+        ...session,
+        validationAlerts: [{
+          code: 'INSTITUTION_HOLIDAY' as const,
+          message: 'Founders Day on 2026-09-07 is an institution holiday.',
+          relatedSessions: [],
+          holidayDate: '2026-09-07',
+          holidayName: 'Founders Day',
+        }],
+      } : session),
+    }
+    renderPanel({ schedules: [holidaySchedule] })
+
+    expect(document.body.textContent).toContain('Founders Day on 2026-09-07')
+    expect(document.querySelectorAll('.validation-alert')).toHaveLength(1)
+    expect(document.body.textContent).not.toContain('Holiday calendar entry')
+
+    act(() => [...document.querySelectorAll('button')].find((item) => item.textContent === 'Weekly')?.click())
+    expect(document.querySelector('.weekly-review')?.textContent).toContain('Founders Day on 2026-09-07')
+  })
+
   it('externally resets active overview filters while preserving schedules and alerts', () => {
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     act(() => root.render(

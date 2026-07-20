@@ -15,6 +15,7 @@ from app.services.draft_schedule_repository import (
     save_generation_constraints,
 )
 from app.services.draft_schedule_validation import ValidationAlertCode, collect_validation_alerts
+from app.services.holiday_calendar import HolidayReference
 from app.services.schedule_generation import GeneratedSession, PlanningPeriodPlan, TimeWindowPlan
 
 
@@ -143,6 +144,42 @@ def alert_codes(alerts_by_session, session_id):
 
 def alert_for(alerts_by_session, session_id, code):
     return next(alert for alert in alerts_by_session[session_id] if alert.code == code)
+
+
+def test_current_holiday_alert_is_named_non_blocking_and_does_not_mutate_session():
+    db = make_session()
+    seed_validation_courses(db)
+    draft = replace_course_draft(db, 1, [generated_session()])
+    session = draft.sessions[0]
+    original = (session.date, session.start_time, session.end_time)
+    holiday = HolidayReference(1, session.date, "Founders Day", 1)
+
+    alerts = collect_validation_alerts(
+        [draft],
+        holidays_by_date={session.date: holiday},
+        **validation_context(db, [draft]),
+    )
+
+    alert = alert_for(alerts, session.id, ValidationAlertCode.INSTITUTION_HOLIDAY)
+    assert alert.holiday_date == session.date
+    assert alert.holiday_name == "Founders Day"
+    assert alert.related_sessions == []
+    assert (session.date, session.start_time, session.end_time) == original
+
+
+def test_missing_holiday_validation_context_is_reported_instead_of_treating_session_as_safe():
+    db = make_session()
+    seed_validation_courses(db)
+    draft = replace_course_draft(db, 1, [generated_session()])
+
+    alerts = collect_validation_alerts(
+        [draft],
+        holidays_by_date=None,
+        **validation_context(db, [draft]),
+    )
+
+    messages = [item.message for item in alerts[draft.sessions[0].id]]
+    assert "Institution holiday data is unavailable for validation." in messages
 
 
 def test_overlap_alerts_apply_to_all_affected_sessions_with_related_context():
