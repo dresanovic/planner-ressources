@@ -47,7 +47,7 @@ export function BatchResultSummary({ result, retryDisabled = false, onRetryFaile
             </div>
             <p>{outcome.scheduledUnits} scheduled · {outcome.remainingUnits} remaining</p>
             {outcome.improvement && <p>+{outcome.improvement.addedUnits} units; {outcome.improvement.reducedConflicts} fewer conflicts; {outcome.improvement.reducedLecturerChanges} fewer lecturer changes; {outcome.improvement.reducedRoomChanges} fewer room changes</p>}
-            {outcome.reasons.map((reason) => <p key={`${outcome.courseId}-${reason.code}`}><strong>{reason.code.replaceAll('_', ' ')}</strong>: {reason.message} ({reason.relatedCount})</p>)}
+            {outcome.reasons.map((reason) => <p key={`${outcome.courseId}-${reason.code}-${reason.holidayDate ?? ''}`}><strong>{reason.code.replaceAll('_', ' ')}</strong>: {reason.message} ({reason.relatedCount})</p>)}
             {outcome.errors.map((error) => <p key={`${outcome.courseId}-${error.code}`}><strong>{error.code.replaceAll('_', ' ')}</strong>: {error.message}</p>)}
           </article>
         ))}

@@ -35,6 +35,7 @@ from app.services.draft_schedule_repository import (
     save_generation_constraints,
 )
 from app.services.schedule_generation import CoursePlan, SemesterPlan
+from app.services.holiday_calendar import HolidayReference, holiday_snapshot
 from app.services.semester_optimization import (
     CourseOptimization,
     CurrentSession,
@@ -76,6 +77,7 @@ class LoadedCourse:
 class LoadedOperation:
     semester: SemesterPlan
     unavailable_dates: tuple[date, ...]
+    holidays: dict[date, HolidayReference]
     semester_snapshot_token: str
     shared_snapshot_token: str
     courses: tuple[LoadedCourse, ...]
@@ -186,6 +188,7 @@ def generate_optimization(
             [item.optimization for item in eligible],
             solve_occupancy,
             loaded.unavailable_dates,
+            holidays=loaded.holidays,
             deadline_seconds=remaining_seconds,
         )
         optimal_for_prepared_snapshot = True
@@ -353,6 +356,8 @@ def generate_optimization(
                     code=BlockingReasonCode(reason.code),
                     message=reason.message,
                     relatedCount=reason.count,
+                    holidayDate=reason.holiday_date,
+                    holidayName=reason.holiday_name,
                 )
                 for reason in course_solution.evidence
                 if scheduled < item.course.total_units
@@ -390,6 +395,7 @@ def load_operation(db: Session, semester_id: int, course_ids: list[int], unavail
         raise SemesterNotFoundError("Semester not found.")
     semester = load_semester_plan(db, semester_id)
     canonical_dates = canonical_unavailable_dates(unavailable_dates)
+    holidays = holiday_snapshot(db, semester.start_date, semester.end_date)
     drafts = list_draft_schedules_by_semester(db, semester_id)
     selected_ids = set(course_ids)
     fixed_sessions = tuple(
@@ -453,6 +459,10 @@ def load_operation(db: Session, semester_id: int, course_ids: list[int], unavail
             "draft": _draft_payload(draft),
             "occupancy": [_fixed_payload(item) for item in sorted(relevant_fixed, key=_fixed_sort_key)],
             "unavailableDates": [value.isoformat() for value in canonical_dates],
+            "institutionHolidays": [
+                [holiday_id, day.isoformat(), name, revision]
+                for holiday_id, day, name, revision in holidays.entries
+            ],
         })
         loaded_courses.append(LoadedCourse(course, plan, constraints, draft, optimization, token))
     semester_payload = [
@@ -466,9 +476,21 @@ def load_operation(db: Session, semester_id: int, course_ids: list[int], unavail
     shared_token = _fingerprint({
         "semester": semester_payload,
         "unavailableDates": [value.isoformat() for value in canonical_dates],
+        "institutionHolidays": [
+            [holiday_id, day.isoformat(), name, revision]
+            for holiday_id, day, name, revision in holidays.entries
+        ],
         "courses": [[item.course.id, item.input_snapshot_token] for item in loaded_courses],
     })
-    return LoadedOperation(semester, canonical_dates, semester_token, shared_token, tuple(loaded_courses), fixed_sessions)
+    return LoadedOperation(
+        semester,
+        canonical_dates,
+        holidays.by_date,
+        semester_token,
+        shared_token,
+        tuple(loaded_courses),
+        fixed_sessions,
+    )
 
 
 def _validate_selection(course_ids: list[int]) -> None:

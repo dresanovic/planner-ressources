@@ -47,7 +47,7 @@ def prepare_conflict_aware_generation(
         return _request_failure(exc.code, exc.message)
 
 
-@router.post("/generate", response_model=OptimizationGenerationResult)
+@router.post("/generate", response_model=OptimizationGenerationResult, response_model_exclude_none=True)
 def generate_conflict_aware_drafts(
     request: OptimizationGenerationRequest,
     db: Session = Depends(get_db),

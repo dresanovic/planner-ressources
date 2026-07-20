@@ -2,6 +2,7 @@ from dataclasses import replace
 from datetime import date, time
 
 from app.services.schedule_generation import PlanningPeriodPlan, ResourceCandidatePlan, TimeWindowPlan
+from app.services.holiday_calendar import HolidayReference
 from app.services.semester_optimization import CurrentSession, FixedSession, generate_candidates, optimize_semester
 from tests.optimization_fixtures import SEMESTER_START, optimization_course
 
@@ -18,6 +19,41 @@ def test_candidate_generation_obeys_unavailable_dates_sizes_windows_and_resource
     assert {item.units for item in candidates.candidates} == {2, 3}
     assert all(item.lecturer_ids == (1,) and item.room_ids == (1,) for item in candidates.candidates)
     assert any(item.code == "UNAVAILABLE_DATE" for item in candidates.evidence)
+
+
+def test_candidate_generation_excludes_named_holiday_and_keeps_it_distinct_from_caller_unavailability():
+    course = replace(
+        optimization_course(1, total_units=4, min_units=2, max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, date(2026, 9, 14)),
+    )
+    holiday = HolidayReference(1, SEMESTER_START, "Founders Day", 1)
+
+    candidates = generate_candidates(
+        course,
+        [],
+        frozenset({SEMESTER_START}),
+        {SEMESTER_START: holiday},
+    )
+
+    assert {item.date for item in candidates.candidates} == {date(2026, 9, 14)}
+    evidence = next(item for item in candidates.evidence if item.code == "INSTITUTION_HOLIDAY")
+    assert evidence.holiday_date == SEMESTER_START
+    assert evidence.holiday_name == "Founders Day"
+    assert not any(item.code == "UNAVAILABLE_DATE" for item in candidates.evidence)
+
+
+def test_holiday_without_an_otherwise_feasible_candidate_is_not_reported():
+    course = replace(
+        optimization_course(1, total_units=4, min_units=2, max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START),
+        windows=(TimeWindowPlan(1, 0, time(8), time(8, 30)),),
+    )
+    holiday = HolidayReference(1, SEMESTER_START, "Founders Day", 1)
+
+    candidates = generate_candidates(course, [], frozenset(), {SEMESTER_START: holiday})
+
+    assert not candidates.candidates
+    assert not any(item.code == "INSTITUTION_HOLIDAY" for item in candidates.evidence)
 
 
 def test_global_optimization_beats_request_order_and_allows_zero_without_fairness():

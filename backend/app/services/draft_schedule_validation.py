@@ -6,6 +6,7 @@ from calendar import day_name
 from app.models.planning import DraftSchedule, DraftSession, Lecturer, ResourceUnavailabilityPeriod, Room
 from app.services.resource_rules import resource_is_unavailable
 from app.services.draft_schedule_repository import GenerationConstraints
+from app.services.holiday_calendar import HolidayReference
 from app.services.schedule_generation import TimeWindowPlan
 
 
@@ -21,6 +22,7 @@ class ValidationAlertCode(StrEnum):
     ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
     LECTURER_INELIGIBLE = "LECTURER_INELIGIBLE"
     ROOM_INELIGIBLE = "ROOM_INELIGIBLE"
+    INSTITUTION_HOLIDAY = "INSTITUTION_HOLIDAY"
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,8 @@ class ValidationAlert:
     code: ValidationAlertCode
     message: str
     related_sessions: list[RelatedSession] = field(default_factory=list)
+    holiday_date: date | None = None
+    holiday_name: str | None = None
 
 
 def collect_validation_alerts(
@@ -57,6 +61,7 @@ def collect_validation_alerts(
     active_lecturer_ids: set[int] | None = None,
     active_room_ids: set[int] | None = None,
     current_cohort_sizes_by_course: dict[int, int] | None = None,
+    holidays_by_date: dict[date, HolidayReference] | None = {},
 ) -> dict[int, list[ValidationAlert]]:
     alerts: dict[int, list[ValidationAlert]] = {
         session.id: [] for draft in drafts for session in draft.sessions
@@ -76,6 +81,23 @@ def collect_validation_alerts(
         _add_overlap_alerts(alerts, sessions, code=code, attr=attr, label=label, rooms_by_id=rooms_by_id, lecturers_by_id=lecturers_by_id)
 
     for draft, session in sessions:
+        if holidays_by_date is None:
+            alerts[session.id].append(
+                ValidationAlert(
+                    code=ValidationAlertCode.VALIDATION_DATA_MISSING,
+                    message="Institution holiday data is unavailable for validation.",
+                )
+            )
+        elif session.date in holidays_by_date:
+            holiday = holidays_by_date[session.date]
+            alerts[session.id].append(
+                ValidationAlert(
+                    code=ValidationAlertCode.INSTITUTION_HOLIDAY,
+                    message=f"{holiday.name} on {holiday.date.isoformat()} is an institution holiday.",
+                    holiday_date=holiday.date,
+                    holiday_name=holiday.name,
+                )
+            )
         if eligible_lecturer_ids_by_course and (
             session.lecturer_id not in eligible_lecturer_ids_by_course.get(draft.course_id, set())
             or (active_lecturer_ids is not None and session.lecturer_id not in active_lecturer_ids)

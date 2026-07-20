@@ -295,6 +295,7 @@ describe('CourseSchedulePage academic option compatibility', () => {
 
     expect(courseSelect.value).toBe('2')
     expect(mocks.getPlanningOptions).toHaveBeenCalledTimes(2)
+    expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(2)
   })
 
   it('retains and flags a selected Course removed by a catalog refresh', async () => {

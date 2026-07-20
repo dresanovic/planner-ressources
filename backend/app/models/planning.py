@@ -17,6 +17,20 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 
+class InstitutionHoliday(Base):
+    __tablename__ = "institution_holidays"
+    __table_args__ = (
+        UniqueConstraint("date", name="uq_institution_holidays_date"),
+        CheckConstraint("revision > 0", name="ck_institution_holidays_revision_positive"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
+
+
 class Lecturer(Base):
     __tablename__ = "lecturers"
     __table_args__ = (

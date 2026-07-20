@@ -3,11 +3,11 @@ from datetime import date, time
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import JSONResponse
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, Lecturer, ResourceUnavailabilityPeriod, Room
+from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, Lecturer, ResourceUnavailabilityPeriod, Room, Semester
 from app.schemas.draft_schedule import (
     AllowedTeachingWindowResponse,
     DraftScheduleContextResponse,
@@ -16,6 +16,8 @@ from app.schemas.draft_schedule import (
     DraftSessionResponse,
     GenerateDraftScheduleRequest,
     GenerationConstraintsResponse,
+    GenerationFailure,
+    FailureCode,
     GenerationFailureResponse,
     PlanningEntityResponse,
     PlanningResourceResponse,
@@ -61,6 +63,7 @@ from app.services.draft_schedule_validation import (
     ValidationAlert,
     collect_validation_alerts,
 )
+from app.services.holiday_calendar import holiday_snapshot
 
 router = APIRouter(prefix="/api/courses/{course_id}/draft-schedule", tags=["draft schedule"])
 constraints_router = APIRouter(
@@ -205,19 +208,45 @@ def generate_draft_schedule(
         end_date=request.planning_period.end_date,
     )
     time_windows = [_request_window_to_plan(index, window) for index, window in enumerate(request.allowed_teaching_windows)]
+    holidays = holiday_snapshot(db, planning_period.start_date, planning_period.end_date)
 
     result = generate_schedule(
         course=course,
         semester=semester,
         planning_period=planning_period,
         time_windows=time_windows,
+        holidays=holidays.by_date,
     )
     if not result.ok:
+        current_holidays = holiday_snapshot(db, planning_period.start_date, planning_period.end_date)
+        if current_holidays.token != holidays.token:
+            return JSONResponse(
+                status_code=status.HTTP_409_CONFLICT,
+                content=GenerationFailureResponse(errors=[GenerationFailure(
+                    code=FailureCode.STALE_HOLIDAY_CALENDAR,
+                    message="The holiday calendar changed during generation. Review the current calendar and retry.",
+                )]).model_dump(mode="json", by_alias=True, exclude_none=True),
+            )
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content=GenerationFailureResponse(errors=result.errors).model_dump(mode="json"),
+            content=GenerationFailureResponse(errors=result.errors).model_dump(mode="json", by_alias=True, exclude_none=True),
         )
     try:
+        # SQLite defers its physical transaction until the first write. Establish
+        # the write boundary before the final holiday reload and hold it through
+        # persistence so a holiday change cannot commit in between them.
+        db.execute(update(Semester).where(Semester.id == semester.id).values(id=Semester.id))
+        current_holidays = holiday_snapshot(db, planning_period.start_date, planning_period.end_date)
+        conflicting = next((session.date for session in result.sessions if session.date in current_holidays.by_date), None)
+        if conflicting is not None:
+            holiday = current_holidays.by_date[conflicting]
+            return JSONResponse(
+                status_code=status.HTTP_409_CONFLICT,
+                content=GenerationFailureResponse(errors=[GenerationFailure(
+                    code=FailureCode.STALE_HOLIDAY_CALENDAR,
+                    message=f"The holiday calendar changed. {holiday.name} on {holiday.date.isoformat()} now conflicts with this result; retry generation.",
+                )]).model_dump(mode="json", by_alias=True, exclude_none=True),
+            )
         draft = replace_draft_schedule(
             db,
             course_plan=course,
@@ -417,6 +446,13 @@ def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResp
             study_type_id = draft.study_type_id_snapshot
             if study_type_id not in study_windows_by_study_type_id:
                 study_windows_by_study_type_id[study_type_id] = load_time_windows(db, study_type_id)
+        holidays_by_date = holiday_snapshot(
+            db,
+            semester_plan.start_date,
+            semester_plan.end_date,
+        ).by_date
+    else:
+        holidays_by_date = {}
     alerts_by_session = collect_validation_alerts(
         list(drafts),
         rooms_by_id=rooms_by_id,
@@ -431,6 +467,7 @@ def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResp
         current_cohort_sizes_by_course={
             draft.course_id: draft.course.cohort.student_count for draft in drafts
         },
+        holidays_by_date=holidays_by_date,
     )
     return [_to_response(draft, alerts_by_session=alerts_by_session, rooms_by_id=rooms_by_id, lecturers_by_id=lecturers_by_id) for draft in drafts]
 
@@ -498,6 +535,8 @@ def _validation_alert_to_response(alert: ValidationAlert) -> ValidationAlertResp
     return ValidationAlertResponse(
         code=alert.code.value,
         message=alert.message,
+        holidayDate=alert.holiday_date,
+        holidayName=alert.holiday_name,
         relatedSessions=[
             RelatedSessionResponse(
                 sessionId=related.session_id,

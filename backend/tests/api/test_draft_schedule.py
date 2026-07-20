@@ -2,7 +2,7 @@ from datetime import date, time
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -22,6 +22,7 @@ from app.models.planning import (
     Semester,
     StudyType,
     StudyTypeTimeWindow,
+    InstitutionHoliday,
 )
 from app.schemas.draft_schedule import (
     DraftScheduleMutationResponse,
@@ -1054,3 +1055,168 @@ def test_single_course_generation_rolls_back_schedule_when_constraint_persistenc
     with pytest.raises(RuntimeError, match="injected persistence error"):
         client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
     assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
+
+
+def test_single_generation_uses_server_holidays_and_returns_paired_named_evidence(client, db_session):
+    seed_valid_course(db_session, total_units=2, min_units=2, max_units=2)
+    db_session.add(InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day"))
+    db_session.commit()
+
+    response = client.post(
+        "/api/courses/1/draft-schedule/generate",
+        json=generation_payload(
+            start="2026-09-07",
+            end="2026-09-07",
+            windows=[{"weekday": 0, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1}],
+        ),
+    )
+
+    assert response.status_code == 422
+    errors = response.json()["errors"]
+    holiday = next(item for item in errors if item["code"] == "INSTITUTION_HOLIDAY")
+    assert holiday["holidayDate"] == "2026-09-07"
+    assert holiday["holidayName"] == "Founders Day"
+    assert all("holidayDate" not in item and "holidayName" not in item for item in errors if item is not holiday)
+    assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
+
+
+def test_failed_single_generation_rejects_superseded_holiday_evidence(client, db_session, monkeypatch):
+    seed_valid_course(db_session, total_units=2, min_units=2, max_units=2)
+    holiday = InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day")
+    db_session.add(holiday)
+    db_session.commit()
+    import app.api.draft_schedule as draft_api
+
+    original = draft_api.holiday_snapshot
+    calls = 0
+
+    def rename_holiday_before_failure_response(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            holiday.name = "Current Closure"
+            holiday.revision += 1
+            db_session.flush()
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(draft_api, "holiday_snapshot", rename_holiday_before_failure_response)
+    response = client.post(
+        "/api/courses/1/draft-schedule/generate",
+        json=generation_payload(
+            start="2026-09-07",
+            end="2026-09-07",
+            windows=[{"weekday": 0, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1}],
+        ),
+    )
+
+    assert response.status_code == 409
+    assert response.json()["errors"][0]["code"] == "STALE_HOLIDAY_CALENDAR"
+    assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
+
+
+def test_manual_holiday_session_saves_and_current_alert_disappears_after_hard_delete(client, db_session):
+    seed_valid_course(db_session, total_units=2, min_units=2, max_units=2)
+    holiday = InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day")
+    db_session.add(holiday)
+    db_session.commit()
+
+    created = client.post(
+        "/api/courses/1/draft-schedule/sessions",
+        json=manual_session_payload(roomId=1),
+    )
+
+    assert created.status_code == 201
+    session = created.json()["draftSchedule"]["sessions"][0]
+    alert = next(item for item in session["validationAlerts"] if item["code"] == "INSTITUTION_HOLIDAY")
+    assert alert["holidayDate"] == "2026-09-07"
+    assert alert["holidayName"] == "Founders Day"
+    assert alert["relatedSessions"] == []
+    session_id = session["id"]
+
+    db_session.delete(holiday)
+    db_session.commit()
+    reread = client.get("/api/courses/1/draft-schedule?semesterId=1").json()
+    assert reread["sessions"][0]["id"] == session_id
+    assert "INSTITUTION_HOLIDAY" not in {
+        item["code"] for item in reread["sessions"][0]["validationAlerts"]
+    }
+
+
+def test_single_generation_revalidates_holidays_before_save(client, db_session, monkeypatch):
+    seed_valid_course(db_session, total_units=2, min_units=2, max_units=2)
+    import app.api.draft_schedule as draft_api
+
+    original = draft_api.holiday_snapshot
+    calls = 0
+    write_barrier_seen = False
+
+    def capture_write_barrier(_connection, _cursor, statement, _parameters, _context, _executemany):
+        nonlocal write_barrier_seen
+        normalized = statement.upper()
+        if normalized.startswith("UPDATE SEMESTERS"):
+            write_barrier_seen = True
+
+    event.listen(db_session.get_bind(), "before_cursor_execute", capture_write_barrier)
+
+    def add_holiday_before_save(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            assert write_barrier_seen
+            db_session.add(InstitutionHoliday(date=date(2026, 9, 7), name="New Closure"))
+            db_session.flush()
+        return original(*args, **kwargs)
+
+    try:
+        monkeypatch.setattr(draft_api, "holiday_snapshot", add_holiday_before_save)
+        response = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
+    finally:
+        event.remove(db_session.get_bind(), "before_cursor_execute", capture_write_barrier)
+
+    assert response.status_code == 409
+    assert response.json()["errors"][0]["code"] == "STALE_HOLIDAY_CALENDAR"
+    assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
+
+
+def test_single_generation_detects_holiday_committed_by_another_session_before_barrier(tmp_path):
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'single-generation-holiday-race.db'}",
+        connect_args={"check_same_thread": False},
+    )
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+    request_db = SessionLocal()
+    seed_valid_course(request_db, total_units=2, min_units=2, max_units=2)
+    holiday_committed = False
+
+    def commit_holiday_before_barrier(_connection, _cursor, statement, _parameters, _context, _executemany):
+        nonlocal holiday_committed
+        if holiday_committed or not statement.upper().startswith("UPDATE SEMESTERS"):
+            return
+        holiday_committed = True
+        with SessionLocal() as concurrent_db:
+            concurrent_db.add(InstitutionHoliday(date=date(2026, 9, 7), name="Concurrent Closure"))
+            concurrent_db.commit()
+
+    def override_get_db():
+        yield request_db
+
+    event.listen(engine, "before_cursor_execute", commit_holiday_before_barrier)
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with TestClient(app) as isolated_client:
+            response = isolated_client.post(
+                "/api/courses/1/draft-schedule/generate",
+                json=generation_payload(),
+            )
+            reread = isolated_client.get("/api/courses/1/draft-schedule?semesterId=1")
+    finally:
+        app.dependency_overrides.clear()
+        event.remove(engine, "before_cursor_execute", commit_holiday_before_barrier)
+        request_db.close()
+        engine.dispose()
+
+    assert holiday_committed
+    assert response.status_code == 409
+    assert response.json()["errors"][0]["code"] == "STALE_HOLIDAY_CALENDAR"
+    assert reread.status_code == 404

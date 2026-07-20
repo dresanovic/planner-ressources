@@ -23,6 +23,21 @@ describe('conflict-aware generation API', () => {
     expect(payload.courses[1].inputSnapshotToken).toBe('course-2')
   })
 
+  it('preserves paired holiday blocking context', async () => {
+    const payload = {
+      ...optimizationResultFixture,
+      outcomes: [{
+        ...optimizationResultFixture.outcomes[0],
+        reasons: [{ code: 'INSTITUTION_HOLIDAY', message: 'Founders Day.', relatedCount: 1, holidayDate: '2026-09-07', holidayName: 'Founders Day' }],
+      }],
+    }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }))
+
+    const result = await generateConflictAwareSchedules(optimizationPreparationFixture, true)
+
+    expect(result.outcomes[0].reasons[0]).toMatchObject({ holidayDate: '2026-09-07', holidayName: 'Founders Day' })
+  })
+
   it('parses validation and solver failures and normalizes network failure', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response(JSON.stringify({ errors: [{ code: 'INVALID_OPTIMIZATION_SIZE', message: 'Bad selection.' }] }), { status: 422 }))
     await expect(prepareConflictAwareGeneration(1, [1], [])).rejects.toEqual([{ code: 'INVALID_OPTIMIZATION_SIZE', message: 'Bad selection.' }])

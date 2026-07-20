@@ -14,6 +14,7 @@ from app.models.planning import (
     Lecturer,
     ResourceUnavailabilityPeriod,
     ResourceUnavailabilityWeekday,
+    InstitutionHoliday,
 )
 from app.schemas.multi_course_generation import BatchOperationKind, PreparedCourseInput
 from app.services.draft_schedule_repository import (
@@ -76,6 +77,89 @@ def test_generation_uses_each_courses_saved_constraints_or_defaults_without_rewr
     current = db.query(GenerationConstraintSet).filter_by(course_id=1, semester_id=1).one()
     assert current.id == saved.constraint_set_id
     assert current.revision == 1
+
+
+def test_generation_excludes_holidays_and_returns_paired_named_evidence_when_they_remove_feasibility():
+    db, _ = make_session()
+    seed_multi_course_planner(db)
+    plan = load_course_plan(db, 1)
+    semester = load_semester_plan(db, 1)
+    save_generation_constraints(
+        db,
+        plan,
+        semester,
+        PlanningPeriodPlan(date(2026, 9, 7), date(2026, 9, 7)),
+        [TimeWindowPlan(id=None, weekday=0, start_time=time(8), end_time=time(12))],
+    )
+    db.add(InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day"))
+    db.commit()
+
+    result = generate_batch(db, 1, BatchOperationKind.INITIAL, prepared(1))
+
+    outcome = result.outcomes[0]
+    holiday_error = next(item for item in outcome.errors if item.code == "INSTITUTION_HOLIDAY")
+    assert holiday_error.holiday_date == date(2026, 9, 7)
+    assert holiday_error.holiday_name == "Founders Day"
+    assert get_draft_schedule(db, 1, 1) is None
+
+
+def test_failed_batch_generation_rejects_superseded_holiday_evidence(monkeypatch):
+    db, _ = make_session()
+    seed_multi_course_planner(db)
+    plan = load_course_plan(db, 1)
+    semester = load_semester_plan(db, 1)
+    save_generation_constraints(
+        db,
+        plan,
+        semester,
+        PlanningPeriodPlan(date(2026, 9, 7), date(2026, 9, 7)),
+        [TimeWindowPlan(id=None, weekday=0, start_time=time(8), end_time=time(12))],
+    )
+    holiday = InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day")
+    db.add(holiday)
+    db.commit()
+    import app.services.multi_course_generation as service
+
+    original = service.holiday_snapshot
+    calls = 0
+
+    def rename_holiday_before_failure_response(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            holiday.name = "Current Closure"
+            holiday.revision += 1
+            db.flush()
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service, "holiday_snapshot", rename_holiday_before_failure_response)
+    result = generate_batch(db, 1, BatchOperationKind.INITIAL, prepared(1))
+
+    assert [error.code for error in result.outcomes[0].errors] == ["STALE_HOLIDAY_CALENDAR"]
+    assert get_draft_schedule(db, 1, 1) is None
+
+
+def test_holiday_added_between_generation_and_save_marks_only_the_affected_result_stale(monkeypatch):
+    db, _ = make_session()
+    seed_multi_course_planner(db)
+    import app.services.multi_course_generation as service
+
+    original = service.holiday_snapshot
+    calls = 0
+
+    def add_holiday_before_revalidation(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            db.add(InstitutionHoliday(date=date(2026, 9, 7), name="New Closure"))
+            db.flush()
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service, "holiday_snapshot", add_holiday_before_revalidation)
+    result = generate_batch(db, 1, BatchOperationKind.INITIAL, prepared(1))
+
+    assert result.outcomes[0].errors[0].code == "STALE_HOLIDAY_CALENDAR"
+    assert get_draft_schedule(db, 1, 1) is None
 
 
 def test_unexpected_persistence_failure_can_roll_back_all_prior_course_savepoints(monkeypatch):

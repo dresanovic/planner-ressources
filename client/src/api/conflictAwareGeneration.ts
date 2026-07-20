@@ -10,6 +10,8 @@ export type BlockingReason = {
   code: string
   message: string
   relatedCount: number
+  holidayDate?: string
+  holidayName?: string
 }
 
 export type PreparedOptimizationCourse = {

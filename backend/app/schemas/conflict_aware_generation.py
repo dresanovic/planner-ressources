@@ -23,6 +23,7 @@ class BlockingReasonCode(StrEnum):
     NO_ELIGIBLE_ROOM = "NO_ELIGIBLE_ROOM"
     INSUFFICIENT_ROOM_CAPACITY = "INSUFFICIENT_ROOM_CAPACITY"
     UNAVAILABLE_DATE = "UNAVAILABLE_DATE"
+    INSTITUTION_HOLIDAY = "INSTITUTION_HOLIDAY"
     NO_ALLOWED_DATE_OR_WINDOW = "NO_ALLOWED_DATE_OR_WINDOW"
     COURSE_CONSTRAINT = "COURSE_CONSTRAINT"
     SELECTED_COURSE_COMPETITION = "SELECTED_COURSE_COMPETITION"
@@ -41,6 +42,19 @@ class BlockingReason(BaseModel):
     code: BlockingReasonCode
     message: str
     related_count: int = Field(default=1, alias="relatedCount", ge=1)
+    holiday_date: date | None = Field(default=None, alias="holidayDate")
+    holiday_name: str | None = Field(default=None, alias="holidayName")
+
+    @model_validator(mode="after")
+    def validate_holiday_evidence(self) -> "BlockingReason":
+        is_holiday = self.code == BlockingReasonCode.INSTITUTION_HOLIDAY
+        has_both = self.holiday_date is not None and self.holiday_name is not None
+        has_either = self.holiday_date is not None or self.holiday_name is not None
+        if is_holiday and not has_both:
+            raise ValueError("Institution holiday reasons require holiday date and name.")
+        if not is_holiday and has_either:
+            raise ValueError("Holiday evidence is only valid for institution holiday reasons.")
+        return self
 
 
 class ArrangementImprovement(BaseModel):

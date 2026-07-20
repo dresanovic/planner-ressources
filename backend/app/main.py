@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.draft_schedule import (
@@ -14,6 +17,7 @@ from app.api.academic_catalog import router as academic_catalog_router
 from app.api.multi_course_generation import router as multi_course_router
 from app.api.conflict_aware_generation import router as conflict_aware_router
 from app.api.resource_catalog import academic_router as academic_resource_router, router as resource_catalog_router
+from app.api.holiday_calendar import router as holiday_calendar_router
 from app.db.schema import initialize_database
 from app.db.session import engine, get_db
 
@@ -46,6 +50,24 @@ app.include_router(planning_options_router)
 app.include_router(academic_catalog_router)
 app.include_router(resource_catalog_router)
 app.include_router(academic_resource_router)
+app.include_router(holiday_calendar_router)
+
+
+@app.exception_handler(RequestValidationError)
+async def structured_holiday_validation_errors(request: Request, exc: RequestValidationError):
+    if not request.url.path.startswith("/api/holidays"):
+        return await request_validation_exception_handler(request, exc)
+    errors = []
+    for item in exc.errors():
+        location = item.get("loc", ())
+        field = str(location[-1]) if location and location[-1] not in {"body", "query", "path"} else None
+        errors.append({
+            "code": "VALIDATION_ERROR",
+            "message": item.get("msg", "Invalid holiday request."),
+            "field": field,
+            "meta": None,
+        })
+    return JSONResponse(status_code=422, content={"errors": errors})
 
 
 @app.get("/health")

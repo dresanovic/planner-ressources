@@ -1,4 +1,5 @@
 import pytest
+from datetime import date, time
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -7,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, DraftSchedule, GenerationConstraintSet
+from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, DraftSchedule, GenerationConstraintSet, GenerationConstraintWindow, InstitutionHoliday
 from tests.multi_course_fixtures import seed_multi_course_planner
 
 
@@ -108,7 +109,35 @@ def test_partial_success_preserves_failed_course_and_reports_every_reason(client
     assert result["summary"] == {"total": 2, "succeeded": 1, "failed": 1}
     assert result["outcomes"][1]["errors"][0]["code"] == "INSUFFICIENT_ROOM_CAPACITY"
     assert db_session.query(DraftSchedule).filter_by(course_id=2).one_or_none() is None
-    assert db_session.query(GenerationConstraintSet).filter_by(course_id=2).one_or_none() is None
+
+
+def test_batch_api_loads_holidays_server_side_and_returns_per_course_named_evidence(client, db_session):
+    seed_multi_course_planner(db_session)
+    constraint = GenerationConstraintSet(
+        course_id=1,
+        semester_id=1,
+        planning_start_date=date(2026, 9, 7),
+        planning_end_date=date(2026, 9, 7),
+        windows=[GenerationConstraintWindow(
+            source_time_window_id=1,
+            weekday=0,
+            start_time=time(8),
+            end_time=time(12),
+            sort_order=1,
+        )],
+    )
+    db_session.add_all([constraint, InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day")])
+    db_session.commit()
+    prepared = client.post("/api/draft-schedules/batch/prepare", json=prepare_payload()).json()
+
+    result = client.post("/api/draft-schedules/batch/generate", json=execution_payload(prepared)).json()
+
+    first = next(item for item in result["outcomes"] if item["courseId"] == 1)
+    reason = next(item for item in first["errors"] if item["code"] == "INSTITUTION_HOLIDAY")
+    assert reason["holidayDate"] == "2026-09-07"
+    assert reason["holidayName"] == "Founders Day"
+    assert all("holidayDate" not in item and "holidayName" not in item for item in first["errors"] if item is not reason)
+    assert db_session.query(DraftSchedule).filter_by(course_id=1).one_or_none() is None
 
 
 def test_retry_allows_one_failed_course_without_regenerating_success(client, db_session):

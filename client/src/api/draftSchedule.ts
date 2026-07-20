@@ -37,12 +37,15 @@ export type ValidationAlert = {
   code: ValidationAlertCode
   message: string
   relatedSessions: RelatedSession[]
+  holidayDate?: string | null
+  holidayName?: string | null
 }
 
 export type ValidationAlertCode =
   | 'LECTURER_OVERLAP' | 'ROOM_OVERLAP' | 'COHORT_OVERLAP' | 'ROOM_CAPACITY'
   | 'GENERATION_CONSTRAINT_VIOLATION' | 'STUDY_TYPE_WINDOW_VIOLATION' | 'VALIDATION_DATA_MISSING'
   | 'LECTURER_UNAVAILABLE' | 'ROOM_UNAVAILABLE' | 'LECTURER_INELIGIBLE' | 'ROOM_INELIGIBLE'
+  | 'INSTITUTION_HOLIDAY'
 
 export type PlanningPeriod = {
   startDate: string
@@ -103,6 +106,8 @@ export type ViewMode = 'list' | 'weekly'
 export type GenerationFailure = {
   code: string
   message: string
+  holidayDate?: string
+  holidayName?: string
 }
 
 export type UpdateDraftSessionRequest = {
@@ -163,7 +168,7 @@ export async function generateDraftSchedule(
       body: JSON.stringify({ semesterId, planningPeriod, allowedTeachingWindows }),
     },
   )
-  if (response.status === 422) {
+  if (response.status === 422 || response.status === 409) {
     const payload = await response.json()
     throw payload.errors as GenerationFailure[]
   }

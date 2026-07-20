@@ -4,11 +4,12 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 from time import monotonic
-from typing import Iterable, Sequence
+from typing import Iterable, Mapping, Sequence
 
 from ortools.sat.python import cp_model
 
 from app.services.resource_rules import resource_is_unavailable
+from app.services.holiday_calendar import HolidayReference
 from app.services.schedule_generation import (
     GeneratedSession,
     PlanningPeriodPlan,
@@ -98,6 +99,8 @@ class BlockingEvidence:
     code: str
     count: int
     message: str
+    holiday_date: date | None = None
+    holiday_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -160,8 +163,11 @@ def generate_candidates(
     course: OptimizationCourse,
     fixed_sessions: Sequence[FixedSession],
     unavailable_dates: frozenset[date],
+    holidays: Mapping[date, HolidayReference] | None = None,
 ) -> CandidateSet:
+    holidays = holidays or {}
     counts: Counter[str] = Counter()
+    holiday_counts: Counter[tuple[date, str]] = Counter()
     candidates: list[TemporalCandidate] = []
     active_lecturers = tuple(sorted((item for item in course.lecturers if item.active), key=lambda item: (item.normalized_code, item.id)))
     active_rooms = tuple(sorted((item for item in course.rooms if item.active), key=lambda item: (item.normalized_code, item.id)))
@@ -190,6 +196,18 @@ def generate_candidates(
     permitted_temporal_slot_found = False
     while cursor <= course.planning_period.end_date:
         matching = [window for window in ordered_windows if window.weekday == cursor.weekday()]
+        if cursor in holidays:
+            if _holiday_removes_feasible_candidate(
+                course,
+                fixed_sessions,
+                cursor,
+                matching,
+                active_lecturers,
+                capacity_rooms,
+            ):
+                holiday_counts[(cursor, holidays[cursor].name)] = 1
+            cursor += timedelta(days=1)
+            continue
         if cursor in unavailable_dates:
             if matching:
                 counts["UNAVAILABLE_DATE"] += 1
@@ -203,41 +221,18 @@ def generate_candidates(
                     counts["COURSE_CONSTRAINT"] += 1
                     continue
                 permitted_temporal_slot_found = True
-                cohort_blocked = any(
-                    fixed.cohort_id == course.cohort_id
-                    and intervals_overlap(cursor, window.start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
-                    for fixed in fixed_sessions
+                cohort_blocked, lecturers, rooms = _candidate_resources(
+                    course,
+                    fixed_sessions,
+                    cursor,
+                    window.start_time,
+                    end_time,
+                    active_lecturers,
+                    capacity_rooms,
+                    counts,
                 )
-                if cohort_blocked:
-                    counts["COHORT_OCCUPIED"] += 1
-                lecturers = []
-                for lecturer in active_lecturers:
-                    if resource_is_unavailable(lecturer.unavailable_periods, cursor, window.start_time, end_time):
-                        counts["LECTURER_UNAVAILABLE"] += 1
-                        continue
-                    if any(
-                        fixed.lecturer_id == lecturer.id
-                        and intervals_overlap(cursor, window.start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
-                        for fixed in fixed_sessions
-                    ):
-                        counts["LECTURER_OCCUPIED"] += 1
-                        continue
-                    lecturers.append(lecturer.id)
-                rooms = []
-                for room in capacity_rooms:
-                    if resource_is_unavailable(room.unavailable_periods, cursor, window.start_time, end_time):
-                        counts["ROOM_UNAVAILABLE"] += 1
-                        continue
-                    if any(
-                        fixed.room_id == room.id
-                        and intervals_overlap(cursor, window.start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
-                        for fixed in fixed_sessions
-                    ):
-                        counts["ROOM_OCCUPIED"] += 1
-                        continue
-                    rooms.append(room.id)
                 if not cohort_blocked and lecturers and rooms:
-                    raw.append((cursor, window.start_time, end_time, units, window, tuple(lecturers), tuple(rooms)))
+                    raw.append((cursor, window.start_time, end_time, units, window, lecturers, rooms))
         cursor += timedelta(days=1)
 
     if not raw and not permitted_temporal_slot_found:
@@ -258,7 +253,97 @@ def generate_candidates(
             room_ids=rooms,
             canonical_rank=rank + 1,
         ))
-    return CandidateSet(tuple(candidates), _evidence(counts))
+    holiday_evidence = tuple(
+        BlockingEvidence(
+            "INSTITUTION_HOLIDAY",
+            count,
+            f"{name} on {day.isoformat()} removed an otherwise allowed date.",
+            day,
+            name,
+        )
+        for (day, name), count in sorted(holiday_counts.items())
+    )
+    return CandidateSet(tuple(candidates), (*_evidence(counts), *holiday_evidence))
+
+
+def _holiday_removes_feasible_candidate(
+    course: OptimizationCourse,
+    fixed_sessions: Sequence[FixedSession],
+    candidate_date: date,
+    windows: Sequence[TimeWindowPlan],
+    active_lecturers: Sequence[ResourceCandidatePlan],
+    capacity_rooms: Sequence[ResourceCandidatePlan],
+) -> bool:
+    for window in windows:
+        for units in range(course.min_session_units, course.max_session_units + 1):
+            end_dt = datetime.combine(candidate_date, window.start_time) + timedelta(minutes=session_duration_minutes(units))
+            if end_dt.date() != candidate_date or end_dt.time() > window.end_time:
+                continue
+            cohort_blocked, lecturers, rooms = _candidate_resources(
+                course,
+                fixed_sessions,
+                candidate_date,
+                window.start_time,
+                end_dt.time(),
+                active_lecturers,
+                capacity_rooms,
+            )
+            if not cohort_blocked and lecturers and rooms:
+                return True
+    return False
+
+
+def _candidate_resources(
+    course: OptimizationCourse,
+    fixed_sessions: Sequence[FixedSession],
+    candidate_date: date,
+    start_time: time,
+    end_time: time,
+    active_lecturers: Sequence[ResourceCandidatePlan],
+    capacity_rooms: Sequence[ResourceCandidatePlan],
+    counts: Counter[str] | None = None,
+) -> tuple[bool, tuple[int, ...], tuple[int, ...]]:
+    cohort_blocked = any(
+        fixed.cohort_id == course.cohort_id
+        and intervals_overlap(candidate_date, start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
+        for fixed in fixed_sessions
+    )
+    if cohort_blocked and counts is not None:
+        counts["COHORT_OCCUPIED"] += 1
+
+    lecturers = []
+    for lecturer in active_lecturers:
+        if resource_is_unavailable(lecturer.unavailable_periods, candidate_date, start_time, end_time):
+            if counts is not None:
+                counts["LECTURER_UNAVAILABLE"] += 1
+            continue
+        if any(
+            fixed.lecturer_id == lecturer.id
+            and intervals_overlap(candidate_date, start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
+            for fixed in fixed_sessions
+        ):
+            if counts is not None:
+                counts["LECTURER_OCCUPIED"] += 1
+            continue
+        lecturers.append(lecturer.id)
+
+    rooms = []
+    for room in capacity_rooms:
+        if resource_is_unavailable(room.unavailable_periods, candidate_date, start_time, end_time):
+            if counts is not None:
+                counts["ROOM_UNAVAILABLE"] += 1
+            continue
+        if any(
+            fixed.room_id == room.id
+            and intervals_overlap(candidate_date, start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
+            for fixed in fixed_sessions
+        ):
+            if counts is not None:
+                counts["ROOM_OCCUPIED"] += 1
+            continue
+        rooms.append(room.id)
+
+    return cohort_blocked, tuple(lecturers), tuple(rooms)
 
 
 def _evidence(counts: Counter[str]) -> tuple[BlockingEvidence, ...]:
@@ -274,6 +359,7 @@ def optimize_semester(
     fixed_sessions: Sequence[FixedSession],
     unavailable_dates: Iterable[date] = (),
     *,
+    holidays: Mapping[date, HolidayReference] | None = None,
     deadline_seconds: float = 60.0,
 ) -> SemesterOptimizationResult:
     started = monotonic()
@@ -285,7 +371,7 @@ def optimize_semester(
     room_assignments: dict[int, list[tuple[TemporalCandidate, cp_model.IntVar]]] = defaultdict(list)
 
     for course in sorted(courses, key=lambda item: item.course_id):
-        candidate_set = generate_candidates(course, fixed_sessions, unavailable)
+        candidate_set = generate_candidates(course, fixed_sessions, unavailable, holidays)
         variables = _CourseVariables(course=course, candidate_set=candidate_set)
         course_vars[course.course_id] = variables
         by_date: dict[date, list[cp_model.IntVar]] = defaultdict(list)
@@ -618,8 +704,15 @@ def _count_generated_changes(sessions: Sequence[GeneratedSession], field_name: s
 
 
 def _deduplicate_evidence(items: Sequence[BlockingEvidence]) -> list[BlockingEvidence]:
-    combined: dict[str, BlockingEvidence] = {}
+    combined: dict[tuple[str, date | None], BlockingEvidence] = {}
     for item in items:
-        existing = combined.get(item.code)
-        combined[item.code] = BlockingEvidence(item.code, item.count + (existing.count if existing else 0), item.message)
-    return [combined[code] for code in sorted(combined)]
+        key = (item.code, item.holiday_date)
+        existing = combined.get(key)
+        combined[key] = BlockingEvidence(
+            item.code,
+            item.count + (existing.count if existing else 0),
+            item.message,
+            item.holiday_date,
+            item.holiday_name,
+        )
+    return [combined[key] for key in sorted(combined, key=lambda value: (value[0], value[1] or date.min))]

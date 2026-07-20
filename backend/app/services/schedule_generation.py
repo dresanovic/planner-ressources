@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+from collections.abc import Mapping
 
 from app.models.planning import ResourceUnavailabilityPeriod
 from app.schemas.draft_schedule import FailureCode, GenerationFailure
 from app.services.resource_rules import ResourceChoice, assign_resource_sequence, resource_is_unavailable
+from app.services.holiday_calendar import HolidayReference
 
 
 UNIT_MINUTES = 45
@@ -117,7 +119,9 @@ def generate_schedule(
     semester: SemesterPlan,
     planning_period: PlanningPeriodPlan,
     time_windows: list[TimeWindowPlan],
+    holidays: Mapping[date, HolidayReference] | None = None,
 ) -> ScheduleGenerationResult:
+    holidays = holidays or {}
     errors = _validate_generation_inputs(course, semester, planning_period, time_windows)
     unit_distribution: list[int] | None = None
     if not any(error.code == FailureCode.INVALID_SESSION_PREFERENCE for error in errors):
@@ -149,6 +153,7 @@ def generate_schedule(
             existing_sessions=sessions,
             planning_period=planning_period,
             ordered_windows=ordered_windows,
+            holidays=holidays,
         )
         if session is None:
             if not _any_window_can_fit(units, ordered_windows):
@@ -160,9 +165,16 @@ def generate_schedule(
             else:
                 code = FailureCode.INSUFFICIENT_SEMESTER_CAPACITY
                 message = "Planning period does not contain enough allowed teaching window capacity."
+            holiday_errors = _holiday_failures(
+                holidays,
+                course=course,
+                planning_period=planning_period,
+                windows=ordered_windows,
+                units=units,
+            )
             return ScheduleGenerationResult(
                 sessions=[],
-                errors=[GenerationFailure(code=code, message=message)],
+                errors=[GenerationFailure(code=code, message=message), *holiday_errors],
             )
         sessions.append(session)
 
@@ -276,6 +288,7 @@ def _place_session(
     existing_sessions: list[GeneratedSession],
     planning_period: PlanningPeriodPlan,
     ordered_windows: list[TimeWindowPlan],
+    holidays: Mapping[date, HolidayReference],
 ) -> GeneratedSession | None:
     start_week = planning_period.start_date + timedelta(weeks=index)
     used_dates = {session.date for session in existing_sessions}
@@ -287,6 +300,7 @@ def _place_session(
         planning_period=planning_period,
         ordered_windows=ordered_windows,
         course=course,
+        holidays=holidays,
     )
     if session is not None:
         return session
@@ -297,6 +311,7 @@ def _place_session(
         planning_period=planning_period,
         ordered_windows=ordered_windows,
         course=course,
+        holidays=holidays,
     )
 
 
@@ -307,11 +322,14 @@ def _find_session_on_dates(
     planning_period: PlanningPeriodPlan,
     ordered_windows: list[TimeWindowPlan],
     course: CoursePlan,
+    holidays: Mapping[date, HolidayReference],
 ) -> GeneratedSession | None:
     for candidate_date in candidate_dates:
         if candidate_date < planning_period.start_date or candidate_date > planning_period.end_date:
             continue
         if candidate_date in used_dates:
+            continue
+        if candidate_date in holidays:
             continue
         for window in ordered_windows:
             if candidate_date.weekday() != window.weekday:
@@ -416,23 +434,59 @@ def _any_resource_feasible_slot(
     windows: list[TimeWindowPlan],
 ) -> bool:
     for candidate_date in _candidate_dates(planning_period.start_date, planning_period.end_date):
-        for window in windows:
-            if candidate_date.weekday() != window.weekday:
-                continue
-            end_time = _session_end_time(window.start_time, units)
-            if end_time > window.end_time:
-                continue
-            proposed = GeneratedSession(
-                date=candidate_date,
-                start_time=window.start_time,
-                end_time=end_time,
-                units=units,
-                time_window_id=window.id,
-                constraint_window_index=window.constraint_window_index,
-            )
-            if (
-                _feasible_lecturer_ids(_lecturer_candidates(course), proposed)
-                and _feasible_room_ids(_room_candidates(course), proposed, course.cohort_size)
-            ):
-                return True
+        if _resource_feasible_slot_on_date(course, units, candidate_date, windows):
+            return True
     return False
+
+
+def _resource_feasible_slot_on_date(
+    course: CoursePlan,
+    units: int,
+    candidate_date: date,
+    windows: list[TimeWindowPlan],
+) -> bool:
+    for window in windows:
+        if candidate_date.weekday() != window.weekday:
+            continue
+        end_time = _session_end_time(window.start_time, units)
+        if end_time > window.end_time:
+            continue
+        proposed = GeneratedSession(
+            date=candidate_date,
+            start_time=window.start_time,
+            end_time=end_time,
+            units=units,
+            time_window_id=window.id,
+            constraint_window_index=window.constraint_window_index,
+        )
+        if (
+            _feasible_lecturer_ids(_lecturer_candidates(course), proposed)
+            and _feasible_room_ids(_room_candidates(course), proposed, course.cohort_size)
+        ):
+            return True
+    return False
+
+
+def _holiday_failures(
+    holidays: Mapping[date, HolidayReference],
+    *,
+    course: CoursePlan,
+    planning_period: PlanningPeriodPlan,
+    windows: list[TimeWindowPlan],
+    units: int,
+) -> list[GenerationFailure]:
+    relevant: list[HolidayReference] = []
+    for day, holiday in sorted(holidays.items()):
+        if day < planning_period.start_date or day > planning_period.end_date:
+            continue
+        if _resource_feasible_slot_on_date(course, units, day, windows):
+            relevant.append(holiday)
+    return [
+        GenerationFailure(
+            code=FailureCode.INSTITUTION_HOLIDAY,
+            message=f"{holiday.name} on {holiday.date.isoformat()} is unavailable for automatic scheduling.",
+            holidayDate=holiday.date,
+            holidayName=holiday.name,
+        )
+        for holiday in relevant
+    ]

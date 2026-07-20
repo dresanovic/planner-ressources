@@ -1087,14 +1087,14 @@ Holiday administration and avoidance are a coherent real-world scheduling outcom
 
 #### In scope
 
-- Create, view, edit, and protected-delete institution-wide holiday dates with readable names.
+- Create, view, edit, and confirmed-delete institution-wide holiday dates with readable names; edits and deletion retain no prior holiday history.
 - Make holidays unavailable to single-course, multi-course, conflict-aware, and later exam generation.
-- Show holiday context in calendar review and validation where an existing or manually added session falls on a holiday.
+- Show holiday alerts where an existing or manually added session falls on a holiday; standalone review-calendar display remains for FS-014.
 - Recalculate relevant alerts after holiday changes without silently moving saved sessions.
 
 #### Out of scope
 
-- Multiple campus or regional calendars, automatic holiday-provider import, religious/personal leave calendars, or automatic movement of existing sessions.
+- Multiple campus or regional calendars, automatic holiday-provider import, religious/personal leave calendars, timed or half-day closures, or automatic movement of existing sessions.
 
 #### Main workflow
 
@@ -1105,7 +1105,7 @@ The planner maintains holiday dates. Future generation excludes them. Existing a
 - One calendar applies institution-wide.
 - A holiday is a hard unavailable date for automatic generation.
 - Adding or editing a holiday never silently deletes or relocates existing sessions.
-- Holiday records referenced by published planning evidence must be protected or historically preserved.
+- Editing a holiday replaces its current date/name and confirmed deletion removes it without retaining holiday history; saved sessions remain unchanged.
 
 #### Data inputs and outputs
 
@@ -1131,10 +1131,12 @@ The primary calendar workspace should visibly distinguish holidays when FS-014 i
 
 New generated teaching sessions do not land on maintained public holidays, and existing holiday collisions are visible rather than silently changed.
 
-#### Open clarification topics
+#### Resolved clarification decisions
 
-- Whether half-day or timed closures are needed later.
-- Historical edit rules for holiday names/dates used by published revisions.
+- Half-day and timed closures remain later scope.
+- Changed or removed holiday values are not retained as history.
+- Existing review surfaces show alerts only on affected sessions; standalone holiday display remains for FS-014.
+- When holiday exclusion contributes to incomplete or failed generation, the result identifies each substantiated relevant holiday by name and date.
 
 #### Specification status
 
@@ -1146,12 +1148,12 @@ Proposed.
 Use $speckit-specify to create the specification for FS-011: Institution-Wide Holiday Calendar and Avoidance.
 
 Outcome: Let a planner maintain one institution-wide holiday calendar and prevent automatic scheduling on holiday dates.
-In scope: Holiday date/name CRUD with protected history; unavailable-date use by existing generation modes and FS-010; holiday display/alerts for existing or manual sessions; alert refresh after changes.
+In scope: Current-state holiday date/name CRUD without retained history; unavailable-date use by existing generation modes and FS-010; holiday alerts for existing or manual sessions; alert refresh after changes; named holiday explanations for incomplete or failed generation.
 Out of scope: Campus/region-specific calendars, external holiday providers, timed closures, and automatic movement/deletion of saved sessions.
 Rules: Holidays are hard constraints for new generation; existing sessions are flagged, not silently changed.
 Dependencies: FS-007 and FS-010.
 Completion: Maintained holidays are excluded from generation and visible in review.
-Clarification topics: Timed closures and historical holiday-edit behavior.
+Resolved clarifications: Timed closures are deferred; changed/deleted holiday values are not retained; existing review shows affected-session alerts only; substantiated holiday-related generation gaps identify holiday name and date.
 
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define scenarios, requirements, edge cases, assumptions, and measurable success criteria without implementation details.
 ```
