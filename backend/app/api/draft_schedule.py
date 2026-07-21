@@ -7,7 +7,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, Lecturer, ResourceUnavailabilityPeriod, Room, Semester
+from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, DraftSchedule, DraftSession, Lecturer, ResourceUnavailabilityPeriod, Room, Semester
 from app.schemas.draft_schedule import (
     AllowedTeachingWindowResponse,
     DraftScheduleContextResponse,
@@ -57,6 +57,8 @@ from app.services.draft_schedule_repository import (
     update_draft_session,
 )
 from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan, generate_schedule
+from app.services.schedule_lifecycle import LifecycleFailure, require_active_working_revision
+from app.api.schedule_lifecycle import lifecycle_failure_response
 from app.models.planning import Course
 from app.services.academic_catalog import planning_eligibility_reasons
 from app.services.draft_schedule_validation import (
@@ -97,6 +99,7 @@ def create_manual_session(
     except ValueError:
         return _manual_failure("INVALID_SESSION_TIME_RANGE", "Session start and end times must use HH:MM values.")
     try:
+        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
         draft = create_manual_draft_session(
             db,
             course_id,
@@ -111,6 +114,9 @@ def create_manual_session(
     except ManualSessionValidationError as exc:
         db.rollback()
         return _manual_failure(exc.code, exc.message)
+    except LifecycleFailure as exc:
+        db.rollback()
+        return lifecycle_failure_response(exc)
     except PlanningInputNotFoundError as exc:
         db.rollback()
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -129,9 +135,14 @@ def remove_draft_session(
     session_id: int,
     expectedDraftScheduleId: int,
     expectedDraftRevision: int,
+    scheduleRevisionId: int,
     db: Session = Depends(get_db),
 ) -> DraftScheduleMutationResponse | JSONResponse:
     try:
+        expected_draft = db.get(DraftSchedule, expectedDraftScheduleId)
+        if expected_draft is None:
+            raise StaleDraftError(None)
+        require_active_working_revision(db, expected_draft.semester_id, scheduleRevisionId)
         draft, course_id, semester_id = delete_draft_session(
             db,
             session_id,
@@ -142,6 +153,9 @@ def remove_draft_session(
     except StaleDraftError as exc:
         db.rollback()
         return _stale_response(exc.current_revision)
+    except LifecycleFailure as exc:
+        db.rollback()
+        return lifecycle_failure_response(exc)
     except Exception:
         db.rollback()
         raise
@@ -158,9 +172,11 @@ def remove_course_draft(
     semesterId: int,
     expectedDraftScheduleId: int,
     expectedDraftRevision: int,
+    scheduleRevisionId: int,
     db: Session = Depends(get_db),
 ) -> DraftScheduleMutationResponse | JSONResponse:
     try:
+        require_active_working_revision(db, semesterId, scheduleRevisionId)
         course_id, semester_id = clear_course_draft(
             db,
             course_id,
@@ -172,6 +188,9 @@ def remove_course_draft(
     except StaleDraftError as exc:
         db.rollback()
         return _stale_response(exc.current_revision)
+    except LifecycleFailure as exc:
+        db.rollback()
+        return lifecycle_failure_response(exc)
     except Exception:
         db.rollback()
         raise
@@ -189,6 +208,10 @@ def generate_draft_schedule(
     request: GenerateDraftScheduleRequest,
     db: Session = Depends(get_db),
 ) -> DraftScheduleResponse | JSONResponse:
+    try:
+        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
+    except LifecycleFailure as exc:
+        return lifecycle_failure_response(exc)
     try:
         course = load_course_plan(db, course_id)
         semester = load_semester_plan(db, request.semester_id)
@@ -299,6 +322,11 @@ def edit_draft_session(
     db: Session = Depends(get_db),
 ) -> DraftScheduleResponse | JSONResponse:
     try:
+        source_session = db.get(DraftSession, session_id)
+        source_draft = db.get(DraftSchedule, source_session.draft_schedule_id) if source_session else None
+        if source_draft is None:
+            raise PlanningInputNotFoundError("Draft Schedule not found.")
+        require_active_working_revision(db, source_draft.semester_id, request.schedule_revision_id)
         draft = update_draft_session(
             db,
             session_id,
@@ -325,6 +353,9 @@ def edit_draft_session(
     except PlanningInputNotFoundError as exc:
         db.rollback()
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except LifecycleFailure as exc:
+        db.rollback()
+        return lifecycle_failure_response(exc)
     return _to_response_with_validation(db, draft)
 
 

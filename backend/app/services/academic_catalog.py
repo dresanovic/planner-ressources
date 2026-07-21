@@ -12,6 +12,7 @@ from app.models.planning import (
     DraftSchedule,
     DraftSession,
     ExamSession,
+    ScheduleRevision,
     CourseExamConfiguration,
     GenerationConstraintSet,
     GenerationConstraintWindow,
@@ -350,6 +351,7 @@ def usage_for(db: Session, row) -> dict:
         selected_schedule_ids = set(db.execute(select(DraftSchedule.id).where(DraftSchedule.selected_time_window_id == row.id)).scalars())
         session_schedule_ids = set(db.execute(select(DraftSession.draft_schedule_id).where(DraftSession.time_window_id == row.id)).scalars())
         saved_count = len(selected_schedule_ids | session_schedule_ids)
+    saved_count += _snapshot_reference_count(db, row)
     dependent = [item for item in dependent if item["count"]]
     blockers = [
         {"kind": "dependent", "type": item["type"], "count": item["count"], "message": f"Used by {item['count']} {item['type']} record(s).", "prerequisiteAction": "Remove or reassign dependent records first."}
@@ -358,6 +360,23 @@ def usage_for(db: Session, row) -> dict:
     if saved_count:
         blockers.append({"kind": "saved_schedule", "type": "draft_schedule", "count": saved_count, "message": f"Referenced by {saved_count} saved schedule(s).", "prerequisiteAction": None})
     return {"recordId": row.id, "revision": row.revision, "canDelete": not blockers, "dependentRecords": dependent, "savedSchedules": {"type": "draft_schedule", "count": saved_count}, "blockers": blockers}
+
+
+def _snapshot_reference_count(db: Session, row) -> int:
+    count = 0
+    for snapshot in db.scalars(select(ScheduleRevision.snapshot_document).where(ScheduleRevision.snapshot_document.is_not(None))):
+        if isinstance(row, Semester) and snapshot.get("semester", {}).get("sourceId") == row.id:
+            count += 1; continue
+        courses = snapshot.get("courses", [])
+        if isinstance(row, Course) and any(item.get("sourceCourseId") == row.id for item in courses):
+            count += 1; continue
+        if isinstance(row, Cohort) and any(item.get("cohort", {}).get("sourceId") == row.id for item in courses):
+            count += 1; continue
+        if isinstance(row, StudyType) and any(item.get("studyType", {}).get("sourceId") == row.id for item in courses):
+            count += 1; continue
+        if isinstance(row, StudyTypeTimeWindow) and any(session.get("timeWindowId") == row.id for item in courses for session in item.get("teachingSessions", [])):
+            count += 1
+    return count
 
 
 def update_semester(db: Session, row: Semester, *, name: str, start_date, end_date, expected_revision: int) -> Semester:

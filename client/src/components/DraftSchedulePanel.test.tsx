@@ -23,14 +23,18 @@ function renderPanel({
   isBusy = false,
   exams = [],
   examCourseNames = {},
+  readOnly = false,
+  contextLabel,
 }: {
   schedules?: DraftSchedule[]
-  onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
+  onUpdateSession?: (sessionId: number, payload: Omit<UpdateDraftSessionRequest, 'scheduleRevisionId'>) => Promise<void>
   onDeleteSession?: (session: DraftSchedule['sessions'][number], schedule: DraftSchedule) => void
   courseResources?: PlanningOptions['courseResources']
   isBusy?: boolean
   exams?: ExamSession[]
   examCourseNames?: Record<number, string>
+  readOnly?: boolean
+  contextLabel?: string
 } = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
@@ -45,6 +49,8 @@ function renderPanel({
         isBusy={isBusy}
         exams={exams}
         examCourseNames={examCourseNames}
+        readOnly={readOnly}
+        contextLabel={contextLabel}
       />,
     )
   })
@@ -96,6 +102,14 @@ function buttonByText(label: string) {
 }
 
 describe('DraftSchedulePanel', () => {
+  it('renders immutable publication context without teaching mutation controls', () => {
+    renderPanel({ readOnly: true, contextLabel: 'Current publication · Revision 1' })
+    expect(document.body.textContent).toContain('Current publication · Revision 1')
+    expect(buttonByText('Edit')).toBeUndefined()
+    expect(buttonByText('Delete')).toBeUndefined()
+    expect(document.body.textContent).toContain('Planning 101')
+  })
+
   it('shows retained recommendation and final-teaching context for exams', () => {
     renderPanel({ schedules: [], examCourseNames: { 1: 'Planning 101' }, exams: [{
       id: 1, revision: 1, courseId: 1, semesterId: 1, configurationIdentifier: 'Final', examType: 'Written', durationMinutes: 90, requiredCapacity: 30,

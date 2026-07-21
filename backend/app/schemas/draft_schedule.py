@@ -47,6 +47,7 @@ class ValidationAlertCode(StrEnum):
 class UpdateDraftSessionRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
     date: str
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
@@ -74,6 +75,7 @@ class GenerateDraftScheduleRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     semester_id: int = Field(alias="semesterId")
+    schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
     planning_period: PlanningPeriodInput = Field(alias="planningPeriod")
     allowed_teaching_windows: list[AllowedTeachingWindowInput] = Field(alias="allowedTeachingWindows")
 
@@ -199,6 +201,7 @@ class CreateManualDraftSessionRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     semester_id: int = Field(alias="semesterId")
+    schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
     date: str
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")

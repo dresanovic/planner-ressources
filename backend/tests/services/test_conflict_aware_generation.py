@@ -79,6 +79,17 @@ def test_preparation_is_canonical_read_only_and_generation_saves_complete_result
     assert db.query(GenerationConstraintSet).count() == 2
 
 
+def test_preparation_tokens_are_bound_to_the_schedule_revision():
+    db = make_session()
+    seed_optimization_planner(db, course_count=1)
+
+    first = prepare_optimization(db, 1, [1], [], schedule_revision_id=11)
+    second = prepare_optimization(db, 1, [1], [], schedule_revision_id=12)
+
+    assert first.shared_snapshot_token != second.shared_snapshot_token
+    assert first.courses[0].input_snapshot_token != second.courses[0].input_snapshot_token
+
+
 def test_holidays_are_server_authoritative_named_blockers_without_changing_caller_unavailable_dates():
     db = make_session()
     seed_optimization_planner(db, course_count=1)

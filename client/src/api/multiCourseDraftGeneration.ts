@@ -11,6 +11,7 @@ export type PreparedCourseSnapshot = {
 
 export type BatchPreparation = {
   semesterId: number
+  scheduleRevisionId: number
   operationKind: BatchOperationKind
   courses: PreparedCourseSnapshot[]
   replacementCourseIds: number[]
@@ -55,6 +56,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export async function prepareMultiCourseGeneration(
   semesterId: number,
+  scheduleRevisionId: number,
   operationKind: BatchOperationKind,
   courseIds: number[],
 ): Promise<BatchPreparation> {
@@ -62,7 +64,7 @@ export async function prepareMultiCourseGeneration(
   const response = await request(`${API_BASE}/api/draft-schedules/batch/prepare`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ semesterId, operationKind, courseIds }),
+    body: JSON.stringify({ semesterId, scheduleRevisionId, operationKind, courseIds }),
   })
   if (!response.ok) throw await parseError(response)
   return response.json()
@@ -81,6 +83,7 @@ export async function generateMultiCourseDrafts(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       semesterId: preparation.semesterId,
+      scheduleRevisionId: preparation.scheduleRevisionId,
       operationKind: preparation.operationKind,
       replacementConfirmed,
       courses: preparation.courses.map((course) => ({

@@ -130,10 +130,13 @@ def test_course_resource_configuration_includes_unavailability_and_course_sessio
         f"/api/resources/lecturers/{lecturer['id']}/unavailability",
         json={"kind": "recurring", "weekdays": [1], "startTime": "09:00", "endTime": "11:00"},
     ).json()
+    lifecycle = client.get(f"/api/semesters/{semester['id']}/schedule-lifecycle").json()
+    working = client.post(f"/api/semesters/{semester['id']}/schedule-revisions", json={"expectedStateToken": lifecycle["stateToken"]}).json()
     generated = client.post(
         f"/api/courses/{course['id']}/draft-schedule/generate",
         json={
             "semesterId": semester["id"],
+            "scheduleRevisionId": working["activeWorkingRevision"]["revisionId"],
             "planningPeriod": {"startDate": "2026-09-07", "endDate": "2026-09-07"},
             "allowedTeachingWindows": [{"weekday": 0, "startTime": "09:00", "endTime": "12:00", "sourceTimeWindowId": window["id"]}],
         },

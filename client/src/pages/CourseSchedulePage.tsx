@@ -50,6 +50,21 @@ import { ExamRequirementEditor } from '../components/ExamRequirementEditor'
 import { ExamGenerationPanel } from '../components/ExamGenerationPanel'
 import { ExamManualSessionEditor } from '../components/ExamManualSessionEditor'
 import { ExamDeletionDialog } from '../components/ExamDeletionDialog'
+import {
+  createWorkingRevision,
+  getScheduleLifecycle,
+  getScheduleRevision,
+  prepareSchedulePublication,
+  transitionScheduleRevision,
+  type PublicationPreparation,
+  type ScheduleLifecycleApiError,
+  type ScheduleLifecycleOverview,
+  type ScheduleRevisionSummary,
+  type ScheduleRevisionContent,
+} from '../api/scheduleLifecycle'
+import { ScheduleLifecyclePanel } from '../components/ScheduleLifecyclePanel'
+import { PublicationConfirmationDialog } from '../components/PublicationConfirmationDialog'
+import { AbandonRevisionDialog } from '../components/AbandonRevisionDialog'
 
 type GenerationMode = 'single' | 'batch'
 type SessionDeletionConfirmation = {
@@ -104,6 +119,14 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const [examError, setExamError] = useState('')
   const [examEditor, setExamEditor] = useState<'create' | ExamSession | null>(null)
   const [examDeletion, setExamDeletion] = useState<ExamSession | null>(null)
+  const [lifecycleOverview, setLifecycleOverview] = useState<ScheduleLifecycleOverview | null>(null)
+  const [selectedLifecycleRevisionId, setSelectedLifecycleRevisionId] = useState<number | null>(null)
+  const [publicationPreparation, setPublicationPreparation] = useState<PublicationPreparation | null>(null)
+  const [lifecycleBusy, setLifecycleBusy] = useState(false)
+  const [lifecycleRefreshError, setLifecycleRefreshError] = useState(false)
+  const [lifecycleError, setLifecycleError] = useState('')
+  const [selectedRevisionContent, setSelectedRevisionContent] = useState<ScheduleRevisionContent | null>(null)
+  const [abandonRevision, setAbandonRevision] = useState<ScheduleRevisionSummary | null>(null)
   const selectedCourseIdRef = useRef<number | null>(null)
   const selectedSemesterIdRef = useRef<number | null>(null)
 
@@ -144,9 +167,11 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     () => planningOptions?.rooms.filter((room) => selectedCourse != null && room.capacity >= selectedCourse.cohortSize) ?? [],
     [planningOptions, selectedCourse],
   )
-  const mutationBusy = singleGenerating || batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy
+  const activeScheduleRevisionId = lifecycleOverview?.activeWorkingRevision?.revisionId ?? null
+  const selectedLifecycleRevision = lifecycleOverview?.revisions.find((item) => item.revisionId === selectedLifecycleRevisionId) ?? lifecycleOverview?.activeWorkingRevision ?? lifecycleOverview?.currentPublication ?? null
+  const mutationBusy = singleGenerating || batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
   const contextBusy = mutationBusy || overviewLoading || examBusy
-  const writeBusy = contextBusy || overviewRefreshError || examRefreshError
+  const writeBusy = contextBusy || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
   const currentExamOverview = examOverview?.semesterId === selectedSemesterId ? examOverview : null
   const selectedExamState = useMemo(() => currentExamOverview?.courses.find((course) => course.courseId === selectedCourseId) ?? null, [currentExamOverview, selectedCourseId])
   const selectedCourseResources = useMemo(() => planningOptions?.courseResources.find((item) => item.courseId === selectedCourseId), [planningOptions, selectedCourseId])
@@ -154,6 +179,9 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const examRooms = useMemo(() => (selectedCourseResources?.eligibleRooms ?? []).filter((item) => item.isEligible && item.isUsable).map((item) => ({ id: item.id, name: item.name, capacity: item.capacity ?? undefined })), [selectedCourseResources])
   const allExams = useMemo(() => currentExamOverview?.courses.flatMap((course) => [...(course.activeExam ? [course.activeExam] : []), ...course.pastExams]) ?? [], [currentExamOverview])
   const examCourseNames = useMemo(() => Object.fromEntries((currentExamOverview?.courses ?? []).map((course) => [course.courseId, course.courseName])), [currentExamOverview])
+  const displayedRevisionContent = selectedRevisionContent?.revision.revisionId === selectedLifecycleRevision?.revisionId ? selectedRevisionContent : null
+  const displaySchedules = displayedRevisionContent ? snapshotSchedules(displayedRevisionContent) : schedules
+  const displayExams = displayedRevisionContent ? snapshotExams(displayedRevisionContent) : allExams
 
   useEffect(() => {
     let current = true
@@ -232,9 +260,33 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   useEffect(() => {
     if (!selectedSemesterId) return
     let current = true
+    void getScheduleLifecycle(selectedSemesterId)
+      .then((value) => {
+        if (!current) return
+        setLifecycleOverview(value)
+        setSelectedLifecycleRevisionId(value.activeWorkingRevision?.revisionId ?? value.currentPublication?.revisionId ?? null)
+      })
+      .catch(() => { if (current) setLifecycleRefreshError(true) })
+      .finally(() => { if (current) setLifecycleBusy(false) })
+    return () => { current = false }
+  }, [selectedSemesterId, catalogRevision])
+
+  useEffect(() => {
+    if (!selectedSemesterId) return
+    let current = true
     void getExamPlanningOverview(selectedSemesterId).then((value) => { if (current) { setExamOverview(value); setExamRefreshError(false) } }).catch(() => { if (current) setExamRefreshError(true) })
     return () => { current = false }
   }, [selectedSemesterId, catalogRevision])
+
+  useEffect(() => {
+    const revisionId = selectedLifecycleRevision?.revisionId
+    if (!revisionId || selectedLifecycleRevision?.isActiveWorking) return
+    let current = true
+    void getScheduleRevision(revisionId)
+      .then((content) => { if (current) { setSelectedRevisionContent(content); setLifecycleError('') } })
+      .catch((reason: ScheduleLifecycleApiError) => { if (current) setLifecycleError(reason.errors?.map((item) => item.message).join(' ') || 'Could not load the selected revision.') })
+    return () => { current = false }
+  }, [selectedLifecycleRevision?.revisionId, selectedLifecycleRevision?.isActiveWorking])
 
   async function refreshExamOverview(semesterId = selectedSemesterId) {
     if (!semesterId) return false
@@ -247,29 +299,33 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     try { const state=await saveExamConfiguration(selectedCourseId, request); if (!await refreshExamOverview(state.semesterId)) setExamError('The exam requirement was saved, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save exam requirement.'); if (failure.status === 409) await refreshExamOverview(failure.currentState?.semesterId ?? request.semesterId) } finally { setExamBusy(false) }
   }
 
-  async function handleExamPlacement(request: CreateManualExamRequest | UpdateExamRequest) {
-    if (!selectedCourseId) return
+  async function handleExamPlacement(request: Omit<CreateManualExamRequest, 'scheduleRevisionId'> | Omit<UpdateExamRequest, 'scheduleRevisionId'>) {
+    if (!selectedCourseId || !activeScheduleRevisionId) return
     setExamBusy(true); setExamError('')
-    try { const state = examEditor === 'create' ? await createManualExam(selectedCourseId, request as CreateManualExamRequest) : await updateExam((examEditor as ExamSession).id, request as UpdateExamRequest); if (!await refreshExamOverview(state.semesterId)) setExamError('The exam placement was saved, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save exam placement.'); if (failure.status === 409) { setExamEditor(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
+    try { const guarded = { ...request, scheduleRevisionId: activeScheduleRevisionId }; const state = examEditor === 'create' ? await createManualExam(selectedCourseId, guarded as CreateManualExamRequest) : await updateExam((examEditor as ExamSession).id, guarded as UpdateExamRequest); if (!await refreshExamOverview(state.semesterId)) setExamError('The exam placement was saved, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save exam placement.'); if (failure.status === 409) { setExamEditor(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
   }
 
   async function confirmExamDeletion() {
-    if (!examDeletion) return
+    if (!examDeletion || !activeScheduleRevisionId) return
     setExamBusy(true); setExamError('')
-    try { const result = await deleteExam(examDeletion.id, { confirmed: true, expectedExamRevision: examDeletion.revision, inputSnapshotToken: examDeletion.inputSnapshotToken }); if (!await refreshExamOverview(result.state.semesterId)) setExamError('The exam was deleted, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamDeletion(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not delete exam.'); if (failure.status === 409) { setExamDeletion(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
+    try { const result = await deleteExam(examDeletion.id, { scheduleRevisionId: activeScheduleRevisionId, confirmed: true, expectedExamRevision: examDeletion.revision, inputSnapshotToken: examDeletion.inputSnapshotToken }); if (!await refreshExamOverview(result.state.semesterId)) setExamError('The exam was deleted, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamDeletion(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not delete exam.'); if (failure.status === 409) { setExamDeletion(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
   }
 
   async function refreshOverview(semesterId: number, resetInteractions = true) {
     setOverviewLoading(true)
     setOverviewRefreshError(false)
     try {
-      const [current, currentExams] = await Promise.all([
+      const [current, currentExams, currentLifecycle] = await Promise.all([
         getDraftSchedules(semesterId),
         getExamPlanningOverview(semesterId),
+        getScheduleLifecycle(semesterId),
       ])
       setSchedules(current)
       setExamOverview(currentExams)
       setExamRefreshError(false)
+      setLifecycleOverview(currentLifecycle)
+      setLifecycleRefreshError(false)
+      setSelectedLifecycleRevisionId((selected) => currentLifecycle.revisions.some((item) => item.revisionId === selected) ? selected : currentLifecycle.activeWorkingRevision?.revisionId ?? currentLifecycle.currentPublication?.revisionId ?? null)
       setLoadedOverviewSemesterId(semesterId)
       setDeletionNotice('')
       if (resetInteractions) setOverviewResetKey((key) => key + 1)
@@ -282,13 +338,75 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     }
   }
 
+  async function startInitialDraft() {
+    if (!selectedSemesterId || !lifecycleOverview) return
+    setLifecycleBusy(true); setLifecycleError('')
+    try {
+      const current = await createWorkingRevision(selectedSemesterId, lifecycleOverview.stateToken)
+      setLifecycleOverview(current)
+      setSelectedLifecycleRevisionId(current.activeWorkingRevision?.revisionId ?? null)
+      await refreshOverview(selectedSemesterId, false)
+    } catch (reason) {
+      const failure = reason as ScheduleLifecycleApiError
+      if (failure.currentOverview) setLifecycleOverview(failure.currentOverview)
+      setLifecycleError(failure.errors?.map((item) => item.message).join(' ') || 'Could not start the Draft revision.')
+    } finally { setLifecycleBusy(false) }
+  }
+
+  async function preparePublication(revision: ScheduleRevisionSummary) {
+    if (!lifecycleOverview) return
+    setLifecycleBusy(true); setLifecycleError('')
+    try { setPublicationPreparation(await prepareSchedulePublication(revision.revisionId, revision.revisionVersion, lifecycleOverview.stateToken)) }
+    catch (reason) {
+      const failure = reason as ScheduleLifecycleApiError
+      if (failure.currentOverview) setLifecycleOverview(failure.currentOverview)
+      setLifecycleError(failure.errors?.map((item) => item.message).join(' ') || 'Could not prepare publication.')
+    } finally { setLifecycleBusy(false) }
+  }
+
+  async function confirmPublication() {
+    if (!publicationPreparation || !lifecycleOverview || !selectedSemesterId) return
+    setLifecycleBusy(true); setLifecycleError('')
+    try {
+      const current = await transitionScheduleRevision(publicationPreparation.targetRevision.revisionId, { action: 'publish', expectedRevisionVersion: publicationPreparation.targetRevision.revisionVersion, expectedStateToken: lifecycleOverview.stateToken, confirmed: true, publicationToken: publicationPreparation.preparationToken })
+      setLifecycleOverview(current)
+      setSelectedLifecycleRevisionId(current.currentPublication?.revisionId ?? null)
+      setPublicationPreparation(null)
+      await refreshOverview(selectedSemesterId, false)
+      setProgressAnnouncement(`Revision ${current.currentPublication?.revisionNumber} is now the current publication.`)
+    } catch (reason) {
+      const failure = reason as ScheduleLifecycleApiError
+      setPublicationPreparation(null)
+      if (failure.currentOverview) setLifecycleOverview(failure.currentOverview)
+      setLifecycleError(failure.errors?.map((item) => item.message).join(' ') || 'Could not publish the revision. Review the refreshed state and retry.')
+      await refreshOverview(selectedSemesterId, false)
+    } finally { setLifecycleBusy(false) }
+  }
+
+  async function handleLifecycleTransition(revision: ScheduleRevisionSummary, action: 'mark_ready' | 'return_to_draft' | 'restore' | 'abandon') {
+    if (!lifecycleOverview || !selectedSemesterId) return
+    setLifecycleBusy(true); setLifecycleError('')
+    try {
+      const current = await transitionScheduleRevision(revision.revisionId, { action, expectedRevisionVersion: revision.revisionVersion, expectedStateToken: lifecycleOverview.stateToken, confirmed: action === 'abandon' || action === 'restore' })
+      setLifecycleOverview(current)
+      setSelectedLifecycleRevisionId(current.activeWorkingRevision?.revisionId ?? current.currentPublication?.revisionId ?? revision.revisionId)
+      setAbandonRevision(null)
+      await refreshOverview(selectedSemesterId, false)
+      setProgressAnnouncement(action === 'mark_ready' ? 'Revision marked Ready for review.' : action === 'return_to_draft' ? 'Revision returned to Draft.' : action === 'restore' ? 'Abandoned revision restored as the active Draft.' : 'Revision abandoned. The current publication is unchanged.')
+    } catch (reason) {
+      const failure = reason as ScheduleLifecycleApiError
+      if (failure.currentOverview) setLifecycleOverview(failure.currentOverview)
+      setLifecycleError(failure.errors?.map((item) => item.message).join(' ') || 'Could not change the revision state.')
+    } finally { setLifecycleBusy(false) }
+  }
+
   async function handleGenerateSingle() {
     if (planningSelectionInvalid) {
       const code = semesterSelectionMissing ? 'SEMESTER_NO_LONGER_AVAILABLE' : courseSelectionInvalid ? 'COURSE_SEMESTER_MISMATCH' : (selectedCourse?.availability?.reasons[0] ?? 'COURSE_UNAVAILABLE')
       setErrors([{ code, message: 'Choose an available Course and Semester before generating.' }])
       return
     }
-    if (!selectedCourseId || !selectedSemesterId || !generationConstraints) {
+    if (!selectedCourseId || !selectedSemesterId || !generationConstraints || !activeScheduleRevisionId) {
       setErrors([{ code: 'MISSING_SELECTION', message: 'Select a course and semester.' }])
       return
     }
@@ -298,6 +416,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
       await generateDraftSchedule(
         selectedCourseId,
         selectedSemesterId,
+        activeScheduleRevisionId,
         generationConstraints.planningPeriod,
         generationConstraints.allowedTeachingWindows,
       )
@@ -312,11 +431,11 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   }
 
   async function startBatch(courseIds = selectedBatchCourseIds) {
-    if (!selectedSemesterId) return
+    if (!selectedSemesterId || !activeScheduleRevisionId) return
     setBatchPreparing(true)
     setBatchErrors([])
     try {
-      const prepared = await prepareConflictAwareGeneration(selectedSemesterId, courseIds, unavailableDates)
+      const prepared = await prepareConflictAwareGeneration(selectedSemesterId, activeScheduleRevisionId, courseIds, unavailableDates)
       if (prepared.replacementCourseIds.length > 0) {
         setBatchPreparation(prepared)
       } else {
@@ -357,7 +476,8 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     setBatchPreparing(true)
     setBatchErrors([])
     try {
-      const prepared = await prepareConflictAwareGeneration(semesterId, courseIds, unavailableDates)
+      if (!activeScheduleRevisionId) return
+      const prepared = await prepareConflictAwareGeneration(semesterId, activeScheduleRevisionId, courseIds, unavailableDates)
       if (prepared.replacementCourseIds.length > 0) setBatchPreparation(prepared)
       else await executeBatch(prepared, false)
     } catch (error) {
@@ -381,22 +501,23 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     }
   }
 
-  async function handleUpdateSession(sessionId: number, payload: UpdateDraftSessionRequest) {
+  async function handleUpdateSession(sessionId: number, payload: Omit<UpdateDraftSessionRequest, 'scheduleRevisionId'>) {
+    if (!activeScheduleRevisionId) return
     setSessionUpdating(true)
     try {
-      await updateDraftSession(sessionId, payload)
+      await updateDraftSession(sessionId, { ...payload, scheduleRevisionId: activeScheduleRevisionId })
       if (selectedSemesterId) await refreshOverview(selectedSemesterId, false)
     } finally {
       setSessionUpdating(false)
     }
   }
 
-  async function handleCreateManualSession(payload: CreateManualDraftSessionRequest) {
-    if (!selectedCourseId || !selectedSemesterId) return
+  async function handleCreateManualSession(payload: Omit<CreateManualDraftSessionRequest, 'scheduleRevisionId'>) {
+    if (!selectedCourseId || !selectedSemesterId || !activeScheduleRevisionId) return
     setManualSaving(true)
     setManualErrors([])
     try {
-      const result = await createManualDraftSession(selectedCourseId, payload)
+      const result = await createManualDraftSession(selectedCourseId, { ...payload, scheduleRevisionId: activeScheduleRevisionId })
       const refreshed = await refreshOverview(selectedSemesterId, false)
       setProgressAnnouncement(refreshed
         ? `Draft Session added. ${result.remainingUnits} units remaining.`
@@ -434,7 +555,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   }
 
   async function confirmSessionDeletion() {
-    if (!sessionDeletion) return
+    if (!sessionDeletion || !activeScheduleRevisionId) return
     setDeletionBusy(true)
     setDeletionErrors([])
     try {
@@ -442,6 +563,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
         sessionDeletion.sessionId,
         sessionDeletion.draftScheduleId,
         sessionDeletion.draftRevision,
+        activeScheduleRevisionId,
       )
       setSessionDeletion(null)
       const refreshed = await refreshOverview(result.semesterId, false)
@@ -486,7 +608,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   }
 
   async function confirmCourseDeletion() {
-    if (!courseDeletion) return
+    if (!courseDeletion || !activeScheduleRevisionId) return
     setDeletionBusy(true)
     setDeletionErrors([])
     try {
@@ -495,6 +617,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
         courseDeletion.semesterId,
         courseDeletion.draftScheduleId,
         courseDeletion.draftRevision,
+        activeScheduleRevisionId,
       )
       setCourseDeletion(null)
       const refreshed = await refreshOverview(result.semesterId, false)
@@ -575,6 +698,9 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
           </section>
 
           <div className="schedule-results">
+            {lifecycleOverview && <ScheduleLifecyclePanel overview={lifecycleOverview} selectedRevisionId={selectedLifecycleRevision?.revisionId ?? null} busy={lifecycleBusy} onStartDraft={() => void startInitialDraft()} onSelectRevision={setSelectedLifecycleRevisionId} onPreparePublication={(revision) => void preparePublication(revision)} onTransition={(revision, action) => void handleLifecycleTransition(revision, action as 'mark_ready' | 'return_to_draft' | 'restore')} onAbandon={setAbandonRevision} />}
+            {lifecycleError && <div className="refresh-error" role="alert">{lifecycleError}</div>}
+            {lifecycleRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh schedule lifecycle. Schedule changes are unavailable.</span><button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)}>Retry lifecycle refresh</button></div>}
             {batchResult && <BatchResultSummary result={batchResult} retryDisabled={writeBusy} onRetryFailed={() => void retryFailedCourses()} />}
             {overviewRefreshError && (
               <div className="refresh-error" role="alert">
@@ -584,20 +710,22 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
             )}
             {deletionNotice && <div className="refresh-error" role="alert">{deletionNotice}</div>}
             {examRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh exam planning. The last complete exam view remains visible.</span><button type="button" onClick={()=>void refreshExamOverview()}>Retry exam refresh</button></div>}
-            {selectedSemesterId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshExamOverview(selectedSemesterId) }} />}
+            {selectedSemesterId && activeScheduleRevisionId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} scheduleRevisionId={activeScheduleRevisionId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshOverview(selectedSemesterId, false) }} />}
             <DraftSchedulePanel
               resetKey={overviewResetKey}
-              schedules={schedules}
+              schedules={displaySchedules}
               rooms={planningOptions?.rooms ?? []}
               lecturers={planningOptions?.lecturers ?? []}
               courseResources={planningOptions?.courseResources ?? []}
               onUpdateSession={handleUpdateSession}
               onDeleteSession={beginSessionDeletion}
               isBusy={writeBusy}
-              exams={allExams}
+              exams={displayExams}
               onEditExam={(exam)=>{ setSelectedCourseId(exam.courseId); setExamEditor(exam) }}
               onDeleteExam={setExamDeletion}
               examCourseNames={examCourseNames}
+              readOnly={selectedLifecycleRevision?.revisionId !== activeScheduleRevisionId}
+              contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Current publication' : selectedLifecycleRevision.isActiveWorking ? 'Active working revision' : 'Historical revision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
             />
           </div>
         </div>
@@ -633,8 +761,25 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
         <div className="dialog-backdrop"><div className="replacement-dialog"><ExamManualSessionEditor mode={examEditor === 'create' ? 'create' : 'edit'} configuration={selectedExamState.configuration ?? undefined} exam={examEditor === 'create' ? undefined : examEditor} snapshotToken={examEditor === 'create' ? selectedExamState.inputSnapshotToken : examEditor.inputSnapshotToken} semesterId={selectedExamState.semesterId} lecturers={examLecturers} rooms={examRooms} busy={examBusy} serverError={examError || undefined} onCancel={()=>setExamEditor(null)} onSubmit={handleExamPlacement}/></div></div>
       )}
       {examDeletion && <ExamDeletionDialog courseName={examCourseNames[examDeletion.courseId] ?? `Course #${examDeletion.courseId}`} exam={examDeletion} busy={examBusy} error={examError || undefined} onCancel={()=>setExamDeletion(null)} onConfirm={confirmExamDeletion}/>}
+      {publicationPreparation && <PublicationConfirmationDialog preparation={publicationPreparation} busy={lifecycleBusy} onCancel={() => setPublicationPreparation(null)} onConfirm={() => void confirmPublication()} />}
+      {abandonRevision && lifecycleOverview && <AbandonRevisionDialog semesterName={lifecycleOverview.semesterName} revision={abandonRevision} currentPublication={lifecycleOverview.currentPublication} busy={lifecycleBusy} onCancel={() => setAbandonRevision(null)} onConfirm={() => void handleLifecycleTransition(abandonRevision, 'abandon')} />}
     </>
   )
+}
+
+function snapshotSchedules(content: ScheduleRevisionContent): DraftSchedule[] {
+  return content.snapshot.courses.filter((course) => course.draftStatus != null || course.teachingSessions.length > 0).map((course) => ({
+    draftScheduleId: -course.sourceCourseId,
+    revision: content.revision.revisionVersion,
+    courseId: course.sourceCourseId,
+    semesterId: content.revision.semesterId,
+    context: { course: { id: course.sourceCourseId, name: course.name }, cohort: { id: course.cohort.sourceId, name: course.cohort.name }, cohortSize: course.cohort.size, lecturer: { id: course.teachingSessions[0]?.lecturer.sourceId ?? 0, name: course.teachingSessions[0]?.lecturer.name ?? 'Captured lecturer' }, room: { id: course.teachingSessions[0]?.room.sourceId ?? 0, name: course.teachingSessions[0]?.room.name ?? 'Captured room' }, studyType: { id: course.studyType.sourceId, name: course.studyType.name } },
+    sessions: course.teachingSessions.map((session) => ({ id: session.sourceSessionId, date: session.date, startTime: session.startTime, endTime: session.endTime, units: session.units, courseId: course.sourceCourseId, lecturerId: session.lecturer.sourceId, lecturerName: session.lecturer.name, lecturerReferenceCode: session.lecturer.referenceCode, cohortId: course.cohort.sourceId, roomId: session.room.sourceId, roomName: session.room.name, roomReferenceCode: session.room.referenceCode, studyTypeId: course.studyType.sourceId, timeWindowId: session.timeWindowId, constraintWindowIndex: session.constraintWindowIndex, validationAlerts: [], lecturer: { id: session.lecturer.sourceId, name: session.lecturer.name, referenceCode: session.lecturer.referenceCode }, room: { id: session.room.sourceId, name: session.room.name, referenceCode: session.room.referenceCode } })),
+  }))
+}
+
+function snapshotExams(content: ScheduleRevisionContent): ExamSession[] {
+  return content.snapshot.examSessions.map((exam) => ({ id: exam.sourceExamId, revision: content.revision.revisionVersion, courseId: exam.course.sourceId, semesterId: content.revision.semesterId, configurationIdentifier: exam.configurationIdentifier, examType: exam.examType, durationMinutes: exam.durationMinutes, requiredCapacity: exam.requiredCapacity, recommendedStartDate: exam.recommendedStartDate, recommendedEndDate: exam.recommendedEndDate, recommendationWasOverridden: exam.recommendationWasOverridden, outsideRecommendedWindow: exam.outsideRecommendedWindow, finalTeachingAnchor: { date: exam.finalTeachingDate, endTime: exam.finalTeachingEndTime, teachingSessionId: 0 }, date: exam.examDate, startTime: exam.startTime, endTime: exam.endTime, lecturer: { id: exam.lecturer.sourceId, name: exam.lecturer.name, referenceCode: exam.lecturer.referenceCode }, cohort: { id: exam.cohort.sourceId, name: exam.cohort.name, referenceCode: null }, room: { id: exam.room.sourceId, name: exam.room.name, referenceCode: exam.room.referenceCode, capacity: exam.room.capacity ?? 0 }, lifecycleStatus: 'active', source: exam.source, validityIssues: [], inputSnapshotToken: '' }))
 }
 
 function ErrorList({ errors }: { errors: { code: string; message: string }[] }) {
@@ -687,7 +832,7 @@ function ManualSessionEditor({
   isBusy: boolean
   isSaving: boolean
   errors: GenerationFailure[]
-  onSubmit: (payload: CreateManualDraftSessionRequest) => Promise<void>
+  onSubmit: (payload: Omit<CreateManualDraftSessionRequest, 'scheduleRevisionId'>) => Promise<void>
 }) {
   const initialUnits = Math.min(2, Math.max(remainingUnits, 1))
   const [sessionDate, setSessionDate] = useState(semester.startDate)

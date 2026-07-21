@@ -25,6 +25,11 @@ def initialize_database(engine: Engine) -> None:
                 Base.metadata.create_all(bind=connection)
                 inspector = inspect(connection)
             elif not _is_current_schema(inspector):
+                if _has_any_lifecycle_table(inspector):
+                    raise UnsupportedSchemaStateError(
+                        "Database schema is not a supported FS-001 through FS-012 state or a complete FS-013 state. "
+                        "Back up the database and inspect its lifecycle tables."
+                    )
                 if _is_slice_1_to_5_schema(inspector):
                     migration = _load_migration("0002_course_semester_drafts.py")
                     migration.op = Operations(MigrationContext.configure(connection))
@@ -61,9 +66,15 @@ def initialize_database(engine: Engine) -> None:
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
 
+                inspector = inspect(connection)
+                if _is_pre_lifecycle_schema(inspector):
+                    migration = _load_migration("0007_versioned_schedule_lifecycle.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+
                 if not _is_current_schema(inspect(connection)):
                     raise UnsupportedSchemaStateError(
-                        "FS-012 database migration completed without producing the expected schema."
+                        "FS-013 database migration completed without producing the expected schema."
                     )
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=ON")
@@ -72,12 +83,54 @@ def initialize_database(engine: Engine) -> None:
 
 
 def _is_current_schema(inspector) -> bool:
+    tables = set(inspector.get_table_names())
+    return (
+        _is_pre_lifecycle_schema(inspector)
+        and {"schedule_revisions", "schedule_revision_events"}.issubset(tables)
+        and {
+            "semester_id",
+            "revision_number",
+            "state",
+            "row_version",
+            "snapshot_document",
+            "created_at",
+            "state_changed_at",
+            "published_at",
+        }.issubset(_column_names(inspector, "schedule_revisions"))
+        and {
+            "semester_id",
+            "schedule_revision_id",
+            "event_sequence",
+            "event_type",
+            "from_state",
+            "to_state",
+            "occurred_at",
+        }.issubset(_column_names(inspector, "schedule_revision_events"))
+        and _has_unique_columns(
+            inspector, "schedule_revisions", ("semester_id", "revision_number")
+        )
+        and _has_unique_columns(
+            inspector,
+            "schedule_revision_events",
+            ("semester_id", "event_sequence"),
+        )
+    )
+
+
+def _is_pre_lifecycle_schema(inspector) -> bool:
     return (
         _has_holiday_schema(inspector)
         and {"course_exam_configurations", "exam_sessions"}.issubset(inspector.get_table_names())
         and {"course_id", "semester_id", "enabled", "revision"}.issubset(_column_names(inspector, "course_exam_configurations"))
         and {"exam_date", "start_time", "end_time", "source", "revision", "final_teaching_session_id_snapshot"}.issubset(_column_names(inspector, "exam_sessions"))
         and _has_unique_columns(inspector, "course_exam_configurations", ("course_id", "semester_id"))
+    )
+
+
+def _has_any_lifecycle_table(inspector) -> bool:
+    return bool(
+        {"schedule_revisions", "schedule_revision_events"}
+        & set(inspector.get_table_names())
     )
 
 

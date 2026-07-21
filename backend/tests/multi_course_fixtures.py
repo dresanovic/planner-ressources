@@ -7,6 +7,7 @@ from app.models.planning import (
     CourseEligibleRoom,
     Lecturer,
     Room,
+    ScheduleRevision,
     Semester,
     StudyType,
     StudyTypeTimeWindow,
@@ -25,6 +26,8 @@ def seed_multi_course_planner(db, *, course_count: int = 3, invalid_course_id: i
     db.add_all([
         Semester(id=1, name="Fall 2026", start_date=date(2026, 9, 7), end_date=date(2026, 12, 20)),
         Semester(id=2, name="Spring 2027", start_date=date(2027, 2, 15), end_date=date(2027, 6, 20)),
+        ScheduleRevision(id=1, semester_id=1, revision_number=1, row_version=1, state="draft"),
+        ScheduleRevision(id=2, semester_id=2, revision_number=1, row_version=1, state="draft"),
         StudyType(id=1, name="Full-time"),
         StudyTypeTimeWindow(
             id=1, study_type_id=1, weekday=0, start_time=time(8), end_time=time(12), sort_order=1

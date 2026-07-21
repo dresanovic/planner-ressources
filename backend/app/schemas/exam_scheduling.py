@@ -131,6 +131,7 @@ class ExamPlanningOverview(ExamModel):
 
 class ExamGenerationPreparationRequest(ExamModel):
     semester_id: int = Field(ge=1)
+    schedule_revision_id: int = Field(ge=1)
     course_ids: list[int] = Field(min_length=1, max_length=100)
 
     @model_validator(mode="after")
@@ -151,6 +152,7 @@ class PreparedExamCourse(ExamModel):
 
 class ExamGenerationPreparation(ExamModel):
     semester_id: int
+    schedule_revision_id: int | None
     institution_today: date
     shared_snapshot_token: str
     courses: list[PreparedExamCourse]
@@ -165,6 +167,7 @@ class PreparedExamCourseInput(ExamModel):
 
 class GenerateExamsRequest(ExamModel):
     semester_id: int = Field(ge=1)
+    schedule_revision_id: int = Field(ge=1)
     institution_today: date
     shared_snapshot_token: str
     courses: list[PreparedExamCourseInput] = Field(min_length=1, max_length=100)
@@ -206,6 +209,7 @@ class ExamGenerationResult(ExamModel):
 
 class CreateManualExamRequest(ExamModel):
     semester_id: int = Field(ge=1)
+    schedule_revision_id: int = Field(ge=1)
     date: date
     start_time: str = Field(pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
     lecturer_id: int = Field(ge=1)
@@ -215,6 +219,7 @@ class CreateManualExamRequest(ExamModel):
 
 
 class UpdateExamRequest(ExamModel):
+    schedule_revision_id: int = Field(ge=1)
     date: date
     start_time: str = Field(pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
     lecturer_id: int = Field(ge=1)
@@ -224,6 +229,7 @@ class UpdateExamRequest(ExamModel):
 
 
 class DeleteExamRequest(ExamModel):
+    schedule_revision_id: int = Field(ge=1)
     confirmed: Literal[True]
     expected_exam_revision: int = Field(ge=1)
     input_snapshot_token: str

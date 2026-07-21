@@ -223,6 +223,7 @@ export const staleDraftFailureFixture: MutationFailure = {
 
 export const batchPreparationFixture: BatchPreparation = {
   semesterId: 1,
+  scheduleRevisionId: 11,
   operationKind: 'initial',
   courses: [
     { courseId: 1, courseName: 'Planning 101', available: true, draftScheduleId: 1, draftRevision: 1, replacementRequired: true },

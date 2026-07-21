@@ -138,7 +138,7 @@ def test_authoritative_read_reports_new_hard_issue_without_repair_and_stales_old
 
 def test_preparation_token_is_bound_to_the_exact_selected_courses(db):
     second = exam_catalog(course_id=2, semester_id=2)
-    second[-1].current_semester_id = 1
+    second[5].current_semester_id = 1
     db.add_all([second[0], second[1], second[2], second[4], second[5]])
     db.commit()
 

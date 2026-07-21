@@ -38,6 +38,7 @@ def client(db_session):
 def generation_payload(prepared, confirmed=False):
     return {
         "semesterId": prepared["semesterId"],
+        "scheduleRevisionId": prepared["scheduleRevisionId"],
         "unavailableDates": prepared["unavailableDates"],
         "sharedSnapshotToken": prepared["sharedSnapshotToken"],
         "replacementConfirmed": confirmed,
@@ -52,7 +53,7 @@ def generation_payload(prepared, confirmed=False):
 
 def test_prepare_deduplicates_dates_and_generate_returns_proven_complete_saved_result(client, db_session):
     seed_optimization_planner(db_session, course_count=2)
-    response = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "courseIds": [2, 1], "unavailableDates": ["2026-10-26", "2026-10-26"]})
+    response = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [2, 1], "unavailableDates": ["2026-10-26", "2026-10-26"]})
     assert response.status_code == 200
     prepared = response.json()
     assert prepared["unavailableDates"] == ["2026-10-26"]
@@ -85,7 +86,7 @@ def test_optimizer_api_keeps_caller_dates_unchanged_and_returns_named_holiday_re
     db_session.commit()
     prepared = client.post(
         "/api/draft-schedules/optimization/prepare",
-        json={"semesterId": 1, "courseIds": [1], "unavailableDates": ["2026-10-26"]},
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": ["2026-10-26"]},
     ).json()
 
     generated = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
@@ -102,7 +103,7 @@ def test_optimizer_api_rejects_holiday_snapshot_change_without_saving(client, db
     seed_optimization_planner(db_session, course_count=1)
     prepared = client.post(
         "/api/draft-schedules/optimization/prepare",
-        json={"semesterId": 1, "courseIds": [1], "unavailableDates": []},
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
     db_session.add(InstitutionHoliday(date=date(2026, 9, 7), name="New Closure"))
     db_session.commit()
@@ -118,7 +119,7 @@ def test_optimizer_api_rejects_holiday_snapshot_change_without_saving(client, db
 @pytest.mark.parametrize("course_ids", [[], list(range(1, 22)), [1, 1]])
 def test_prepare_rejects_invalid_selection(client, db_session, course_ids):
     seed_optimization_planner(db_session, course_count=1)
-    response = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "courseIds": course_ids, "unavailableDates": []})
+    response = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": course_ids, "unavailableDates": []})
     assert response.status_code == 422
     assert response.json()["errors"][0]["code"] in {"INVALID_OPTIMIZATION_SIZE", "DUPLICATE_COURSE_SELECTION"}
 
@@ -130,7 +131,7 @@ def test_prepare_rejects_complete_selection_when_one_course_belongs_to_another_s
 
     response = client.post(
         "/api/draft-schedules/optimization/prepare",
-        json={"semesterId": 1, "courseIds": [1, 2], "unavailableDates": []},
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1, 2], "unavailableDates": []},
     )
 
     assert response.status_code == 422
@@ -142,7 +143,7 @@ def test_existing_draft_requires_explicit_replacement_confirmation(client, db_se
     seed_optimization_planner(db_session, course_count=1)
     replace_draft_schedule(db_session, load_course_plan(db_session, 1), 1, [GeneratedSession(date(2026, 9, 7), time(8), time(11, 30), 4, 1, 0, 1, 1)])
     db_session.commit()
-    prepared = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "courseIds": [1], "unavailableDates": []}).json()
+    prepared = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []}).json()
     response = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
     assert response.status_code == 409
     assert response.json()["code"] == "REPLACEMENT_CONFIRMATION_REQUIRED"
@@ -150,7 +151,7 @@ def test_existing_draft_requires_explicit_replacement_confirmation(client, db_se
 
 def test_unproven_solver_result_returns_503_and_saves_nothing(client, db_session, monkeypatch):
     seed_optimization_planner(db_session, course_count=1)
-    prepared = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "courseIds": [1], "unavailableDates": []}).json()
+    prepared = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []}).json()
     from app.services.semester_optimization import OptimalResultNotProven
     import app.services.conflict_aware_generation as service
     monkeypatch.setattr(service, "optimize_semester", lambda *args, **kwargs: (_ for _ in ()).throw(OptimalResultNotProven("not proven")))
@@ -163,7 +164,7 @@ def test_material_change_after_preparation_returns_saved_state_stale_outcome(cli
     seed_optimization_planner(db_session, course_count=1, total_units=4)
     prepared = client.post(
         "/api/draft-schedules/optimization/prepare",
-        json={"semesterId": 1, "courseIds": [1], "unavailableDates": []},
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
     room = db_session.get(Room, 1)
     room.capacity = 20
@@ -190,7 +191,7 @@ def test_confirmed_equal_non_improvement_preserves_current_draft(client, db_sess
     db_session.commit()
     prepared = client.post(
         "/api/draft-schedules/optimization/prepare",
-        json={"semesterId": 1, "courseIds": [1], "unavailableDates": []},
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
 
     response = client.post(
@@ -215,7 +216,7 @@ def test_confirmed_equal_unit_conflict_reduction_replaces_current_draft(client, 
     db_session.commit()
     prepared = client.post(
         "/api/draft-schedules/optimization/prepare",
-        json={"semesterId": 1, "courseIds": [1], "unavailableDates": []},
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
 
     response = client.post(
@@ -238,7 +239,7 @@ def test_mixed_saved_failed_and_post_solve_stale_outcomes_share_one_response(cli
     db_session.commit()
     prepared = client.post(
         "/api/draft-schedules/optimization/prepare",
-        json={"semesterId": 1, "courseIds": [1, 2, 3], "unavailableDates": []},
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1, 2, 3], "unavailableDates": []},
     ).json()
     import app.services.conflict_aware_generation as service
     original = service.optimize_semester

@@ -127,15 +127,15 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 9 | FS-018 | Unified Application Navigation | Move consistently between Schedule and Academic Data | FS-007, FS-008 | Implemented |
 | 10 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Implemented |
 | 11 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Implemented |
-| 12 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Ready for specification |
-| 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Proposed |
-| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Proposed |
+| 12 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Implemented |
+| 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Implemented |
+| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented — validation follow-ups open |
 | 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Proposed |
 | 16 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Proposed — later release |
 | 17 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015 | Proposed — later release |
 | 18 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
-**Recommended first slice:** `FS-011 – Institution-Wide Holiday Calendar and Avoidance`
+**Recommended first slice:** `FS-013 – Versioned Review and Publication Lifecycle`
 
 ## Development slices
 
@@ -1301,7 +1301,7 @@ The planner works on a draft, optionally marks it ready for review, and publishe
 
 #### Data inputs and outputs
 
-Inputs are schedule revisions and explicit transition actions. Outputs are durable lifecycle state, revision history, one current published revision where present, and one or more controlled working revisions as clarified.
+Inputs are schedule revisions and explicit transition actions. Outputs are durable lifecycle state, revision history, one current published revision where present, and at most one controlled working revision per semester.
 
 #### Integrations
 
@@ -1324,15 +1324,16 @@ Lifecycle badges and filters should be introduced gradually into the current rev
 
 The planner can publish a stable schedule, revise it safely, and replace it only through an explicit later publication.
 
-#### Open clarification topics
+#### Clarification decisions
 
-- Whether more than one working draft revision may exist per semester or course.
-- Whether publication is course-by-course, semester-wide, or both.
-- Minimum change-history detail and rules for abandoning or restoring revisions.
+- Publication and revision identity are semester-wide; course views project the selected semester revision.
+- A semester has at most one active working revision.
+- Complete revision/state event history is retained, while historical schedule bodies load on demand.
+- Abandonment captures the working content; restoration reuses the same revision only when no other working revision exists.
 
 #### Specification status
 
-Proposed.
+Implemented — the exact reference-scale/query-bound proof, broader file-backed concurrency matrix, literal 200% manual pass, and moderated planner study remain validation follow-ups.
 
 #### Ready-to-copy Spec Kit prompt
 

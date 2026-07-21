@@ -15,6 +15,7 @@ from app.models.planning import (
     Room,
     ResourceUnavailabilityPeriod,
     ResourceUnavailabilityWeekday,
+    ScheduleRevision,
 )
 
 
@@ -264,6 +265,10 @@ def assess_resource_usage(db: Session, row) -> dict:
     exam_session_count = int(
         db.execute(select(func.count()).select_from(ExamSession).where(exam_column == row.id)).scalar_one()
     )
+    snapshot_draft_count, snapshot_exam_count = _snapshot_resource_usage(db, row)
+    draft_session_count += snapshot_draft_count
+    draft_schedule_count += snapshot_draft_count
+    exam_session_count += snapshot_exam_count
     configured_count = 0
     if isinstance(row, Lecturer):
         configured_count = int(db.execute(select(func.count()).select_from(CourseExamConfiguration).where(CourseExamConfiguration.responsible_lecturer_id == row.id, CourseExamConfiguration.enabled.is_(True))).scalar_one())
@@ -279,6 +284,16 @@ def assess_resource_usage(db: Session, row) -> dict:
         },
         "examUsage": {"examSessionCount": exam_session_count, "currentConfigurationCount": configured_count},
     }
+
+
+def _snapshot_resource_usage(db: Session, row) -> tuple[int, int]:
+    key = "lecturer" if isinstance(row, Lecturer) else "room"
+    teaching = 0
+    exams = 0
+    for snapshot in db.scalars(select(ScheduleRevision.snapshot_document).where(ScheduleRevision.snapshot_document.is_not(None))):
+        teaching += sum(1 for course in snapshot.get("courses", []) for session in course.get("teachingSessions", []) if session.get(key, {}).get("sourceId") == row.id)
+        exams += sum(1 for exam in snapshot.get("examSessions", []) if exam.get(key, {}).get("sourceId") == row.id)
+    return teaching, exams
 
 
 def remove_resource(

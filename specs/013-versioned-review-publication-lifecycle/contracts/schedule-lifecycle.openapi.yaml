@@ -1,0 +1,789 @@
+openapi: 3.1.0
+info:
+  title: FS-013 Versioned Schedule Lifecycle Contract
+  version: 1.0.0
+  description: >-
+    Planner-only semester schedule revision, publication preparation,
+    explicit lifecycle transition, immutable content, and history contract.
+servers:
+  - url: /
+paths:
+  /api/semesters/{semester_id}/schedule-lifecycle:
+    get:
+      summary: Read authoritative lifecycle and complete revision/event summaries for one semester
+      parameters:
+        - $ref: '#/components/parameters/SemesterId'
+      responses:
+        '200':
+          description: Current working/publication authority and ordered lifecycle history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleLifecycleOverview'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/semesters/{semester_id}/schedule-revisions:
+    post:
+      summary: Establish an initial Draft or start a successor from the current publication
+      parameters:
+        - $ref: '#/components/parameters/SemesterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkingRevisionRequest'
+      responses:
+        '201':
+          description: Working revision created and authoritative lifecycle returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleLifecycleOverview'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+  /api/schedule-revisions/{revision_id}:
+    get:
+      summary: Read one working or inactive semester revision with its schedule content
+      parameters:
+        - $ref: '#/components/parameters/RevisionId'
+      responses:
+        '200':
+          description: Selected revision metadata, events, and canonical schedule content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleRevisionContent'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/schedule-revisions/{revision_id}/publication-preparation:
+    post:
+      summary: Prepare authoritative non-blocking publication decision context
+      parameters:
+        - $ref: '#/components/parameters/RevisionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreparePublicationRequest'
+      responses:
+        '200':
+          description: Current consequence, conditions, and confirmation token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationPreparation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+  /api/schedule-revisions/{revision_id}/transitions:
+    post:
+      summary: Complete one explicit planner-controlled lifecycle transition
+      parameters:
+        - $ref: '#/components/parameters/RevisionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransitionRevisionRequest'
+      responses:
+        '200':
+          description: Transition completed and authoritative lifecycle returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleLifecycleOverview'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+components:
+  parameters:
+    SemesterId:
+      name: semester_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    RevisionId:
+      name: revision_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  responses:
+    NotFound:
+      description: Semester or schedule revision does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Lifecycle, revision, material input, or uniqueness state changed; no requested mutation retained
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LifecycleConflictResponse'
+    ValidationFailure:
+      description: Request shape, confirmation, source materialization, or transition rule failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    CreateWorkingRevisionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedStateToken]
+      properties:
+        expectedStateToken:
+          type: string
+          minLength: 1
+          description: Opaque token from the latest lifecycle overview.
+    PreparePublicationRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedRevisionVersion, expectedStateToken]
+      properties:
+        expectedRevisionVersion:
+          type: integer
+          minimum: 1
+        expectedStateToken:
+          type: string
+          minLength: 1
+    TransitionRevisionRequest:
+      type: object
+      additionalProperties: false
+      required: [action, expectedRevisionVersion, expectedStateToken, confirmed]
+      properties:
+        action:
+          $ref: '#/components/schemas/TransitionAction'
+        expectedRevisionVersion:
+          type: integer
+          minimum: 1
+        expectedStateToken:
+          type: string
+          minLength: 1
+        confirmed:
+          type: boolean
+          description: Must be true for publish and abandon; ignored for non-confirmation actions.
+        publicationToken:
+          oneOf:
+            - type: string
+              minLength: 1
+            - type: 'null'
+          default: null
+          description: Required only for publish and issued by publication preparation.
+    TransitionAction:
+      type: string
+      enum:
+        - mark_ready
+        - return_to_draft
+        - publish
+        - abandon
+        - restore
+    LifecycleState:
+      type: string
+      enum:
+        - draft
+        - ready_for_review
+        - published
+        - superseded
+        - abandoned
+    LifecycleEventType:
+      type: string
+      enum:
+        - created
+        - marked_ready
+        - returned_to_draft
+        - published
+        - superseded
+        - abandoned
+        - restored
+    ScheduleLifecycleOverview:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - semesterName
+        - stateToken
+        - activeWorkingRevision
+        - currentPublication
+        - revisions
+        - allowedActions
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        semesterName:
+          type: string
+          minLength: 1
+        stateToken:
+          type: string
+          minLength: 1
+        activeWorkingRevision:
+          oneOf:
+            - $ref: '#/components/schemas/ScheduleRevisionSummary'
+            - type: 'null'
+        currentPublication:
+          oneOf:
+            - $ref: '#/components/schemas/ScheduleRevisionSummary'
+            - type: 'null'
+        revisions:
+          type: array
+          description: Every revision in descending revision-number order; each event list remains ascending.
+          items:
+            $ref: '#/components/schemas/ScheduleRevisionSummary'
+        allowedActions:
+          $ref: '#/components/schemas/LifecycleAllowedActions'
+    LifecycleAllowedActions:
+      type: object
+      additionalProperties: false
+      required: [createWorkingRevision]
+      properties:
+        createWorkingRevision:
+          type: boolean
+          description: True when the planner may explicitly Start Draft for an initial revision or start a successor Draft.
+    ScheduleRevisionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - revisionId
+        - semesterId
+        - revisionNumber
+        - revisionVersion
+        - state
+        - originRevisionId
+        - isActiveWorking
+        - isCurrentPublication
+        - createdAt
+        - stateChangedAt
+        - publishedAt
+        - events
+        - allowedActions
+      properties:
+        revisionId:
+          type: integer
+          minimum: 1
+        semesterId:
+          type: integer
+          minimum: 1
+        revisionNumber:
+          type: integer
+          minimum: 1
+        revisionVersion:
+          type: integer
+          minimum: 1
+          description: Optimistic row version; not the displayed revision number.
+        state:
+          $ref: '#/components/schemas/LifecycleState'
+        originRevisionId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        isActiveWorking:
+          type: boolean
+        isCurrentPublication:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          description: UTC instant serialized as an RFC 3339 value with an explicit offset.
+        stateChangedAt:
+          type: string
+          format: date-time
+          description: UTC instant serialized as an RFC 3339 value with an explicit offset.
+        publishedAt:
+          oneOf:
+            - type: string
+              format: date-time
+              description: UTC publication instant serialized as an RFC 3339 value with an explicit offset.
+            - type: 'null'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleRevisionEvent'
+        allowedActions:
+          $ref: '#/components/schemas/RevisionAllowedActions'
+    RevisionAllowedActions:
+      type: object
+      additionalProperties: false
+      required: [markReady, returnToDraft, preparePublication, abandon, restore, editSchedule]
+      properties:
+        markReady:
+          type: boolean
+        returnToDraft:
+          type: boolean
+        preparePublication:
+          type: boolean
+        abandon:
+          type: boolean
+        restore:
+          type: boolean
+        editSchedule:
+          type: boolean
+    ScheduleRevisionEvent:
+      type: object
+      additionalProperties: false
+      required: [eventSequence, eventType, fromState, toState, occurredAt]
+      properties:
+        eventSequence:
+          type: integer
+          minimum: 1
+        eventType:
+          $ref: '#/components/schemas/LifecycleEventType'
+        fromState:
+          oneOf:
+            - $ref: '#/components/schemas/LifecycleState'
+            - type: 'null'
+        toState:
+          $ref: '#/components/schemas/LifecycleState'
+        occurredAt:
+          type: string
+          format: date-time
+          description: UTC event instant serialized as an RFC 3339 value with an explicit offset.
+    PublicationPreparation:
+      type: object
+      additionalProperties: false
+      required:
+        - preparationToken
+        - preparedAt
+        - semesterId
+        - semesterName
+        - targetRevision
+        - consequence
+        - currentPublication
+        - courseCount
+        - totalUnits
+        - scheduledUnits
+        - remainingUnits
+        - conditions
+      properties:
+        preparationToken:
+          type: string
+          minLength: 1
+        preparedAt:
+          type: string
+          format: date-time
+          description: UTC preparation instant serialized as an RFC 3339 value with an explicit offset.
+        semesterId:
+          type: integer
+          minimum: 1
+        semesterName:
+          type: string
+          minLength: 1
+        targetRevision:
+          $ref: '#/components/schemas/ScheduleRevisionSummary'
+        consequence:
+          type: string
+          enum: [first_publication, replacement_publication]
+        currentPublication:
+          oneOf:
+            - $ref: '#/components/schemas/ScheduleRevisionSummary'
+            - type: 'null'
+        courseCount:
+          type: integer
+          minimum: 0
+        totalUnits:
+          type: integer
+          minimum: 0
+        scheduledUnits:
+          type: integer
+          minimum: 0
+        remainingUnits:
+          type: integer
+          minimum: 0
+        conditions:
+          type: array
+          description: Complete known non-blocking publication conditions.
+          items:
+            $ref: '#/components/schemas/PublicationCondition'
+    PublicationCondition:
+      type: object
+      additionalProperties: false
+      required: [code, message, courseId, sessionKind, sourceSessionId, details]
+      properties:
+        code:
+          type: string
+          enum:
+            - course_units_remaining
+            - teaching_validation_alert
+            - enabled_exam_unscheduled
+            - exam_validity_issue
+            - exam_outside_recommendation
+        message:
+          type: string
+          minLength: 1
+        courseId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        sessionKind:
+          oneOf:
+            - type: string
+              enum: [teaching, exam]
+            - type: 'null'
+        sourceSessionId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        details:
+          type: object
+          additionalProperties: true
+    ScheduleRevisionContent:
+      type: object
+      additionalProperties: false
+      required: [revision, contentSource, snapshot]
+      properties:
+        revision:
+          $ref: '#/components/schemas/ScheduleRevisionSummary'
+        contentSource:
+          type: string
+          enum: [active_working, captured_snapshot]
+        snapshot:
+          $ref: '#/components/schemas/SemesterScheduleSnapshot'
+    SemesterScheduleSnapshot:
+      type: object
+      additionalProperties: false
+      required: [schemaVersion, capturedAt, semester, courses, examSessions, capturedConditions]
+      properties:
+        schemaVersion:
+          type: integer
+          const: 1
+        capturedAt:
+          type: string
+          format: date-time
+          description: UTC snapshot instant serialized as an RFC 3339 value with an explicit offset.
+        semester:
+          $ref: '#/components/schemas/CapturedSemester'
+        courses:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturedCourseSchedule'
+        examSessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturedExamSession'
+        capturedConditions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicationCondition'
+    CapturedSemester:
+      type: object
+      additionalProperties: false
+      required: [sourceId, name, startDate, endDate]
+      properties:
+        sourceId:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+    CapturedCourseSchedule:
+      type: object
+      additionalProperties: false
+      required:
+        - sourceCourseId
+        - name
+        - cohort
+        - studyType
+        - totalUnits
+        - scheduledUnits
+        - remainingUnits
+        - draftStatus
+        - teachingSessions
+      properties:
+        sourceCourseId:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+        cohort:
+          $ref: '#/components/schemas/CapturedCohort'
+        studyType:
+          $ref: '#/components/schemas/CapturedEntity'
+        totalUnits:
+          type: integer
+          minimum: 0
+        scheduledUnits:
+          type: integer
+          minimum: 0
+        remainingUnits:
+          type: integer
+          minimum: 0
+        draftStatus:
+          oneOf:
+            - type: string
+              minLength: 1
+            - type: 'null'
+        teachingSessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturedTeachingSession'
+    CapturedEntity:
+      type: object
+      additionalProperties: false
+      required: [sourceId, name]
+      properties:
+        sourceId:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+    CapturedCohort:
+      type: object
+      additionalProperties: false
+      required: [sourceId, name, size]
+      properties:
+        sourceId:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 0
+    CapturedResource:
+      type: object
+      additionalProperties: false
+      required: [sourceId, name, referenceCode]
+      properties:
+        sourceId:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+        referenceCode:
+          type: string
+          minLength: 1
+        capacity:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+    CapturedTeachingSession:
+      type: object
+      additionalProperties: false
+      required:
+        - sourceSessionId
+        - date
+        - startTime
+        - endTime
+        - units
+        - timeWindowId
+        - constraintWindowIndex
+        - lecturer
+        - room
+        - validationAlerts
+      properties:
+        sourceSessionId:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          format: time
+        endTime:
+          type: string
+          format: time
+        units:
+          type: integer
+          minimum: 1
+        timeWindowId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        constraintWindowIndex:
+          type: integer
+          minimum: 0
+        lecturer:
+          $ref: '#/components/schemas/CapturedResource'
+        room:
+          $ref: '#/components/schemas/CapturedResource'
+        validationAlerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturedIssue'
+    CapturedIssue:
+      type: object
+      additionalProperties: false
+      required: [code, message, details]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        message:
+          type: string
+          minLength: 1
+        details:
+          type: object
+          additionalProperties: true
+    CapturedExamSession:
+      type: object
+      additionalProperties: false
+      required:
+        - sourceExamId
+        - course
+        - cohort
+        - lecturer
+        - room
+        - examDate
+        - startTime
+        - endTime
+        - source
+        - configurationIdentifier
+        - configurationRevision
+        - durationMinutes
+        - examType
+        - requiredCapacity
+        - recommendedStartDate
+        - recommendedEndDate
+        - recommendationWasOverridden
+        - finalTeachingDate
+        - finalTeachingEndTime
+        - validityIssues
+        - outsideRecommendedWindow
+      properties:
+        sourceExamId:
+          type: integer
+          minimum: 1
+        course:
+          $ref: '#/components/schemas/CapturedEntity'
+        cohort:
+          $ref: '#/components/schemas/CapturedEntity'
+        lecturer:
+          $ref: '#/components/schemas/CapturedResource'
+        room:
+          $ref: '#/components/schemas/CapturedResource'
+        examDate:
+          type: string
+          format: date
+        startTime:
+          type: string
+          format: time
+        endTime:
+          type: string
+          format: time
+        source:
+          type: string
+          enum: [generated, manual]
+        configurationIdentifier:
+          type: string
+          minLength: 1
+        configurationRevision:
+          type: integer
+          minimum: 1
+        durationMinutes:
+          type: integer
+          minimum: 1
+        examType:
+          type: string
+          minLength: 1
+        requiredCapacity:
+          type: integer
+          minimum: 1
+        recommendedStartDate:
+          type: string
+          format: date
+        recommendedEndDate:
+          type: string
+          format: date
+        recommendationWasOverridden:
+          type: boolean
+        finalTeachingDate:
+          type: string
+          format: date
+        finalTeachingEndTime:
+          type: string
+          format: time
+        validityIssues:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturedIssue'
+        outsideRecommendedWindow:
+          type: boolean
+    LifecycleConflictResponse:
+      type: object
+      additionalProperties: false
+      required: [errors, currentOverview]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/LifecycleError'
+        currentOverview:
+          oneOf:
+            - $ref: '#/components/schemas/ScheduleLifecycleOverview'
+            - type: 'null'
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/LifecycleError'
+    LifecycleError:
+      type: object
+      additionalProperties: false
+      required: [code, message, field, meta]
+      properties:
+        code:
+          type: string
+          enum:
+            - semester_not_found
+            - revision_not_found
+            - working_revision_required
+            - active_working_revision_exists
+            - revision_not_editable
+            - invalid_transition
+            - confirmation_required
+            - stale_lifecycle_state
+            - stale_publication_preparation
+            - snapshot_materialization_failed
+            - lifecycle_conflict
+            - validation_error
+        message:
+          type: string
+          minLength: 1
+        field:
+          oneOf:
+            - type: string
+            - type: 'null'
+        meta:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: 'null'

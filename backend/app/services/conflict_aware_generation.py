@@ -94,9 +94,12 @@ def prepare_optimization(
     semester_id: int,
     course_ids: list[int],
     unavailable_dates,
+    schedule_revision_id: int | None = None,
 ) -> OptimizationPreparationResponse:
     _validate_selection(course_ids)
-    loaded = load_operation(db, semester_id, course_ids, unavailable_dates)
+    loaded = load_operation(
+        db, semester_id, course_ids, unavailable_dates, schedule_revision_id
+    )
     mismatched = next(
         (item for item in loaded.courses if item.course.current_semester_id != semester_id),
         None,
@@ -126,6 +129,7 @@ def prepare_optimization(
         ))
     return OptimizationPreparationResponse(
         semesterId=semester_id,
+        scheduleRevisionId=schedule_revision_id,
         unavailableDates=list(loaded.unavailable_dates),
         sharedSnapshotToken=loaded.shared_snapshot_token,
         courses=prepared,
@@ -139,12 +143,15 @@ def generate_optimization(
     prepared_courses: list[PreparedOptimizationCourseInput],
     unavailable_dates,
     shared_snapshot_token: str,
+    schedule_revision_id: int | None = None,
 ) -> OptimizationGenerationResult:
     started = monotonic()
     deadline = started + OPERATION_DEADLINE_SECONDS
     course_ids = [item.course_id for item in prepared_courses]
     _validate_selection(course_ids)
-    loaded = load_operation(db, semester_id, course_ids, unavailable_dates)
+    loaded = load_operation(
+        db, semester_id, course_ids, unavailable_dates, schedule_revision_id
+    )
     supplied = {item.course_id: item for item in prepared_courses}
     stale_ids: set[int] = set()
     for item in loaded.courses:
@@ -203,7 +210,9 @@ def generate_optimization(
     # The final result must always describe current persisted state. This also
     # covers stale or unavailable selections for which no solver run occurs.
     db.expire_all()
-    refreshed = load_operation(db, semester_id, course_ids, unavailable_dates)
+    refreshed = load_operation(
+        db, semester_id, course_ids, unavailable_dates, schedule_revision_id
+    )
     refreshed_by_id = {item.course.id: item for item in refreshed.courses}
     original_by_id = {item.course.id: item for item in loaded.courses}
     if refreshed.semester_snapshot_token != loaded.semester_snapshot_token:
@@ -389,7 +398,13 @@ def generate_optimization(
     )
 
 
-def load_operation(db: Session, semester_id: int, course_ids: list[int], unavailable_dates) -> LoadedOperation:
+def load_operation(
+    db: Session,
+    semester_id: int,
+    course_ids: list[int],
+    unavailable_dates,
+    schedule_revision_id: int | None = None,
+) -> LoadedOperation:
     semester_record = db.get(Semester, semester_id)
     if semester_record is None:
         raise SemesterNotFoundError("Semester not found.")
@@ -455,6 +470,7 @@ def load_operation(db: Session, semester_id: int, course_ids: list[int], unavail
             or session.room_id in {room.id for room in plan.room_candidates}
         ]
         token = _fingerprint({
+            "scheduleRevisionId": schedule_revision_id,
             "course": _course_payload(course, plan, constraints),
             "draft": _draft_payload(draft),
             "occupancy": [_fixed_payload(item) for item in sorted(relevant_fixed, key=_fixed_sort_key)],
@@ -474,6 +490,7 @@ def load_operation(db: Session, semester_id: int, course_ids: list[int], unavail
     ]
     semester_token = _fingerprint(semester_payload)
     shared_token = _fingerprint({
+        "scheduleRevisionId": schedule_revision_id,
         "semester": semester_payload,
         "unavailableDates": [value.isoformat() for value in canonical_dates],
         "institutionHolidays": [
