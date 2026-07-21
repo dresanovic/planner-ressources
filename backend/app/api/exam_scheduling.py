@@ -31,6 +31,9 @@ from app.services.exam_scheduling import (
     save_exam_configuration,
     update_exam,
 )
+from app.models.planning import ExamSession
+from app.services.schedule_lifecycle import LifecycleFailure, require_active_working_revision
+from app.api.schedule_lifecycle import lifecycle_failure_response
 
 router = APIRouter(tags=["exam scheduling"])
 
@@ -69,7 +72,10 @@ def put_configuration(course_id: int, payload: SaveExamConfigurationRequest, db:
 @router.post("/api/exams/generation/prepare", response_model=ExamGenerationPreparation)
 def prepare(payload: ExamGenerationPreparationRequest, db: Session = Depends(get_db)):
     try:
-        return _transport(prepare_exam_generation(db, payload.semester_id, payload.course_ids))
+        require_active_working_revision(db, payload.semester_id, payload.schedule_revision_id)
+        return _transport(prepare_exam_generation(db, payload.semester_id, payload.course_ids, schedule_revision_id=payload.schedule_revision_id))
+    except LifecycleFailure as exc:
+        return lifecycle_failure_response(exc)
     except ExamSchedulingError as exc:
         return _error(exc)
 
@@ -77,11 +83,14 @@ def prepare(payload: ExamGenerationPreparationRequest, db: Session = Depends(get
 @router.post("/api/exams/generation", response_model=ExamGenerationResult)
 def generate(payload: GenerateExamsRequest, db: Session = Depends(get_db)):
     try:
+        require_active_working_revision(db, payload.semester_id, payload.schedule_revision_id)
         result = generate_exams(db, payload.model_dump(by_alias=True))
         db.commit()
         return _transport(result)
     except ExamSchedulingError as exc:
         db.rollback(); return _error(exc)
+    except LifecycleFailure as exc:
+        db.rollback(); return lifecycle_failure_response(exc)
     except (IntegrityError, StaleDataError):
         db.rollback(); return _error(_concurrent_error())
 
@@ -89,10 +98,13 @@ def generate(payload: GenerateExamsRequest, db: Session = Depends(get_db)):
 @router.post("/api/courses/{course_id}/exam-sessions", response_model=ExamCoursePlanningState, status_code=status.HTTP_201_CREATED)
 def create_session(course_id: int, payload: CreateManualExamRequest, db: Session = Depends(get_db)):
     try:
+        require_active_working_revision(db, payload.semester_id, payload.schedule_revision_id)
         state = create_manual_exam(db, course_id=course_id, semester_id=payload.semester_id, exam_date=payload.date, start_time=time.fromisoformat(payload.start_time), lecturer_id=payload.lecturer_id, room_id=payload.room_id, expected_configuration_revision=payload.expected_configuration_revision, input_snapshot_token=payload.input_snapshot_token)
         db.commit(); return _transport(state)
     except ExamSchedulingError as exc:
         db.rollback(); return _error(exc)
+    except LifecycleFailure as exc:
+        db.rollback(); return lifecycle_failure_response(exc)
     except (IntegrityError, StaleDataError):
         db.rollback(); return _error(_concurrent_error())
 
@@ -100,10 +112,16 @@ def create_session(course_id: int, payload: CreateManualExamRequest, db: Session
 @router.patch("/api/exam-sessions/{exam_id}", response_model=ExamCoursePlanningState)
 def patch_session(exam_id: int, payload: UpdateExamRequest, db: Session = Depends(get_db)):
     try:
+        source_exam = db.get(ExamSession, exam_id)
+        if source_exam is None:
+            raise ExamSchedulingError(404, [ExamErrorItem("EXAM_NOT_FOUND", "Exam Session not found.")])
+        require_active_working_revision(db, source_exam.semester_id, payload.schedule_revision_id)
         state = update_exam(db, exam_id, exam_date=payload.date, start_time=time.fromisoformat(payload.start_time), lecturer_id=payload.lecturer_id, room_id=payload.room_id, expected_exam_revision=payload.expected_exam_revision, input_snapshot_token=payload.input_snapshot_token)
         db.commit(); return _transport(state)
     except ExamSchedulingError as exc:
         db.rollback(); return _error(exc)
+    except LifecycleFailure as exc:
+        db.rollback(); return lifecycle_failure_response(exc)
     except (IntegrityError, StaleDataError):
         db.rollback(); return _error(_concurrent_error())
 
@@ -111,10 +129,16 @@ def patch_session(exam_id: int, payload: UpdateExamRequest, db: Session = Depend
 @router.delete("/api/exam-sessions/{exam_id}", response_model=DeleteExamResponse)
 def remove_session(exam_id: int, payload: DeleteExamRequest, db: Session = Depends(get_db)):
     try:
+        source_exam = db.get(ExamSession, exam_id)
+        if source_exam is None:
+            raise ExamSchedulingError(404, [ExamErrorItem("EXAM_NOT_FOUND", "Exam Session not found.")])
+        require_active_working_revision(db, source_exam.semester_id, payload.schedule_revision_id)
         result = delete_exam(db, exam_id, confirmed=payload.confirmed, expected_exam_revision=payload.expected_exam_revision, input_snapshot_token=payload.input_snapshot_token)
         db.commit(); return _transport(result)
     except ExamSchedulingError as exc:
         db.rollback(); return _error(exc)
+    except LifecycleFailure as exc:
+        db.rollback(); return lifecycle_failure_response(exc)
     except (IntegrityError, StaleDataError):
         db.rollback(); return _error(_concurrent_error())
 

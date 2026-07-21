@@ -38,6 +38,7 @@ describe('institution holiday contracts', () => {
     await expect(generateDraftSchedule(
       1,
       1,
+      11,
       { startDate: '2026-09-07', endDate: '2026-09-07' },
       [{ weekday: 0, startTime: '08:00', endTime: '12:00' }],
     )).rejects.toEqual(errors)
@@ -87,12 +88,12 @@ describe('resource-aware Draft Sessions', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const result = await updateDraftSession(9, {
-      date: '2026-09-07', startTime: '09:00', endTime: '10:00', lecturerId: 5, roomId: 6,
+      scheduleRevisionId: 11, date: '2026-09-07', startTime: '09:00', endTime: '10:00', lecturerId: 5, roomId: 6,
     })
 
     expect(fetchMock).toHaveBeenCalledWith('/api/draft-sessions/9', expect.objectContaining({
       method: 'PATCH',
-      body: JSON.stringify({ date: '2026-09-07', startTime: '09:00', endTime: '10:00', lecturerId: 5, roomId: 6 }),
+      body: JSON.stringify({ scheduleRevisionId: 11, date: '2026-09-07', startTime: '09:00', endTime: '10:00', lecturerId: 5, roomId: 6 }),
     }))
     expect(result.sessions[0].lecturer.referenceCode).toBe('LEC-005')
     expect(result.sessions[0].validationAlerts[0].code).toBe('LECTURER_UNAVAILABLE')
@@ -104,7 +105,7 @@ describe('manual Draft Session mutation contracts', () => {
     const payload = { courseId: 1, semesterId: 1, scheduledUnits: 0, remainingUnits: 12, draftSchedule: null }
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => payload }))
 
-    await expect(deleteDraftSession(9, 4, 2)).resolves.toEqual(payload)
+    await expect(deleteDraftSession(9, 4, 2, 11)).resolves.toEqual(payload)
   })
 
   it('sends the manual create body and maps structured validation errors', async () => {
@@ -115,7 +116,7 @@ describe('manual Draft Session mutation contracts', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const payload = { semesterId: 1, date: '2026-09-07', startTime: '08:00', endTime: '09:45', units: 4, roomId: 3 }
+    const payload = { semesterId: 1, scheduleRevisionId: 11, date: '2026-09-07', startTime: '08:00', endTime: '09:45', units: 4, roomId: 3 }
     await expect(createManualDraftSession(1, payload)).rejects.toEqual([
       { code: 'UNITS_EXCEED_REMAINING', message: 'Only 2 units remain.' },
     ])
@@ -133,18 +134,18 @@ describe('manual Draft Session mutation contracts', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(clearCourseDraft(1, 2, 7, 4)).rejects.toEqual([
+    await expect(clearCourseDraft(1, 2, 7, 4, 11)).rejects.toEqual([
       { code: 'STALE_DRAFT', message: 'Draft changed.', currentRevision: 3 },
     ])
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/courses/1/draft-schedule?semesterId=2&expectedDraftScheduleId=7&expectedDraftRevision=4',
+      '/api/courses/1/draft-schedule?semesterId=2&expectedDraftScheduleId=7&expectedDraftRevision=4&scheduleRevisionId=11',
       expect.objectContaining({ method: 'DELETE' }),
     )
   })
 
   it('maps network failures without reporting success', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
-    await expect(deleteDraftSession(9, 4, 2)).rejects.toEqual([
+    await expect(deleteDraftSession(9, 4, 2, 11)).rejects.toEqual([
       expect.objectContaining({ code: 'NETWORK_ERROR' }),
     ])
   })

@@ -21,12 +21,14 @@ import {
   sortSessionsChronologically,
 } from './scheduleReviewUtils'
 
+type EditableDraftSessionRequest = Omit<UpdateDraftSessionRequest, 'scheduleRevisionId'>
+
 type DraftSchedulePanelProps = {
   schedules: DraftSchedule[]
   rooms?: RoomOption[]
   lecturers?: LecturerRecord[]
   courseResources?: PlanningOptions['courseResources']
-  onUpdateSession?: (sessionId: number, payload: UpdateDraftSessionRequest) => Promise<void>
+  onUpdateSession?: (sessionId: number, payload: EditableDraftSessionRequest) => Promise<void>
   onDeleteSession?: (session: DraftSession, schedule: DraftSchedule) => void
   resetKey?: number
   isBusy?: boolean
@@ -34,6 +36,8 @@ type DraftSchedulePanelProps = {
   onEditExam?: (exam: ExamSession) => void
   onDeleteExam?: (exam: ExamSession) => void
   examCourseNames?: Record<number, string>
+  readOnly?: boolean
+  contextLabel?: string
 }
 
 export function DraftSchedulePanel(props: DraftSchedulePanelProps) {
@@ -52,11 +56,13 @@ function DraftSchedulePanelStateful({
   onEditExam,
   onDeleteExam,
   examCourseNames = {},
+  readOnly = false,
+  contextLabel,
 }: DraftSchedulePanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [filters, setFilters] = useState<ReviewFilters>({})
   const [editingSessionId, setEditingSessionId] = useState<number | null>(null)
-  const [editDraft, setEditDraft] = useState<UpdateDraftSessionRequest | null>(null)
+  const [editDraft, setEditDraft] = useState<EditableDraftSessionRequest | null>(null)
   const [editErrors, setEditErrors] = useState<SessionEditFailure[]>([])
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const overviewSessions = useMemo(
@@ -79,7 +85,7 @@ function DraftSchedulePanelStateful({
     <section className={`planner-panel ${isBusy ? 'overview-busy' : ''}`} aria-labelledby="courses-overview-title" aria-busy={isBusy}>
       <div className="panel-toolbar">
         <div>
-          <p className="eyebrow">Draft plans</p>
+          <p className="eyebrow">{contextLabel ?? 'Draft plans'}</p>
           <h2 id="courses-overview-title">Courses overview</h2>
         </div>
       </div>
@@ -157,7 +163,7 @@ function DraftSchedulePanelStateful({
                 <span>Lecturer</span>
                 <span>Room</span>
                 <span>Study type</span>
-                <span>Actions</span>
+                 {!readOnly && <span>Actions</span>}
               </div>
               {visibleSessions.map((session) => (
                 <div className="session-row" key={`${session.draftScheduleId}-${session.id}`}>
@@ -187,14 +193,14 @@ function DraftSchedulePanelStateful({
                       <span>{resourceLabel(session.lecturer)}</span>
                       <span>{resourceLabel(session.room)}</span>
                       <span>{session.context.studyType.name}</span>
-                      <span className="session-actions">
+                      {!readOnly && <span className="session-actions">
                         <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
                           Edit
                         </button>
                         <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>
                           Delete
                         </button>
-                      </span>
+                      </span>}
                     </>
                   )}
                 </div>
@@ -221,12 +227,12 @@ function DraftSchedulePanelStateful({
                             <span>{resourceLabel(session.room)}</span>
                             <span>{session.context.studyType.name}</span>
                             <SessionAlerts alerts={session.validationAlerts} />
-                            <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
+                            {!readOnly && <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
                               Edit
-                            </button>
-                            <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>
+                            </button>}
+                            {!readOnly && <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>
                               Delete
-                            </button>
+                            </button>}
                           </article>
                         ))}
                       </div>
@@ -238,14 +244,14 @@ function DraftSchedulePanelStateful({
           )}
           {visibleExams.length > 0 && (
             <div className="session-table exam-session-table" aria-label="Exam sessions">
-              <div className="session-row exam-session-row session-header"><span>Kind</span><span>Date and time</span><span>Lifecycle</span><span>Exam</span><span>Course</span><span>Cohort</span><span>Lecturer</span><span>Room</span><span>Actions</span></div>
+              <div className="session-row exam-session-row session-header"><span>Kind</span><span>Date and time</span><span>Lifecycle</span><span>Exam</span><span>Course</span><span>Cohort</span><span>Lecturer</span><span>Room</span>{!readOnly && <span>Actions</span>}</div>
               {visibleExams.map((exam) => <div className="session-row exam-session-row" key={`exam-${exam.id}`}>
                 <span><strong>Exam</strong>{exam.source === 'generated' ? ' · Generated' : ' · Manual'}</span>
                 <span>{exam.date}<br/>{exam.startTime}-{exam.endTime} ({exam.durationMinutes} min)</span>
                 <span className={`exam-lifecycle ${exam.lifecycleStatus}`}>{exam.lifecycleStatus === 'active' ? 'Active' : 'Past'}</span>
                 <span>{exam.configurationIdentifier}<br/>{exam.examType}<small>Recommended {exam.recommendedStartDate}–{exam.recommendedEndDate}{exam.recommendationWasOverridden ? ' (planner override)' : ''}</small><small>Final teaching {exam.finalTeachingAnchor.date} at {exam.finalTeachingAnchor.endTime}</small>{exam.outsideRecommendedWindow && <small className="soft-notice"> Outside recommended window</small>}{exam.validityIssues.map((issue, index) => <small className="validation-alert" key={`${issue.code}-${index}`}>{issue.code.replaceAll('_', ' ')}: {issue.message}</small>)}</span>
                 <span>{examCourseNames[exam.courseId] ?? `Course #${exam.courseId}`}</span><span>{exam.cohort.name}</span><span>{resourceLabel(exam.lecturer)}</span><span>{resourceLabel(exam.room)} · capacity {exam.room.capacity}/{exam.requiredCapacity} required</span>
-                <span className="session-actions"><button type="button" className="secondary-button compact-button" disabled={isBusy} onClick={()=>onEditExam?.(exam)}>Edit</button><button type="button" className="destructive-button compact-button" disabled={isBusy} onClick={()=>onDeleteExam?.(exam)}>Delete</button></span>
+                {!readOnly && <span className="session-actions"><button type="button" className="secondary-button compact-button" disabled={isBusy} onClick={()=>onEditExam?.(exam)}>Edit</button><button type="button" className="destructive-button compact-button" disabled={isBusy} onClick={()=>onDeleteExam?.(exam)}>Delete</button></span>}
               </div>)}
             </div>
           )}
@@ -264,7 +270,7 @@ function DraftSchedulePanelStateful({
   }
 
   function openEdit(session: OverviewSession) {
-    if (isBusy) return
+    if (isBusy || readOnly) return
     setViewMode('list')
     setEditingSessionId(session.id)
     setEditDraft({
@@ -334,11 +340,11 @@ function SessionAlerts({ alerts }: { alerts: DraftSession['validationAlerts'] })
 
 type SessionEditFieldsProps = {
   session: OverviewSession
-  draft: UpdateDraftSessionRequest
+    draft: EditableDraftSessionRequest
   isSaving: boolean
   isDisabled: boolean
   errors: SessionEditFailure[]
-  onChange: (draft: UpdateDraftSessionRequest) => void
+  onChange: (draft: EditableDraftSessionRequest) => void
   onCancel: () => void
   onSave: () => void
 }

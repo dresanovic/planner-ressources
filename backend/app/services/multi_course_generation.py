@@ -58,6 +58,7 @@ def prepare_batch(
     semester_id: int,
     operation_kind: BatchOperationKind,
     course_ids: list[int],
+    schedule_revision_id: int | None = None,
 ) -> BatchPreparationResponse:
     semester, courses, drafts, _, default_windows = _bulk_load(db, semester_id, course_ids)
     active_window_types = {window.study_type_id for window in default_windows}
@@ -84,6 +85,7 @@ def prepare_batch(
         )
     return BatchPreparationResponse(
         semesterId=semester.id,
+        scheduleRevisionId=schedule_revision_id,
         operationKind=operation_kind,
         courses=snapshots,
         replacementCourseIds=replacements,

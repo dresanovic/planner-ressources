@@ -28,6 +28,7 @@ export type PreparedOptimizationCourse = {
 
 export type OptimizationPreparation = {
   semesterId: number
+  scheduleRevisionId: number
   unavailableDates: string[]
   sharedSnapshotToken: string
   courses: PreparedOptimizationCourse[]
@@ -76,6 +77,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export async function prepareConflictAwareGeneration(
   semesterId: number,
+  scheduleRevisionId: number,
   courseIds: number[],
   unavailableDates: string[] = [],
 ): Promise<OptimizationPreparation> {
@@ -83,7 +85,7 @@ export async function prepareConflictAwareGeneration(
   const response = await request(`${API_BASE}/api/draft-schedules/optimization/prepare`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ semesterId, courseIds, unavailableDates }),
+    body: JSON.stringify({ semesterId, scheduleRevisionId, courseIds, unavailableDates }),
   })
   if (!response.ok) throw await parseOptimizationError(response)
   return response.json()
@@ -99,6 +101,7 @@ export async function generateConflictAwareSchedules(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       semesterId: preparation.semesterId,
+      scheduleRevisionId: preparation.scheduleRevisionId,
       unavailableDates: preparation.unavailableDates,
       sharedSnapshotToken: preparation.sharedSnapshotToken,
       replacementConfirmed,

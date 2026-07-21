@@ -10,14 +10,14 @@ export type ExamCoursePlanningState = { courseId: number; courseName: string; se
 export type ExamPlanningOverview = { semesterId: number; institutionToday: string; courses: ExamCoursePlanningState[] }
 export type SaveExamConfigurationRequest = { semesterId: number; enabled: boolean; expectedRevision: number | null; configuration: ExamConfigurationInput | null }
 export type PreparedExamCourse = { courseId: number; courseName: string; configurationId: number | null; configurationRevision: number | null; inputSnapshotToken: string; eligibility: GenerationEligibility }
-export type ExamGenerationPreparation = { semesterId: number; institutionToday: string; sharedSnapshotToken: string; courses: PreparedExamCourse[] }
+export type ExamGenerationPreparation = { semesterId: number; scheduleRevisionId: number; institutionToday: string; sharedSnapshotToken: string; courses: PreparedExamCourse[] }
 export type PreparedExamCourseInput = Omit<PreparedExamCourse, 'courseName' | 'eligibility'>
-export type GenerateExamsRequest = { semesterId: number; institutionToday: string; sharedSnapshotToken: string; courses: PreparedExamCourseInput[] }
+export type GenerateExamsRequest = { semesterId: number; scheduleRevisionId: number; institutionToday: string; sharedSnapshotToken: string; courses: PreparedExamCourseInput[] }
 export type ExamGenerationOutcome = { courseId: number; courseName: string; configurationId: number | null; configurationIdentifier: string | null; status: 'scheduled' | 'failed' | 'stale' | 'skipped_active' | 'skipped_disabled'; saved: boolean; exam: ExamSession | null; reasons: ExamIssue[] }
 export type ExamGenerationResult = { semesterId: number; summary: { total: number; scheduled: number; failed: number; stale: number; skippedActive: number; skippedDisabled: number; elapsedMilliseconds: number; optimalForPreparedSnapshot: boolean }; outcomes: ExamGenerationOutcome[] }
-export type CreateManualExamRequest = { semesterId: number; date: string; startTime: string; lecturerId: number; roomId: number; expectedConfigurationRevision: number; inputSnapshotToken: string }
-export type UpdateExamRequest = { date: string; startTime: string; lecturerId: number; roomId: number; expectedExamRevision: number; inputSnapshotToken: string }
-export type DeleteExamRequest = { confirmed: true; expectedExamRevision: number; inputSnapshotToken: string }
+export type CreateManualExamRequest = { semesterId: number; scheduleRevisionId: number; date: string; startTime: string; lecturerId: number; roomId: number; expectedConfigurationRevision: number; inputSnapshotToken: string }
+export type UpdateExamRequest = { scheduleRevisionId: number; date: string; startTime: string; lecturerId: number; roomId: number; expectedExamRevision: number; inputSnapshotToken: string }
+export type DeleteExamRequest = { scheduleRevisionId: number; confirmed: true; expectedExamRevision: number; inputSnapshotToken: string }
 export type DeleteExamResponse = { deletedExamId: number; deletedLifecycleStatus: 'active' | 'past'; consequence: 'configuration_enabled_unscheduled' | 'historical_exam_only'; state: ExamCoursePlanningState }
 export type ExamOperationError = { code: string; message: string; field: string | null; meta?: Record<string, unknown> | null }
 
@@ -43,9 +43,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const getExamPlanningOverview = (semesterId: number) => request<ExamPlanningOverview>(`/api/exam-planning?semesterId=${semesterId}`)
 export const saveExamConfiguration = (courseId: number, input: SaveExamConfigurationRequest) => request<ExamCoursePlanningState>(`/api/courses/${courseId}/exam-configuration`, json('PUT', input))
-export function prepareExamGeneration(semesterId: number, courseIds: number[]) {
+export function prepareExamGeneration(semesterId: number, scheduleRevisionId: number, courseIds: number[]) {
   if (courseIds.length < 1 || courseIds.length > 100 || new Set(courseIds).size !== courseIds.length) return Promise.reject(new ExamSchedulingApiError(422, [{ code: 'INVALID_SELECTION', message: 'Select 1 to 100 unique courses.', field: 'courseIds' }]))
-  return request<ExamGenerationPreparation>('/api/exams/generation/prepare', json('POST', { semesterId, courseIds }))
+  return request<ExamGenerationPreparation>('/api/exams/generation/prepare', json('POST', { semesterId, scheduleRevisionId, courseIds }))
 }
 export const generateExams = (input: GenerateExamsRequest) => request<ExamGenerationResult>('/api/exams/generation', json('POST', input))
 export const createManualExam = (courseId: number, input: CreateManualExamRequest) => request<ExamCoursePlanningState>(`/api/courses/${courseId}/exam-sessions`, json('POST', input))

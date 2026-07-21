@@ -111,6 +111,7 @@ export type GenerationFailure = {
 }
 
 export type UpdateDraftSessionRequest = {
+  scheduleRevisionId: number
   date: string
   startTime: string
   endTime: string
@@ -145,6 +146,7 @@ export type MutationFailure = {
 
 export type CreateManualDraftSessionRequest = {
   semesterId: number
+  scheduleRevisionId: number
   date: string
   startTime: string
   endTime: string
@@ -157,6 +159,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 export async function generateDraftSchedule(
   courseId: number,
   semesterId: number,
+  scheduleRevisionId: number,
   planningPeriod: PlanningPeriod,
   allowedTeachingWindows: AllowedTeachingWindow[],
 ): Promise<DraftSchedule> {
@@ -165,7 +168,7 @@ export async function generateDraftSchedule(
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ semesterId, planningPeriod, allowedTeachingWindows }),
+      body: JSON.stringify({ semesterId, scheduleRevisionId, planningPeriod, allowedTeachingWindows }),
     },
   )
   if (response.status === 422 || response.status === 409) {
@@ -254,10 +257,12 @@ export async function deleteDraftSession(
   sessionId: number,
   expectedDraftScheduleId: number,
   expectedDraftRevision: number,
+  scheduleRevisionId: number,
 ): Promise<DraftScheduleMutationResult> {
   const query = new URLSearchParams({
     expectedDraftScheduleId: String(expectedDraftScheduleId),
     expectedDraftRevision: String(expectedDraftRevision),
+    scheduleRevisionId: String(scheduleRevisionId),
   })
   const response = await request(`${API_BASE}/api/draft-sessions/${sessionId}?${query}`, { method: 'DELETE' })
   return parseMutationResponse(response)
@@ -268,11 +273,13 @@ export async function clearCourseDraft(
   semesterId: number,
   expectedDraftScheduleId: number,
   expectedDraftRevision: number,
+  scheduleRevisionId: number,
 ): Promise<DraftScheduleMutationResult> {
   const query = new URLSearchParams({
     semesterId: String(semesterId),
     expectedDraftScheduleId: String(expectedDraftScheduleId),
     expectedDraftRevision: String(expectedDraftRevision),
+    scheduleRevisionId: String(scheduleRevisionId),
   })
   const response = await request(`${API_BASE}/api/courses/${courseId}/draft-schedule?${query}`, { method: 'DELETE' })
   return parseMutationResponse(response)

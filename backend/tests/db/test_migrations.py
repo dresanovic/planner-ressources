@@ -407,6 +407,155 @@ def test_sixth_migration_upgrades_0005_and_downgrade_removes_only_exam_tables():
         assert existing_tables == remaining_tables
 
 
+def test_current_schema_contains_constrained_versioned_lifecycle_tables_and_is_idempotent():
+    engine = create_engine("sqlite://")
+
+    initialize_database(engine)
+    initialize_database(engine)
+
+    inspector = inspect(engine)
+    assert {"schedule_revisions", "schedule_revision_events"}.issubset(
+        inspector.get_table_names()
+    )
+    assert {
+        "semester_id",
+        "revision_number",
+        "state",
+        "origin_revision_id",
+        "row_version",
+        "snapshot_schema_version",
+        "snapshot_document",
+        "created_at",
+        "state_changed_at",
+        "published_at",
+        "updated_at",
+    }.issubset(_columns_by_name(inspector, "schedule_revisions"))
+    assert {
+        "semester_id",
+        "schedule_revision_id",
+        "event_sequence",
+        "event_type",
+        "from_state",
+        "to_state",
+        "occurred_at",
+    }.issubset(_columns_by_name(inspector, "schedule_revision_events"))
+    index_names = {item["name"] for item in inspector.get_indexes("schedule_revisions")}
+    assert "uq_schedule_revision_active_working" in index_names
+    assert "uq_schedule_revision_current_publication" in index_names
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO semesters "
+                "(id, name, normalized_name_key, name_repair_required, start_date, end_date, is_active, revision) "
+                "VALUES (1, 'Fall', 'fall', 0, '2026-09-01', '2026-12-20', 1, 1)"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO schedule_revisions "
+                "(semester_id, revision_number, state, row_version, created_at, state_changed_at, updated_at) "
+                "VALUES (1, 1, 'draft', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+            )
+        )
+        with pytest.raises(Exception):
+            connection.execute(
+                text(
+                    "INSERT INTO schedule_revisions "
+                    "(semester_id, revision_number, state, row_version, created_at, state_changed_at, updated_at) "
+                    "VALUES (1, 2, 'ready_for_review', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+                )
+            )
+
+
+def test_seventh_migration_upgrades_exact_0006_backfills_populated_semesters_and_preserves_data():
+    engine = create_engine("sqlite://")
+    migrations = _upgrade_chain_through_0006(engine)
+    seventh = _load_migration(
+        "0007_versioned_schedule_lifecycle.py", "versioned_schedule_lifecycle"
+    )
+
+    with engine.begin() as connection:
+        _seed_fs012_lifecycle_upgrade_rows(connection)
+        seventh.op = Operations(MigrationContext.configure(connection))
+        seventh.upgrade()
+
+        assert connection.execute(
+            text(
+                "SELECT semester_id, revision_number, state, row_version "
+                "FROM schedule_revisions ORDER BY semester_id"
+            )
+        ).all() == [(1, 1, "draft", 1), (2, 1, "draft", 1)]
+        assert connection.execute(
+            text(
+                "SELECT semester_id, event_sequence, event_type, from_state, to_state "
+                "FROM schedule_revision_events ORDER BY semester_id"
+            )
+        ).all() == [
+            (1, 1, "created", None, "draft"),
+            (2, 1, "created", None, "draft"),
+        ]
+        assert connection.execute(
+            text("SELECT COUNT(*) FROM schedule_revisions WHERE semester_id=3")
+        ).scalar_one() == 0
+        assert connection.execute(
+            text("SELECT course_name_snapshot FROM draft_schedules WHERE semester_id=1")
+        ).scalar_one() == "Lifecycle Course"
+        assert connection.execute(
+            text("SELECT configuration_identifier FROM exam_sessions WHERE semester_id=2")
+        ).scalar_one() == "EXAM-1"
+        assert migrations[-1].revision == "0006_conflict_aware_exam_scheduling"
+
+
+def test_seventh_migration_downgrade_refuses_unrepresentable_history_before_mutation():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    seventh = _load_migration(
+        "0007_versioned_schedule_lifecycle.py", "versioned_lifecycle_downgrade_guard"
+    )
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO semesters "
+                "(id, name, normalized_name_key, name_repair_required, start_date, end_date, is_active, revision) "
+                "VALUES (1, 'Fall', 'fall', 0, '2026-09-01', '2026-12-20', 1, 1)"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO schedule_revisions "
+                "(id, semester_id, revision_number, state, row_version, snapshot_schema_version, snapshot_document, "
+                "created_at, state_changed_at, published_at, updated_at) "
+                "VALUES (1, 1, 1, 'published', 2, 1, '{}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO schedule_revision_events "
+                "(semester_id, schedule_revision_id, event_sequence, event_type, from_state, to_state, occurred_at) "
+                "VALUES (1, 1, 1, 'created', NULL, 'draft', CURRENT_TIMESTAMP), "
+                "(1, 1, 2, 'published', 'draft', 'published', CURRENT_TIMESTAMP)"
+            )
+        )
+        seventh.op = Operations(MigrationContext.configure(connection))
+        with pytest.raises(RuntimeError, match="cannot be represented by the FS-012 schema"):
+            seventh.downgrade()
+        assert {"schedule_revisions", "schedule_revision_events"}.issubset(
+            inspect(connection).get_table_names()
+        )
+
+
+def test_startup_rejects_partial_versioned_lifecycle_schema():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE schedule_revision_events"))
+
+    with pytest.raises(Exception, match="supported FS-001 through FS-012 state"):
+        initialize_database(engine)
+
+
 def _seed_current_resource_course(engine, *, include_room: bool, include_draft: bool) -> None:
     lecturer = Lecturer(id=7, name="Lecturer", reference_code="LECT-7", normalized_reference_code="lect-7")
     room = Room(id=9, name="Room", reference_code="ROOM-9", normalized_reference_code="room-9", capacity=30)
@@ -462,6 +611,93 @@ def _seed_current_resource_course(engine, *, include_room: bool, include_draft: 
     with Session(engine) as db:
         db.add_all(rows)
         db.commit()
+
+
+def _upgrade_chain_through_0006(engine):
+    migrations = (
+        _load_initial_migration(),
+        _load_migration("0002_course_semester_drafts.py", "lifecycle_course_semester"),
+        _load_migration("0003_academic_catalog_administration.py", "lifecycle_catalog"),
+        _load_migration("0004_resource_eligibility_availability.py", "lifecycle_resources"),
+        _load_migration("0005_institution_holidays.py", "lifecycle_holidays"),
+        _load_migration("0006_conflict_aware_exam_scheduling.py", "lifecycle_exams"),
+    )
+    with engine.begin() as connection:
+        for migration in migrations:
+            migration.op = Operations(MigrationContext.configure(connection))
+            migration.upgrade()
+    return migrations
+
+
+def _seed_fs012_lifecycle_upgrade_rows(connection) -> None:
+    connection.execute(
+        text(
+            "INSERT INTO lecturers "
+            "(id, name, reference_code, normalized_reference_code, is_active, revision) "
+            "VALUES (1, 'Lecturer', 'L-1', 'l-1', 1, 1)"
+        )
+    )
+    connection.execute(
+        text(
+            "INSERT INTO cohorts "
+            "(id, name, normalized_name_key, name_repair_required, student_count, is_active, revision) "
+            "VALUES (1, 'Cohort', 'cohort', 0, 20, 1, 1)"
+        )
+    )
+    connection.execute(
+        text(
+            "INSERT INTO rooms "
+            "(id, name, reference_code, normalized_reference_code, capacity, is_active, revision) "
+            "VALUES (1, 'Room', 'R-1', 'r-1', 30, 1, 1)"
+        )
+    )
+    connection.execute(
+        text(
+            "INSERT INTO semesters "
+            "(id, name, normalized_name_key, name_repair_required, start_date, end_date, is_active, revision) VALUES "
+            "(1, 'Fall', 'fall', 0, '2026-09-01', '2026-12-20', 1, 1), "
+            "(2, 'Spring', 'spring', 0, '2027-02-01', '2027-06-20', 1, 1), "
+            "(3, 'Empty', 'empty', 0, '2027-09-01', '2027-12-20', 1, 1)"
+        )
+    )
+    connection.execute(
+        text(
+            "INSERT INTO study_types "
+            "(id, name, normalized_name_key, name_repair_required, is_active, revision) "
+            "VALUES (1, 'Full-time', 'full-time', 0, 1, 1)"
+        )
+    )
+    connection.execute(
+        text(
+            "INSERT INTO courses "
+            "(id, name, normalized_name_key, name_repair_required, total_units, min_session_units, max_session_units, "
+            "cohort_id, study_type_id, current_semester_id, is_active, revision) "
+            "VALUES (1, 'Lifecycle Course', 'lifecycle-course', 0, 4, 2, 2, 1, 1, 1, 1, 1)"
+        )
+    )
+    connection.execute(
+        text(
+            "INSERT INTO draft_schedules "
+            "(id, course_id, semester_id, revision, selected_time_window_id, status, created_at, "
+            "course_name_snapshot, course_total_units_snapshot, course_min_session_units_snapshot, "
+            "course_max_session_units_snapshot, cohort_id_snapshot, cohort_name_snapshot, cohort_size_snapshot, "
+            "study_type_id_snapshot, study_type_name_snapshot, semester_name_snapshot, semester_start_date_snapshot, semester_end_date_snapshot) "
+            "VALUES (1, 1, 1, 1, NULL, 'generated', CURRENT_TIMESTAMP, 'Lifecycle Course', 4, 2, 2, 1, 'Cohort', 20, 1, 'Full-time', 'Fall', '2026-09-01', '2026-12-20')"
+        )
+    )
+    connection.execute(
+        text(
+            "INSERT INTO exam_sessions "
+            "(id, course_id, semester_id, cohort_id, lecturer_id, room_id, exam_date, start_time, end_time, source, revision, "
+            "configuration_identifier, configuration_revision, duration_minutes, exam_type, required_capacity, "
+            "recommended_start_date, recommended_end_date, recommendation_was_overridden, final_teaching_date, "
+            "final_teaching_end_time, final_teaching_session_id_snapshot, course_name_snapshot, semester_name_snapshot, "
+            "cohort_name_snapshot, lecturer_name_snapshot, lecturer_reference_snapshot, room_name_snapshot, room_reference_snapshot) "
+            "VALUES (1, 1, 2, 1, 1, 1, '2027-06-10', '08:00:00', '09:00:00', 'manual', 1, "
+            "'EXAM-1', 1, 60, 'Written', 20, '2027-06-01', '2027-06-20', 0, '2027-05-30', '10:00:00', 99, "
+            "'Lifecycle Course', 'Spring', 'Cohort', 'Lecturer', 'L-1', 'Room', 'R-1')"
+        )
+    )
 
 
 def _load_initial_migration():

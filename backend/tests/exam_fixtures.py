@@ -10,6 +10,7 @@ from app.models.planning import (
     InstitutionHoliday,
     Lecturer,
     Room,
+    ScheduleRevision,
     Semester,
     StudyType,
     StudyTypeTimeWindow,
@@ -38,7 +39,8 @@ def exam_catalog(*, course_id: int = 1, semester_id: int = 1):
         eligible_lecturers=[CourseEligibleLecturer(lecturer_id=lecturer.id)],
         eligible_rooms=[CourseEligibleRoom(room_id=room.id)],
     )
-    return lecturer, room, cohort, semester, study_type, course
+    revision = ScheduleRevision(id=semester_id, semester_id=semester_id, revision_number=1, row_version=1, state="draft")
+    return lecturer, room, cohort, semester, study_type, course, revision
 
 
 def teaching_draft(*, course_id: int = 1, semester_id: int = 1, final_date: date = date(2026, 10, 2)):

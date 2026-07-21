@@ -18,6 +18,8 @@ from app.services.multi_course_generation import (
     generate_batch,
     prepare_batch,
 )
+from app.services.schedule_lifecycle import LifecycleFailure, require_active_working_revision
+from app.api.schedule_lifecycle import lifecycle_failure_response
 
 router = APIRouter(prefix="/api/draft-schedules/batch", tags=["multi-course generation"])
 
@@ -28,7 +30,10 @@ def prepare_multi_course_generation(request: BatchPreparationRequest, db: Sessio
     if validation:
         return _request_failure(validation)
     try:
-        return prepare_batch(db, request.semester_id, request.operation_kind, request.course_ids)
+        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
+        return prepare_batch(db, request.semester_id, request.operation_kind, request.course_ids, request.schedule_revision_id)
+    except LifecycleFailure as exc:
+        return lifecycle_failure_response(exc)
     except SemesterNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -62,12 +67,16 @@ def generate_multi_course_drafts(request: BatchGenerationRequest, db: Session = 
             content=body.model_dump(mode="json", by_alias=True),
         )
     try:
+        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
         result = generate_batch(db, request.semester_id, request.operation_kind, request.courses)
         db.commit()
         return result
     except SemesterNotFoundError as exc:
         db.rollback()
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except LifecycleFailure as exc:
+        db.rollback()
+        return lifecycle_failure_response(exc)
     except Exception:
         db.rollback()
         body = BatchOperationFailureResponse(

@@ -2,7 +2,8 @@ import { useState } from 'react'
 import type { CreateManualExamRequest, ExamConfiguration, ExamSession, UpdateExamRequest } from '../api/examScheduling'
 
 type Option = { id: number; name: string; capacity?: number }
-export function ExamManualSessionEditor({ mode, configuration, exam, snapshotToken, semesterId, lecturers, rooms, busy, serverError, onCancel, onSubmit }: { mode: 'create' | 'edit'; configuration?: ExamConfiguration; exam?: ExamSession; snapshotToken: string; semesterId: number; lecturers: Option[]; rooms: Option[]; busy: boolean; serverError?: string; onCancel: () => void; onSubmit: (request: CreateManualExamRequest | UpdateExamRequest) => Promise<void> }) {
+type ExamPlacementInput = Omit<CreateManualExamRequest, 'scheduleRevisionId'> | Omit<UpdateExamRequest, 'scheduleRevisionId'>
+export function ExamManualSessionEditor({ mode, configuration, exam, snapshotToken, semesterId, lecturers, rooms, busy, serverError, onCancel, onSubmit }: { mode: 'create' | 'edit'; configuration?: ExamConfiguration; exam?: ExamSession; snapshotToken: string; semesterId: number; lecturers: Option[]; rooms: Option[]; busy: boolean; serverError?: string; onCancel: () => void; onSubmit: (request: ExamPlacementInput) => Promise<void> }) {
   const [day, setDay] = useState(exam?.date ?? '')
   const [startTime, setStartTime] = useState(exam?.startTime ?? '09:00')
   const [lecturerId, setLecturerId] = useState(exam?.lecturer.id ?? configuration?.responsibleLecturerId ?? lecturers[0]?.id ?? 0)

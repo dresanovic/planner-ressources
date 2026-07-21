@@ -2,6 +2,7 @@ import type { OptimizationGenerationResult, OptimizationPreparation } from '../a
 
 export const optimizationPreparationFixture: OptimizationPreparation = {
   semesterId: 1,
+  scheduleRevisionId: 11,
   unavailableDates: ['2026-10-26'],
   sharedSnapshotToken: 'shared-snapshot',
   replacementCourseIds: [2],

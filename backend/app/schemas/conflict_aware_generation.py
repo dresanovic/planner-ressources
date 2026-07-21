@@ -70,6 +70,7 @@ class OptimizationPreparationRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     semester_id: int = Field(alias="semesterId", ge=1)
+    schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
     course_ids: list[int] = Field(alias="courseIds")
     unavailable_dates: list[date] = Field(default_factory=list, alias="unavailableDates")
 
@@ -92,6 +93,7 @@ class OptimizationPreparationResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     semester_id: int = Field(alias="semesterId")
+    schedule_revision_id: int | None = Field(alias="scheduleRevisionId")
     unavailable_dates: list[date] = Field(alias="unavailableDates")
     shared_snapshot_token: str = Field(alias="sharedSnapshotToken")
     courses: list[PreparedOptimizationCourse]
@@ -117,6 +119,7 @@ class OptimizationGenerationRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     semester_id: int = Field(alias="semesterId", ge=1)
+    schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
     unavailable_dates: list[date] = Field(alias="unavailableDates")
     shared_snapshot_token: str = Field(alias="sharedSnapshotToken", min_length=1)
     replacement_confirmed: bool = Field(alias="replacementConfirmed")

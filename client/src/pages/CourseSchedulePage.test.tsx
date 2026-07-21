@@ -19,6 +19,11 @@ const mocks = vi.hoisted(() => ({
   createManualExam: vi.fn(),
   updateExam: vi.fn(),
   deleteExam: vi.fn(),
+  getScheduleLifecycle: vi.fn(),
+  createWorkingRevision: vi.fn(),
+  prepareSchedulePublication: vi.fn(),
+  transitionScheduleRevision: vi.fn(),
+  getScheduleRevision: vi.fn(),
 }))
 
 vi.mock('../api/planningOptions', () => ({ getPlanningOptions: mocks.getPlanningOptions }))
@@ -43,9 +48,18 @@ vi.mock('../api/examScheduling', () => ({
   updateExam: mocks.updateExam,
   deleteExam: mocks.deleteExam,
 }))
+vi.mock('../api/scheduleLifecycle', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../api/scheduleLifecycle')>()),
+  getScheduleLifecycle: mocks.getScheduleLifecycle,
+  createWorkingRevision: mocks.createWorkingRevision,
+  prepareSchedulePublication: mocks.prepareSchedulePublication,
+  transitionScheduleRevision: mocks.transitionScheduleRevision,
+  getScheduleRevision: mocks.getScheduleRevision,
+}))
 
 import { CourseSchedulePage } from './CourseSchedulePage'
 import { draftScheduleFixture, generationConstraintsFixture } from '../test/draftScheduleFixtures'
+import { lifecycleOverviewFixture } from '../test/lifecycleFixtures'
 
 const entity = (id: number, name: string) => ({ id, name })
 const options = {
@@ -81,6 +95,7 @@ beforeEach(() => {
   mocks.getGenerationConstraints.mockResolvedValue(generationConstraintsFixture)
   mocks.getDraftSchedules.mockResolvedValue([])
   mocks.getExamPlanningOverview.mockResolvedValue(examOverview)
+  mocks.getScheduleLifecycle.mockResolvedValue(lifecycleOverviewFixture())
 })
 
 afterEach(() => { document.body.innerHTML = '' })
@@ -189,7 +204,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       button('Optimize selected courses')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(mocks.prepare).toHaveBeenCalledWith(1, [1, 2], ['2026-10-26', '2026-11-02'])
+    expect(mocks.prepare).toHaveBeenCalledWith(1, 11, [1, 2], ['2026-10-26', '2026-11-02'])
     expect(mocks.generateBatch).toHaveBeenCalledOnce()
     expect(document.body.textContent).toContain('2 complete · 0 improved partial')
     expect(mocks.getGenerationConstraints).toHaveBeenCalledTimes(1)
@@ -273,7 +288,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     })
 
     expect(mocks.prepare).toHaveBeenCalledTimes(2)
-    expect(mocks.prepare).toHaveBeenLastCalledWith(1, [1], [])
+    expect(mocks.prepare).toHaveBeenLastCalledWith(1, 11, [1], [])
     expect(mocks.generateBatch).toHaveBeenCalledTimes(2)
     expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(3)
     expect(document.body.textContent).toContain('1 complete')
@@ -336,7 +351,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       button('Retry failed or stale courses')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(mocks.prepare).toHaveBeenLastCalledWith(1, [1, 3], [])
+    expect(mocks.prepare).toHaveBeenLastCalledWith(1, 11, [1, 3], [])
     expect(mocks.generateBatch).toHaveBeenCalledTimes(1)
     expect(document.body.textContent).toContain('Optimize existing Draft Schedules?')
 
@@ -520,7 +535,7 @@ describe('CourseSchedulePage single-session deletion', () => {
       button('Delete session')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(mocks.deleteDraftSession).toHaveBeenCalledWith(1, 1, 1)
+    expect(mocks.deleteDraftSession).toHaveBeenCalledWith(1, 1, 1, 11)
     expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(2)
   })
 
@@ -584,7 +599,7 @@ describe('CourseSchedulePage complete draft clearing', () => {
       confirm?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(mocks.clearCourseDraft).toHaveBeenCalledWith(1, 1, 1, 1)
+    expect(mocks.clearCourseDraft).toHaveBeenCalledWith(1, 1, 1, 1, 11)
     expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(3)
   })
 

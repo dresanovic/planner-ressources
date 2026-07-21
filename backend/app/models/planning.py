@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -9,13 +9,19 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     String,
     Time,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class InstitutionHoliday(Base):
@@ -133,6 +139,133 @@ class Semester(Base):
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    schedule_revisions: Mapped[list["ScheduleRevision"]] = relationship(
+        back_populates="semester",
+        cascade="all, delete-orphan",
+        order_by="ScheduleRevision.revision_number",
+    )
+
+
+class ScheduleRevision(Base):
+    __tablename__ = "schedule_revisions"
+    __table_args__ = (
+        UniqueConstraint(
+            "semester_id", "revision_number", name="uq_schedule_revision_number"
+        ),
+        CheckConstraint(
+            "revision_number > 0", name="ck_schedule_revision_number_positive"
+        ),
+        CheckConstraint("row_version > 0", name="ck_schedule_revision_version_positive"),
+        CheckConstraint(
+            "state IN ('draft', 'ready_for_review', 'published', 'superseded', 'abandoned')",
+            name="ck_schedule_revision_state",
+        ),
+        CheckConstraint(
+            "(state IN ('draft', 'ready_for_review') AND published_at IS NULL) OR "
+            "(state IN ('published', 'superseded') AND published_at IS NOT NULL "
+            "AND snapshot_schema_version IS NOT NULL AND snapshot_document IS NOT NULL) OR "
+            "(state = 'abandoned' AND published_at IS NULL "
+            "AND snapshot_schema_version IS NOT NULL AND snapshot_document IS NOT NULL)",
+            name="ck_schedule_revision_state_content",
+        ),
+        Index(
+            "uq_schedule_revision_active_working",
+            "semester_id",
+            unique=True,
+            sqlite_where=text("state IN ('draft', 'ready_for_review')"),
+        ),
+        Index(
+            "uq_schedule_revision_current_publication",
+            "semester_id",
+            unique=True,
+            sqlite_where=text("state = 'published'"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
+    revision_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    state: Mapped[str] = mapped_column(String(30), nullable=False)
+    origin_revision_id: Mapped[int | None] = mapped_column(
+        ForeignKey("schedule_revisions.id"), nullable=True
+    )
+    row_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    snapshot_schema_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    snapshot_document: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+    state_changed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
+    __mapper_args__ = {"version_id_col": row_version, "version_id_generator": False}
+
+    semester: Mapped[Semester] = relationship(back_populates="schedule_revisions")
+    origin_revision: Mapped["ScheduleRevision | None"] = relationship(
+        remote_side="ScheduleRevision.id", back_populates="successor_revisions"
+    )
+    successor_revisions: Mapped[list["ScheduleRevision"]] = relationship(
+        back_populates="origin_revision"
+    )
+    events: Mapped[list["ScheduleRevisionEvent"]] = relationship(
+        back_populates="schedule_revision",
+        cascade="all, delete-orphan",
+        order_by="ScheduleRevisionEvent.event_sequence",
+    )
+
+
+class ScheduleRevisionEvent(Base):
+    __tablename__ = "schedule_revision_events"
+    __table_args__ = (
+        UniqueConstraint(
+            "semester_id", "event_sequence", name="uq_schedule_revision_event_sequence"
+        ),
+        CheckConstraint(
+            "event_sequence > 0", name="ck_schedule_revision_event_sequence_positive"
+        ),
+        CheckConstraint(
+            "event_type IN ('created', 'marked_ready', 'returned_to_draft', 'published', "
+            "'superseded', 'abandoned', 'restored')",
+            name="ck_schedule_revision_event_type",
+        ),
+        CheckConstraint(
+            "to_state IN ('draft', 'ready_for_review', 'published', 'superseded', 'abandoned')",
+            name="ck_schedule_revision_event_to_state",
+        ),
+        CheckConstraint(
+            "from_state IS NULL OR from_state IN "
+            "('draft', 'ready_for_review', 'published', 'superseded', 'abandoned')",
+            name="ck_schedule_revision_event_from_state",
+        ),
+        CheckConstraint(
+            "(event_type = 'created' AND from_state IS NULL) OR "
+            "(event_type <> 'created' AND from_state IS NOT NULL)",
+            name="ck_schedule_revision_event_created_source",
+        ),
+        Index("ix_schedule_revision_events_revision", "schedule_revision_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
+    schedule_revision_id: Mapped[int] = mapped_column(
+        ForeignKey("schedule_revisions.id", ondelete="CASCADE"), nullable=False
+    )
+    event_sequence: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    from_state: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    to_state: Mapped[str] = mapped_column(String(30), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+
+    schedule_revision: Mapped[ScheduleRevision] = relationship(back_populates="events")
 
 
 class StudyType(Base):

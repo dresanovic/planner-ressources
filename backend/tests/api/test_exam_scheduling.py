@@ -41,13 +41,13 @@ def test_configuration_overview_manual_update_and_delete_contract(client_and_db)
     assert state["configuration"]["recommendedStartDate"] == "2026-10-09"
     overview = client.get("/api/exam-planning?semesterId=1")
     assert overview.status_code == 200
-    manual = client.post("/api/courses/1/exam-sessions", json={"semesterId": 1, "date": "2026-10-16", "startTime": "13:00", "lecturerId": 1, "roomId": 1, "expectedConfigurationRevision": 1, "inputSnapshotToken": state["inputSnapshotToken"]})
+    manual = client.post("/api/courses/1/exam-sessions", json={"semesterId": 1, "scheduleRevisionId": 1, "date": "2026-10-16", "startTime": "13:00", "lecturerId": 1, "roomId": 1, "expectedConfigurationRevision": 1, "inputSnapshotToken": state["inputSnapshotToken"]})
     assert manual.status_code == 201
     exam = manual.json()["activeExam"]
-    updated = client.patch(f"/api/exam-sessions/{exam['id']}", json={"date": "2026-10-17", "startTime": "09:00", "lecturerId": 1, "roomId": 1, "expectedExamRevision": 1, "inputSnapshotToken": exam["inputSnapshotToken"]})
+    updated = client.patch(f"/api/exam-sessions/{exam['id']}", json={"scheduleRevisionId": 1, "date": "2026-10-17", "startTime": "09:00", "lecturerId": 1, "roomId": 1, "expectedExamRevision": 1, "inputSnapshotToken": exam["inputSnapshotToken"]})
     assert updated.status_code == 200
     changed = updated.json()["activeExam"]
-    deleted = client.request("DELETE", f"/api/exam-sessions/{exam['id']}", json={"confirmed": True, "expectedExamRevision": 2, "inputSnapshotToken": changed["inputSnapshotToken"]})
+    deleted = client.request("DELETE", f"/api/exam-sessions/{exam['id']}", json={"scheduleRevisionId": 1, "confirmed": True, "expectedExamRevision": 2, "inputSnapshotToken": changed["inputSnapshotToken"]})
     assert deleted.status_code == 200
     assert deleted.json()["deletedExamId"] == exam["id"]
 
@@ -55,10 +55,10 @@ def test_configuration_overview_manual_update_and_delete_contract(client_and_db)
 def test_generation_prepare_and_generate_mixed_contract(client_and_db):
     client, _db = client_and_db
     state = client.put("/api/courses/1/exam-configuration", json=_configuration()).json()
-    prepared = client.post("/api/exams/generation/prepare", json={"semesterId": 1, "courseIds": [1]})
+    prepared = client.post("/api/exams/generation/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1]})
     assert prepared.status_code == 200
     payload = prepared.json()
-    generated = client.post("/api/exams/generation", json={"semesterId": 1, "institutionToday": payload["institutionToday"], "sharedSnapshotToken": payload["sharedSnapshotToken"], "courses": [{"courseId": 1, "configurationId": 1, "configurationRevision": 1, "inputSnapshotToken": payload["courses"][0]["inputSnapshotToken"]}]})
+    generated = client.post("/api/exams/generation", json={"semesterId": 1, "scheduleRevisionId": 1, "institutionToday": payload["institutionToday"], "sharedSnapshotToken": payload["sharedSnapshotToken"], "courses": [{"courseId": 1, "configurationId": 1, "configurationRevision": 1, "inputSnapshotToken": payload["courses"][0]["inputSnapshotToken"]}]})
     assert generated.status_code == 200
     assert generated.json()["summary"]["scheduled"] == 1
 

@@ -13,6 +13,7 @@ class BatchPreparationRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     semester_id: int = Field(alias="semesterId", ge=1)
+    schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
     operation_kind: BatchOperationKind = Field(alias="operationKind")
     course_ids: list[int] = Field(alias="courseIds")
 
@@ -32,6 +33,7 @@ class BatchPreparationResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     semester_id: int = Field(alias="semesterId")
+    schedule_revision_id: int | None = Field(alias="scheduleRevisionId")
     operation_kind: BatchOperationKind = Field(alias="operationKind")
     courses: list[PreparedCourseSnapshot]
     replacement_course_ids: list[int] = Field(alias="replacementCourseIds")
@@ -49,6 +51,7 @@ class BatchGenerationRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     semester_id: int = Field(alias="semesterId", ge=1)
+    schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
     operation_kind: BatchOperationKind = Field(alias="operationKind")
     replacement_confirmed: bool = Field(alias="replacementConfirmed")
     courses: list[PreparedCourseInput]

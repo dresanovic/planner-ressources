@@ -101,7 +101,7 @@ def save_exam_configuration(
     return _course_state(db, course, semester, current_day), created
 
 
-def prepare_exam_generation(db: Session, semester_id: int, course_ids: list[int], *, today: date | None = None) -> dict:
+def prepare_exam_generation(db: Session, semester_id: int, course_ids: list[int], *, schedule_revision_id: int | None = None, today: date | None = None) -> dict:
     if not 1 <= len(course_ids) <= 100 or len(set(course_ids)) != len(course_ids):
         raise ExamSchedulingError(422, [ExamErrorItem("INVALID_SELECTION", "Select 1 to 100 unique courses.", "courseIds")])
     current_day = today or institution_today()
@@ -124,8 +124,9 @@ def prepare_exam_generation(db: Session, semester_id: int, course_ids: list[int]
         })
     return {
         "semesterId": semester_id,
+        "scheduleRevisionId": schedule_revision_id,
         "institutionToday": current_day,
-        "sharedSnapshotToken": _digest([semester_id, current_day.isoformat(), sorted(course_ids), sorted((item["courseId"], item["inputSnapshotToken"]) for item in overview["courses"])]),
+        "sharedSnapshotToken": _digest([semester_id, schedule_revision_id, current_day.isoformat(), sorted(course_ids), sorted((item["courseId"], item["inputSnapshotToken"]) for item in overview["courses"])]),
         "courses": courses,
     }
 
@@ -135,7 +136,7 @@ def generate_exams(db: Session, request: dict, *, today: date | None = None) -> 
     current_day = today or institution_today()
     semester_id = request["semesterId"]
     _claim_semester(db, semester_id)
-    prepared = prepare_exam_generation(db, semester_id, [item["courseId"] for item in request["courses"]], today=current_day)
+    prepared = prepare_exam_generation(db, semester_id, [item["courseId"] for item in request["courses"]], schedule_revision_id=request.get("scheduleRevisionId"), today=current_day)
     if request["institutionToday"] != current_day or request["sharedSnapshotToken"] != prepared["sharedSnapshotToken"]:
         raise ExamSchedulingError(409, [ExamErrorItem("STALE_INPUT_SNAPSHOT", "Shared exam-planning inputs changed. Prepare again.")])
     fresh_by_id = {item["courseId"]: item for item in prepared["courses"]}

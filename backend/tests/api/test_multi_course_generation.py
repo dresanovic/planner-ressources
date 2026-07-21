@@ -34,12 +34,13 @@ def client(db_session):
 
 
 def prepare_payload(course_ids=(1, 2), operation="initial", semester=1):
-    return {"semesterId": semester, "operationKind": operation, "courseIds": list(course_ids)}
+    return {"semesterId": semester, "scheduleRevisionId": semester, "operationKind": operation, "courseIds": list(course_ids)}
 
 
 def execution_payload(prepared, confirmed=False):
     return {
         "semesterId": prepared["semesterId"],
+        "scheduleRevisionId": prepared["scheduleRevisionId"],
         "operationKind": prepared["operationKind"],
         "replacementConfirmed": confirmed,
         "courses": [

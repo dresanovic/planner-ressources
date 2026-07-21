@@ -21,6 +21,8 @@ from app.services.conflict_aware_generation import (
     prepare_optimization,
 )
 from app.services.semester_optimization import OptimalResultNotProven, OptimizationModelInvalid
+from app.services.schedule_lifecycle import LifecycleFailure, require_active_working_revision
+from app.api.schedule_lifecycle import lifecycle_failure_response
 
 
 router = APIRouter(
@@ -35,12 +37,16 @@ def prepare_conflict_aware_generation(
     db: Session = Depends(get_db),
 ):
     try:
+        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
         return prepare_optimization(
             db,
             request.semester_id,
             request.course_ids,
             request.unavailable_dates,
+            request.schedule_revision_id,
         )
+    except LifecycleFailure as exc:
+        return lifecycle_failure_response(exc)
     except SemesterNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except InvalidOptimizationSelection as exc:
@@ -74,18 +80,23 @@ def generate_conflict_aware_drafts(
             content=body.model_dump(mode="json", by_alias=True),
         )
     try:
+        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
         result = generate_optimization(
             db,
             request.semester_id,
             request.courses,
             request.unavailable_dates,
             request.shared_snapshot_token,
+            request.schedule_revision_id,
         )
         db.commit()
         return result
     except SemesterNotFoundError as exc:
         db.rollback()
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except LifecycleFailure as exc:
+        db.rollback()
+        return lifecycle_failure_response(exc)
     except InvalidOptimizationSelection as exc:
         db.rollback()
         return _request_failure(exc.code, exc.message)

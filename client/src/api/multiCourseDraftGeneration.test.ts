@@ -9,8 +9,8 @@ describe('multi-course generation API', () => {
   it('serializes preparation in selected order', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => batchPreparationFixture })
     vi.stubGlobal('fetch', fetchMock)
-    await prepareMultiCourseGeneration(1, 'initial', [2, 1])
-    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ semesterId: 1, operationKind: 'initial', courseIds: [2, 1] })
+    await prepareMultiCourseGeneration(1, 11, 'initial', [2, 1])
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ semesterId: 1, scheduleRevisionId: 11, operationKind: 'initial', courseIds: [2, 1] })
   })
 
   it('serializes immutable draft snapshots and confirmation', async () => {
@@ -19,6 +19,7 @@ describe('multi-course generation API', () => {
     await generateMultiCourseDrafts(batchPreparationFixture, true)
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       semesterId: 1,
+      scheduleRevisionId: 11,
       operationKind: 'initial',
       replacementConfirmed: true,
       courses: [
@@ -46,10 +47,10 @@ describe('multi-course generation API', () => {
 
   it('rejects malformed initial and retry sizes before a request', async () => {
     vi.stubGlobal('fetch', vi.fn())
-    await expect(prepareMultiCourseGeneration(1, 'initial', [1])).rejects.toEqual([
+    await expect(prepareMultiCourseGeneration(1, 11, 'initial', [1])).rejects.toEqual([
       expect.objectContaining({ code: 'INVALID_BATCH_SIZE' }),
     ])
-    await expect(prepareMultiCourseGeneration(1, 'retry', [])).rejects.toEqual([
+    await expect(prepareMultiCourseGeneration(1, 11, 'retry', [])).rejects.toEqual([
       expect.objectContaining({ code: 'INVALID_BATCH_SIZE' }),
     ])
   })
