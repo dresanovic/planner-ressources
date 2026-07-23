@@ -29,8 +29,9 @@ No approval workflow, lecturer access/feedback, authentication, automatic public
 
 ## Exceptions requiring follow-up evidence
 
-1. The performance test proves the five lifecycle operation classes and 101-revision history under two seconds, but not the exact 100-course/500-teaching-session/100-exam fixture or a bounded-query assertion.
-2. The quickstart browser pass used a narrow effective viewport but did not apply literal 200% browser zoom.
-3. SC-008/SC-009 remain unverified because the required moderated study with 10 representative planners has not been run.
+The automated performance proof now covers 100 courses, 500 teaching sessions, 100 exams, fewer than 50 preparation queries, all five lifecycle operation classes, and 101-revision history under two seconds.
+
+1. The quickstart browser pass used a narrow effective viewport but did not apply literal 200% browser zoom.
+2. SC-008/SC-009 remain unverified because the required moderated study with 10 representative planners has not been run.
 
 These are validation-evidence gaps, not authorization to weaken the lifecycle completion rule. Automated and browser evidence confirms that an existing publication remains stable until an explicitly published successor replaces it.

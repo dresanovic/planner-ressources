@@ -79,6 +79,37 @@ def test_generation_uses_each_courses_saved_constraints_or_defaults_without_rewr
     assert current.revision == 1
 
 
+def test_generation_claims_lifecycle_only_after_schedule_calculation(monkeypatch):
+    db, _ = make_session()
+    seed_multi_course_planner(db)
+    import app.services.multi_course_generation as service
+
+    events = []
+    original_generate = service.generate_schedule
+
+    def tracked_generate(*args, **kwargs):
+        events.append("generate")
+        return original_generate(*args, **kwargs)
+
+    monkeypatch.setattr(service, "generate_schedule", tracked_generate)
+    monkeypatch.setattr(
+        service,
+        "claim_active_working_revision",
+        lambda *_args, **_kwargs: events.append("claim"),
+    )
+
+    generate_batch(
+        db,
+        1,
+        BatchOperationKind.INITIAL,
+        prepared(1, 2),
+        schedule_revision_id=99,
+    )
+
+    assert events[-1] == "claim"
+    assert events.count("generate") == 2
+
+
 def test_generation_excludes_holidays_and_returns_paired_named_evidence_when_they_remove_feasibility():
     db, _ = make_session()
     seed_multi_course_planner(db)

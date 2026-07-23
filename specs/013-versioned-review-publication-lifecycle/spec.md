@@ -1,10 +1,10 @@
 # Feature Specification: FS-013 Versioned Review and Publication Lifecycle
 
-**Working Branch**: `codex/fs-012-exam-scheduling`
+**Working Branch**: `master`
 
 **Created**: 2026-07-20
 
-**Status**: Draft
+**Status**: Implemented — validation follow-ups open
 
 **Input**: User description: "Give planner users controlled Draft → Ready for review → Published schedule states and safe post-publication revision."
 

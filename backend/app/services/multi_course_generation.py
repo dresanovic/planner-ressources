@@ -39,6 +39,7 @@ from app.services.schedule_generation import (
     TimeWindowPlan,
     generate_schedule,
 )
+from app.services.schedule_lifecycle import claim_active_working_revision
 
 
 class SemesterNotFoundError(ValueError):
@@ -97,6 +98,7 @@ def generate_batch(
     semester_id: int,
     operation_kind: BatchOperationKind,
     prepared_courses: list[PreparedCourseInput],
+    schedule_revision_id: int | None = None,
 ) -> BatchGenerationResult:
     course_ids = [item.course_id for item in prepared_courses]
     semester, courses, drafts, saved_sets, default_windows = _bulk_load(
@@ -191,11 +193,16 @@ def generate_batch(
     if candidates:
         # SQLite defers its physical outer transaction until the first write. Establish it
         # before SAVEPOINT so releasing a course savepoint cannot commit the whole attempt.
-        db.execute(
-            update(Semester)
-            .where(Semester.id == semester_id)
-            .values(id=Semester.id)
-        )
+        if schedule_revision_id is None:
+            db.execute(
+                update(Semester)
+                .where(Semester.id == semester_id)
+                .values(id=Semester.id)
+            )
+        else:
+            claim_active_working_revision(
+                db, semester_id, schedule_revision_id
+            )
     current_holidays = holiday_snapshot(db, semester.start_date, semester.end_date)
     if current_holidays.token != initial_holidays.token:
         outcomes = [

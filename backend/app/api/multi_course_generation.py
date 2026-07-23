@@ -68,7 +68,13 @@ def generate_multi_course_drafts(request: BatchGenerationRequest, db: Session = 
         )
     try:
         require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
-        result = generate_batch(db, request.semester_id, request.operation_kind, request.courses)
+        result = generate_batch(
+            db,
+            request.semester_id,
+            request.operation_kind,
+            request.courses,
+            schedule_revision_id=request.schedule_revision_id,
+        )
         db.commit()
         return result
     except SemesterNotFoundError as exc:

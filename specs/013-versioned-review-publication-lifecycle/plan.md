@@ -1,6 +1,6 @@
 # Implementation Plan: FS-013 Versioned Review and Publication Lifecycle
 
-**Working Branch**: `codex/fs-012-exam-scheduling` (planning only; create `codex/fs-013-versioned-publication` after FS-012 is integrated) | **Date**: 2026-07-20 | **Spec**: [spec.md](spec.md)
+**Working Branch**: `master` | **Date**: 2026-07-20 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `/specs/013-versioned-review-publication-lifecycle/spec.md`
 

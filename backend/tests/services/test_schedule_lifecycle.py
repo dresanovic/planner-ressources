@@ -1,3 +1,5 @@
+from datetime import time
+
 from sqlalchemy import create_engine, delete
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
@@ -5,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 import pytest
 
 from app.db.schema import initialize_database
-from app.models.planning import Course, DraftSchedule, DraftSession, ExamSession, Lecturer, Room, ScheduleRevision, Semester
+from app.models.planning import Course, DraftSchedule, DraftSession, ExamSession, Lecturer, Room, ScheduleRevision, Semester, StudyType, StudyTypeTimeWindow
 from app.services.academic_catalog import usage_for
 from app.services.resource_catalog import assess_resource_usage
 from app.services.schedule_lifecycle import (
@@ -103,6 +105,51 @@ def test_direct_first_publication_captures_stable_snapshot_and_nonblocking_condi
     with pytest.raises(LifecycleConflict) as exc_info:
         require_active_working_revision(db, 1, revision["revisionId"])
     assert exc_info.value.code == "revision_not_editable"
+
+
+def test_publication_uses_current_study_type_for_default_generation_constraints(db):
+    seed_lifecycle_semester(db, with_schedule=True)
+    db.add_all([
+        StudyTypeTimeWindow(
+            study_type_id=1,
+            weekday=0,
+            start_time=time(9),
+            end_time=time(11),
+            sort_order=0,
+        ),
+        StudyType(id=2, name="Current study type"),
+    ])
+    db.flush()
+    db.add(
+        StudyTypeTimeWindow(
+            study_type_id=2,
+            weekday=1,
+            start_time=time(9),
+            end_time=time(11),
+            sort_order=0,
+        )
+    )
+    db.get(Course, 1).study_type_id = 2
+    db.commit()
+    initial = get_lifecycle_overview(db, 1)
+    created = create_working_revision(db, 1, initial["stateToken"])
+    db.commit()
+    revision = created["activeWorkingRevision"]
+
+    preparation = prepare_publication(
+        db,
+        revision["revisionId"],
+        revision["revisionVersion"],
+        created["stateToken"],
+    )
+
+    alert_codes = {
+        condition["details"].get("alertCode")
+        for condition in preparation["conditions"]
+        if condition["code"] == "teaching_validation_alert"
+    }
+    assert "GENERATION_CONSTRAINT_VIOLATION" in alert_codes
+    assert "STUDY_TYPE_WINDOW_VIOLATION" not in alert_codes
 
 
 def test_stale_and_repeated_first_publication_write_no_duplicate_events(db):

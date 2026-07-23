@@ -59,7 +59,7 @@ vi.mock('../api/scheduleLifecycle', async (importOriginal) => ({
 
 import { CourseSchedulePage } from './CourseSchedulePage'
 import { draftScheduleFixture, generationConstraintsFixture } from '../test/draftScheduleFixtures'
-import { lifecycleOverviewFixture } from '../test/lifecycleFixtures'
+import { lifecycleOverviewFixture, snapshotFixture } from '../test/lifecycleFixtures'
 
 const entity = (id: number, name: string) => ({ id, name })
 const options = {
@@ -119,6 +119,93 @@ function summaryValue(label: string) {
 }
 
 describe('CourseSchedulePage multi-course mode', () => {
+  it('does not label live schedules as a publication while its snapshot is loading', async () => {
+    const draft = lifecycleOverviewFixture().activeWorkingRevision!
+    const published = {
+      ...draft,
+      state: 'published' as const,
+      isActiveWorking: false,
+      isCurrentPublication: true,
+      publishedAt: draft.stateChangedAt,
+      allowedActions: { markReady: false, returnToDraft: false, preparePublication: false, abandon: false, restore: false, editSchedule: false },
+    }
+    mocks.getScheduleLifecycle.mockResolvedValue({
+      ...lifecycleOverviewFixture(),
+      activeWorkingRevision: null,
+      currentPublication: published,
+      revisions: [published],
+      allowedActions: { createWorkingRevision: true },
+    })
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    mocks.getScheduleRevision.mockImplementation(() => new Promise(() => undefined))
+
+    await renderPage()
+
+    expect(document.body.textContent).toContain('Loading selected revision')
+    expect(document.body.textContent).not.toContain('Ada Lovelace')
+  })
+
+  it('keeps live schedules hidden when a publication snapshot cannot be loaded', async () => {
+    const draft = lifecycleOverviewFixture().activeWorkingRevision!
+    const published = {
+      ...draft,
+      state: 'published' as const,
+      isActiveWorking: false,
+      isCurrentPublication: true,
+      publishedAt: draft.stateChangedAt,
+      allowedActions: { markReady: false, returnToDraft: false, preparePublication: false, abandon: false, restore: false, editSchedule: false },
+    }
+    mocks.getScheduleLifecycle.mockResolvedValue({
+      ...lifecycleOverviewFixture(),
+      activeWorkingRevision: null,
+      currentPublication: published,
+      revisions: [published],
+      allowedActions: { createWorkingRevision: true },
+    })
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    mocks.getScheduleRevision.mockRejectedValue({ errors: [{ message: 'Captured publication is unavailable.' }] })
+
+    await renderPage()
+
+    expect(document.body.textContent).toContain('Captured publication is unavailable.')
+    expect(document.body.textContent).not.toContain('Ada Lovelace')
+    expect(document.body.textContent).not.toContain('Loading selected revision')
+  })
+
+  it('retries a failed publication snapshot without changing revisions', async () => {
+    const draft = lifecycleOverviewFixture().activeWorkingRevision!
+    const published = {
+      ...draft,
+      state: 'published' as const,
+      isActiveWorking: false,
+      isCurrentPublication: true,
+      publishedAt: draft.stateChangedAt,
+      allowedActions: { markReady: false, returnToDraft: false, preparePublication: false, abandon: false, restore: false, editSchedule: false },
+    }
+    mocks.getScheduleLifecycle.mockResolvedValue({
+      ...lifecycleOverviewFixture(),
+      activeWorkingRevision: null,
+      currentPublication: published,
+      revisions: [published],
+      allowedActions: { createWorkingRevision: true },
+    })
+    mocks.getScheduleRevision
+      .mockRejectedValueOnce({ errors: [{ message: 'Captured publication is unavailable.' }] })
+      .mockResolvedValueOnce({ revision: published, contentSource: 'captured_snapshot', snapshot: snapshotFixture() })
+
+    await renderPage()
+    expect(document.body.textContent).toContain('Captured publication is unavailable.')
+
+    await act(async () => {
+      button('Retry selected revision')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(mocks.getScheduleRevision).toHaveBeenCalledTimes(2)
+    expect(document.body.textContent).not.toContain('Captured publication is unavailable.')
+    expect(document.body.textContent).toContain('Current publication')
+  })
+
   it('blocks further exam writes when an authoritative post-save refresh fails', async () => {
     mocks.getPlanningOptions.mockResolvedValue({
       ...options,

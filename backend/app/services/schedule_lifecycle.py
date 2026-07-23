@@ -9,26 +9,28 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.planning import (
     Course,
+    CourseEligibleLecturer,
+    CourseEligibleRoom,
     CourseExamConfiguration,
     DraftSchedule,
     DraftSession,
     ExamSession,
+    GenerationConstraintSet,
     Lecturer,
     ResourceUnavailabilityPeriod,
     Room,
     ScheduleRevision,
     ScheduleRevisionEvent,
     Semester,
+    StudyTypeTimeWindow,
 )
 from app.services.draft_schedule_repository import (
-    load_course_plan,
-    load_generation_constraints,
-    load_semester_plan,
-    load_time_windows,
+    GenerationConstraints,
 )
 from app.services.draft_schedule_validation import collect_validation_alerts
-from app.services.exam_scheduling import _current_validity_issues
 from app.services.holiday_calendar import holiday_snapshot
+from app.services.resource_rules import intervals_overlap, resource_is_unavailable
+from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan
 
 
 WORKING_STATES = {"draft", "ready_for_review"}
@@ -349,6 +351,17 @@ def require_active_working_revision(
     return revision
 
 
+def claim_active_working_revision(
+    db: Session, semester_id: int, schedule_revision_id: int
+) -> ScheduleRevision:
+    """Serialize a schedule mutation with lifecycle transitions for its semester."""
+    _claim_semester(db, semester_id)
+    revision = db.get(ScheduleRevision, schedule_revision_id)
+    if revision is not None:
+        db.refresh(revision)
+    return require_active_working_revision(db, semester_id, schedule_revision_id)
+
+
 def _build_snapshot(
     db: Session, semester_id: int, captured_at: datetime
 ) -> dict[str, Any]:
@@ -361,7 +374,16 @@ def _build_snapshot(
         db.scalars(
             select(DraftSchedule)
             .where(DraftSchedule.semester_id == semester_id)
-            .options(selectinload(DraftSchedule.sessions))
+            .options(
+                selectinload(DraftSchedule.sessions),
+                selectinload(DraftSchedule.course).selectinload(Course.cohort),
+                selectinload(DraftSchedule.course)
+                .selectinload(Course.eligible_lecturers)
+                .selectinload(CourseEligibleLecturer.lecturer),
+                selectinload(DraftSchedule.course)
+                .selectinload(Course.eligible_rooms)
+                .selectinload(CourseEligibleRoom.room),
+            )
             .order_by(DraftSchedule.course_id)
         )
     )
@@ -378,6 +400,8 @@ def _build_snapshot(
             .options(
                 selectinload(Course.cohort),
                 selectinload(Course.study_type),
+                selectinload(Course.eligible_lecturers),
+                selectinload(Course.eligible_rooms),
             )
             .order_by(Course.id)
         ).unique()
@@ -496,24 +520,12 @@ def _build_snapshot(
             .order_by(ExamSession.exam_date, ExamSession.start_time, ExamSession.id)
         )
     )
+    exam_validity_issues = _snapshot_exam_validity_issues(
+        db, semester, drafts, courses, exams
+    )
     captured_exams = []
     for exam in exams:
-        validity_issues = [
-            {
-                "code": issue["code"],
-                "message": issue["message"],
-                "details": {
-                    key: (
-                        value.isoformat()
-                        if isinstance(value, (date, datetime))
-                        else value
-                    )
-                    for key, value in issue.items()
-                    if key not in {"code", "message"} and value is not None
-                },
-            }
-            for issue in _current_validity_issues(db, exam)
-        ]
+        validity_issues = exam_validity_issues.get(exam.id, [])
         for issue in validity_issues:
             conditions.append(
                 {
@@ -629,17 +641,90 @@ def _teaching_validation_alerts(
         return {}
     rooms_by_id = {row.id: row for row in db.scalars(select(Room))}
     lecturers_by_id = {row.id: row for row in db.scalars(select(Lecturer))}
-    semester_plan = load_semester_plan(db, semester.id)
-    constraints_by_course_id = {}
-    study_windows_by_study_type_id = {}
-    for draft in drafts:
-        course_plan = load_course_plan(db, draft.course_id)
-        constraints_by_course_id[draft.course_id] = load_generation_constraints(
-            db, course_plan, semester_plan
+    study_type_ids = {
+        study_type_id
+        for draft in drafts
+        for study_type_id in (
+            draft.study_type_id_snapshot,
+            draft.course.study_type_id,
         )
-        study_type_id = draft.study_type_id_snapshot
-        study_windows_by_study_type_id.setdefault(
-            study_type_id, load_time_windows(db, study_type_id)
+    }
+    window_rows = list(
+        db.scalars(
+            select(StudyTypeTimeWindow)
+            .where(
+                StudyTypeTimeWindow.study_type_id.in_(study_type_ids),
+                StudyTypeTimeWindow.is_active.is_(True),
+            )
+            .order_by(
+                StudyTypeTimeWindow.study_type_id,
+                StudyTypeTimeWindow.sort_order,
+                StudyTypeTimeWindow.weekday,
+            )
+        )
+    )
+    study_windows_by_study_type_id: dict[int, list[TimeWindowPlan]] = {
+        study_type_id: [] for study_type_id in study_type_ids
+    }
+    for row in window_rows:
+        windows = study_windows_by_study_type_id[row.study_type_id]
+        windows.append(
+            TimeWindowPlan(
+                id=row.id,
+                weekday=row.weekday,
+                start_time=row.start_time,
+                end_time=row.end_time,
+                sort_order=row.sort_order,
+                constraint_window_index=len(windows),
+            )
+        )
+    saved_sets = list(
+        db.scalars(
+            select(GenerationConstraintSet)
+            .where(
+                GenerationConstraintSet.semester_id == semester.id,
+                GenerationConstraintSet.course_id.in_(
+                    [draft.course_id for draft in drafts]
+                ),
+            )
+            .options(selectinload(GenerationConstraintSet.windows))
+        )
+    )
+    saved_by_course_id = {row.course_id: row for row in saved_sets}
+    constraints_by_course_id = {}
+    for draft in drafts:
+        saved = saved_by_course_id.get(draft.course_id)
+        if saved is None:
+            allowed_windows = study_windows_by_study_type_id[
+                draft.course.study_type_id
+            ]
+            planning_period = PlanningPeriodPlan(
+                start_date=semester.start_date, end_date=semester.end_date
+            )
+        else:
+            allowed_windows = [
+                TimeWindowPlan(
+                    id=window.source_time_window_id,
+                    weekday=window.weekday,
+                    start_time=window.start_time,
+                    end_time=window.end_time,
+                    sort_order=window.sort_order,
+                    constraint_window_index=index,
+                )
+                for index, window in enumerate(saved.windows)
+            ]
+            planning_period = PlanningPeriodPlan(
+                start_date=saved.planning_start_date,
+                end_date=saved.planning_end_date,
+            )
+        constraints_by_course_id[draft.course_id] = GenerationConstraints(
+            course_id=draft.course_id,
+            semester_id=semester.id,
+            planning_period=planning_period,
+            allowed_windows=allowed_windows,
+            is_custom=saved is not None,
+            constraint_set_id=saved.id if saved is not None else None,
+            revision=saved.revision if saved is not None else None,
         )
     unavailability_by_resource = {}
     periods = db.scalars(
@@ -684,6 +769,209 @@ def _teaching_validation_alerts(
             db, semester.start_date, semester.end_date
         ).by_date,
     )
+
+
+def _snapshot_exam_validity_issues(
+    db: Session,
+    semester: Semester,
+    drafts: list[DraftSchedule],
+    courses: list[Course],
+    exams: list[ExamSession],
+) -> dict[int, list[dict[str, Any]]]:
+    """Evaluate all captured exams from one bounded, eagerly loaded semester view."""
+    lecturers = {
+        row.id: row
+        for row in db.scalars(
+            select(Lecturer).options(
+                selectinload(Lecturer.unavailability_periods).selectinload(
+                    ResourceUnavailabilityPeriod.weekdays
+                )
+            )
+        )
+    }
+    rooms = {
+        row.id: row
+        for row in db.scalars(
+            select(Room).options(
+                selectinload(Room.unavailability_periods).selectinload(
+                    ResourceUnavailabilityPeriod.weekdays
+                )
+            )
+        )
+    }
+    course_by_id = {course.id: course for course in courses}
+    anchors = {}
+    teaching_by_date: dict[date, list[DraftSession]] = {}
+    for draft in drafts:
+        ordered = sorted(
+            draft.sessions, key=lambda row: (row.date, row.end_time, row.id or 0)
+        )
+        if ordered:
+            anchors[draft.course_id] = ordered[-1]
+        for session in ordered:
+            teaching_by_date.setdefault(session.date, []).append(session)
+    exams_by_date: dict[date, list[ExamSession]] = {}
+    for exam in exams:
+        exams_by_date.setdefault(exam.exam_date, []).append(exam)
+    holidays = holiday_snapshot(db, semester.start_date, semester.end_date).by_date
+    result: dict[int, list[dict[str, Any]]] = {}
+
+    for exam in exams:
+        anchor = anchors.get(exam.course_id)
+        if anchor is None:
+            result[exam.id] = [
+                {
+                    "code": "FINAL_TEACHING_SESSION_MISSING",
+                    "message": "The final teaching session is no longer available.",
+                    "details": {},
+                }
+            ]
+            continue
+        course = course_by_id[exam.course_id]
+        lecturer = lecturers.get(exam.lecturer_id)
+        room = rooms.get(exam.room_id)
+        issue_rows: list[tuple[str, str, dict[str, Any]]] = []
+
+        def add(code: str, message: str, **details: Any) -> None:
+            issue_rows.append(
+                (
+                    code,
+                    message,
+                    {
+                        "relatedDate": exam.exam_date.isoformat(),
+                        **{key: value for key, value in details.items() if value is not None},
+                    },
+                )
+            )
+
+        if exam.end_time is None:
+            add("INVALID_EXAM_INTERVAL", "The exam must end on the same day.")
+        if not semester.start_date <= exam.exam_date <= semester.end_date:
+            add("OUTSIDE_SEMESTER", "The exam date must be inside the semester.")
+        if exam.exam_date < anchor.date or (
+            exam.exam_date == anchor.date and exam.start_time < anchor.end_time
+        ):
+            add(
+                "BEFORE_FINAL_TEACHING",
+                "The exam cannot start before the final teaching session ends.",
+            )
+        eligible_lecturers = {
+            link.lecturer_id for link in course.eligible_lecturers
+        }
+        eligible_rooms = {link.room_id for link in course.eligible_rooms}
+        if (
+            lecturer is None
+            or not lecturer.is_active
+            or exam.lecturer_id not in eligible_lecturers
+        ):
+            add(
+                "RESPONSIBLE_LECTURER_INELIGIBLE",
+                "The lecturer is not active and eligible for this course.",
+            )
+        if room is None or not room.is_active or exam.room_id not in eligible_rooms:
+            add(
+                "ROOM_INELIGIBLE",
+                "The room is not active and eligible for this course.",
+            )
+        if room is not None and room.capacity < exam.required_capacity:
+            add(
+                "INSUFFICIENT_ROOM_CAPACITY",
+                "The room does not meet the required capacity.",
+            )
+        if exam.end_time is not None:
+            if lecturer is not None and resource_is_unavailable(
+                lecturer.unavailability_periods,
+                exam.exam_date,
+                exam.start_time,
+                exam.end_time,
+            ):
+                add(
+                    "LECTURER_UNAVAILABLE",
+                    "The lecturer is unavailable for the full exam interval.",
+                )
+            if room is not None and resource_is_unavailable(
+                room.unavailability_periods,
+                exam.exam_date,
+                exam.start_time,
+                exam.end_time,
+            ):
+                add(
+                    "ROOM_UNAVAILABLE",
+                    "The room is unavailable for the full exam interval.",
+                )
+            holiday = holidays.get(exam.exam_date)
+            if holiday is not None:
+                add(
+                    "INSTITUTION_HOLIDAY",
+                    f"The exam date is the institution holiday {holiday.name}.",
+                    holidayName=holiday.name,
+                )
+            interval_start = datetime.combine(exam.exam_date, exam.start_time)
+            interval_end = datetime.combine(exam.exam_date, exam.end_time)
+            for session in teaching_by_date.get(exam.exam_date, []):
+                if not intervals_overlap(
+                    interval_start,
+                    interval_end,
+                    datetime.combine(session.date, session.start_time),
+                    datetime.combine(session.date, session.end_time),
+                ):
+                    continue
+                if session.lecturer_id == exam.lecturer_id:
+                    add(
+                        "LECTURER_OCCUPIED",
+                        "The lecturer has a teaching session at this time.",
+                        relatedSessionId=session.id,
+                    )
+                if session.room_id == exam.room_id:
+                    add(
+                        "ROOM_OCCUPIED",
+                        "The room has a teaching session at this time.",
+                        relatedSessionId=session.id,
+                    )
+                if session.cohort_id == exam.cohort_id:
+                    add(
+                        "COHORT_OCCUPIED",
+                        "The cohort has a teaching session at this time.",
+                        relatedSessionId=session.id,
+                    )
+            for existing in exams_by_date.get(exam.exam_date, []):
+                if existing.id == exam.id or existing.end_time is None:
+                    continue
+                if not intervals_overlap(
+                    interval_start,
+                    interval_end,
+                    datetime.combine(existing.exam_date, existing.start_time),
+                    datetime.combine(existing.exam_date, existing.end_time),
+                ):
+                    continue
+                if existing.lecturer_id == exam.lecturer_id:
+                    add(
+                        "LECTURER_OCCUPIED",
+                        "The lecturer has another exam at this time.",
+                        relatedSessionId=existing.id,
+                    )
+                if existing.room_id == exam.room_id:
+                    add(
+                        "ROOM_OCCUPIED",
+                        "The room has another exam at this time.",
+                        relatedSessionId=existing.id,
+                    )
+                if existing.cohort_id == exam.cohort_id:
+                    add(
+                        "COHORT_OCCUPIED",
+                        "The cohort has another exam at this time.",
+                        relatedSessionId=existing.id,
+                    )
+        seen = set()
+        captured = []
+        for code, message, details in issue_rows:
+            key = (code, details.get("relatedSessionId"), details.get("holidayName"))
+            if key in seen:
+                continue
+            seen.add(key)
+            captured.append({"code": code, "message": message, "details": details})
+        result[exam.id] = captured
+    return result
 
 
 def _materialize_snapshot(db: Session, semester_id: int, snapshot: dict[str, Any] | None) -> None:

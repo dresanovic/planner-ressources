@@ -6,7 +6,7 @@ import os
 from time import monotonic
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.planning import (
@@ -25,6 +25,7 @@ from app.models.planning import (
 )
 from app.services.exam_optimization import CandidateInput, ExamCandidate, Occupancy, OptimizationIssue, build_candidates, select_joint_candidates
 from app.services.resource_rules import intervals_overlap, resource_is_unavailable
+from app.services.schedule_lifecycle import claim_active_working_revision
 
 
 @dataclass(frozen=True)
@@ -135,10 +136,8 @@ def generate_exams(db: Session, request: dict, *, today: date | None = None) -> 
     started = monotonic()
     current_day = today or institution_today()
     semester_id = request["semesterId"]
-    _claim_semester(db, semester_id)
     prepared = prepare_exam_generation(db, semester_id, [item["courseId"] for item in request["courses"]], schedule_revision_id=request.get("scheduleRevisionId"), today=current_day)
-    if request["institutionToday"] != current_day or request["sharedSnapshotToken"] != prepared["sharedSnapshotToken"]:
-        raise ExamSchedulingError(409, [ExamErrorItem("STALE_INPUT_SNAPSHOT", "Shared exam-planning inputs changed. Prepare again.")])
+    _require_current_generation_preparation(request, prepared, current_day)
     fresh_by_id = {item["courseId"]: item for item in prepared["courses"]}
     candidates_by_course: dict[int, list[ExamCandidate]] = {}
     issues_by_course: dict[int, list[dict]] = {}
@@ -168,6 +167,25 @@ def generate_exams(db: Session, request: dict, *, today: date | None = None) -> 
     selected, proven = select_joint_candidates(candidates_by_course)
     if not proven:
         raise ExamSchedulingError(503, [ExamErrorItem("OPTIMAL_RESULT_NOT_PROVEN", "A bounded optimal exam arrangement was not proven; nothing was saved.")])
+    if selected:
+        schedule_revision_id = request.get("scheduleRevisionId")
+        if schedule_revision_id is None:
+            db.execute(
+                update(Semester)
+                .where(Semester.id == semester_id)
+                .values(id=Semester.id)
+            )
+        else:
+            claim_active_working_revision(db, semester_id, schedule_revision_id)
+        db.expire_all()
+        refreshed = prepare_exam_generation(
+            db,
+            semester_id,
+            [item["courseId"] for item in request["courses"]],
+            schedule_revision_id=schedule_revision_id,
+            today=current_day,
+        )
+        _require_current_generation_preparation(request, refreshed, current_day)
     for course_id, candidates in candidates_by_course.items():
         if course_id not in selected:
             base = _outcome_base(db.get(Course, course_id), _configuration(db, course_id, semester_id))
@@ -193,6 +211,24 @@ def generate_exams(db: Session, request: dict, *, today: date | None = None) -> 
         "summary": {"total": len(ordered), **counts, "elapsedMilliseconds": min(60000, int((monotonic() - started) * 1000)), "optimalForPreparedSnapshot": True},
         "outcomes": ordered,
     }
+
+
+def _require_current_generation_preparation(
+    request: dict, prepared: dict, current_day: date
+) -> None:
+    if (
+        request["institutionToday"] != current_day
+        or request["sharedSnapshotToken"] != prepared["sharedSnapshotToken"]
+    ):
+        raise ExamSchedulingError(
+            409,
+            [
+                ExamErrorItem(
+                    "STALE_INPUT_SNAPSHOT",
+                    "Shared exam-planning inputs changed. Prepare again.",
+                )
+            ],
+        )
 
 
 def create_manual_exam(db: Session, *, course_id: int, semester_id: int, exam_date: date, start_time: time, lecturer_id: int, room_id: int, expected_configuration_revision: int, input_snapshot_token: str, today: date | None = None) -> dict:

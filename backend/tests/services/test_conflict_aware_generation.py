@@ -90,6 +90,40 @@ def test_preparation_tokens_are_bound_to_the_schedule_revision():
     assert first.courses[0].input_snapshot_token != second.courses[0].input_snapshot_token
 
 
+def test_optimization_claims_lifecycle_only_after_solver_finishes(monkeypatch):
+    db = make_session()
+    seed_optimization_planner(db, course_count=2)
+    import app.services.conflict_aware_generation as service
+
+    events = []
+    original_optimize = service.optimize_semester
+
+    def tracked_optimize(*args, **kwargs):
+        events.append("solve")
+        return original_optimize(*args, **kwargs)
+
+    monkeypatch.setattr(service, "optimize_semester", tracked_optimize)
+    monkeypatch.setattr(
+        service,
+        "claim_active_working_revision",
+        lambda *_args, **_kwargs: events.append("claim"),
+    )
+    prepared = prepare_optimization(
+        db, 1, [1, 2], [], schedule_revision_id=99
+    )
+
+    generate_optimization(
+        db,
+        1,
+        execution_courses(prepared),
+        [],
+        prepared.shared_snapshot_token,
+        schedule_revision_id=99,
+    )
+
+    assert events == ["solve", "claim"]
+
+
 def test_holidays_are_server_authoritative_named_blockers_without_changing_caller_unavailable_dates():
     db = make_session()
     seed_optimization_planner(db, course_count=1)

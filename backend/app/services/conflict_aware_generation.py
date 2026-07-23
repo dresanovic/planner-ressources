@@ -46,6 +46,7 @@ from app.services.semester_optimization import (
     intervals_overlap,
     optimize_semester,
 )
+from app.services.schedule_lifecycle import claim_active_working_revision
 
 
 OPERATION_DEADLINE_SECONDS = 60.0
@@ -206,7 +207,12 @@ def generate_optimization(
         # Establish the physical write transaction before the final reload. This
         # both closes SQLite's validation-to-write race and keeps later SAVEPOINTs
         # under the operation-level rollback boundary.
-        db.execute(update(Semester).where(Semester.id == semester_id).values(id=Semester.id))
+        if schedule_revision_id is None:
+            db.execute(update(Semester).where(Semester.id == semester_id).values(id=Semester.id))
+        else:
+            claim_active_working_revision(
+                db, semester_id, schedule_revision_id
+            )
     # The final result must always describe current persisted state. This also
     # covers stale or unavailable selections for which no solver run occurs.
     db.expire_all()

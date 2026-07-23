@@ -1,7 +1,7 @@
 from datetime import date, datetime, time
 
 import pytest
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -11,6 +11,7 @@ from app.services.exam_scheduling import (
     ExamSchedulingError,
     create_manual_exam,
     delete_exam,
+    generate_exams,
     get_exam_planning_overview,
     prepare_exam_generation,
     save_exam_configuration,
@@ -146,6 +147,86 @@ def test_preparation_token_is_bound_to_the_exact_selected_courses(db):
     second_selection = prepare_exam_generation(db, 1, [2], today=date(2026, 9, 1))
 
     assert first_selection["sharedSnapshotToken"] != second_selection["sharedSnapshotToken"]
+
+
+def test_generation_claims_lifecycle_only_after_joint_optimization(db, monkeypatch):
+    db.add(teaching_draft())
+    db.commit()
+    save_exam_configuration(
+        db,
+        course_id=1,
+        semester_id=1,
+        enabled=True,
+        expected_revision=None,
+        configuration=_input(),
+        today=date(2026, 9, 1),
+    )
+    db.commit()
+    prepared = prepare_exam_generation(
+        db,
+        1,
+        [1],
+        schedule_revision_id=99,
+        today=date(2026, 9, 1),
+    )
+    import app.services.exam_scheduling as service
+
+    events = []
+    original_select = service.select_joint_candidates
+
+    def tracked_select(*args, **kwargs):
+        events.append("solve")
+        return original_select(*args, **kwargs)
+
+    monkeypatch.setattr(service, "select_joint_candidates", tracked_select)
+    monkeypatch.setattr(
+        service,
+        "claim_active_working_revision",
+        lambda *_args, **_kwargs: events.append("claim"),
+    )
+
+    generate_exams(db, prepared, today=date(2026, 9, 1))
+
+    assert events == ["solve", "claim"]
+
+
+def test_generation_reloads_prepared_inputs_after_lifecycle_claim(db, monkeypatch):
+    db.add(teaching_draft())
+    db.commit()
+    save_exam_configuration(
+        db,
+        course_id=1,
+        semester_id=1,
+        enabled=True,
+        expected_revision=None,
+        configuration=_input(),
+        today=date(2026, 9, 1),
+    )
+    db.commit()
+    prepared = prepare_exam_generation(
+        db,
+        1,
+        [1],
+        schedule_revision_id=99,
+        today=date(2026, 9, 1),
+    )
+    import app.services.exam_scheduling as service
+
+    def change_prepared_input(session, *_args):
+        session.execute(
+            update(CourseExamConfiguration)
+            .where(CourseExamConfiguration.course_id == 1)
+            .values(revision=CourseExamConfiguration.revision + 1)
+            .execution_options(synchronize_session=False)
+        )
+
+    monkeypatch.setattr(service, "claim_active_working_revision", change_prepared_input)
+
+    with pytest.raises(ExamSchedulingError) as raised:
+        generate_exams(db, prepared, today=date(2026, 9, 1))
+
+    assert raised.value.errors[0].code == "STALE_INPUT_SNAPSHOT"
+    assert db.scalar(select(ExamSession)) is None
 
 
 def test_exam_retains_the_saved_final_teaching_session_identity(db):

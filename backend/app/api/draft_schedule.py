@@ -3,7 +3,7 @@ from datetime import date, time
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import JSONResponse
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
@@ -57,7 +57,7 @@ from app.services.draft_schedule_repository import (
     update_draft_session,
 )
 from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan, generate_schedule
-from app.services.schedule_lifecycle import LifecycleFailure, require_active_working_revision
+from app.services.schedule_lifecycle import LifecycleFailure, claim_active_working_revision, require_active_working_revision
 from app.api.schedule_lifecycle import lifecycle_failure_response
 from app.models.planning import Course
 from app.services.academic_catalog import planning_eligibility_reasons
@@ -99,7 +99,7 @@ def create_manual_session(
     except ValueError:
         return _manual_failure("INVALID_SESSION_TIME_RANGE", "Session start and end times must use HH:MM values.")
     try:
-        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
+        claim_active_working_revision(db, request.semester_id, request.schedule_revision_id)
         draft = create_manual_draft_session(
             db,
             course_id,
@@ -142,7 +142,7 @@ def remove_draft_session(
         expected_draft = db.get(DraftSchedule, expectedDraftScheduleId)
         if expected_draft is None:
             raise StaleDraftError(None)
-        require_active_working_revision(db, expected_draft.semester_id, scheduleRevisionId)
+        claim_active_working_revision(db, expected_draft.semester_id, scheduleRevisionId)
         draft, course_id, semester_id = delete_draft_session(
             db,
             session_id,
@@ -176,7 +176,7 @@ def remove_course_draft(
     db: Session = Depends(get_db),
 ) -> DraftScheduleMutationResponse | JSONResponse:
     try:
-        require_active_working_revision(db, semesterId, scheduleRevisionId)
+        claim_active_working_revision(db, semesterId, scheduleRevisionId)
         course_id, semester_id = clear_course_draft(
             db,
             course_id,
@@ -258,7 +258,9 @@ def generate_draft_schedule(
         # SQLite defers its physical transaction until the first write. Establish
         # the write boundary before the final holiday reload and hold it through
         # persistence so a holiday change cannot commit in between them.
-        db.execute(update(Semester).where(Semester.id == semester.id).values(id=Semester.id))
+        claim_active_working_revision(
+            db, request.semester_id, request.schedule_revision_id
+        )
         current_holidays = holiday_snapshot(db, planning_period.start_date, planning_period.end_date)
         conflicting = next((session.date for session in result.sessions if session.date in current_holidays.by_date), None)
         if conflicting is not None:
@@ -326,7 +328,7 @@ def edit_draft_session(
         source_draft = db.get(DraftSchedule, source_session.draft_schedule_id) if source_session else None
         if source_draft is None:
             raise PlanningInputNotFoundError("Draft Schedule not found.")
-        require_active_working_revision(db, source_draft.semester_id, request.schedule_revision_id)
+        claim_active_working_revision(db, source_draft.semester_id, request.schedule_revision_id)
         draft = update_draft_session(
             db,
             session_id,

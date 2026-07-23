@@ -14,6 +14,7 @@ describe('PublicationConfirmationDialog', () => {
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     act(() => root.render(<PublicationConfirmationDialog preparation={publicationFixture()} busy={false} onConfirm={vi.fn()} onCancel={vi.fn()} />))
     expect(document.body.textContent).toContain('Publish revision 1')
+    expect(document.body.textContent).toContain('Current state: draft')
     expect(document.body.textContent).toContain('first publication')
     expect(document.body.textContent).toContain('2 units remain')
     expect(document.body.textContent).toContain('do not prevent publication')

@@ -129,13 +129,13 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 11 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Implemented |
 | 12 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Implemented |
 | 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Implemented |
-| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented — validation follow-ups open |
-| 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Proposed |
+| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented |
+| 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Ready for specification |
 | 16 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Proposed — later release |
 | 17 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015 | Proposed — later release |
 | 18 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
-**Recommended first slice:** `FS-013 – Versioned Review and Publication Lifecycle`
+**Recommended first slice:** `FS-014 – Calendar Planning Workspace and Operational Dashboard`
 
 ## Development slices
 
@@ -1333,7 +1333,7 @@ The planner can publish a stable schedule, revise it safely, and replace it only
 
 #### Specification status
 
-Implemented — the exact reference-scale/query-bound proof, broader file-backed concurrency matrix, literal 200% manual pass, and moderated planner study remain validation follow-ups.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1430,7 +1430,7 @@ The planner can understand and act on the complete semester planning state from 
 
 #### Specification status
 
-Proposed.
+Ready for specification.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1860,6 +1860,7 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-07-23 | Status update | FS-013, FS-014 | Marked FS-013 implemented and advanced FS-014 to Ready for specification as the recommended next slice. | Reflect completion of the versioned publication lifecycle and open the calendar workspace for specification. |
 | 2026-07-14 | Ground-truth creation | FS-001–FS-017 | Reconstructed implemented FS-001–FS-006 and replaced the old roadmap with a validated planner-MVP and later-release slice map. | Preserve implemented behavior while defining conflict-aware planning, manual administration, exams, publication, calendar operations, lecturer review, identity, and future integration as coherent vertical slices. |
 | 2026-07-16 | New slice, reordered slice, updated slice | FS-007, FS-014, FS-018 | Added unified application navigation as the recommended next slice, recorded the approved UX ground truth, and made the later calendar workspace reuse that navigation. | Separate the confirmed cross-workflow navigation outcome from implemented academic administration and remove the navigation ambiguity from FS-014. |
 | 2026-07-16 | Reordered slice, status correction | FS-008, FS-018 | Recorded FS-008 as implemented, placed FS-018 after the completed FS-008 baseline, and added FS-008 as an FS-018 dependency. | Reflect completed resource administration work and the Lecturer and Room destinations that unified navigation must preserve. |

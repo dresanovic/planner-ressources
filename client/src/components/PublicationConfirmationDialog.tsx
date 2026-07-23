@@ -28,6 +28,7 @@ export function PublicationConfirmationDialog({ preparation, busy, onConfirm, on
       <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="publication-title" className="confirmation-dialog" tabIndex={-1} onKeyDown={onKeyDown}>
         <p className="eyebrow">{preparation.semesterName}</p>
         <h2 id="publication-title">Publish revision {preparation.targetRevision.revisionNumber}</h2>
+        <p>Current state: <strong>{preparation.targetRevision.state.replaceAll('_', ' ')}</strong>.</p>
         <p>{consequence}</p>
         <p>{preparation.scheduledUnits} of {preparation.totalUnits} teaching units are scheduled; {preparation.remainingUnits} remain.</p>
         {preparation.conditions.length > 0 ? <><p>These conditions do not prevent publication:</p><ul className="publication-conditions">{preparation.conditions.map((condition, index) => <li key={`${condition.code}-${condition.sourceSessionId ?? index}`}>{condition.message}</li>)}</ul></> : <p>No known non-blocking conditions were found.</p>}

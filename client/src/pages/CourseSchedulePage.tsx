@@ -65,6 +65,7 @@ import {
 import { ScheduleLifecyclePanel } from '../components/ScheduleLifecyclePanel'
 import { PublicationConfirmationDialog } from '../components/PublicationConfirmationDialog'
 import { AbandonRevisionDialog } from '../components/AbandonRevisionDialog'
+import { snapshotExamCourseNames, snapshotExams, snapshotSchedules } from './scheduleSnapshot'
 
 type GenerationMode = 'single' | 'batch'
 type SessionDeletionConfirmation = {
@@ -126,6 +127,8 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const [lifecycleRefreshError, setLifecycleRefreshError] = useState(false)
   const [lifecycleError, setLifecycleError] = useState('')
   const [selectedRevisionContent, setSelectedRevisionContent] = useState<ScheduleRevisionContent | null>(null)
+  const [revisionLoadFailure, setRevisionLoadFailure] = useState<{ revisionId: number; message: string } | null>(null)
+  const [revisionLoadAttempt, setRevisionLoadAttempt] = useState(0)
   const [abandonRevision, setAbandonRevision] = useState<ScheduleRevisionSummary | null>(null)
   const selectedCourseIdRef = useRef<number | null>(null)
   const selectedSemesterIdRef = useRef<number | null>(null)
@@ -180,8 +183,12 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const allExams = useMemo(() => currentExamOverview?.courses.flatMap((course) => [...(course.activeExam ? [course.activeExam] : []), ...course.pastExams]) ?? [], [currentExamOverview])
   const examCourseNames = useMemo(() => Object.fromEntries((currentExamOverview?.courses ?? []).map((course) => [course.courseId, course.courseName])), [currentExamOverview])
   const displayedRevisionContent = selectedRevisionContent?.revision.revisionId === selectedLifecycleRevision?.revisionId ? selectedRevisionContent : null
-  const displaySchedules = displayedRevisionContent ? snapshotSchedules(displayedRevisionContent) : schedules
-  const displayExams = displayedRevisionContent ? snapshotExams(displayedRevisionContent) : allExams
+  const selectedRevisionNeedsSnapshot = selectedLifecycleRevision != null && !selectedLifecycleRevision.isActiveWorking
+  const selectedRevisionAvailable = !selectedRevisionNeedsSnapshot || displayedRevisionContent != null
+  const selectedRevisionLoading = selectedRevisionNeedsSnapshot && !selectedRevisionAvailable && revisionLoadFailure?.revisionId !== selectedLifecycleRevision?.revisionId
+  const displaySchedules = selectedRevisionNeedsSnapshot ? (displayedRevisionContent ? snapshotSchedules(displayedRevisionContent) : []) : schedules
+  const displayExams = selectedRevisionNeedsSnapshot ? (displayedRevisionContent ? snapshotExams(displayedRevisionContent) : []) : allExams
+  const displayExamCourseNames = displayedRevisionContent ? snapshotExamCourseNames(displayedRevisionContent) : examCourseNames
 
   useEffect(() => {
     let current = true
@@ -283,10 +290,10 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     if (!revisionId || selectedLifecycleRevision?.isActiveWorking) return
     let current = true
     void getScheduleRevision(revisionId)
-      .then((content) => { if (current) { setSelectedRevisionContent(content); setLifecycleError('') } })
-      .catch((reason: ScheduleLifecycleApiError) => { if (current) setLifecycleError(reason.errors?.map((item) => item.message).join(' ') || 'Could not load the selected revision.') })
+      .then((content) => { if (current) { setSelectedRevisionContent(content); setRevisionLoadFailure(null) } })
+      .catch((reason: ScheduleLifecycleApiError) => { if (current) setRevisionLoadFailure({ revisionId, message: reason.errors?.map((item) => item.message).join(' ') || 'Could not load the selected revision.' }) })
     return () => { current = false }
-  }, [selectedLifecycleRevision?.revisionId, selectedLifecycleRevision?.isActiveWorking])
+  }, [selectedLifecycleRevision?.revisionId, selectedLifecycleRevision?.isActiveWorking, revisionLoadAttempt])
 
   async function refreshExamOverview(semesterId = selectedSemesterId) {
     if (!semesterId) return false
@@ -700,6 +707,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
           <div className="schedule-results">
             {lifecycleOverview && <ScheduleLifecyclePanel overview={lifecycleOverview} selectedRevisionId={selectedLifecycleRevision?.revisionId ?? null} busy={lifecycleBusy} onStartDraft={() => void startInitialDraft()} onSelectRevision={setSelectedLifecycleRevisionId} onPreparePublication={(revision) => void preparePublication(revision)} onTransition={(revision, action) => void handleLifecycleTransition(revision, action as 'mark_ready' | 'return_to_draft' | 'restore')} onAbandon={setAbandonRevision} />}
             {lifecycleError && <div className="refresh-error" role="alert">{lifecycleError}</div>}
+            {revisionLoadFailure && revisionLoadFailure.revisionId === selectedLifecycleRevision?.revisionId && <div className="refresh-error" role="alert"><span>{revisionLoadFailure.message}</span><button type="button" onClick={() => { setRevisionLoadFailure(null); setRevisionLoadAttempt((attempt) => attempt + 1) }}>Retry selected revision</button></div>}
             {lifecycleRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh schedule lifecycle. Schedule changes are unavailable.</span><button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)}>Retry lifecycle refresh</button></div>}
             {batchResult && <BatchResultSummary result={batchResult} retryDisabled={writeBusy} onRetryFailed={() => void retryFailedCourses()} />}
             {overviewRefreshError && (
@@ -711,7 +719,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
             {deletionNotice && <div className="refresh-error" role="alert">{deletionNotice}</div>}
             {examRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh exam planning. The last complete exam view remains visible.</span><button type="button" onClick={()=>void refreshExamOverview()}>Retry exam refresh</button></div>}
             {selectedSemesterId && activeScheduleRevisionId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} scheduleRevisionId={activeScheduleRevisionId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshOverview(selectedSemesterId, false) }} />}
-            <DraftSchedulePanel
+            {selectedRevisionAvailable ? <DraftSchedulePanel
               resetKey={overviewResetKey}
               schedules={displaySchedules}
               rooms={planningOptions?.rooms ?? []}
@@ -723,10 +731,10 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
               exams={displayExams}
               onEditExam={(exam)=>{ setSelectedCourseId(exam.courseId); setExamEditor(exam) }}
               onDeleteExam={setExamDeletion}
-              examCourseNames={examCourseNames}
+              examCourseNames={displayExamCourseNames}
               readOnly={selectedLifecycleRevision?.revisionId !== activeScheduleRevisionId}
               contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Current publication' : selectedLifecycleRevision.isActiveWorking ? 'Active working revision' : 'Historical revision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
-            />
+            /> : selectedRevisionLoading ? <p role="status">Loading selected revision…</p> : null}
           </div>
         </div>
       </section>
@@ -765,21 +773,6 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
       {abandonRevision && lifecycleOverview && <AbandonRevisionDialog semesterName={lifecycleOverview.semesterName} revision={abandonRevision} currentPublication={lifecycleOverview.currentPublication} busy={lifecycleBusy} onCancel={() => setAbandonRevision(null)} onConfirm={() => void handleLifecycleTransition(abandonRevision, 'abandon')} />}
     </>
   )
-}
-
-function snapshotSchedules(content: ScheduleRevisionContent): DraftSchedule[] {
-  return content.snapshot.courses.filter((course) => course.draftStatus != null || course.teachingSessions.length > 0).map((course) => ({
-    draftScheduleId: -course.sourceCourseId,
-    revision: content.revision.revisionVersion,
-    courseId: course.sourceCourseId,
-    semesterId: content.revision.semesterId,
-    context: { course: { id: course.sourceCourseId, name: course.name }, cohort: { id: course.cohort.sourceId, name: course.cohort.name }, cohortSize: course.cohort.size, lecturer: { id: course.teachingSessions[0]?.lecturer.sourceId ?? 0, name: course.teachingSessions[0]?.lecturer.name ?? 'Captured lecturer' }, room: { id: course.teachingSessions[0]?.room.sourceId ?? 0, name: course.teachingSessions[0]?.room.name ?? 'Captured room' }, studyType: { id: course.studyType.sourceId, name: course.studyType.name } },
-    sessions: course.teachingSessions.map((session) => ({ id: session.sourceSessionId, date: session.date, startTime: session.startTime, endTime: session.endTime, units: session.units, courseId: course.sourceCourseId, lecturerId: session.lecturer.sourceId, lecturerName: session.lecturer.name, lecturerReferenceCode: session.lecturer.referenceCode, cohortId: course.cohort.sourceId, roomId: session.room.sourceId, roomName: session.room.name, roomReferenceCode: session.room.referenceCode, studyTypeId: course.studyType.sourceId, timeWindowId: session.timeWindowId, constraintWindowIndex: session.constraintWindowIndex, validationAlerts: [], lecturer: { id: session.lecturer.sourceId, name: session.lecturer.name, referenceCode: session.lecturer.referenceCode }, room: { id: session.room.sourceId, name: session.room.name, referenceCode: session.room.referenceCode } })),
-  }))
-}
-
-function snapshotExams(content: ScheduleRevisionContent): ExamSession[] {
-  return content.snapshot.examSessions.map((exam) => ({ id: exam.sourceExamId, revision: content.revision.revisionVersion, courseId: exam.course.sourceId, semesterId: content.revision.semesterId, configurationIdentifier: exam.configurationIdentifier, examType: exam.examType, durationMinutes: exam.durationMinutes, requiredCapacity: exam.requiredCapacity, recommendedStartDate: exam.recommendedStartDate, recommendedEndDate: exam.recommendedEndDate, recommendationWasOverridden: exam.recommendationWasOverridden, outsideRecommendedWindow: exam.outsideRecommendedWindow, finalTeachingAnchor: { date: exam.finalTeachingDate, endTime: exam.finalTeachingEndTime, teachingSessionId: 0 }, date: exam.examDate, startTime: exam.startTime, endTime: exam.endTime, lecturer: { id: exam.lecturer.sourceId, name: exam.lecturer.name, referenceCode: exam.lecturer.referenceCode }, cohort: { id: exam.cohort.sourceId, name: exam.cohort.name, referenceCode: null }, room: { id: exam.room.sourceId, name: exam.room.name, referenceCode: exam.room.referenceCode, capacity: exam.room.capacity ?? 0 }, lifecycleStatus: 'active', source: exam.source, validityIssues: [], inputSnapshotToken: '' }))
 }
 
 function ErrorList({ errors }: { errors: { code: string; message: string }[] }) {
