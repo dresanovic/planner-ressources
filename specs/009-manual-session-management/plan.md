@@ -127,12 +127,12 @@ Research decisions are recorded in [research.md](./research.md). All technical u
 
 ### Backend Design
 
-1. Add request and response schemas for manual creation, deletion results, progress values, validation failures, and stale conflicts.
+1. Add request and response schemas for manual creation, including explicit Lecturer, Cohort, and Room selections, deletion results, progress values, validation failures, and stale conflicts.
 2. Add repository operations that:
    - load current course, semester, cohort, lecturer, room, and draft state;
    - calculate current scheduled and remaining units;
    - create a Draft Schedule with current snapshots when none exists;
-   - add one Draft Session using the course lecturer/cohort and selected room;
+   - default manual-session controls from the Course while persisting the planner-selected active Lecturer, active Cohort, and capacity-valid active Room;
    - increment the Draft Schedule revision for every mutation that leaves it present;
    - delete the parent Draft Schedule when its last session is removed;
    - delete the complete parent draft without touching source records or `GenerationConstraintSet` rows;
@@ -146,7 +146,7 @@ Research decisions are recorded in [research.md](./research.md). All technical u
 1. Extend the draft-schedule API client with the three mutation calls, typed progress/result payloads, validation errors, and `409 STALE_DRAFT` handling.
 2. Compute the initial proposed end time from the chosen start time and units using `units × 45 minutes + (units - 1) × 10 minutes`. Recalculate it whenever start time or units changes; allow the planner to edit the result afterward before saving. The submitted unit count remains unchanged by an end-time override.
 3. Derive progress for the currently selected course-semester from planning-option `totalUnits` and the complete unfiltered schedule set. Display it beside the existing selected-course Planning Summary even when that course has no Draft Schedule; filters affect only visible sessions, never progress calculations. Do not introduce a semester-wide unscheduled-course dashboard in this slice.
-4. Extend the existing planning-options course shape with `cohortSize`, then add manual-create controls beneath the selected-course summary using the inherited lecturer/cohort and capacity-valid room choices.
+4. Extend planning options with active Cohort choices and cohort sizes, then add manual-create dropdowns beneath the selected-course summary. Default Lecturer, Cohort, and Room from the Course; allow all active Lecturer/Cohort choices and capacity-valid active Rooms, and keep overrides local to the submitted session.
 5. Add a delete action beside Edit for each generated or manual session in list and weekly views, and place the clear-draft action in the selected-course section. Confirmation state captures the current Draft Schedule revision and the exact consequence summary.
 6. On successful mutation, retain the current semester and filters where possible, refresh the complete overview, and close the relevant form/dialog. On `STALE_DRAFT`, close the obsolete confirmation, refresh current state, explain that the draft changed, and require the planner to invoke deletion again.
 7. Replace “Generated plans/sessions” wording on surfaces that now include manual sessions with the canonical “Draft plans/sessions” terminology.
@@ -159,7 +159,7 @@ The contract in [manual-session-management.openapi.yaml](./contracts/manual-sess
 - `POST /api/courses/{course_id}/draft-schedule/sessions` for one manual session;
 - `DELETE /api/draft-sessions/{session_id}?expectedDraftScheduleId=...&expectedDraftRevision=...` for one session;
 - `DELETE /api/courses/{course_id}/draft-schedule?semesterId=...&expectedDraftScheduleId=...&expectedDraftRevision=...` for one complete course-semester draft;
-- the additive `cohortSize` field on the existing planning-options Course shape so room choices can be capacity-filtered before the first draft exists;
+- the additive active `cohorts` collection and existing course `cohortSize` context so room choices can be capacity-filtered for the selected Cohort before the first draft exists;
 - `201/200` mutation results with nullable current draft plus scheduled and remaining units;
 - `404` for missing current source input on manual creation, `409 STALE_DRAFT` whenever a confirmed deletion target or expected parent identity/revision is missing or changed, and `422` structural/capacity/unit validation outcomes.
 

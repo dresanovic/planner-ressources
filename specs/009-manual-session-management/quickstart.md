@@ -7,7 +7,7 @@ This guide verifies the FS-009 behavior end to end without covering FS-008 resou
 - Python 3.12 environment with `backend/requirements.txt` installed.
 - Node.js and the locked dependencies from `client/package-lock.json`.
 - Seed or fixture data containing:
-  - one active course assigned to a semester, lecturer, cohort, study type, and default room;
+  - one active course assigned to a semester, lecturer, cohort, study type, and default room, plus at least one additional active Lecturer and active Cohort;
   - at least one additional room above cohort capacity and one room below capacity;
   - saved generation constraints for the target course-semester;
   - another course draft in the same semester and another draft for the target course in a different semester;
@@ -46,14 +46,14 @@ Focused automated evidence (2026-07-16): repository/API/planning-option tests pa
 
 1. Select a course-semester with no Draft Schedule.
 2. Confirm the selected-course Planning Summary shows zero scheduled units and all course units remaining.
-3. Open manual creation and enter a date, start time, whole-unit count, and capacity-valid room.
+3. Open manual creation and confirm Lecturer, Cohort, and Room default from the Course; optionally choose another active Lecturer and Cohort, then choose a Room with sufficient capacity for that Cohort.
 4. Verify start time plus units produces the expected default end time using 45 minutes per unit and 10 minutes between units.
 5. Save the session.
 
 Expected:
 
 - One Draft Schedule and one session exist only for the selected course-semester.
-- The session inherits the course lecturer and cohort and uses the selected room.
+- The session uses the selected Lecturer, Cohort, and Room while the Course retains its original assignments.
 - Scheduled units equal the new session units; remaining units decrease by exactly that amount.
 - Saved generation constraints are unchanged.
 

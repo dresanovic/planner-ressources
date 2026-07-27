@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -23,6 +25,7 @@ from app.services.conflict_aware_generation import (
 from app.services.semester_optimization import OptimalResultNotProven, OptimizationModelInvalid
 from app.services.schedule_lifecycle import LifecycleFailure, require_active_working_revision
 from app.api.schedule_lifecycle import lifecycle_failure_response
+from app.services.planning_outcomes import retain_planning_outcome
 
 
 router = APIRouter(
@@ -89,6 +92,32 @@ def generate_conflict_aware_drafts(
             request.shared_snapshot_token,
             request.schedule_revision_id,
         )
+        completed_at = datetime.now(timezone.utc)
+        classifications = {
+            "complete": "successful",
+            "improved_partial": "successful",
+            "unchanged": "unchanged",
+            "failed": "failed",
+            "stale": "stale",
+        }
+        for outcome in result.outcomes:
+            status_value = (
+                outcome.status.value
+                if hasattr(outcome.status, "value")
+                else str(outcome.status)
+            )
+            retain_planning_outcome(
+                db,
+                schedule_revision_id=request.schedule_revision_id,
+                course_id=outcome.course_id,
+                operation_kind="semester_optimization",
+                classification=classifications[status_value],
+                source_status=status_value,
+                result_payload=outcome.model_dump(
+                    mode="json", by_alias=True, exclude_none=True
+                ),
+                completed_at=completed_at,
+            )
         db.commit()
         return result
     except SemesterNotFoundError as exc:

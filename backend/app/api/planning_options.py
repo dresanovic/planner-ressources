@@ -3,10 +3,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.models.planning import Course, CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Semester, StudyTypeTimeWindow
+from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Semester, StudyTypeTimeWindow
 from app.schemas.academic_catalog import AvailabilityResponse
 from app.schemas.draft_schedule import PlanningEntityResponse
 from app.schemas.planning_options import (
+    CohortOptionResponse,
     CourseOptionResponse,
     PlanningOptionsResponse,
     RoomOptionResponse,
@@ -67,6 +68,7 @@ def read_planning_options(
         and course.study_type.is_active
     ]
     semesters = db.execute(select(Semester).where(Semester.is_active.is_(True)).order_by(Semester.start_date, Semester.name)).scalars().all()
+    cohorts = db.execute(select(Cohort).where(Cohort.is_active.is_(True)).order_by(Cohort.name)).scalars().all()
     rooms = db.execute(select(Room).where(Room.is_active.is_(True)).order_by(Room.name)).scalars().all()
     lecturers = db.execute(select(Lecturer).where(Lecturer.is_active.is_(True)).order_by(Lecturer.name)).scalars().all()
     time_windows = (
@@ -113,6 +115,14 @@ def read_planning_options(
                 endDate=semester.end_date,
             )
             for semester in semesters
+        ],
+        cohorts=[
+            CohortOptionResponse(
+                id=cohort.id,
+                name=cohort.name,
+                studentCount=cohort.student_count,
+            )
+            for cohort in cohorts
         ],
         rooms=[
             {

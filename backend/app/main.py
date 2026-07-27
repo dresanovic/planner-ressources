@@ -20,6 +20,7 @@ from app.api.resource_catalog import academic_router as academic_resource_router
 from app.api.holiday_calendar import router as holiday_calendar_router
 from app.api.exam_scheduling import router as exam_scheduling_router
 from app.api.schedule_lifecycle import router as schedule_lifecycle_router
+from app.api.calendar_workspace import router as calendar_workspace_router
 from app.db.schema import initialize_database
 from app.db.session import engine, get_db
 
@@ -55,6 +56,7 @@ app.include_router(academic_resource_router)
 app.include_router(holiday_calendar_router)
 app.include_router(exam_scheduling_router)
 app.include_router(schedule_lifecycle_router)
+app.include_router(calendar_workspace_router)
 
 
 @app.exception_handler(RequestValidationError)

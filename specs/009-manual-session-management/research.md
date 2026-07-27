@@ -86,9 +86,9 @@
 
 ## Decision: Extend Existing Planner Components
 
-**Decision**: Keep selected-course progress, manual-create controls, complete-draft clearing, orchestration, and semester refresh in `CourseSchedulePage`; extend `DraftSchedulePanel` only with per-session delete triggers beside existing Edit actions; add one small schedule-specific deletion dialog that reuses the accessible focus-management behavior established by `ProtectedDeleteDialog`. Extend planning-option Course data with current `cohortSize` so the first manual session can offer capacity-valid rooms before a Draft Schedule exists.
+**Decision**: Keep selected-course progress, manual-create controls, complete-draft clearing, orchestration, and semester refresh in `CourseSchedulePage`; extend `DraftSchedulePanel` only with per-session delete triggers beside existing Edit actions; add one small schedule-specific deletion dialog that reuses the accessible focus-management behavior established by `ProtectedDeleteDialog`. Extend planning options with active Cohort choices and sizes so a manual session can default Lecturer, Cohort, and Room from the Course while allowing simple session-only dropdown overrides and capacity-validating Rooms against the selected Cohort.
 
-**Rationale**: The current page already owns planning options, selected course/semester, writes, and overview refresh. The panel already owns sessions, filters, edit actions, rooms, and alerts. Keeping progress limited to the selected course delivers FS-009 without pre-building FS-014's semester dashboard. `cohortSize` is the smallest additive context needed for client-side room filtering when no draft exists.
+**Rationale**: The current page already owns planning options, selected course/semester, writes, and overview refresh. The panel already owns sessions, filters, edit actions, rooms, and alerts. Keeping progress limited to the selected course delivers FS-009 without pre-building FS-014's semester dashboard. The existing active Lecturer and Room lists plus one additive active Cohort list are the smallest contract needed for the confirmed manual overrides.
 
 **Alternatives considered**:
 

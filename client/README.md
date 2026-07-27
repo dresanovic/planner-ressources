@@ -53,6 +53,31 @@ The review panel supports:
 - alert details that identify related conflicting sessions when an overlap is detected
 - distinct no-semester-schedules and no-results states
 
+## FS-014 calendar planning workspace
+
+Schedule now opens a semester-centered workspace with Week as its default and
+Day, Month, and List modes. List is the existing `DraftSchedulePanel` Courses
+overview—not a replacement list—so its filters, weekly review, alerts,
+selection, and editors remain the established dense-review workflow.
+
+One revision-scoped workspace response supplies the calendar records, current
+findings, retained planning outcomes, five operational summaries, filter
+facets, and trace references. Active Working is selected before Current
+Published when both exist. Published sessions and course totals remain
+captured and read-only while their warning overlay is identified as current
+validation.
+
+Filters are local projections and never make mutation requests. Summary cards
+open contributor lists; dated contributors move to their Day detail and
+undated course/outcome contributors move to List. Existing edit and deletion
+flows remain the only mutation paths. Drag, drop, resize, duplicate, split,
+merge, new optimization, external synchronization, and a second Dashboard
+destination are not provided.
+
+At narrow widths the Schedule workspace precedes the longer planning-input
+form, all modes and summaries remain sequentially reachable, and the FS-018
+navigation menu stays unobstructed.
+
 Manual edits update the saved draft schedule returned to the overview, so changed sessions and validation alerts remain visible while switching filters or list/weekly review modes. Validation alerts do not block generation or otherwise valid manual edits.
 
 The page has separate **One course** and **Several courses** modes. The several-course mode now exposes **Optimize selected courses** for 1-20 Courses and optional comma-separated future unavailable dates. Selection remains visible during preparation, confirmation, solving, errors, and retry. Duplicate unavailable dates are deduplicated before the backend preparation is echoed.
@@ -100,7 +125,7 @@ npm run build
 
 In the selected-course Planning Summary, scheduled and remaining units are derived from the complete saved course-semester draft, independent of active overview filters. A course without a Draft Schedule remains visible with zero scheduled units and all current course units remaining.
 
-The **Add one Draft Session** form inherits the selected Course lecturer and cohort and offers current rooms with sufficient capacity. Start time plus explicit units proposes an end time using 45 minutes per unit and 10 minutes between units. The planner may move the end time earlier for merged teaching or later for a pause; the explicit unit count remains authoritative for progress.
+The **Add one Draft Session** form defaults Lecturer, Cohort, and Room from the selected Course. The planner may override them for the new session using all active Lecturer and Cohort choices plus active Rooms with sufficient capacity for the selected Cohort; these overrides do not modify the Course. Start time plus explicit units proposes an end time using 45 minutes per unit and 10 minutes between units. The planner may move the end time earlier for merged teaching or later for a pause; the explicit unit count remains authoritative for progress.
 
 Every session in list and weekly views has an action-specific **Delete** control. The selected-course section also provides **Clear course draft** when a draft exists. Both actions require a modal confirmation describing the exact course-semester scope, removed scheduled coverage, resulting remaining units, and—for complete clearing—preservation of source records and saved generation constraints.
 

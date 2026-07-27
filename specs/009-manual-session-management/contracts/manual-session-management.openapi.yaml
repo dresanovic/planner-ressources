@@ -144,11 +144,31 @@ components:
       additionalProperties: true
       required:
         - courses
+        - cohorts
       properties:
         courses:
           type: array
           items:
             $ref: '#/components/schemas/PlanningCourseOption'
+        cohorts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlanningCohortOption'
+    PlanningCohortOption:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - studentCount
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        studentCount:
+          type: integer
+          minimum: 1
     PlanningCourseOption:
       type: object
       additionalProperties: true
@@ -178,6 +198,8 @@ components:
         - startTime
         - endTime
         - units
+        - lecturerId
+        - cohortId
         - roomId
       properties:
         semesterId:
@@ -193,6 +215,12 @@ components:
           type: string
           pattern: '^([01]\\d|2[0-3]):[0-5]\\d$'
         units:
+          type: integer
+          minimum: 1
+        lecturerId:
+          type: integer
+          minimum: 1
+        cohortId:
           type: integer
           minimum: 1
         roomId:

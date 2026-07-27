@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   prepareSchedulePublication: vi.fn(),
   transitionScheduleRevision: vi.fn(),
   getScheduleRevision: vi.fn(),
+  getCalendarWorkspace: vi.fn(),
 }))
 
 vi.mock('../api/planningOptions', () => ({ getPlanningOptions: mocks.getPlanningOptions }))
@@ -56,10 +57,26 @@ vi.mock('../api/scheduleLifecycle', async (importOriginal) => ({
   transitionScheduleRevision: mocks.transitionScheduleRevision,
   getScheduleRevision: mocks.getScheduleRevision,
 }))
+vi.mock('../api/calendarWorkspace', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../api/calendarWorkspace')>()),
+  getCalendarWorkspace: mocks.getCalendarWorkspace,
+}))
 
 import { CourseSchedulePage } from './CourseSchedulePage'
+import { calendarWorkspaceMatchesSelection } from './calendarWorkspaceSelection'
 import { draftScheduleFixture, generationConstraintsFixture } from '../test/draftScheduleFixtures'
 import { lifecycleOverviewFixture, snapshotFixture } from '../test/lifecycleFixtures'
+import { loadedCalendarWorkspaceFixture, noRevisionWorkspaceFixture } from '../test/calendarWorkspaceFixtures'
+
+function deferred<Value>() {
+  let resolve!: (value: Value) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<Value>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, resolve, reject }
+}
 
 const entity = (id: number, name: string) => ({ id, name })
 const options = {
@@ -68,7 +85,14 @@ const options = {
     lecturer: entity(id, `L${id}`), cohort: entity(id, `C${id}`), room: entity(id, `R${id}`), studyType: entity(1, 'Full-time'),
   })),
   semesters: [{ id: 1, name: 'Fall 2026', startDate: '2026-09-07', endDate: '2026-12-20' }],
-  timeWindows: [], rooms: [{ id: 3, name: 'Large room', referenceCode: 'ROOM-003', capacity: 40, isActive: true, revision: 1 }], lecturers: [], courseResources: [],
+  timeWindows: [],
+  cohorts: [{ id: 1, name: 'C1', studentCount: 30 }, { id: 2, name: 'C2', studentCount: 30 }],
+  rooms: [{ id: 3, name: 'Large room', referenceCode: 'ROOM-003', capacity: 40, isActive: true, revision: 1 }],
+  lecturers: [
+    { id: 1, name: 'L1', referenceCode: 'LEC-001', isActive: true, revision: 1 },
+    { id: 2, name: 'L2', referenceCode: 'LEC-002', isActive: true, revision: 1 },
+  ],
+  courseResources: [],
 }
 const examOverview = {
   semesterId: 1,
@@ -89,6 +113,118 @@ const examOverview = {
   })),
 }
 
+function publishedLifecycleOverview() {
+  const base = lifecycleOverviewFixture()
+  const published = {
+    ...base.activeWorkingRevision!,
+    revisionId: 12,
+    revisionNumber: 2,
+    state: 'published' as const,
+    isActiveWorking: false,
+    isCurrentPublication: true,
+    publishedAt: '2026-07-21T10:00:00Z',
+    allowedActions: {
+      markReady: false,
+      returnToDraft: false,
+      preparePublication: false,
+      abandon: false,
+      restore: false,
+      editSchedule: false,
+    },
+  }
+  return {
+    ...base,
+    activeWorkingRevision: null,
+    currentPublication: published,
+    revisions: [published],
+    allowedActions: { createWorkingRevision: true },
+  }
+}
+
+function publishedCalendarWorkspace() {
+  const workspace = loadedCalendarWorkspaceFixture()
+  const selector = {
+    revisionId: 12,
+    revisionNumber: 2,
+    lifecycleState: 'published' as const,
+    designation: 'current_published' as const,
+  }
+  return {
+    ...workspace,
+    availableContexts: {
+      activeWorking: null,
+      currentPublished: selector,
+    },
+    selectedRevision: {
+      ...selector,
+      readOnly: true,
+      contentSource: 'captured_published' as const,
+      validationBasis: 'current' as const,
+      snapshotSchemaVersion: 2 as const,
+    },
+    workspaceToken: 'semester:1:revision:12:published:2',
+  }
+}
+
+function lifecycleWithWorkingAndPublished() {
+  const working = lifecycleOverviewFixture().activeWorkingRevision!
+  const published = {
+    ...working,
+    revisionId: 12,
+    revisionNumber: 2,
+    state: 'published' as const,
+    isActiveWorking: false,
+    isCurrentPublication: true,
+    publishedAt: '2026-07-21T10:00:00Z',
+    allowedActions: {
+      markReady: false,
+      returnToDraft: false,
+      preparePublication: false,
+      abandon: false,
+      restore: false,
+      editSchedule: false,
+    },
+  }
+  return {
+    ...lifecycleOverviewFixture(),
+    activeWorkingRevision: working,
+    currentPublication: published,
+    revisions: [working, published],
+  }
+}
+
+function workingCalendarWithPublishedAvailable() {
+  const workspace = loadedCalendarWorkspaceFixture()
+  return {
+    ...workspace,
+    availableContexts: {
+      ...workspace.availableContexts,
+      currentPublished: {
+        revisionId: 12,
+        revisionNumber: 2,
+        lifecycleState: 'published' as const,
+        designation: 'current_published' as const,
+      },
+    },
+  }
+}
+
+function publishedCalendarWithWorkingAvailable() {
+  const workspace = publishedCalendarWorkspace()
+  return {
+    ...workspace,
+    availableContexts: {
+      activeWorking: {
+        revisionId: 11,
+        revisionNumber: 1,
+        lifecycleState: 'draft' as const,
+        designation: 'active_working' as const,
+      },
+      currentPublished: workspace.availableContexts.currentPublished,
+    },
+  }
+}
+
 beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset())
   mocks.getPlanningOptions.mockResolvedValue(options)
@@ -96,6 +232,7 @@ beforeEach(() => {
   mocks.getDraftSchedules.mockResolvedValue([])
   mocks.getExamPlanningOverview.mockResolvedValue(examOverview)
   mocks.getScheduleLifecycle.mockResolvedValue(lifecycleOverviewFixture())
+  mocks.getCalendarWorkspace.mockResolvedValue(loadedCalendarWorkspaceFixture())
 })
 
 afterEach(() => { document.body.innerHTML = '' })
@@ -119,6 +256,337 @@ function summaryValue(label: string) {
 }
 
 describe('CourseSchedulePage multi-course mode', () => {
+  it('loads the Working workspace by default and renders the adapted overview once', async () => {
+    await renderPage()
+
+    expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 11)
+    expect(document.body.textContent).toContain('Active Working')
+    expect(document.body.textContent?.match(/Courses overview/g)).toHaveLength(1)
+  })
+
+  it('falls back coherently to Current Published when no Working revision exists', async () => {
+    mocks.getScheduleLifecycle.mockResolvedValue(publishedLifecycleOverview())
+    mocks.getScheduleRevision.mockResolvedValue({
+      revision: publishedLifecycleOverview().currentPublication,
+      snapshot: snapshotFixture(),
+    })
+    mocks.getCalendarWorkspace.mockResolvedValue(publishedCalendarWorkspace())
+
+    await renderPage()
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+
+    expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 12)
+    expect(document.body.textContent).toContain('Current Published')
+    expect(document.body.textContent).toContain('Published content is read-only')
+  })
+
+  it('renders the no-revision workspace without inventing revision-owned records', async () => {
+    const base = lifecycleOverviewFixture()
+    mocks.getScheduleLifecycle.mockResolvedValue({
+      ...base,
+      activeWorkingRevision: null,
+      currentPublication: null,
+      revisions: [],
+      allowedActions: { createWorkingRevision: true },
+    })
+    mocks.getCalendarWorkspace.mockResolvedValue(noRevisionWorkspaceFixture())
+
+    await renderPage()
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
+
+    expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, undefined)
+    expect(document.body.textContent).toContain('No schedule revision exists yet')
+    expect(button('Start Draft')).toBeTruthy()
+  })
+
+  it('requires complete lifecycle identity before accepting a cached calendar workspace', () => {
+    const draft = lifecycleOverviewFixture().activeWorkingRevision!
+    const workspace = loadedCalendarWorkspaceFixture()
+
+    expect(calendarWorkspaceMatchesSelection(workspace, 1, draft)).toBe(true)
+    expect(calendarWorkspaceMatchesSelection(workspace, 1, {
+      ...draft,
+      state: 'ready_for_review',
+    })).toBe(false)
+    expect(calendarWorkspaceMatchesSelection(workspace, 1, {
+      ...draft,
+      state: 'published',
+      isActiveWorking: false,
+      isCurrentPublication: true,
+    })).toBe(false)
+    expect(calendarWorkspaceMatchesSelection({
+      ...workspace,
+      selectedRevision: {
+        ...workspace.selectedRevision,
+        designation: 'current_published',
+      },
+    }, 1, draft)).toBe(false)
+    expect(calendarWorkspaceMatchesSelection({
+      ...workspace,
+      selectedRevision: {
+        ...workspace.selectedRevision,
+        readOnly: true,
+      },
+    }, 1, draft)).toBe(false)
+    expect(calendarWorkspaceMatchesSelection(workspace, 1, {
+      ...draft,
+      isActiveWorking: false,
+      isCurrentPublication: false,
+    })).toBe(false)
+    expect(calendarWorkspaceMatchesSelection(workspace, 1, null)).toBe(false)
+    expect(calendarWorkspaceMatchesSelection(noRevisionWorkspaceFixture(), 1, null)).toBe(true)
+  })
+
+  it('keeps the latest revision selection when workspace responses resolve out of order', async () => {
+    const lifecycle = lifecycleWithWorkingAndPublished()
+    const initialWorking = workingCalendarWithPublishedAvailable()
+    const currentWorking = {
+      ...workingCalendarWithPublishedAvailable(),
+      workspaceToken: 'working-current',
+      courses: workingCalendarWithPublishedAvailable().courses.map((course) => ({
+        ...course,
+        name: 'Current Working course',
+      })),
+      filterFacets: {
+        ...workingCalendarWithPublishedAvailable().filterFacets,
+        courses: [{ value: 'course:1', label: 'Current Working course' }],
+      },
+    }
+    const stalePublished = {
+      ...publishedCalendarWithWorkingAvailable(),
+      workspaceToken: 'published-stale',
+      courses: publishedCalendarWithWorkingAvailable().courses.map((course) => ({
+        ...course,
+        name: 'Stale Published course',
+      })),
+      filterFacets: {
+        ...publishedCalendarWithWorkingAvailable().filterFacets,
+        courses: [{ value: 'course:1', label: 'Stale Published course' }],
+      },
+    }
+    const publishedRequest = deferred<typeof stalePublished>()
+    const workingRequest = deferred<typeof currentWorking>()
+    mocks.getScheduleLifecycle.mockResolvedValue(lifecycle)
+    mocks.getScheduleRevision.mockResolvedValue({
+      revision: lifecycle.currentPublication,
+      contentSource: 'captured_snapshot',
+      snapshot: snapshotFixture(),
+    })
+    mocks.getCalendarWorkspace.mockImplementation((_semesterId, revisionId) => {
+      if (revisionId === 12) return publishedRequest.promise
+      if (revisionId === 11) return workingRequest.promise
+      return Promise.resolve(initialWorking)
+    })
+
+    await renderPage()
+    await act(async () => {
+      button('Published R2')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 12)
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLButtonElement>('.lifecycle-history button')]
+        .find((item) => item.textContent?.includes('Revision 1') && item.textContent.includes('Draft'))
+        ?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 11)
+    await act(async () => {
+      workingRequest.resolve(currentWorking)
+      await workingRequest.promise
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    await act(async () => {
+      publishedRequest.resolve(stalePublished)
+      await publishedRequest.promise
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.body.textContent).toContain('Active Working')
+    expect(document.body.textContent).toContain('Current Working course')
+    expect(document.body.textContent).not.toContain('Stale Published course')
+  })
+
+  it('replaces same-revision Draft identity with Ready for review after lifecycle refresh', async () => {
+    const draft = lifecycleOverviewFixture()
+    const readyRevision = {
+      ...draft.activeWorkingRevision!,
+      revisionVersion: 2,
+      state: 'ready_for_review' as const,
+      allowedActions: {
+        ...draft.activeWorkingRevision!.allowedActions,
+        markReady: false,
+        returnToDraft: true,
+      },
+    }
+    const ready = {
+      ...draft,
+      stateToken: 'state-ready',
+      activeWorkingRevision: readyRevision,
+      revisions: [readyRevision],
+    }
+    const readyWorkspace = {
+      ...loadedCalendarWorkspaceFixture(),
+      selectedRevision: {
+        ...loadedCalendarWorkspaceFixture().selectedRevision,
+        lifecycleState: 'ready_for_review' as const,
+      },
+      availableContexts: {
+        ...loadedCalendarWorkspaceFixture().availableContexts,
+        activeWorking: {
+          ...loadedCalendarWorkspaceFixture().availableContexts.activeWorking!,
+          lifecycleState: 'ready_for_review' as const,
+        },
+      },
+      workspaceToken: 'working-ready-v2',
+    }
+    let readyPhase = false
+    mocks.transitionScheduleRevision.mockImplementation(async () => {
+      readyPhase = true
+      return ready
+    })
+    mocks.getScheduleLifecycle.mockImplementation(async () => readyPhase ? ready : draft)
+    mocks.getCalendarWorkspace.mockImplementation(async () => (
+      readyPhase ? readyWorkspace : loadedCalendarWorkspaceFixture()
+    ))
+
+    await renderPage()
+    await act(async () => {
+      button('Mark ready for review')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.body.textContent).toContain('Ready for review (not approved)')
+    expect(document.body.textContent).toContain('Revision marked Ready for review.')
+  })
+
+  it('hands calendar teaching edit and deletion into the established workflows', async () => {
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    await renderPage()
+    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+        .find((item) => item.textContent?.includes('Teaching'))?.click()
+    })
+    await act(async () => button('Edit with existing editor')?.click())
+    expect(button('Save')).toBeTruthy()
+    await act(async () => button('Cancel')?.click())
+
+    await act(async () => button('Week')?.click())
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+        .find((item) => item.textContent?.includes('Teaching'))?.click()
+    })
+    await act(async () => button('Delete with confirmation')?.click())
+    expect(document.body.textContent).toContain('Delete this Draft Session?')
+    expect(mocks.deleteDraftSession).not.toHaveBeenCalled()
+    await act(async () => button('Cancel')?.click())
+  })
+
+  it('hands calendar exam edit and deletion into the established workflows', async () => {
+    const activeExam = {
+      id: 1,
+      revision: 1,
+      courseId: 1,
+      semesterId: 1,
+      configurationIdentifier: 'FINAL',
+      examType: 'Written',
+      durationMinutes: 120,
+      requiredCapacity: 30,
+      recommendedStartDate: '2026-12-08',
+      recommendedEndDate: '2026-12-15',
+      recommendationWasOverridden: true,
+      outsideRecommendedWindow: false,
+      finalTeachingAnchor: {
+        date: '2026-12-01',
+        endTime: '12:00',
+        teachingSessionId: 1,
+      },
+      date: '2026-12-10',
+      startTime: '09:00',
+      endTime: '11:00',
+      lecturer: { id: 1, name: 'Ada', referenceCode: 'L-1' },
+      cohort: { id: 1, name: 'C1', referenceCode: null },
+      room: {
+        id: 3,
+        name: 'Large room',
+        referenceCode: 'ROOM-003',
+        capacity: 40,
+      },
+      lifecycleStatus: 'active' as const,
+      source: 'manual' as const,
+      validityIssues: [],
+      inputSnapshotToken: 'exam-token',
+    }
+    const configuration = {
+      id: 10,
+      revision: 1,
+      identifier: 'FINAL',
+      durationMinutes: 120,
+      recommendedStartOverride: null,
+      recommendedEndOverride: null,
+      requiredCapacity: 30,
+      examType: 'Written',
+      responsibleLecturerId: 1,
+      configurationConsumed: true,
+      recommendedStartDate: '2026-12-08',
+      recommendedEndDate: '2026-12-15',
+      recommendationWasOverridden: true,
+    }
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      lecturers: [{ id: 1, name: 'Ada', referenceCode: 'L-1', isActive: true, revision: 1 }],
+      courseResources: [{
+        courseId: 1,
+        eligibleLecturers: [{ id: 1, name: 'Ada', referenceCode: 'L-1', kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [] }],
+        eligibleRooms: [{ id: 3, name: 'Large room', referenceCode: 'ROOM-003', kind: 'room', capacity: 40, isActive: true, isEligible: true, isUsable: true, reasons: [] }],
+        preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true },
+      }],
+    })
+    mocks.getExamPlanningOverview.mockResolvedValue({
+      ...examOverview,
+      courses: examOverview.courses.map((course) => course.courseId === 1
+        ? {
+            ...course,
+            enabled: true,
+            configuration,
+            finalTeachingAnchor: activeExam.finalTeachingAnchor,
+            activeExam,
+            generationEligibility: {
+              eligible: false,
+              code: 'ACTIVE_EXAM_EXISTS',
+              message: 'An active exam already exists.',
+            },
+          }
+        : course),
+    })
+
+    await renderPage()
+    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-12-10')
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+        .find((item) => item.textContent?.includes('Exam'))?.click()
+    })
+    await act(async () => button('Edit with existing editor')?.click())
+    expect(document.body.textContent).toContain('Correct active exam')
+    await act(async () => button('Cancel')?.click())
+
+    await act(async () => button('Delete with confirmation')?.click())
+    expect(document.body.textContent).toContain('Delete active exam?')
+    expect(mocks.deleteExam).not.toHaveBeenCalled()
+    await act(async () => button('Cancel')?.click())
+  })
+
   it('does not label live schedules as a publication while its snapshot is loading', async () => {
     const draft = lifecycleOverviewFixture().activeWorkingRevision!
     const published = {
@@ -565,6 +1033,82 @@ describe('CourseSchedulePage manual session creation', () => {
     })
     expect(mocks.createManualDraftSession).toHaveBeenCalledWith(1, expect.objectContaining({ endTime: '10:15', units: 2, roomId: 3 }))
     expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(2)
+  })
+
+  it('defaults manual resources from the course and submits active lecturer and cohort overrides', async () => {
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      courses: [{
+        ...options.courses[0],
+        lecturer: entity(1, 'Ada'),
+        cohort: entity(1, 'Cohort 30'),
+        cohortSize: 30,
+        room: entity(3, 'Large room'),
+      }],
+      lecturers: [
+        { id: 1, name: 'Ada', referenceCode: 'LEC-001', isActive: true, revision: 1 },
+        { id: 2, name: 'Grace', referenceCode: 'LEC-002', isActive: true, revision: 1 },
+      ],
+      cohorts: [
+        { id: 1, name: 'Cohort 30', studentCount: 30 },
+        { id: 2, name: 'Cohort 20', studentCount: 20 },
+      ],
+      rooms: [
+        { id: 3, name: 'Large room', referenceCode: 'ROOM-003', capacity: 40, isActive: true, revision: 1 },
+        { id: 4, name: 'Small room', referenceCode: 'ROOM-004', capacity: 25, isActive: true, revision: 1 },
+      ],
+    })
+    mocks.createManualDraftSession.mockResolvedValue({ courseId: 1, semesterId: 1, scheduledUnits: 2, remainingUnits: 6, draftSchedule: null })
+    await renderPage()
+
+    const lecturer = document.querySelector<HTMLSelectElement>('select[name="manual-lecturer"]')!
+    const cohort = document.querySelector<HTMLSelectElement>('select[name="manual-cohort"]')!
+    const room = document.querySelector<HTMLSelectElement>('select[name="manual-room"]')!
+    expect(lecturer.value).toBe('1')
+    expect(cohort.value).toBe('1')
+    expect(room.value).toBe('3')
+    expect([...room.options].map((item) => item.text)).not.toContain('Small room (25 seats)')
+
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(lecturer, '2')
+      lecturer.dispatchEvent(new Event('change', { bubbles: true }))
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(cohort, '2')
+      cohort.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect([...room.options].map((item) => item.text)).toContain('Small room (25 seats)')
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(room, '4')
+      room.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => {
+      button('Add Draft Session')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(mocks.createManualDraftSession).toHaveBeenCalledWith(1, expect.objectContaining({
+      lecturerId: 2,
+      cohortId: 2,
+      roomId: 4,
+    }))
+  })
+
+  it('resets inherited manual-resource defaults when the selected course changes', async () => {
+    await renderPage()
+    const courseSelector = document.querySelector<HTMLSelectElement>('.planning-selectors select')!
+
+    expect(document.querySelector<HTMLSelectElement>('select[name="manual-lecturer"]')?.value).toBe('1')
+    expect(document.querySelector<HTMLSelectElement>('select[name="manual-cohort"]')?.value).toBe('1')
+
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(
+        courseSelector,
+        '2',
+      )
+      courseSelector.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+
+    expect(document.querySelector<HTMLSelectElement>('select[name="manual-lecturer"]')?.value).toBe('2')
+    expect(document.querySelector<HTMLSelectElement>('select[name="manual-cohort"]')?.value).toBe('2')
   })
 
   it('reports a saved mutation whose overview refresh failed and blocks another write until retry succeeds', async () => {

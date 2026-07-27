@@ -33,9 +33,9 @@ Represents one generated, manually edited, or manually created teaching occurren
 - `id`: Stable session identity.
 - `draft_schedule_id`: Required parent.
 - `course_id`: Same course as the parent.
-- `lecturer_id`: Inherited from the current course when manually created.
-- `cohort_id`: Inherited from the current course when manually created.
-- `room_id`: Existing room selected by the planner.
+- `lecturer_id`: Defaults from the current course and may be overridden with an active Lecturer for the manually created session.
+- `cohort_id`: Defaults from the current course and may be overridden with an active Cohort for the manually created session.
+- `room_id`: Defaults from the current course and may be overridden with an active capacity-valid Room.
 - `date`: Session date.
 - `start_time`, `end_time`: Final clock interval, including any planner override.
 - `units`: Positive whole teaching-unit count used for scheduled/remaining calculations.
@@ -69,8 +69,9 @@ Represents saved planning limits for one course and semester.
 ### FS-009 rules
 
 - Schedule deletion never deletes or updates a source entity.
-- Manual creation reads the Course's current Lecturer and Cohort.
-- The planner may select any existing Room; capacity is the hard selection rule in this slice.
+- Manual creation reads the Course's current Lecturer, Cohort, and preferred Room as defaults.
+- The planner may override the session with any active Lecturer and active Cohort.
+- The planner may select any active Room; the selected Cohort's current size is the hard capacity rule in this slice.
 - FS-008 eligible-resource and availability relationships are not required or enforced by FS-009.
 
 ## Derived Concept: Course-Semester Progress

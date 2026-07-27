@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models.planning import Cohort, Course, DraftSchedule, Room, GenerationConstraintSet, GenerationConstraintWindow, InstitutionHoliday
+from app.models.planning import Cohort, Course, DraftSchedule, Room, GenerationConstraintSet, GenerationConstraintWindow, InstitutionHoliday, PlanningOutcome
 from tests.optimization_fixtures import seed_optimization_planner
 from app.services.draft_schedule_repository import get_draft_schedule, load_course_plan, replace_draft_schedule
 from app.services.schedule_generation import GeneratedSession
@@ -63,6 +63,10 @@ def test_prepare_deduplicates_dates_and_generate_returns_proven_complete_saved_r
     assert generated.status_code == 200
     assert generated.json()["summary"]["complete"] == 2
     assert generated.json()["summary"]["optimalForPreparedSnapshot"] is True
+    assert [
+        (row.course_id, row.classification)
+        for row in db_session.query(PlanningOutcome).order_by(PlanningOutcome.course_id)
+    ] == [(1, "successful"), (2, "successful")]
 
 
 def test_optimizer_api_keeps_caller_dates_unchanged_and_returns_named_holiday_reason(client, db_session):
@@ -114,6 +118,7 @@ def test_optimizer_api_rejects_holiday_snapshot_change_without_saving(client, db
     assert generated.json()["outcomes"][0]["status"] == "stale"
     assert generated.json()["outcomes"][0]["saved"] is False
     assert db_session.query(DraftSchedule).count() == 0
+    assert db_session.query(PlanningOutcome).one().classification == "stale"
 
 
 @pytest.mark.parametrize("course_ids", [[], list(range(1, 22)), [1, 1]])
@@ -203,6 +208,41 @@ def test_confirmed_equal_non_improvement_preserves_current_draft(client, db_sess
     assert response.json()["outcomes"][0]["status"] == "unchanged"
     assert response.json()["outcomes"][0]["saved"] is False
     assert get_draft_schedule(db_session, 1, 1).revision == 1
+    assert db_session.query(PlanningOutcome).one().classification == "unchanged"
+
+
+def test_saved_partial_improvement_is_retained_as_a_successful_completed_result(client, db_session):
+    seed_optimization_planner(db_session, course_count=1, total_units=8)
+    db_session.add(GenerationConstraintSet(
+        course_id=1,
+        semester_id=1,
+        planning_start_date=date(2026, 9, 7),
+        planning_end_date=date(2026, 9, 7),
+        windows=[GenerationConstraintWindow(
+            source_time_window_id=1,
+            weekday=0,
+            start_time=time(8),
+            end_time=time(12),
+            sort_order=1,
+        )],
+    ))
+    db_session.commit()
+    prepared = client.post(
+        "/api/draft-schedules/optimization/prepare",
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
+    ).json()
+
+    response = client.post(
+        "/api/draft-schedules/optimization/generate",
+        json=generation_payload(prepared),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["outcomes"][0]["status"] == "improved_partial"
+    assert response.json()["outcomes"][0]["saved"] is True
+    outcome = db_session.query(PlanningOutcome).one()
+    assert outcome.classification == "successful"
+    assert outcome.source_status == "improved_partial"
 
 
 def test_confirmed_equal_unit_conflict_reduction_replaces_current_draft(client, db_session):
@@ -273,6 +313,10 @@ def test_mixed_saved_failed_and_post_solve_stale_outcomes_share_one_response(cli
         "optimalForPreparedSnapshot": True,
     }
     assert [item["status"] for item in body["outcomes"]] == ["complete", "failed", "stale"]
+    assert [
+        (row.course_id, row.classification)
+        for row in db_session.query(PlanningOutcome).order_by(PlanningOutcome.course_id)
+    ] == [(1, "successful"), (2, "failed"), (3, "stale")]
     assert db_session.query(DraftSchedule).filter_by(course_id=1, semester_id=1).count() == 1
     assert db_session.query(DraftSchedule).filter_by(course_id=2, semester_id=1).count() == 0
     assert db_session.query(DraftSchedule).filter_by(course_id=3, semester_id=1).count() == 0

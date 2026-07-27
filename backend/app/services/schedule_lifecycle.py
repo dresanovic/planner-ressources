@@ -228,7 +228,7 @@ def transition_revision(
         snapshot = _build_snapshot(db, revision.semester_id, changed_at)
         from_state = revision.state
         revision.state = "abandoned"
-        revision.snapshot_schema_version = 1
+        revision.snapshot_schema_version = snapshot["schemaVersion"]
         revision.snapshot_document = snapshot
         revision.state_changed_at = changed_at
         revision.updated_at = changed_at
@@ -282,7 +282,7 @@ def transition_revision(
         current.row_version += 1
         _append_event(db, current, "superseded", "published", "superseded", captured_at)
     revision.state = "published"
-    revision.snapshot_schema_version = 1
+    revision.snapshot_schema_version = snapshot["schemaVersion"]
     revision.snapshot_document = snapshot
     revision.published_at = captured_at
     revision.state_changed_at = captured_at
@@ -406,6 +406,26 @@ def _build_snapshot(
             .order_by(Course.id)
         ).unique()
     )
+    saved_constraints = {
+        row.course_id: row
+        for row in db.scalars(
+            select(GenerationConstraintSet)
+            .where(GenerationConstraintSet.semester_id == semester_id)
+            .options(selectinload(GenerationConstraintSet.windows))
+        )
+    }
+    study_type_ids = {course.study_type_id for course in courses}
+    default_windows: dict[int, list[StudyTypeTimeWindow]] = {}
+    if study_type_ids:
+        for window in db.scalars(
+            select(StudyTypeTimeWindow)
+            .where(
+                StudyTypeTimeWindow.study_type_id.in_(study_type_ids),
+                StudyTypeTimeWindow.is_active.is_(True),
+            )
+            .order_by(StudyTypeTimeWindow.study_type_id, StudyTypeTimeWindow.sort_order)
+        ):
+            default_windows.setdefault(window.study_type_id, []).append(window)
     conditions: list[dict[str, Any]] = []
     captured_courses: list[dict[str, Any]] = []
     for course in courses:
@@ -413,6 +433,19 @@ def _build_snapshot(
         sessions = list(draft.sessions) if draft else []
         scheduled = sum(item.units for item in sessions)
         remaining = max(course.total_units - scheduled, 0)
+        saved_constraint = saved_constraints.get(course.id)
+        if saved_constraint is None:
+            constraint_windows = default_windows.get(course.study_type_id, [])
+            planning_start_date = semester.start_date
+            planning_end_date = semester.end_date
+            source_revision = None
+            is_custom = False
+        else:
+            constraint_windows = list(saved_constraint.windows)
+            planning_start_date = saved_constraint.planning_start_date
+            planning_end_date = saved_constraint.planning_end_date
+            source_revision = saved_constraint.revision
+            is_custom = True
         if remaining:
             conditions.append(
                 {
@@ -504,6 +537,24 @@ def _build_snapshot(
                 "remainingUnits": remaining,
                 "draftStatus": draft.status if draft else None,
                 "teachingSessions": captured_sessions,
+                "constraintProfile": {
+                    "isCustom": is_custom,
+                    "sourceRevision": source_revision,
+                    "planningStartDate": planning_start_date.isoformat(),
+                    "planningEndDate": planning_end_date.isoformat(),
+                    "allowedTeachingWindows": [
+                        {
+                            "sourceTimeWindowId": window.source_time_window_id
+                            if hasattr(window, "source_time_window_id")
+                            else window.id,
+                            "weekday": window.weekday,
+                            "startTime": window.start_time.isoformat(),
+                            "endTime": window.end_time.isoformat(),
+                            "sortOrder": window.sort_order,
+                        }
+                        for window in constraint_windows
+                    ],
+                },
             }
         )
 
@@ -618,7 +669,7 @@ def _build_snapshot(
             )
 
     return {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "capturedAt": _iso(captured_at),
         "semester": {
             "sourceId": semester.id,

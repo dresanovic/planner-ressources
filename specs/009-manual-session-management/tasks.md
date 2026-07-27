@@ -253,3 +253,15 @@ Task T038: Full-confirmation/page tests in ScheduleDeletionDialog.test.tsx and C
 - Use ORM parent deletion so the existing relationship cascade removes sessions; do not assume database-level `ON DELETE CASCADE`.
 - Tests must fail for the intended missing behavior before implementing the corresponding production task wherever practical.
 - Preserve unrelated worktree changes and create a feature branch before production implementation unless the constitution's clean solo-work condition for `master` is satisfied.
+
+---
+
+## Phase 7: Manual Resource Overrides
+
+- [X] T048 Update FS-009 requirements, data model, OpenAPI contract, plan, and roadmap wording so manual sessions default Lecturer, Cohort, and Room from the Course while permitting session-only dropdown overrides from active records.
+- [X] T049 Add failing backend planning-options, manual-session API, repository, and validation tests for active Lecturer/Cohort options, persisted overrides, inactive/missing references, and capacity against the selected Cohort.
+- [X] T050 Add failing client API and page tests for inherited defaults, all-active Lecturer/Cohort dropdowns, selected-Cohort room capacity, override payloads, and reset when Course/Semester changes.
+- [X] T051 Implement additive active Cohort planning options and explicit `lecturerId`/`cohortId` manual-session request fields across backend and client contracts.
+- [X] T052 Persist and validate planner-selected Lecturer, Cohort, and Room references in manual Draft Session creation without changing the Course or applying course-eligibility filtering.
+- [X] T053 Replace read-only Lecturer/Cohort fields with accessible dropdowns defaulted from the Course, recalculate capacity-valid Rooms from the selected Cohort, and preserve existing remaining-unit/alert refresh behavior.
+- [ ] T054 Run focused backend/client tests, complete suites, lint, build, and manual dropdown verification; record any remaining risk.

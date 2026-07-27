@@ -116,7 +116,7 @@ describe('manual Draft Session mutation contracts', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    const payload = { semesterId: 1, scheduleRevisionId: 11, date: '2026-09-07', startTime: '08:00', endTime: '09:45', units: 4, roomId: 3 }
+    const payload = { semesterId: 1, scheduleRevisionId: 11, date: '2026-09-07', startTime: '08:00', endTime: '09:45', units: 4, lecturerId: 2, cohortId: 4, roomId: 3 }
     await expect(createManualDraftSession(1, payload)).rejects.toEqual([
       { code: 'UNITS_EXCEED_REMAINING', message: 'Only 2 units remain.' },
     ])

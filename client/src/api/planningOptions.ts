@@ -39,9 +39,16 @@ export type RoomOption = {
   capacity: number
 }
 
+export type CohortOption = {
+  id: number
+  name: string
+  studentCount: number
+}
+
 export type PlanningOptions = {
   courses: CourseOption[]
   semesters: SemesterOption[]
+  cohorts: CohortOption[]
   timeWindows: TimeWindowOption[]
   rooms: RoomRecord[]
   lecturers: LecturerRecord[]

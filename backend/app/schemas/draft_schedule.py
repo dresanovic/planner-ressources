@@ -206,6 +206,8 @@ class CreateManualDraftSessionRequest(BaseModel):
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
     units: Any = Field(json_schema_extra={"type": "integer", "minimum": 1})
+    lecturer_id: int = Field(alias="lecturerId", ge=1)
+    cohort_id: int = Field(alias="cohortId", ge=1)
     room_id: int = Field(alias="roomId")
 
 

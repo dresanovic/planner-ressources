@@ -50,11 +50,20 @@ class RoomOptionResponse(BaseModel):
     capacity: int
 
 
+class CohortOptionResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: int
+    name: str
+    student_count: int = Field(alias="studentCount")
+
+
 class PlanningOptionsResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     courses: list[CourseOptionResponse]
     semesters: list[SemesterOptionResponse]
+    cohorts: list[CohortOptionResponse]
     time_windows: list[TimeWindowOptionResponse] = Field(alias="timeWindows")
     rooms: list[RoomRecord]
     lecturers: list[LecturerRecord]

@@ -25,7 +25,12 @@ def initialize_database(engine: Engine) -> None:
                 Base.metadata.create_all(bind=connection)
                 inspector = inspect(connection)
             elif not _is_current_schema(inspector):
-                if _has_any_lifecycle_table(inspector):
+                if _is_pre_calendar_workspace_schema(inspector):
+                    migration = _load_migration("0008_calendar_workspace_outcomes.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                    inspector = inspect(connection)
+                elif _has_any_lifecycle_table(inspector):
                     raise UnsupportedSchemaStateError(
                         "Database schema is not a supported FS-001 through FS-012 state or a complete FS-013 state. "
                         "Back up the database and inspect its lifecycle tables."
@@ -71,10 +76,16 @@ def initialize_database(engine: Engine) -> None:
                     migration = _load_migration("0007_versioned_schedule_lifecycle.py")
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
+                    inspector = inspect(connection)
+
+                if _is_pre_calendar_workspace_schema(inspector):
+                    migration = _load_migration("0008_calendar_workspace_outcomes.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
 
                 if not _is_current_schema(inspect(connection)):
                     raise UnsupportedSchemaStateError(
-                        "FS-013 database migration completed without producing the expected schema."
+                        "FS-014 database migration completed without producing the expected schema."
                     )
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=ON")
@@ -83,6 +94,36 @@ def initialize_database(engine: Engine) -> None:
 
 
 def _is_current_schema(inspector) -> bool:
+    tables = set(inspector.get_table_names())
+    return (
+        _has_complete_lifecycle_schema(inspector)
+        and "planning_outcomes" in tables
+        and {
+            "schedule_revision_id",
+            "course_id",
+            "operation_kind",
+            "classification",
+            "source_status",
+            "result_payload",
+            "completed_at",
+        }.issubset(_column_names(inspector, "planning_outcomes"))
+        and _has_unique_columns(
+            inspector,
+            "planning_outcomes",
+            ("schedule_revision_id", "course_id", "operation_kind"),
+        )
+    )
+
+
+def _is_pre_calendar_workspace_schema(inspector) -> bool:
+    tables = set(inspector.get_table_names())
+    return (
+        _has_complete_lifecycle_schema(inspector)
+        and "planning_outcomes" not in tables
+    )
+
+
+def _has_complete_lifecycle_schema(inspector) -> bool:
     tables = set(inspector.get_table_names())
     return (
         _is_pre_lifecycle_schema(inspector)

@@ -66,6 +66,12 @@ import { ScheduleLifecyclePanel } from '../components/ScheduleLifecyclePanel'
 import { PublicationConfirmationDialog } from '../components/PublicationConfirmationDialog'
 import { AbandonRevisionDialog } from '../components/AbandonRevisionDialog'
 import { snapshotExamCourseNames, snapshotExams, snapshotSchedules } from './scheduleSnapshot'
+import {
+  getCalendarWorkspace,
+  type CalendarWorkspace,
+} from '../api/calendarWorkspace'
+import { CalendarPlanningWorkspace } from '../components/CalendarPlanningWorkspace'
+import { calendarWorkspaceMatchesSelection } from './calendarWorkspaceSelection'
 
 type GenerationMode = 'single' | 'batch'
 type SessionDeletionConfirmation = {
@@ -114,6 +120,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const [deletionBusy, setDeletionBusy] = useState(false)
   const [deletionErrors, setDeletionErrors] = useState<GenerationFailure[]>([])
   const [deletionNotice, setDeletionNotice] = useState('')
+  const [calendarTeachingEditSessionId, setCalendarTeachingEditSessionId] = useState<number | null>(null)
   const [examOverview, setExamOverview] = useState<ExamPlanningOverview | null>(null)
   const [examRefreshError, setExamRefreshError] = useState(false)
   const [examBusy, setExamBusy] = useState(false)
@@ -130,6 +137,11 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const [revisionLoadFailure, setRevisionLoadFailure] = useState<{ revisionId: number; message: string } | null>(null)
   const [revisionLoadAttempt, setRevisionLoadAttempt] = useState(0)
   const [abandonRevision, setAbandonRevision] = useState<ScheduleRevisionSummary | null>(null)
+  const [calendarWorkspace, setCalendarWorkspace] = useState<CalendarWorkspace | null>(null)
+  const [calendarWorkspaceLoading, setCalendarWorkspaceLoading] = useState(false)
+  const [calendarWorkspaceError, setCalendarWorkspaceError] = useState('')
+  const [calendarWorkspaceRefresh, setCalendarWorkspaceRefresh] = useState(0)
+  const calendarRequestSequence = useRef(0)
   const selectedCourseIdRef = useRef<number | null>(null)
   const selectedSemesterIdRef = useRef<number | null>(null)
 
@@ -166,10 +178,6 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     () => schedules.find((schedule) => schedule.courseId === selectedCourseId && schedule.semesterId === selectedSemesterId) ?? null,
     [schedules, selectedCourseId, selectedSemesterId],
   )
-  const capacityValidRooms = useMemo(
-    () => planningOptions?.rooms.filter((room) => selectedCourse != null && room.capacity >= selectedCourse.cohortSize) ?? [],
-    [planningOptions, selectedCourse],
-  )
   const activeScheduleRevisionId = lifecycleOverview?.activeWorkingRevision?.revisionId ?? null
   const selectedLifecycleRevision = lifecycleOverview?.revisions.find((item) => item.revisionId === selectedLifecycleRevisionId) ?? lifecycleOverview?.activeWorkingRevision ?? lifecycleOverview?.currentPublication ?? null
   const mutationBusy = singleGenerating || batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
@@ -189,6 +197,15 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const displaySchedules = selectedRevisionNeedsSnapshot ? (displayedRevisionContent ? snapshotSchedules(displayedRevisionContent) : []) : schedules
   const displayExams = selectedRevisionNeedsSnapshot ? (displayedRevisionContent ? snapshotExams(displayedRevisionContent) : []) : allExams
   const displayExamCourseNames = displayedRevisionContent ? snapshotExamCourseNames(displayedRevisionContent) : examCourseNames
+  const calendarWorkspaceMatchesIntended = calendarWorkspaceMatchesSelection(
+    calendarWorkspace,
+    selectedSemesterId,
+    selectedLifecycleRevision,
+  )
+  const displayedCalendarWorkspace = calendarWorkspaceMatchesIntended ? calendarWorkspace : null
+  const intendedCalendarContext = selectedSemester
+    ? `${selectedSemester.name} · ${selectedLifecycleRevision ? `Revision ${selectedLifecycleRevision.revisionNumber} · ${selectedLifecycleRevision.isCurrentPublication ? 'Current Published' : 'Active Working'}` : 'No revision'}`
+    : undefined
 
   useEffect(() => {
     let current = true
@@ -295,6 +312,34 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     return () => { current = false }
   }, [selectedLifecycleRevision?.revisionId, selectedLifecycleRevision?.isActiveWorking, revisionLoadAttempt])
 
+  useEffect(() => {
+    if (!selectedSemesterId) return
+    const permittedRevision = selectedLifecycleRevision?.isActiveWorking || selectedLifecycleRevision?.isCurrentPublication
+      ? selectedLifecycleRevision.revisionId
+      : undefined
+    if (selectedLifecycleRevision && !permittedRevision) {
+      return
+    }
+    const sequence = ++calendarRequestSequence.current
+    queueMicrotask(() => {
+      if (calendarRequestSequence.current !== sequence) return
+      setCalendarWorkspaceLoading(true)
+      setCalendarWorkspaceError('')
+    })
+    void getCalendarWorkspace(selectedSemesterId, permittedRevision)
+      .then((value) => {
+        if (calendarRequestSequence.current === sequence) setCalendarWorkspace(value)
+      })
+      .catch((reason) => {
+        if (calendarRequestSequence.current === sequence) {
+          setCalendarWorkspaceError(reason instanceof Error ? reason.message : 'Could not load the calendar workspace.')
+        }
+      })
+      .finally(() => {
+        if (calendarRequestSequence.current === sequence) setCalendarWorkspaceLoading(false)
+      })
+  }, [selectedSemesterId, selectedLifecycleRevision, calendarWorkspaceRefresh])
+
   async function refreshExamOverview(semesterId = selectedSemesterId) {
     if (!semesterId) return false
     try { const value = await getExamPlanningOverview(semesterId); if (selectedSemesterIdRef.current === semesterId) { setExamOverview(value); setExamRefreshError(false) }; return true } catch { if (selectedSemesterIdRef.current === semesterId) setExamRefreshError(true); return false }
@@ -322,17 +367,29 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     setOverviewLoading(true)
     setOverviewRefreshError(false)
     try {
-      const [current, currentExams, currentLifecycle] = await Promise.all([
-        getDraftSchedules(semesterId),
-        getExamPlanningOverview(semesterId),
+      const criticalWorkspaceRefresh = Promise.all([
         getScheduleLifecycle(semesterId),
+        getCalendarWorkspace(semesterId),
+      ]).then(([currentLifecycle, currentCalendarWorkspace]) => {
+        calendarRequestSequence.current += 1
+        setLifecycleOverview(currentLifecycle)
+        setLifecycleRefreshError(false)
+        setCalendarWorkspace(currentCalendarWorkspace)
+        setCalendarWorkspaceError('')
+        setCalendarWorkspaceLoading(false)
+        setSelectedLifecycleRevisionId((selected) => currentLifecycle.revisions.some((item) => item.revisionId === selected) ? selected : currentLifecycle.activeWorkingRevision?.revisionId ?? currentLifecycle.currentPublication?.revisionId ?? null)
+        return currentLifecycle
+      })
+      const [[current, currentExams]] = await Promise.all([
+        Promise.all([
+          getDraftSchedules(semesterId),
+          getExamPlanningOverview(semesterId),
+        ]),
+        criticalWorkspaceRefresh,
       ])
       setSchedules(current)
       setExamOverview(currentExams)
       setExamRefreshError(false)
-      setLifecycleOverview(currentLifecycle)
-      setLifecycleRefreshError(false)
-      setSelectedLifecycleRevisionId((selected) => currentLifecycle.revisions.some((item) => item.revisionId === selected) ? selected : currentLifecycle.activeWorkingRevision?.revisionId ?? currentLifecycle.currentPublication?.revisionId ?? null)
       setLoadedOverviewSemesterId(semesterId)
       setDeletionNotice('')
       if (resetInteractions) setOverviewResetKey((key) => key + 1)
@@ -647,6 +704,36 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     }
   }
 
+  function beginCalendarTeachingDeletion(occurrenceRef: string) {
+    const sessionId = Number(occurrenceRef.split(':')[1])
+    for (const schedule of displaySchedules) {
+      const session = schedule.sessions.find((item) => item.id === sessionId)
+      if (session) {
+        beginSessionDeletion(session, schedule)
+        return
+      }
+    }
+  }
+
+  function beginCalendarTeachingEdit(occurrenceRef: string) {
+    const sessionId = Number(occurrenceRef.split(':')[1])
+    if (Number.isInteger(sessionId)) setCalendarTeachingEditSessionId(sessionId)
+  }
+
+  function editCalendarExam(occurrenceRef: string) {
+    const examId = Number(occurrenceRef.split(':')[1])
+    const exam = displayExams.find((item) => item.id === examId)
+    if (!exam) return
+    setSelectedCourseId(exam.courseId)
+    setExamEditor(exam)
+  }
+
+  function deleteCalendarExam(occurrenceRef: string) {
+    const examId = Number(occurrenceRef.split(':')[1])
+    const exam = displayExams.find((item) => item.id === examId)
+    if (exam) setExamDeletion(exam)
+  }
+
   return (
     <>
       <section className="workbench">
@@ -677,10 +764,12 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
                     {planningSelectionInvalid && <div className="refresh-error" role="alert">{semesterSelectionMissing ? 'The selected Semester is no longer available. Choose another Semester.' : courseSelectionInvalid ? 'This Course is not assigned to the selected Semester. Choose another Course.' : `This Course is unavailable: ${selectedCourse?.availability?.reasons.join(', ')}`}</div>}
                     {selectedCourse && selectedSemester && (
                       <ManualSessionEditor
-                        key={`${selectedCourse.id}-${selectedSemester.id}-${loadedOverviewSemesterId ?? 'loading'}-${capacityValidRooms.map((room) => room.id).join('-')}`}
+                        key={`${selectedCourse.id}-${selectedSemester.id}-${loadedOverviewSemesterId ?? 'loading'}-${planningOptions.lecturers.map((item) => item.id).join('-')}-${planningOptions.cohorts.map((item) => item.id).join('-')}-${planningOptions.rooms.map((item) => item.id).join('-')}`}
                         course={selectedCourse}
                         semester={selectedSemester}
-                        rooms={capacityValidRooms}
+                        lecturers={planningOptions.lecturers}
+                        cohorts={planningOptions.cohorts}
+                        rooms={planningOptions.rooms}
                         remainingUnits={selectedProgress?.remainingUnits ?? 0}
                         isBusy={writeBusy || selectedProgress == null || planningSelectionInvalid}
                         isSaving={manualSaving}
@@ -705,6 +794,42 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
           </section>
 
           <div className="schedule-results">
+            {selectedRevisionAvailable && (!selectedLifecycleRevision || selectedLifecycleRevision.isActiveWorking || selectedLifecycleRevision.isCurrentPublication) && <CalendarPlanningWorkspace
+              key={selectedSemesterId ?? 'no-semester'}
+              workspace={displayedCalendarWorkspace}
+              loading={calendarWorkspaceLoading || (!calendarWorkspaceMatchesIntended && !calendarWorkspaceError)}
+              error={calendarWorkspaceError || undefined}
+              lastKnown={calendarWorkspaceMatchesIntended}
+              intendedContext={intendedCalendarContext}
+              onRetry={() => setCalendarWorkspaceRefresh((key) => key + 1)}
+              onStartDraft={() => void startInitialDraft()}
+              onSelectRevision={setSelectedLifecycleRevisionId}
+              onEditTeaching={beginCalendarTeachingEdit}
+              onDeleteTeaching={beginCalendarTeachingDeletion}
+              onEditExam={editCalendarExam}
+              onDeleteExam={deleteCalendarExam}
+              selectedCourseId={selectedCourseId}
+              onTraceCourse={setSelectedCourseId}
+              listContent={(workspaceListContext) => <DraftSchedulePanel
+                resetKey={overviewResetKey}
+                schedules={displaySchedules}
+                rooms={planningOptions?.rooms ?? []}
+                lecturers={planningOptions?.lecturers ?? []}
+                courseResources={planningOptions?.courseResources ?? []}
+                onUpdateSession={handleUpdateSession}
+                onDeleteSession={beginSessionDeletion}
+                isBusy={writeBusy}
+                exams={displayExams}
+                onEditExam={(exam)=>{ setSelectedCourseId(exam.courseId); setExamEditor(exam) }}
+                onDeleteExam={setExamDeletion}
+                examCourseNames={displayExamCourseNames}
+                readOnly={selectedLifecycleRevision?.revisionId !== activeScheduleRevisionId}
+                contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Current publication' : 'Active working revision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
+                requestedEditSessionId={calendarTeachingEditSessionId}
+                onRequestedEditHandled={() => setCalendarTeachingEditSessionId(null)}
+                workspaceListContext={workspaceListContext}
+              />}
+            />}
             {lifecycleOverview && <ScheduleLifecyclePanel overview={lifecycleOverview} selectedRevisionId={selectedLifecycleRevision?.revisionId ?? null} busy={lifecycleBusy} onStartDraft={() => void startInitialDraft()} onSelectRevision={setSelectedLifecycleRevisionId} onPreparePublication={(revision) => void preparePublication(revision)} onTransition={(revision, action) => void handleLifecycleTransition(revision, action as 'mark_ready' | 'return_to_draft' | 'restore')} onAbandon={setAbandonRevision} />}
             {lifecycleError && <div className="refresh-error" role="alert">{lifecycleError}</div>}
             {revisionLoadFailure && revisionLoadFailure.revisionId === selectedLifecycleRevision?.revisionId && <div className="refresh-error" role="alert"><span>{revisionLoadFailure.message}</span><button type="button" onClick={() => { setRevisionLoadFailure(null); setRevisionLoadAttempt((attempt) => attempt + 1) }}>Retry selected revision</button></div>}
@@ -719,7 +844,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
             {deletionNotice && <div className="refresh-error" role="alert">{deletionNotice}</div>}
             {examRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh exam planning. The last complete exam view remains visible.</span><button type="button" onClick={()=>void refreshExamOverview()}>Retry exam refresh</button></div>}
             {selectedSemesterId && activeScheduleRevisionId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} scheduleRevisionId={activeScheduleRevisionId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshOverview(selectedSemesterId, false) }} />}
-            {selectedRevisionAvailable ? <DraftSchedulePanel
+            {selectedRevisionAvailable && selectedLifecycleRevision && !selectedLifecycleRevision.isActiveWorking && !selectedLifecycleRevision.isCurrentPublication ? <DraftSchedulePanel
               resetKey={overviewResetKey}
               schedules={displaySchedules}
               rooms={planningOptions?.rooms ?? []}
@@ -811,6 +936,8 @@ function PlanningSummary({ course, semester, progress, progressUnavailableLabel 
 function ManualSessionEditor({
   course,
   semester,
+  lecturers,
+  cohorts,
   rooms,
   remainingUnits,
   isBusy,
@@ -820,6 +947,8 @@ function ManualSessionEditor({
 }: {
   course: CourseOption
   semester: SemesterOption
+  lecturers: PlanningOptions['lecturers']
+  cohorts: PlanningOptions['cohorts']
   rooms: PlanningOptions['rooms']
   remainingUnits: number
   isBusy: boolean
@@ -828,20 +957,43 @@ function ManualSessionEditor({
   onSubmit: (payload: Omit<CreateManualDraftSessionRequest, 'scheduleRevisionId'>) => Promise<void>
 }) {
   const initialUnits = Math.min(2, Math.max(remainingUnits, 1))
+  const initialLecturerId = (
+    course.lecturer != null && lecturers.some((item) => item.id === course.lecturer!.id)
+      ? course.lecturer.id
+      : lecturers[0]?.id
+  ) ?? null
+  const initialCohortId = (
+    cohorts.some((item) => item.id === course.cohort.id)
+      ? course.cohort.id
+      : cohorts[0]?.id
+  ) ?? null
+  const initialCohortSize = cohorts.find((item) => item.id === initialCohortId)?.studentCount ?? course.cohortSize
+  const initialRooms = rooms.filter((room) => room.capacity >= initialCohortSize)
+  const initialRoomId = (
+    course.room != null && initialRooms.some((item) => item.id === course.room!.id)
+      ? course.room.id
+      : initialRooms[0]?.id
+  ) ?? null
   const [sessionDate, setSessionDate] = useState(semester.startDate)
   const [startTime, setStartTime] = useState('08:00')
   const [units, setUnits] = useState(initialUnits)
   const [endTime, setEndTime] = useState(calculateDefaultEndTime('08:00', initialUnits) ?? '')
-  const [roomId, setRoomId] = useState<number | null>(rooms[0]?.id ?? null)
+  const [lecturerId, setLecturerId] = useState<number | null>(initialLecturerId)
+  const [cohortId, setCohortId] = useState<number | null>(initialCohortId)
+  const [roomId, setRoomId] = useState<number | null>(initialRoomId)
   const [localError, setLocalError] = useState('')
+  const selectedCohort = cohorts.find((item) => item.id === cohortId)
+  const capacityValidRooms = rooms.filter(
+    (room) => selectedCohort != null && room.capacity >= selectedCohort.studentCount,
+  )
 
   function submit() {
-    if (!roomId || !Number.isInteger(units) || units <= 0 || units > remainingUnits || !isValidSessionTimeRange(startTime, endTime)) {
-      setLocalError('Enter positive whole units within the remaining amount, a capacity-valid room, and an end time later than the start time.')
+    if (!lecturerId || !cohortId || !roomId || !capacityValidRooms.some((room) => room.id === roomId) || !Number.isInteger(units) || units <= 0 || units > remainingUnits || !isValidSessionTimeRange(startTime, endTime)) {
+      setLocalError('Select a Lecturer, Cohort, and capacity-valid Room; enter positive whole units within the remaining amount and an end time later than the start time.')
       return
     }
     setLocalError('')
-    void onSubmit({ semesterId: semester.id, date: sessionDate, startTime, endTime, units, roomId })
+    void onSubmit({ semesterId: semester.id, date: sessionDate, startTime, endTime, units, lecturerId, cohortId, roomId })
   }
 
   return (
@@ -853,12 +1005,24 @@ function ManualSessionEditor({
         <label className="constraint-field"><span>Units</span><input name="manual-units" type="number" min="1" step="1" max={remainingUnits} value={units} onChange={(event) => { const value = Number(event.target.value); setUnits(value); setEndTime(calculateDefaultEndTime(startTime, value) ?? '') }} /></label>
         <label className="constraint-field"><span>End time</span><input name="manual-end-time" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
       </div>
-      <label className="constraint-field"><span>Lecturer</span><input value={course.lecturer?.name ?? 'No course Lecturer'} readOnly /></label>
-      <label className="constraint-field"><span>Cohort</span><input value={`${course.cohort.name} (${course.cohortSize})`} readOnly /></label>
-      <label className="constraint-field"><span>Room</span><select value={roomId ?? ''} onChange={(event) => setRoomId(Number(event.target.value))}>{rooms.map((room) => <option key={room.id} value={room.id}>{room.name} ({room.capacity} seats)</option>)}</select></label>
+      <label className="constraint-field"><span>Lecturer</span><select name="manual-lecturer" value={lecturerId ?? ''} onChange={(event) => setLecturerId(Number(event.target.value))}>{lecturers.map((lecturer) => <option key={lecturer.id} value={lecturer.id}>{lecturer.name}</option>)}</select></label>
+      <label className="constraint-field"><span>Cohort</span><select name="manual-cohort" value={cohortId ?? ''} onChange={(event) => {
+        const nextCohortId = Number(event.target.value)
+        const nextCohortSize = cohorts.find((item) => item.id === nextCohortId)?.studentCount
+        const nextRooms = rooms.filter((room) => nextCohortSize != null && room.capacity >= nextCohortSize)
+        setCohortId(nextCohortId)
+        setRoomId((current) => (
+          current != null && nextRooms.some((room) => room.id === current)
+            ? current
+            : course.room != null && nextRooms.some((room) => room.id === course.room!.id)
+              ? course.room.id
+              : nextRooms[0]?.id ?? null
+        ))
+      }}>{cohorts.map((cohort) => <option key={cohort.id} value={cohort.id}>{cohort.name} ({cohort.studentCount})</option>)}</select></label>
+      <label className="constraint-field"><span>Room</span><select name="manual-room" value={roomId ?? ''} onChange={(event) => setRoomId(Number(event.target.value))}>{capacityValidRooms.map((room) => <option key={room.id} value={room.id}>{room.name} ({room.capacity} seats)</option>)}</select></label>
       {localError && <div className="alert-item" role="alert">{localError}</div>}
       {errors.length > 0 && <ErrorList errors={errors} />}
-      <button type="button" className="generate-button" onClick={submit} disabled={isBusy || !roomId || remainingUnits <= 0}>{isSaving ? 'Adding…' : 'Add Draft Session'}</button>
+      <button type="button" className="generate-button" onClick={submit} disabled={isBusy || !lecturerId || !cohortId || !roomId || remainingUnits <= 0}>{isSaving ? 'Adding…' : 'Add Draft Session'}</button>
       <p className="sr-only" aria-live="polite">{endTime ? `Proposed end time ${endTime}.` : ''}</p>
     </section>
   )

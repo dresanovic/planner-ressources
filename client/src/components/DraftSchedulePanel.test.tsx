@@ -14,6 +14,7 @@ import {
 import type { DraftSchedule, GenerationConstraints, UpdateDraftSessionRequest } from '../api/draftSchedule'
 import type { PlanningOptions } from '../api/planningOptions'
 import type { ExamSession } from '../api/examScheduling'
+import type { WorkspaceListContext } from './CalendarPlanningWorkspace'
 
 function renderPanel({
   schedules = [draftScheduleFixture],
@@ -25,6 +26,9 @@ function renderPanel({
   examCourseNames = {},
   readOnly = false,
   contextLabel,
+  requestedEditSessionId,
+  onRequestedEditHandled,
+  workspaceListContext,
 }: {
   schedules?: DraftSchedule[]
   onUpdateSession?: (sessionId: number, payload: Omit<UpdateDraftSessionRequest, 'scheduleRevisionId'>) => Promise<void>
@@ -35,6 +39,9 @@ function renderPanel({
   examCourseNames?: Record<number, string>
   readOnly?: boolean
   contextLabel?: string
+  requestedEditSessionId?: number | null
+  onRequestedEditHandled?: () => void
+  workspaceListContext?: WorkspaceListContext | null
 } = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
@@ -51,6 +58,9 @@ function renderPanel({
         examCourseNames={examCourseNames}
         readOnly={readOnly}
         contextLabel={contextLabel}
+        requestedEditSessionId={requestedEditSessionId}
+        onRequestedEditHandled={onRequestedEditHandled}
+        workspaceListContext={workspaceListContext}
       />,
     )
   })
@@ -102,6 +112,21 @@ function buttonByText(label: string) {
 }
 
 describe('DraftSchedulePanel', () => {
+  it('opens the established inline editor when requested by the calendar', async () => {
+    const onRequestedEditHandled = vi.fn()
+    renderPanel({
+      requestedEditSessionId: 2,
+      onRequestedEditHandled,
+    })
+
+    await act(async () => {})
+    expect(buttonByText('Save')).toBeDefined()
+    expect(document.querySelector<HTMLInputElement>('input[type="date"]')?.value).toBe(
+      draftScheduleFixture.sessions.find((session) => session.id === 2)?.date,
+    )
+    expect(onRequestedEditHandled).toHaveBeenCalledOnce()
+  })
+
   it('renders immutable publication context without teaching mutation controls', () => {
     renderPanel({ readOnly: true, contextLabel: 'Current publication · Revision 1' })
     expect(document.body.textContent).toContain('Current publication · Revision 1')
@@ -136,6 +161,34 @@ describe('DraftSchedulePanel', () => {
     expect(document.body.textContent).toContain('Ada Lovelace')
     expect(document.body.textContent).toContain('R1')
     expect(document.body.textContent).toContain('Full-time')
+  })
+
+  it('uses the shared workspace projection and focuses an exact trace target', async () => {
+    renderPanel({
+      schedules: [draftScheduleFixture, secondDraftScheduleFixture],
+      workspaceListContext: {
+        courseIds: [2],
+        teachingSessionIds: [3],
+        examIds: [],
+        activeFilterCount: 1,
+        traceTarget: {
+          reference: 'course:2',
+          label: 'Scheduling 201 · 2 units remaining',
+          courseIds: [2],
+          teachingSessionIds: [3],
+          examIds: [],
+        },
+      },
+    })
+
+    expect(document.body.textContent).toContain('Affected record')
+    expect(document.body.textContent).toContain('Scheduling 201 · 2 units remaining')
+    expect(document.body.textContent).not.toContain('Planning 101')
+    expect(document.querySelector('[aria-label="Draft session filters"]')).toBeNull()
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(document.activeElement).toBe(document.querySelector('[data-trace-reference="course:2"]'))
   })
 
   it('shows a no-schedule empty state', () => {

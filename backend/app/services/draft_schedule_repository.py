@@ -413,6 +413,8 @@ def create_manual_draft_session(
     start_time,
     end_time,
     units,
+    lecturer_id: int | None = None,
+    cohort_id: int | None = None,
     room_id: int,
 ) -> DraftSchedule:
     for _attempt in range(3):
@@ -430,15 +432,23 @@ def create_manual_draft_session(
             .one_or_none()
         )
         semester = db.get(Semester, semester_id)
+        selected_lecturer_id = lecturer_id if lecturer_id is not None else course.lecturer_id if course is not None else None
+        selected_cohort_id = cohort_id if cohort_id is not None else course.cohort_id if course is not None else None
+        lecturer = db.get(Lecturer, selected_lecturer_id) if selected_lecturer_id is not None else None
+        cohort = db.get(Cohort, selected_cohort_id) if selected_cohort_id is not None else None
         room = db.get(Room, room_id)
         if course is None:
             raise PlanningInputNotFoundError("Course not found.")
         if semester is None:
             raise PlanningInputNotFoundError("Semester not found.")
-        if course.cohort is None or course.lecturer is None or course.study_type is None:
+        if course.cohort is None or course.study_type is None:
             raise PlanningInputNotFoundError("Course planning input is incomplete.")
-        if room is None:
-            raise PlanningInputNotFoundError("Room not found.")
+        if lecturer is None or not lecturer.is_active:
+            raise PlanningInputNotFoundError("Selected Lecturer is unavailable.")
+        if cohort is None or not cohort.is_active:
+            raise PlanningInputNotFoundError("Selected Cohort is unavailable.")
+        if room is None or not room.is_active:
+            raise PlanningInputNotFoundError("Selected Room is unavailable.")
 
         draft = get_draft_schedule(db, course_id, semester_id)
         scheduled = sum(item.units for item in draft.sessions) if draft is not None else 0
@@ -447,7 +457,7 @@ def create_manual_draft_session(
             draft=draft,
             semester=semester,
             room=room,
-            cohort=course.cohort,
+            cohort=cohort,
             session_date=session_date,
             start_time=start_time,
             end_time=end_time,
@@ -467,8 +477,8 @@ def create_manual_draft_session(
             candidate.sessions.append(
                 DraftSession(
                     course_id=course.id,
-                    lecturer_id=course.lecturer.id,
-                    cohort_id=course.cohort.id,
+                    lecturer_id=lecturer.id,
+                    cohort_id=cohort.id,
                     room_id=room.id,
                     date=session_date,
                     start_time=start_time,
@@ -502,8 +512,8 @@ def create_manual_draft_session(
                 DraftSession(
                     draft_schedule=draft,
                     course_id=course.id,
-                    lecturer_id=course.lecturer.id,
-                    cohort_id=course.cohort.id,
+                    lecturer_id=lecturer.id,
+                    cohort_id=cohort.id,
                     room_id=room.id,
                     date=session_date,
                     start_time=start_time,

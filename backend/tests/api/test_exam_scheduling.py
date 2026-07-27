@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from app.models.planning import PlanningOutcome
 from tests.exam_fixtures import exam_catalog, teaching_draft
 
 
@@ -53,7 +54,7 @@ def test_configuration_overview_manual_update_and_delete_contract(client_and_db)
 
 
 def test_generation_prepare_and_generate_mixed_contract(client_and_db):
-    client, _db = client_and_db
+    client, db = client_and_db
     state = client.put("/api/courses/1/exam-configuration", json=_configuration()).json()
     prepared = client.post("/api/exams/generation/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1]})
     assert prepared.status_code == 200
@@ -61,6 +62,12 @@ def test_generation_prepare_and_generate_mixed_contract(client_and_db):
     generated = client.post("/api/exams/generation", json={"semesterId": 1, "scheduleRevisionId": 1, "institutionToday": payload["institutionToday"], "sharedSnapshotToken": payload["sharedSnapshotToken"], "courses": [{"courseId": 1, "configurationId": 1, "configurationRevision": 1, "inputSnapshotToken": payload["courses"][0]["inputSnapshotToken"]}]})
     assert generated.status_code == 200
     assert generated.json()["summary"]["scheduled"] == 1
+    outcome = db.query(PlanningOutcome).one()
+    assert (
+        outcome.course_id,
+        outcome.operation_kind,
+        outcome.classification,
+    ) == (1, "exam_generation", "successful")
 
 
 def test_structured_validation_stale_and_not_found_errors(client_and_db):
@@ -74,6 +81,75 @@ def test_structured_validation_stale_and_not_found_errors(client_and_db):
     stale = client.put("/api/courses/1/exam-configuration", json=_configuration())
     assert first.status_code == 201
     assert stale.status_code == 409
+
+
+def test_stale_exam_generation_retains_only_the_reliable_stale_course_result(client_and_db):
+    client, db = client_and_db
+    state = client.put(
+        "/api/courses/1/exam-configuration",
+        json=_configuration(),
+    ).json()
+    prepared = client.post(
+        "/api/exams/generation/prepare",
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1]},
+    ).json()
+
+    generated = client.post(
+        "/api/exams/generation",
+        json={
+            "semesterId": 1,
+            "scheduleRevisionId": 1,
+            "institutionToday": prepared["institutionToday"],
+            "sharedSnapshotToken": prepared["sharedSnapshotToken"],
+            "courses": [
+                {
+                        "courseId": 1,
+                        "configurationId": state["configuration"]["id"],
+                        "configurationRevision": 1,
+                        "inputSnapshotToken": "stale-course-snapshot",
+                    }
+                ],
+            },
+    )
+
+    assert generated.status_code == 200
+    assert generated.json()["outcomes"][0]["status"] == "stale"
+    outcome = db.query(PlanningOutcome).one()
+    assert outcome.operation_kind == "exam_generation"
+    assert outcome.classification == "stale"
+
+
+def test_changed_shared_exam_context_rejects_the_request_without_retaining_an_outcome(client_and_db):
+    client, db = client_and_db
+    client.put("/api/courses/1/exam-configuration", json=_configuration())
+    prepared = client.post(
+        "/api/exams/generation/prepare",
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1]},
+    ).json()
+    changed = client.put(
+        "/api/courses/1/exam-configuration",
+        json=_configuration(expected_revision=1),
+    )
+    assert changed.status_code == 200
+
+    generated = client.post(
+        "/api/exams/generation",
+        json={
+            "semesterId": 1,
+            "scheduleRevisionId": 1,
+            "institutionToday": prepared["institutionToday"],
+            "sharedSnapshotToken": prepared["sharedSnapshotToken"],
+            "courses": [{
+                "courseId": 1,
+                "configurationId": prepared["courses"][0]["configurationId"],
+                "configurationRevision": prepared["courses"][0]["configurationRevision"],
+                "inputSnapshotToken": prepared["courses"][0]["inputSnapshotToken"],
+            }],
+        },
+    )
+
+    assert generated.status_code == 409
+    assert db.query(PlanningOutcome).count() == 0
 
 
 def test_configuration_validation_reports_every_semantic_field_together(client_and_db):

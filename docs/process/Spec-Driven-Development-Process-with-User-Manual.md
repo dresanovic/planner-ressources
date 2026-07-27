@@ -44,6 +44,8 @@ $speckit-specify
 $speckit-clarify
         ↺ repeat until sufficiently clear
         ↓
+optional $speckit-checklist
+        ↓
 $speckit-plan
         ↓
 $speckit-tasks
@@ -52,6 +54,14 @@ $speckit-analyze
         ↺ correct findings and repeat until consistent
         ↓
 $speckit-implement
+        ↓
+$speckit-converge
+        ↓
+material gaps found?
+        ├─ Yes → $speckit-implement
+        │          ↓
+        │    $speckit-converge
+        └─ No
         ↓
 $code-review
         ↓
@@ -285,6 +295,8 @@ $speckit-specify
         ↓
 $speckit-clarify
         ↺
+optional $speckit-checklist
+        ↓
 $speckit-plan
         ↓
 $speckit-tasks
@@ -292,6 +304,9 @@ $speckit-tasks
 $speckit-analyze
         ↺
 $speckit-implement
+        ↓
+$speckit-converge
+        ↺ implement remaining convergence tasks when necessary
         ↓
 $code-review
         ↓
@@ -638,7 +653,41 @@ Implementation is complete only when:
 
 ---
 
-## 13. Review the implementation
+## 13. Converge the implementation
+
+Skill:
+
+```text
+$speckit-converge
+```
+
+Purpose:
+
+Verify that the completed implementation fully satisfies the specification, implementation plan, and task list.
+
+Unlike `$code-review`, convergence checks **completeness**, not code quality.
+
+Typical workflow:
+
+```text
+$speckit-implement
+        ↓
+$speckit-converge
+        ↓
+material gaps?
+        ├─ Yes → implement remaining tasks
+        │          ↓
+        │    $speckit-converge
+        └─ No
+        ↓
+$code-review
+```
+
+Run convergence once after completing a slice and repeat only if it identifies additional work.
+
+---
+
+## 14. Review the implementation
 
 Custom skill:
 
@@ -693,7 +742,7 @@ This cycle may be repeated until no blocking findings remain.
 
 ---
 
-## 14. Verify the completed slice
+## 15. Verify the completed slice
 
 Before committing, verify:
 
@@ -726,7 +775,7 @@ The final implementation summary should state:
 
 ---
 
-## 15. Create or update the user manual
+## 16. Create or update the user manual
 
 Custom skill:
 
@@ -843,7 +892,7 @@ The user manual should be updated after every slice that changes user-visible be
 
 ---
 
-## 16. Commit, review, and merge
+## 17. Commit, review, and merge
 
 Only commit the slice when:
 
@@ -899,7 +948,7 @@ A release-level documentation review should verify:
 
 # Phase 5: Periodic refactoring
 
-## 17. Refactor the codebase
+## 18. Refactor the codebase
 
 Custom skill:
 
@@ -1131,17 +1180,19 @@ Architecture exploration may also be run before the constitution when the techno
 9. Run $speckit-analyze
 10. Correct findings and repeat analysis when necessary
 11. Run $speckit-implement
-12. Run tests and inspect the Git diff
-13. Run $code-review
-14. Correct blocking review findings
-15. Repeat tests and code review where necessary
-16. Run `$user-manual-creation` for user-visible changes
-17. Review `User_Manual.md` as a first-time user
-18. Inspect the documentation diff and report
-19. Commit and push the branch
-20. Review through a pull request or direct diff inspection
-21. Merge into main
-22. Update the slice status in Feature_slices.md
+12. Run $speckit-converge
+13. If convergence reports gaps, implement them and run convergence again
+14. Run tests and inspect the Git diff
+15. Run $code-review
+16. Correct blocking review findings
+17. Repeat tests and code review where necessary
+18. Run `$user-manual-creation` for user-visible changes
+19. Review `User_Manual.md` as a first-time user
+20. Inspect the documentation diff and report
+21. Commit and push the branch
+22. Review through a pull request or direct diff inspection
+23. Merge into main
+24. Update the slice status in Feature_slices.md
 ```
 
 ## Before a release or handover
@@ -1204,10 +1255,12 @@ Requirements engineering manages the complete product scope and is revisited whe
 ```text
 $speckit-specify
 $speckit-clarify
+$speckit-checklist
 $speckit-plan
 $speckit-tasks
 $speckit-analyze
 $speckit-implement
+$speckit-converge
 ```
 
 These skills are executed iteratively for each selected vertical slice.
