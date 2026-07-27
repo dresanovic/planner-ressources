@@ -150,6 +150,22 @@ class CapturedTeachingSession(LifecycleModel):
     validation_alerts: list[CapturedIssue]
 
 
+class CapturedConstraintWindow(LifecycleModel):
+    source_time_window_id: int | None
+    weekday: int = Field(ge=0, le=6)
+    start_time: time
+    end_time: time
+    sort_order: int = Field(ge=0)
+
+
+class CapturedConstraintProfile(LifecycleModel):
+    is_custom: bool
+    source_revision: int | None = Field(default=None, ge=1)
+    planning_start_date: date
+    planning_end_date: date
+    allowed_teaching_windows: list[CapturedConstraintWindow]
+
+
 class CapturedCourseSchedule(LifecycleModel):
     source_course_id: int = Field(ge=1)
     name: str = Field(min_length=1)
@@ -160,6 +176,7 @@ class CapturedCourseSchedule(LifecycleModel):
     remaining_units: int = Field(ge=0)
     draft_status: str | None
     teaching_sessions: list[CapturedTeachingSession]
+    constraint_profile: CapturedConstraintProfile | None = None
 
 
 class CapturedExamSession(LifecycleModel):

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
   AllowedTeachingWindow,
@@ -15,6 +15,7 @@ import type {
 import type { PlanningOptions, RoomOption } from '../api/planningOptions'
 import type { LecturerRecord, ResourceCandidate } from '../api/resourceCatalog'
 import type { ExamSession } from '../api/examScheduling'
+import type { WorkspaceListContext } from './CalendarPlanningWorkspace'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
 import {
   groupSessionsByWeek,
@@ -22,6 +23,10 @@ import {
 } from './scheduleReviewUtils'
 
 type EditableDraftSessionRequest = Omit<UpdateDraftSessionRequest, 'scheduleRevisionId'>
+const EMPTY_ROOMS: RoomOption[] = []
+const EMPTY_LECTURERS: LecturerRecord[] = []
+const EMPTY_COURSE_RESOURCES: PlanningOptions['courseResources'] = []
+const EMPTY_EXAMS: ExamSession[] = []
 
 type DraftSchedulePanelProps = {
   schedules: DraftSchedule[]
@@ -38,6 +43,9 @@ type DraftSchedulePanelProps = {
   examCourseNames?: Record<number, string>
   readOnly?: boolean
   contextLabel?: string
+  requestedEditSessionId?: number | null
+  onRequestedEditHandled?: () => void
+  workspaceListContext?: WorkspaceListContext | null
 }
 
 export function DraftSchedulePanel(props: DraftSchedulePanelProps) {
@@ -46,18 +54,21 @@ export function DraftSchedulePanel(props: DraftSchedulePanelProps) {
 
 function DraftSchedulePanelStateful({
   schedules,
-  rooms = [],
-  lecturers = [],
-  courseResources = [],
+  rooms = EMPTY_ROOMS,
+  lecturers = EMPTY_LECTURERS,
+  courseResources = EMPTY_COURSE_RESOURCES,
   onUpdateSession,
   onDeleteSession,
   isBusy = false,
-  exams = [],
+  exams = EMPTY_EXAMS,
   onEditExam,
   onDeleteExam,
   examCourseNames = {},
   readOnly = false,
   contextLabel,
+  requestedEditSessionId,
+  onRequestedEditHandled,
+  workspaceListContext,
 }: DraftSchedulePanelProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [filters, setFilters] = useState<ReviewFilters>({})
@@ -65,21 +76,68 @@ function DraftSchedulePanelStateful({
   const [editDraft, setEditDraft] = useState<EditableDraftSessionRequest | null>(null)
   const [editErrors, setEditErrors] = useState<SessionEditFailure[]>([])
   const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const listTraceTargetRef = useRef<HTMLDivElement>(null)
+  const listTraceReference = workspaceListContext?.traceTarget?.reference
   const overviewSessions = useMemo(
     () => flattenSchedules(schedules, rooms, lecturers, courseResources),
     [schedules, rooms, lecturers, courseResources],
   )
   const filterOptions = useMemo(() => buildFilterOptions(overviewSessions, schedules, exams, examCourseNames), [overviewSessions, schedules, exams, examCourseNames])
+  const scopedSessions = scopeTeachingSessions(overviewSessions, workspaceListContext)
+  const scopedExams = scopeExamSessions(exams, workspaceListContext)
   const visibleSessions = sortSessionsChronologically(
-    overviewSessions.filter((session) => matchesFilters(session, filters)),
+    scopedSessions.filter((session) => matchesFilters(session, filters)),
   )
   const hasActiveFilters = Object.values(filters).some((value) => value !== undefined)
-  const visibleExams = exams.filter((exam) => (
+  const visibleExams = scopedExams.filter((exam) => (
     (filters.courseId === undefined || exam.courseId === filters.courseId) &&
     (filters.cohortId === undefined || exam.cohort.id === filters.cohortId) &&
     (filters.lecturerId === undefined || exam.lecturer.id === filters.lecturerId) &&
     (filters.roomId === undefined || exam.room.id === filters.roomId)
   )).sort((left, right) => `${left.date}-${left.startTime}-${left.id}`.localeCompare(`${right.date}-${right.startTime}-${right.id}`))
+
+  useEffect(() => {
+    if (requestedEditSessionId == null || readOnly || isBusy) return
+    const session = overviewSessions.find((item) => item.id === requestedEditSessionId)
+    if (!session) return
+    let cancelled = false
+    queueMicrotask(() => {
+      if (cancelled) return
+      setViewMode('list')
+      setEditingSessionId(session.id)
+      setEditDraft({
+        date: session.date,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        lecturerId: session.lecturerId,
+        roomId: session.roomId,
+      })
+      setEditErrors([])
+      onRequestedEditHandled?.()
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [
+    requestedEditSessionId,
+    readOnly,
+    isBusy,
+    overviewSessions,
+    onRequestedEditHandled,
+  ])
+
+  useEffect(() => {
+    if (listTraceReference == null) return
+    let cancelled = false
+    queueMicrotask(() => {
+      if (cancelled) return
+      setViewMode('list')
+      listTraceTargetRef.current?.focus()
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [listTraceReference])
 
   return (
     <section className={`planner-panel ${isBusy ? 'overview-busy' : ''}`} aria-labelledby="courses-overview-title" aria-busy={isBusy}>
@@ -89,10 +147,25 @@ function DraftSchedulePanelStateful({
           <h2 id="courses-overview-title">Courses overview</h2>
         </div>
       </div>
+      {workspaceListContext?.traceTarget && (
+        <div
+          className="workspace-list-trace"
+          role="status"
+          tabIndex={-1}
+          ref={listTraceTargetRef}
+          data-trace-reference={workspaceListContext.traceTarget.reference}
+        >
+          <strong>Affected record</strong>
+          <span>{workspaceListContext.traceTarget.label}</span>
+          {workspaceListContext.traceTarget.teachingSessionIds.length === 0
+            && workspaceListContext.traceTarget.examIds.length === 0
+            && <span>No scheduled session matches the active filters; use the existing course planning controls for this course.</span>}
+        </div>
+      )}
 
       {overviewSessions.length > 0 || exams.length > 0 ? (
         <>
-          <div className="filter-bar" aria-label="Draft session filters">
+          {workspaceListContext == null && <div className="filter-bar" aria-label="Draft session filters">
             <FilterSelect
               label="Course"
               name="courseId"
@@ -131,7 +204,7 @@ function DraftSchedulePanelStateful({
             <button type="button" onClick={() => setFilters({})} disabled={!hasActiveFilters}>
               Clear filters
             </button>
-          </div>
+          </div>}
 
           <div className="review-controls" aria-label="Review view mode">
             <button
@@ -372,6 +445,7 @@ function SessionEditFields({
         <span>Date</span>
         <input
           type="date"
+          autoFocus
           value={draft.date}
           disabled={isDisabled}
           onChange={(event) => onChange({ ...draft, date: event.target.value })}
@@ -711,13 +785,41 @@ function editableCandidates(candidates: ResourceCandidate[], current: EditableRe
 }
 
 function resourceLabel(resource: { name: string; referenceCode?: string | null }): string {
-  return resource.referenceCode ? `${resource.name} Â· ${resource.referenceCode}` : resource.name
+  return resource.referenceCode ? `${resource.name} · ${resource.referenceCode}` : resource.name
 }
 
 function uniqueEntities(entities: PlanningEntity[]): PlanningEntity[] {
   return [...new Map(entities.map((entity) => [entity.id, entity])).values()].sort((a, b) =>
     a.name.localeCompare(b.name),
   )
+}
+
+function scopeTeachingSessions(
+  sessions: OverviewSession[],
+  context?: WorkspaceListContext | null,
+) {
+  if (context == null) return sessions
+  const trace = context.traceTarget
+  if (trace != null) {
+    const sessionIds = new Set(trace.teachingSessionIds)
+    return sessions.filter((session) => sessionIds.has(session.id))
+  }
+  const sessionIds = new Set(context.teachingSessionIds)
+  return sessions.filter((session) => sessionIds.has(session.id))
+}
+
+function scopeExamSessions(
+  exams: ExamSession[],
+  context?: WorkspaceListContext | null,
+) {
+  if (context == null) return exams
+  const trace = context.traceTarget
+  if (trace != null) {
+    const examIds = new Set(trace.examIds)
+    return exams.filter((exam) => examIds.has(exam.id))
+  }
+  const examIds = new Set(context.examIds)
+  return exams.filter((exam) => examIds.has(exam.id))
 }
 
 function matchesFilters(session: OverviewSession, filters: ReviewFilters): boolean {

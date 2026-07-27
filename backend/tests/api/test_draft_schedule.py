@@ -23,6 +23,7 @@ from app.models.planning import (
     Semester,
     StudyType,
     StudyTypeTimeWindow,
+    PlanningOutcome,
     InstitutionHoliday,
 )
 from app.schemas.draft_schedule import (
@@ -72,6 +73,8 @@ def manual_session_payload(**overrides):
         "startTime": "08:00",
         "endTime": "09:45",
         "units": 2,
+        "lecturerId": 1,
+        "cohortId": 1,
         "roomId": 3,
     }
     payload.update(overrides)
@@ -303,6 +306,13 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
     }
     assert payload["sessions"][0]["lecturer"]["referenceCode"] == "LEC-001"
     assert payload["sessions"][0]["room"]["referenceCode"] == "ROOM-001"
+    outcome = db_session.query(PlanningOutcome).one()
+    assert (
+        outcome.schedule_revision_id,
+        outcome.course_id,
+        outcome.operation_kind,
+        outcome.classification,
+    ) == (1, 1, "single_course_generation", "successful")
 
 
 def test_regeneration_displays_the_current_course_name(client, db_session):
@@ -367,6 +377,57 @@ def test_create_manual_session_returns_structured_hard_validation_without_partia
     assert response.status_code == 422
     assert response.json()["errors"][0]["code"] == code
     assert db_session.query(GenerationConstraintSet).count() == 1
+    assert client.get("/api/draft-schedules?semesterId=1").json() == []
+
+
+def test_create_manual_session_persists_active_lecturer_and_cohort_overrides_and_uses_selected_cohort_capacity(client, db_session):
+    seed_valid_course(db_session, total_units=8)
+    db_session.add_all([
+        Lecturer(id=2, name="Grace Hopper", reference_code="LEC-002", normalized_reference_code="lec-002"),
+        Cohort(id=2, name="AI 2", student_count=50),
+    ])
+    db_session.commit()
+
+    too_small = client.post(
+        "/api/courses/1/draft-schedule/sessions",
+        json=manual_session_payload(lecturerId=2, cohortId=2, roomId=1),
+    )
+    assert too_small.status_code == 422
+    assert too_small.json()["errors"][0]["code"] == "INSUFFICIENT_ROOM_CAPACITY"
+
+    created = client.post(
+        "/api/courses/1/draft-schedule/sessions",
+        json=manual_session_payload(lecturerId=2, cohortId=2, roomId=3),
+    )
+    assert created.status_code == 201
+    session = created.json()["draftSchedule"]["sessions"][0]
+    assert session["lecturerId"] == 2
+    assert session["cohortId"] == 2
+    assert db_session.get(Course, 1).cohort_id == 1
+    assert db_session.get(Course, 1).lecturer_id == 1
+
+
+def test_create_manual_session_rejects_inactive_manual_resource_overrides(client, db_session):
+    seed_valid_course(db_session, total_units=8)
+    db_session.add_all([
+        Lecturer(id=2, name="Inactive Lecturer", reference_code="LEC-002", normalized_reference_code="lec-002", is_active=False),
+        Cohort(id=2, name="Inactive Cohort", student_count=20, is_active=False),
+    ])
+    db_session.commit()
+
+    inactive_lecturer = client.post(
+        "/api/courses/1/draft-schedule/sessions",
+        json=manual_session_payload(lecturerId=2),
+    )
+    inactive_cohort = client.post(
+        "/api/courses/1/draft-schedule/sessions",
+        json=manual_session_payload(cohortId=2),
+    )
+
+    assert inactive_lecturer.status_code == 404
+    assert inactive_lecturer.json()["detail"] == "Selected Lecturer is unavailable."
+    assert inactive_cohort.status_code == 404
+    assert inactive_cohort.json()["detail"] == "Selected Cohort is unavailable."
     assert client.get("/api/draft-schedules?semesterId=1").json() == []
 
 
@@ -723,6 +784,9 @@ def test_generation_returns_multiple_failure_reasons_without_partial_draft(clien
     codes = {error["code"] for error in response.json()["errors"]}
     assert codes == {"INSUFFICIENT_ROOM_CAPACITY", "INVALID_SESSION_PREFERENCE"}
     assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
+    outcome = db_session.query(PlanningOutcome).one()
+    assert outcome.classification == "failed"
+    assert {item["code"] for item in outcome.result_payload["errors"]} == codes
 
 
 def test_generation_blocks_wrong_current_semester_and_missing_active_window(client, db_session):
@@ -732,6 +796,7 @@ def test_generation_blocks_wrong_current_semester_and_missing_active_window(clie
     mismatch = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload() | {"semesterId": 2, "scheduleRevisionId": 2, "planningPeriod": {"startDate": "2027-02-01", "endDate": "2027-06-20"}})
     assert mismatch.status_code == 422
     assert any(error["code"] == "COURSE_SEMESTER_MISMATCH" for error in mismatch.json()["errors"])
+    assert db_session.query(PlanningOutcome).count() == 0
 
     for window in db_session.query(StudyTypeTimeWindow).all():
         window.is_active = False
@@ -1059,6 +1124,7 @@ def test_single_course_generation_rolls_back_schedule_when_constraint_persistenc
     with pytest.raises(RuntimeError, match="injected persistence error"):
         client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
     assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
+    assert db_session.query(PlanningOutcome).count() == 0
 
 
 def test_single_generation_uses_server_holidays_and_returns_paired_named_evidence(client, db_session):

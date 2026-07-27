@@ -1,0 +1,1160 @@
+openapi: 3.1.0
+info:
+  title: Resource Planner Calendar Workspace API
+  version: 1.0.0
+  description: |
+    Revision-scoped read contract for FS-014. One successful response is the
+    coherent source for calendar modes, the adapted List mode, operational
+    summaries, filters, trace targets, and session detail.
+
+    Existing planning operations also retain each reliable completed per-course
+    result by schedule revision, course, and operation kind. Their existing
+    response contracts remain authoritative; this contract documents the
+    outcome read shape and retention side effect, not a new mutation endpoint.
+servers:
+  - url: /api
+paths:
+  /semesters/{semester_id}/calendar-workspace:
+    get:
+      operationId: getCalendarWorkspace
+      summary: Read one coherent semester revision workspace
+      description: |
+        With no revisionId, selects the active Working revision when present,
+        otherwise the Current Published revision. An explicit revisionId must
+        identify one of those two permitted contexts. Historical revisions are
+        reviewed through the existing lifecycle history contract.
+
+        Current Published content comes from its immutable snapshot. Current
+        validation is evaluated only over that snapshot's occurrences against
+        current applicable planning data; Working and historical occurrences
+        are excluded.
+      parameters:
+        - $ref: "#/components/parameters/SemesterId"
+        - $ref: "#/components/parameters/RevisionId"
+      responses:
+        "200":
+          description: Coherent loaded workspace or explicit no-revision state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarWorkspaceResponse"
+        "404":
+          description: Semester or explicit revision does not exist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "409":
+          description: Requested context changed while the workspace was read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "422":
+          description: revisionId is not active Working or Current Published for this semester
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+components:
+  parameters:
+    SemesterId:
+      name: semester_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    RevisionId:
+      name: revisionId
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+  schemas:
+    CalendarWorkspaceResponse:
+      oneOf:
+        - $ref: "#/components/schemas/LoadedCalendarWorkspaceResponse"
+        - $ref: "#/components/schemas/NoRevisionCalendarWorkspaceResponse"
+      discriminator:
+        propertyName: workspaceState
+        mapping:
+          loaded: "#/components/schemas/LoadedCalendarWorkspaceResponse"
+          no_revision: "#/components/schemas/NoRevisionCalendarWorkspaceResponse"
+    LoadedCalendarWorkspaceResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - semester
+        - workspaceState
+        - selectedRevision
+        - availableContexts
+        - workspaceToken
+        - sectionStatus
+        - courses
+        - occurrences
+        - holidays
+        - validationFindings
+        - planningOutcomes
+        - summary
+        - filterFacets
+      properties:
+        semester:
+          $ref: "#/components/schemas/Semester"
+        workspaceState:
+          type: string
+          const: loaded
+        selectedRevision:
+          $ref: "#/components/schemas/RevisionContext"
+        availableContexts:
+          $ref: "#/components/schemas/AvailableContexts"
+        workspaceToken:
+          type: string
+          minLength: 1
+          description: Opaque token identifying the coherent response version.
+        sectionStatus:
+          $ref: "#/components/schemas/SectionStatuses"
+        courses:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceCourse"
+        occurrences:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/TeachingOccurrence"
+              - $ref: "#/components/schemas/ExamOccurrence"
+            discriminator:
+              propertyName: kind
+              mapping:
+                teaching: "#/components/schemas/TeachingOccurrence"
+                exam: "#/components/schemas/ExamOccurrence"
+        holidays:
+          type: array
+          items:
+            $ref: "#/components/schemas/Holiday"
+        validationFindings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationFinding"
+        planningOutcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanningOutcome"
+        summary:
+          $ref: "#/components/schemas/WorkspaceSummary"
+        filterFacets:
+          $ref: "#/components/schemas/FilterFacets"
+    NoRevisionCalendarWorkspaceResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - semester
+        - workspaceState
+        - selectedRevision
+        - availableContexts
+        - workspaceToken
+        - sectionStatus
+        - courses
+        - occurrences
+        - holidays
+        - validationFindings
+        - planningOutcomes
+        - summary
+        - filterFacets
+      properties:
+        semester:
+          $ref: "#/components/schemas/Semester"
+        workspaceState:
+          type: string
+          const: no_revision
+        selectedRevision:
+          type: "null"
+        availableContexts:
+          type: object
+          additionalProperties: false
+          required: [activeWorking, currentPublished]
+          properties:
+            activeWorking:
+              type: "null"
+            currentPublished:
+              type: "null"
+        workspaceToken:
+          type: string
+          minLength: 1
+        sectionStatus:
+          $ref: "#/components/schemas/SectionStatuses"
+        courses:
+          type: array
+          maxItems: 0
+        occurrences:
+          type: array
+          maxItems: 0
+        holidays:
+          type: array
+          maxItems: 0
+        validationFindings:
+          type: array
+          maxItems: 0
+        planningOutcomes:
+          type: array
+          maxItems: 0
+        summary:
+          $ref: "#/components/schemas/NoRevisionWorkspaceSummary"
+        filterFacets:
+          $ref: "#/components/schemas/EmptyFilterFacets"
+    Semester:
+      type: object
+      additionalProperties: false
+      required: [semesterId, name, startDate, endDate]
+      properties:
+        semesterId:
+          type: integer
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+    AvailableContexts:
+      type: object
+      additionalProperties: false
+      required: [activeWorking, currentPublished]
+      properties:
+        activeWorking:
+          oneOf:
+            - $ref: "#/components/schemas/RevisionSelector"
+            - type: "null"
+        currentPublished:
+          oneOf:
+            - $ref: "#/components/schemas/RevisionSelector"
+            - type: "null"
+    RevisionSelector:
+      type: object
+      additionalProperties: false
+      required: [revisionId, revisionNumber, lifecycleState, designation]
+      properties:
+        revisionId:
+          type: integer
+        revisionNumber:
+          type: integer
+        lifecycleState:
+          type: string
+          enum: [draft, ready_for_review, published]
+        designation:
+          type: string
+          enum: [active_working, current_published]
+    RevisionContext:
+      type: object
+      additionalProperties: false
+      required:
+        - revisionId
+        - revisionNumber
+        - lifecycleState
+        - designation
+        - readOnly
+        - contentSource
+        - validationBasis
+        - snapshotSchemaVersion
+      properties:
+        revisionId:
+          type: integer
+        revisionNumber:
+          type: integer
+        lifecycleState:
+          type: string
+          enum: [draft, ready_for_review, published]
+        designation:
+          type: string
+          enum: [active_working, current_published]
+        readOnly:
+          type: boolean
+        contentSource:
+          type: string
+          enum: [active_working, captured_published]
+        validationBasis:
+          type: string
+          const: current
+        snapshotSchemaVersion:
+          oneOf:
+            - type: integer
+              enum: [1, 2]
+            - type: "null"
+    SectionStatus:
+      type: object
+      additionalProperties: false
+      required: [availability]
+      properties:
+        availability:
+          type: string
+          enum: [available, partial, unavailable]
+        reason:
+          type: string
+        coverage:
+          type: string
+          description: Human-readable scope when only part of the section is known.
+    SectionStatuses:
+      type: object
+      additionalProperties: false
+      required: [courses, occurrences, holidays, validationFindings, planningOutcomes, summary]
+      properties:
+        courses:
+          $ref: "#/components/schemas/SectionStatus"
+        occurrences:
+          $ref: "#/components/schemas/SectionStatus"
+        holidays:
+          $ref: "#/components/schemas/SectionStatus"
+        validationFindings:
+          $ref: "#/components/schemas/SectionStatus"
+        planningOutcomes:
+          $ref: "#/components/schemas/SectionStatus"
+        summary:
+          $ref: "#/components/schemas/SectionStatus"
+    WorkspaceCourse:
+      type: object
+      additionalProperties: false
+      required:
+        - courseRef
+        - courseId
+        - code
+        - name
+        - cohort
+        - lecturerRefs
+        - studyType
+        - planningEligible
+        - totalTeachingUnits
+        - scheduledTeachingUnits
+        - remainingTeachingUnits
+        - remainingInstructionalMinutes
+        - occurrenceRefs
+        - findingRefs
+        - outcomeRefs
+        - needsReviewReasonRefs
+      properties:
+        courseRef:
+          type: string
+          pattern: "^course:[1-9][0-9]*$"
+        courseId:
+          type: integer
+        code:
+          type: string
+        name:
+          type: string
+        cohort:
+          type: string
+        lecturerRefs:
+          type: array
+          items:
+            type: string
+        studyType:
+          type: string
+        planningEligible:
+          type: boolean
+          description: Whether the course belongs to the current coverage universe for at least one established planning operation.
+        totalTeachingUnits:
+          type: integer
+          minimum: 0
+        scheduledTeachingUnits:
+          type: integer
+          minimum: 0
+        remainingTeachingUnits:
+          type: integer
+          minimum: 0
+        remainingInstructionalMinutes:
+          type: integer
+          minimum: 0
+          multipleOf: 45
+        occurrenceRefs:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OccurrenceRef"
+        findingRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        outcomeRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        needsReviewReasonRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+    OccurrenceRef:
+      type: string
+      pattern: "^(teaching|exam):[1-9][0-9]*$"
+    OccurrenceBase:
+      type: object
+      required:
+        - occurrenceRef
+        - kind
+        - courseRef
+        - date
+        - startTime
+        - endTime
+        - cohort
+        - lecturerRefs
+        - roomRef
+        - findingRefs
+      properties:
+        occurrenceRef:
+          $ref: "#/components/schemas/OccurrenceRef"
+        kind:
+          type: string
+          enum: [teaching, exam]
+        courseRef:
+          type: string
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        endTime:
+          type: string
+          pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        cohort:
+          type: string
+        lecturerRefs:
+          type: array
+          items:
+            type: string
+        roomRef:
+          type: string
+        findingRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+    TeachingOccurrence:
+      allOf:
+        - $ref: "#/components/schemas/OccurrenceBase"
+        - type: object
+          required: [teachingUnits, source]
+          properties:
+            kind:
+              type: string
+              const: teaching
+            teachingUnits:
+              type: integer
+              minimum: 1
+            source:
+              type: string
+    ExamOccurrence:
+      allOf:
+        - $ref: "#/components/schemas/OccurrenceBase"
+        - type: object
+          required:
+            - examType
+            - durationMinutes
+            - requiredCapacity
+            - assignedRoomName
+            - currentRoomCapacity
+            - validityContext
+          properties:
+            kind:
+              type: string
+              const: exam
+            examType:
+              type: string
+            durationMinutes:
+              type: integer
+              minimum: 1
+            requiredCapacity:
+              type: integer
+              minimum: 0
+            assignedRoomName:
+              type: string
+            currentRoomCapacity:
+              oneOf:
+                - type: integer
+                  minimum: 0
+                - type: "null"
+              description: Current capacity of the assigned room, or null when current room data is unavailable.
+            validityContext:
+              $ref: "#/components/schemas/ExamValidityContext"
+            recommendationContext:
+              $ref: "#/components/schemas/ExamRecommendationContext"
+    ExamValidityContext:
+      type: object
+      additionalProperties: false
+      required:
+        - configurationIdentifier
+        - configurationRevision
+        - finalTeachingDate
+        - finalTeachingEndTime
+        - source
+      properties:
+        configurationIdentifier:
+          type: string
+        configurationRevision:
+          type: integer
+          minimum: 0
+        finalTeachingDate:
+          type: string
+          format: date
+        finalTeachingEndTime:
+          type: string
+          pattern: "^[0-2][0-9]:[0-5][0-9]$"
+        source:
+          type: string
+        capturedIssues:
+          type: array
+          items: {}
+    ExamRecommendationContext:
+      type: object
+      additionalProperties: false
+      required:
+        - recommendedStartDate
+        - recommendedEndDate
+        - recommendationWasOverridden
+        - outsideRecommendedWindow
+      properties:
+        recommendedStartDate:
+          type: string
+          format: date
+        recommendedEndDate:
+          type: string
+          format: date
+        recommendationWasOverridden:
+          type: boolean
+        outsideRecommendedWindow:
+          type: boolean
+    Holiday:
+      type: object
+      additionalProperties: false
+      required: [holidayRef, date, name]
+      properties:
+        holidayRef:
+          type: string
+        date:
+          type: string
+          format: date
+        name:
+          type: string
+    ValidationFinding:
+      type: object
+      additionalProperties: false
+      required:
+        - findingRef
+        - category
+        - validationBasis
+        - affectedCourseRefs
+        - affectedOccurrenceRefs
+        - details
+      properties:
+        findingRef:
+          type: string
+        category:
+          type: string
+          enum:
+            - lecturer_conflict
+            - room_conflict
+            - cohort_conflict
+            - room_capacity
+            - holiday
+            - exam_validity
+            - other
+        validationBasis:
+          type: string
+          const: current
+        affectedCourseRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        affectedOccurrenceRefs:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OccurrenceRef"
+        details:
+          oneOf:
+            - $ref: "#/components/schemas/ConflictFindingDetails"
+            - $ref: "#/components/schemas/CapacityFindingDetails"
+            - $ref: "#/components/schemas/HolidayFindingDetails"
+            - $ref: "#/components/schemas/ExamValidityFindingDetails"
+            - $ref: "#/components/schemas/OtherFindingDetails"
+          description: The detail kind must correspond to the finding category.
+    ConflictFindingDetails:
+      type: object
+      additionalProperties: false
+      required: [kind, conflictType, occurrenceRefs, subjectRef]
+      properties:
+        kind:
+          type: string
+          const: conflict
+        conflictType:
+          type: string
+          enum: [lecturer, room, cohort]
+        occurrenceRefs:
+          type: array
+          minItems: 2
+          maxItems: 2
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OccurrenceRef"
+        subjectRef:
+          type: string
+          description: Conflicting lecturer, room, or cohort reference.
+    CapacityFindingDetails:
+      type: object
+      additionalProperties: false
+      required:
+        - kind
+        - occurrenceRef
+        - requiredCapacity
+        - roomRef
+        - roomName
+        - currentCapacity
+      properties:
+        kind:
+          type: string
+          const: capacity
+        occurrenceRef:
+          $ref: "#/components/schemas/OccurrenceRef"
+        requiredCapacity:
+          type: integer
+          minimum: 0
+        roomRef:
+          type: string
+        roomName:
+          type: string
+        currentCapacity:
+          type: integer
+          minimum: 0
+    HolidayFindingDetails:
+      type: object
+      additionalProperties: false
+      required: [kind, holidayRef, holidayDate, holidayName, occurrenceRefs]
+      properties:
+        kind:
+          type: string
+          const: holiday
+        holidayRef:
+          type: string
+        holidayDate:
+          type: string
+          format: date
+        holidayName:
+          type: string
+        occurrenceRefs:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OccurrenceRef"
+    ExamValidityFindingDetails:
+      type: object
+      additionalProperties: false
+      required: [kind, examOccurrenceRef, issueCode, supportingValues]
+      properties:
+        kind:
+          type: string
+          const: exam_validity
+        examOccurrenceRef:
+          type: string
+          pattern: "^exam:[1-9][0-9]*$"
+        issueCode:
+          type: string
+        supportingValues:
+          type: object
+          additionalProperties:
+            type: [string, number, boolean]
+    OtherFindingDetails:
+      type: object
+      additionalProperties: false
+      required: [kind, issueCode, occurrenceRefs]
+      properties:
+        kind:
+          type: string
+          const: other
+        issueCode:
+          type: string
+        occurrenceRefs:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OccurrenceRef"
+        roomRef:
+          oneOf:
+            - type: string
+            - type: "null"
+        subjectRef:
+          oneOf:
+            - type: string
+            - type: "null"
+    PlanningOutcome:
+      type: object
+      additionalProperties: false
+      required:
+        - outcomeRef
+        - revisionId
+        - courseRef
+        - operationKind
+        - classification
+        - sourceStatus
+        - reasons
+        - completedAt
+      properties:
+        outcomeRef:
+          type: string
+        revisionId:
+          type: integer
+        courseRef:
+          type: string
+        operationKind:
+          type: string
+          enum:
+            - single_course_generation
+            - multi_course_generation
+            - semester_optimization
+            - exam_generation
+        classification:
+          type: string
+          enum: [successful, failed, stale, unchanged, skipped]
+        sourceStatus:
+          type: string
+        reasons:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        completedAt:
+          type: string
+          format: date-time
+    WorkspaceSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - unscheduledWork
+        - conflicts
+        - capacityIssues
+        - planningFailures
+        - needsReview
+      properties:
+        unscheduledWork:
+          $ref: "#/components/schemas/UnscheduledWorkSummary"
+        conflicts:
+          $ref: "#/components/schemas/ConflictSummary"
+        capacityIssues:
+          $ref: "#/components/schemas/CapacityIssueSummary"
+        planningFailures:
+          $ref: "#/components/schemas/PlanningFailureSummary"
+        needsReview:
+          $ref: "#/components/schemas/NeedsReviewSummary"
+    UnscheduledWorkSummary:
+      type: object
+      additionalProperties: false
+      required: [availability, scope, contributorRefs]
+      properties:
+        availability:
+          type: string
+          enum: [available, partial, unavailable, not_applicable]
+        scope:
+          type: string
+          const: complete_revision
+        remainingTeachingUnits:
+          type: integer
+          minimum: 0
+          description: Present for available or partial data.
+        remainingInstructionalMinutes:
+          type: integer
+          minimum: 0
+          multipleOf: 45
+          description: Present for available or partial data.
+        contributingCourseCount:
+          type: integer
+          minimum: 0
+          description: Present for available or partial data.
+        contributorRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^course:[1-9][0-9]*$"
+        unavailableReason:
+          type: string
+        notApplicableReason:
+          type: string
+      allOf:
+        - if:
+            properties:
+              availability:
+                enum: [available, partial]
+          then:
+            required:
+              - remainingTeachingUnits
+              - remainingInstructionalMinutes
+              - contributingCourseCount
+          else:
+            not:
+              anyOf:
+                - required: [remainingTeachingUnits]
+                - required: [remainingInstructionalMinutes]
+                - required: [contributingCourseCount]
+        - if:
+            properties:
+              availability:
+                const: unavailable
+          then:
+            required: [unavailableReason]
+        - if:
+            properties:
+              availability:
+                const: not_applicable
+          then:
+            required: [notApplicableReason]
+    ConflictSummary:
+      type: object
+      additionalProperties: false
+      required: [availability, scope, contributorRefs]
+      properties:
+        availability:
+          type: string
+          enum: [available, partial, unavailable, not_applicable]
+        scope:
+          type: string
+          const: complete_revision
+        distinctFindingCount:
+          type: integer
+          minimum: 0
+          description: Present for available or partial data.
+        countByType:
+          type: object
+          additionalProperties: false
+          required: [lecturer, room, cohort]
+          properties:
+            lecturer:
+              type: integer
+              minimum: 0
+            room:
+              type: integer
+              minimum: 0
+            cohort:
+              type: integer
+              minimum: 0
+        contributorRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        unavailableReason:
+          type: string
+        notApplicableReason:
+          type: string
+      allOf:
+        - if:
+            properties:
+              availability:
+                enum: [available, partial]
+          then:
+            required: [distinctFindingCount, countByType]
+          else:
+            not:
+              anyOf:
+                - required: [distinctFindingCount]
+                - required: [countByType]
+        - if:
+            properties:
+              availability:
+                const: unavailable
+          then:
+            required: [unavailableReason]
+        - if:
+            properties:
+              availability:
+                const: not_applicable
+          then:
+            required: [notApplicableReason]
+    CapacityIssueSummary:
+      type: object
+      additionalProperties: false
+      required: [availability, scope, contributorRefs]
+      properties:
+        availability:
+          type: string
+          enum: [available, partial, unavailable, not_applicable]
+        scope:
+          type: string
+          const: complete_revision
+        affectedOccurrenceCount:
+          type: integer
+          minimum: 0
+          description: Present for available or partial data.
+        contributorRefs:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OccurrenceRef"
+        unavailableReason:
+          type: string
+        notApplicableReason:
+          type: string
+      allOf:
+        - if:
+            properties:
+              availability:
+                enum: [available, partial]
+          then:
+            required: [affectedOccurrenceCount]
+          else:
+            not:
+              required: [affectedOccurrenceCount]
+        - if:
+            properties:
+              availability:
+                const: unavailable
+          then:
+            required: [unavailableReason]
+        - if:
+            properties:
+              availability:
+                const: not_applicable
+          then:
+            required: [notApplicableReason]
+    PlanningOutcomeCoverage:
+      type: object
+      additionalProperties: false
+      required: [eligibleCourseCount, coveredCourseCount, coverageComplete]
+      properties:
+        eligibleCourseCount:
+          type: integer
+          minimum: 0
+        coveredCourseCount:
+          type: integer
+          minimum: 0
+        coverageComplete:
+          type: boolean
+    PlanningFailureSummary:
+      type: object
+      additionalProperties: false
+      required: [availability, scope, coverage, contributorRefs]
+      properties:
+        availability:
+          type: string
+          enum: [available, partial, unavailable, not_applicable]
+        scope:
+          type: string
+          const: complete_revision
+        coverage:
+          $ref: "#/components/schemas/PlanningOutcomeCoverage"
+        failedOutcomeCount:
+          type: integer
+          minimum: 0
+          description: Complete when available and a known incomplete count when partial.
+        staleOutcomeCount:
+          type: integer
+          minimum: 0
+          description: Complete when available and a known incomplete count when partial.
+        unchangedOutcomeCount:
+          type: integer
+          minimum: 0
+          description: Complete when available and a known incomplete count when partial.
+        contributorRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        unavailableReason:
+          type: string
+        notApplicableReason:
+          type: string
+      allOf:
+        - if:
+            properties:
+              availability:
+                enum: [available, partial]
+          then:
+            required:
+              - failedOutcomeCount
+              - staleOutcomeCount
+              - unchangedOutcomeCount
+          else:
+            not:
+              anyOf:
+                - required: [failedOutcomeCount]
+                - required: [staleOutcomeCount]
+                - required: [unchangedOutcomeCount]
+        - if:
+            properties:
+              availability:
+                const: unavailable
+          then:
+            required: [unavailableReason]
+        - if:
+            properties:
+              availability:
+                const: not_applicable
+          then:
+            required: [notApplicableReason]
+    NeedsReviewSummary:
+      type: object
+      additionalProperties: false
+      required: [availability, scope, contributorRefs]
+      properties:
+        availability:
+          type: string
+          enum: [available, partial, unavailable, not_applicable]
+        scope:
+          type: string
+          const: complete_revision
+        distinctCourseCount:
+          type: integer
+          minimum: 0
+          description: Present for available or partial data.
+        contributorRefs:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: "^course:[1-9][0-9]*$"
+        unavailableReason:
+          type: string
+        notApplicableReason:
+          type: string
+      allOf:
+        - if:
+            properties:
+              availability:
+                enum: [available, partial]
+          then:
+            required: [distinctCourseCount]
+          else:
+            not:
+              required: [distinctCourseCount]
+        - if:
+            properties:
+              availability:
+                const: unavailable
+          then:
+            required: [unavailableReason]
+        - if:
+            properties:
+              availability:
+                const: not_applicable
+          then:
+            required: [notApplicableReason]
+    NoRevisionWorkspaceSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - unscheduledWork
+        - conflicts
+        - capacityIssues
+        - planningFailures
+        - needsReview
+      properties:
+        unscheduledWork:
+          $ref: "#/components/schemas/NotApplicableSummary"
+        conflicts:
+          $ref: "#/components/schemas/NotApplicableSummary"
+        capacityIssues:
+          $ref: "#/components/schemas/NotApplicableSummary"
+        planningFailures:
+          $ref: "#/components/schemas/NotApplicableSummary"
+        needsReview:
+          $ref: "#/components/schemas/NotApplicableSummary"
+    NotApplicableSummary:
+      type: object
+      additionalProperties: false
+      required: [availability, scope, contributorRefs, notApplicableReason]
+      properties:
+        availability:
+          type: string
+          const: not_applicable
+        scope:
+          type: string
+          const: no_revision
+        contributorRefs:
+          type: array
+          maxItems: 0
+        notApplicableReason:
+          type: string
+          minLength: 1
+    FilterFacets:
+      type: object
+      additionalProperties: false
+      required:
+        - courses
+        - cohorts
+        - lecturers
+        - rooms
+        - studyTypes
+        - sessionTypes
+        - lifecycleContexts
+        - validationCategories
+      properties:
+        courses:
+          $ref: "#/components/schemas/FacetValues"
+        cohorts:
+          $ref: "#/components/schemas/FacetValues"
+        lecturers:
+          $ref: "#/components/schemas/FacetValues"
+        rooms:
+          $ref: "#/components/schemas/FacetValues"
+        studyTypes:
+          $ref: "#/components/schemas/FacetValues"
+        sessionTypes:
+          $ref: "#/components/schemas/FacetValues"
+        lifecycleContexts:
+          $ref: "#/components/schemas/FacetValues"
+        validationCategories:
+          $ref: "#/components/schemas/FacetValues"
+    EmptyFilterFacets:
+      type: object
+      additionalProperties: false
+      required:
+        - courses
+        - cohorts
+        - lecturers
+        - rooms
+        - studyTypes
+        - sessionTypes
+        - lifecycleContexts
+        - validationCategories
+      properties:
+        courses:
+          $ref: "#/components/schemas/EmptyFacetValues"
+        cohorts:
+          $ref: "#/components/schemas/EmptyFacetValues"
+        lecturers:
+          $ref: "#/components/schemas/EmptyFacetValues"
+        rooms:
+          $ref: "#/components/schemas/EmptyFacetValues"
+        studyTypes:
+          $ref: "#/components/schemas/EmptyFacetValues"
+        sessionTypes:
+          $ref: "#/components/schemas/EmptyFacetValues"
+        lifecycleContexts:
+          $ref: "#/components/schemas/EmptyFacetValues"
+        validationCategories:
+          $ref: "#/components/schemas/EmptyFacetValues"
+    EmptyFacetValues:
+      type: array
+      maxItems: 0
+    FacetValues:
+      type: array
+      items:
+        type: object
+        additionalProperties: false
+        required: [value, label]
+        properties:
+          value:
+            type: string
+          label:
+            type: string
+    Problem:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string

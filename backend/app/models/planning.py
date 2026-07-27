@@ -219,6 +219,11 @@ class ScheduleRevision(Base):
         cascade="all, delete-orphan",
         order_by="ScheduleRevisionEvent.event_sequence",
     )
+    planning_outcomes: Mapped[list["PlanningOutcome"]] = relationship(
+        back_populates="schedule_revision",
+        cascade="all, delete-orphan",
+        order_by="PlanningOutcome.completed_at",
+    )
 
 
 class ScheduleRevisionEvent(Base):
@@ -266,6 +271,49 @@ class ScheduleRevisionEvent(Base):
     )
 
     schedule_revision: Mapped[ScheduleRevision] = relationship(back_populates="events")
+
+
+class PlanningOutcome(Base):
+    __tablename__ = "planning_outcomes"
+    __table_args__ = (
+        UniqueConstraint(
+            "schedule_revision_id",
+            "course_id",
+            "operation_kind",
+            name="uq_planning_outcome_revision_course_kind",
+        ),
+        CheckConstraint(
+            "operation_kind IN ('single_course_generation', 'multi_course_generation', "
+            "'semester_optimization', 'exam_generation')",
+            name="ck_planning_outcome_operation_kind",
+        ),
+        CheckConstraint(
+            "classification IN ('successful', 'failed', 'stale', 'unchanged', 'skipped')",
+            name="ck_planning_outcome_classification",
+        ),
+        Index("ix_planning_outcomes_revision", "schedule_revision_id"),
+        Index("ix_planning_outcomes_course", "course_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    schedule_revision_id: Mapped[int] = mapped_column(
+        ForeignKey("schedule_revisions.id", ondelete="CASCADE"), nullable=False
+    )
+    course_id: Mapped[int] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"), nullable=False
+    )
+    operation_kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    classification: Mapped[str] = mapped_column(String(30), nullable=False)
+    source_status: Mapped[str] = mapped_column(String(100), nullable=False)
+    result_payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    completed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+
+    schedule_revision: Mapped[ScheduleRevision] = relationship(
+        back_populates="planning_outcomes"
+    )
+    course: Mapped["Course"] = relationship(back_populates="planning_outcomes")
 
 
 class StudyType(Base):
@@ -350,6 +398,10 @@ class Course(Base):
         back_populates="course", cascade="all, delete-orphan"
     )
     exam_sessions: Mapped[list["ExamSession"]] = relationship(back_populates="course")
+    planning_outcomes: Mapped[list[PlanningOutcome]] = relationship(
+        back_populates="course",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def lecturer_id(self) -> int | None:

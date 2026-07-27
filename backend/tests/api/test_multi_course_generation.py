@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
-from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, DraftSchedule, GenerationConstraintSet, GenerationConstraintWindow, InstitutionHoliday
+from app.models.planning import CourseEligibleLecturer, CourseEligibleRoom, DraftSchedule, GenerationConstraintSet, GenerationConstraintWindow, InstitutionHoliday, PlanningOutcome
 from tests.multi_course_fixtures import seed_multi_course_planner
 
 
@@ -91,6 +91,10 @@ def test_batch_all_success_persists_ordered_schedules_and_active_defaults(client
     assert all(item["status"] == "succeeded" and item["draftRevision"] == 1 for item in result["outcomes"])
     assert db_session.query(DraftSchedule).count() == 2
     assert db_session.query(GenerationConstraintSet).count() == 2
+    assert [
+        (row.course_id, row.classification)
+        for row in db_session.query(PlanningOutcome).order_by(PlanningOutcome.course_id)
+    ] == [(1, "successful"), (2, "successful")]
 
 
 def test_batch_preparation_marks_course_unavailable_for_wrong_semester(client, db_session):
@@ -110,6 +114,10 @@ def test_partial_success_preserves_failed_course_and_reports_every_reason(client
     assert result["summary"] == {"total": 2, "succeeded": 1, "failed": 1}
     assert result["outcomes"][1]["errors"][0]["code"] == "INSUFFICIENT_ROOM_CAPACITY"
     assert db_session.query(DraftSchedule).filter_by(course_id=2).one_or_none() is None
+    assert {
+        row.course_id: row.classification
+        for row in db_session.query(PlanningOutcome)
+    } == {1: "successful", 2: "failed"}
 
 
 def test_batch_api_loads_holidays_server_side_and_returns_per_course_named_evidence(client, db_session):
@@ -155,6 +163,8 @@ def test_retry_allows_one_failed_course_without_regenerating_success(client, db_
     result = client.post("/api/draft-schedules/batch/generate", json=execution_payload(retry)).json()
     assert result["summary"] == {"total": 1, "succeeded": 1, "failed": 0}
     assert db_session.query(DraftSchedule).filter_by(course_id=1, semester_id=1).one().revision == first_revision
+    assert db_session.query(PlanningOutcome).count() == 2
+    assert db_session.query(PlanningOutcome).filter_by(course_id=2).one().classification == "successful"
 
 
 def test_replacement_requires_confirmation_and_cancel_path_writes_nothing(client, db_session):
@@ -222,6 +232,7 @@ def test_unexpected_batch_failure_rolls_back_all_courses_and_returns_no_false_ou
     assert response.json()["code"] == "BATCH_OPERATION_FAILED"
     assert "outcomes" not in response.json()
     assert db_session.query(DraftSchedule).count() == 0
+    assert db_session.query(PlanningOutcome).count() == 0
 
 
 def test_post_batch_overview_keeps_overlaps_non_blocking_and_visible(client, db_session):

@@ -151,6 +151,8 @@ export type CreateManualDraftSessionRequest = {
   startTime: string
   endTime: string
   units: number
+  lecturerId: number
+  cohortId: number
   roomId: number
 }
 

@@ -903,7 +903,7 @@ The planner selects one course schedule and either adds a validly formed session
 
 #### Business rules
 
-- A manually added session may be saved with non-blocking lecturer, room, cohort, or window alerts, consistent with existing editing.
+- A manually added session defaults Lecturer, Cohort, and Room from the Course, allows the planner to override them from active-record dropdowns for that session only, and may be saved with non-blocking lecturer, room, cohort, or window alerts, consistent with existing editing.
 - Existing hard structural validation such as semester bounds, valid time order, existing references, and room capacity remains applicable.
 - Deleting schedule data never deletes saved generation constraints or source planning records.
 - Only one course or one session is affected by each explicit deletion action.

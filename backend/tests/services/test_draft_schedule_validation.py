@@ -14,9 +14,67 @@ from app.services.draft_schedule_repository import (
     replace_draft_schedule,
     save_generation_constraints,
 )
-from app.services.draft_schedule_validation import ValidationAlertCode, collect_validation_alerts
+from app.services.draft_schedule_validation import (
+    ValidationAlertCode,
+    ValidationOccurrenceRecord,
+    collect_validation_alerts,
+    evaluate_occurrence_records,
+    evaluate_teaching_constraints,
+)
 from app.services.holiday_calendar import HolidayReference
 from app.services.schedule_generation import GeneratedSession, PlanningPeriodPlan, TimeWindowPlan
+
+
+def test_common_evaluator_has_live_and_published_parity_without_cross_context_rows():
+    def occurrence(ref, lecturer, room, cohort, capacity):
+        return ValidationOccurrenceRecord(
+            occurrence_ref=ref,
+            course_ref=f"course:{ref}",
+            date=date(2026, 10, 5),
+            start_time=time(9),
+            end_time=time(11),
+            lecturer_refs=(lecturer,),
+            room_ref=room,
+            cohort_ref=cohort,
+            required_capacity=capacity,
+        )
+
+    live_records = [
+        occurrence("1", "lecturer:1", "room:1", "cohort:1", 30),
+        occurrence("2", "lecturer:1", "room:1", "cohort:2", 10),
+    ]
+    published_records = [
+        occurrence("1", "lecturer:1", "room:1", "cohort:1", 30),
+        occurrence("2", "lecturer:1", "room:1", "cohort:2", 10),
+    ]
+    working_only = occurrence(
+        "working-only", "lecturer:1", "room:1", "cohort:1", 30
+    )
+    holiday = HolidayReference(
+        id=1,
+        date=date(2026, 10, 5),
+        name="Institution Day",
+        revision=1,
+    )
+    arguments = {
+        "room_capacities": {"room:1": 20},
+        "holidays_by_date": {holiday.date: holiday},
+    }
+
+    live = evaluate_occurrence_records(live_records, **arguments)
+    published = evaluate_occurrence_records(published_records, **arguments)
+
+    assert published == live
+    assert {finding.category for finding in published} == {
+        "lecturer_conflict",
+        "room_conflict",
+        "room_capacity",
+        "holiday",
+    }
+    assert all(
+        working_only.occurrence_ref not in finding.occurrence_refs
+        for finding in published
+    )
 
 
 def make_session():
@@ -355,11 +413,27 @@ def test_study_type_window_and_multiple_alerts_are_reported_together():
     db.commit()
 
     alerts = collect_validation_alerts([draft], **validation_context(db, [draft]))
+    constraints = load_generation_constraints(
+        db,
+        load_course_plan(db, 1),
+        load_semester_plan(db, 1),
+    )
+    shared_evaluation = evaluate_teaching_constraints(
+        session_date=draft.sessions[0].date,
+        start_time=draft.sessions[0].start_time,
+        end_time=draft.sessions[0].end_time,
+        planning_start_date=constraints.planning_period.start_date,
+        planning_end_date=constraints.planning_period.end_date,
+        allowed_windows=constraints.allowed_windows,
+        is_custom=constraints.is_custom,
+        study_type_windows=load_time_windows(db, draft.study_type_id_snapshot),
+    )
 
     codes = alert_codes(alerts, draft.sessions[0].id)
     assert ValidationAlertCode.ROOM_CAPACITY in codes
     assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION in codes
     assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
+    assert set(shared_evaluation.issue_codes) <= {code.value for code in codes}
     generation_message = alert_for(
         alerts,
         draft.sessions[0].id,

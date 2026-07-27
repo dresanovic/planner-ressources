@@ -1,4 +1,4 @@
-from datetime import time
+from datetime import datetime, time, timezone
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
@@ -34,6 +34,7 @@ from app.services.exam_scheduling import (
 from app.models.planning import ExamSession
 from app.services.schedule_lifecycle import LifecycleFailure, claim_active_working_revision, require_active_working_revision
 from app.api.schedule_lifecycle import lifecycle_failure_response
+from app.services.planning_outcomes import retain_planning_outcome
 
 router = APIRouter(tags=["exam scheduling"])
 
@@ -85,6 +86,25 @@ def generate(payload: GenerateExamsRequest, db: Session = Depends(get_db)):
     try:
         require_active_working_revision(db, payload.semester_id, payload.schedule_revision_id)
         result = generate_exams(db, payload.model_dump(by_alias=True))
+        completed_at = datetime.now(timezone.utc)
+        classifications = {
+            "scheduled": "successful",
+            "failed": "failed",
+            "stale": "stale",
+            "skipped_active": "skipped",
+            "skipped_disabled": "skipped",
+        }
+        for outcome in result["outcomes"]:
+            retain_planning_outcome(
+                db,
+                schedule_revision_id=payload.schedule_revision_id,
+                course_id=outcome["courseId"],
+                operation_kind="exam_generation",
+                classification=classifications[outcome["status"]],
+                source_status=outcome["status"],
+                result_payload=_transport(outcome),
+                completed_at=completed_at,
+            )
         db.commit()
         return _transport(result)
     except ExamSchedulingError as exc:

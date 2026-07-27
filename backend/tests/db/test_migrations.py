@@ -507,6 +507,67 @@ def test_seventh_migration_upgrades_exact_0006_backfills_populated_semesters_and
         assert migrations[-1].revision == "0006_conflict_aware_exam_scheduling"
 
 
+def test_eighth_migration_adds_empty_revision_scoped_planning_outcomes():
+    engine = create_engine("sqlite://")
+    _upgrade_chain_through_0006(engine)
+    seventh = _load_migration(
+        "0007_versioned_schedule_lifecycle.py", "calendar_workspace_lifecycle"
+    )
+    eighth = _load_migration(
+        "0008_calendar_workspace_outcomes.py", "calendar_workspace_outcomes"
+    )
+
+    with engine.begin() as connection:
+        _seed_fs012_lifecycle_upgrade_rows(connection)
+        seventh.op = Operations(MigrationContext.configure(connection))
+        seventh.upgrade()
+        eighth.op = Operations(MigrationContext.configure(connection))
+        eighth.upgrade()
+
+        inspector = inspect(connection)
+        assert {
+            "id",
+            "schedule_revision_id",
+            "course_id",
+            "operation_kind",
+            "classification",
+            "source_status",
+            "result_payload",
+            "completed_at",
+        }.issubset(_columns_by_name(inspector, "planning_outcomes"))
+        assert connection.execute(text("SELECT COUNT(*) FROM planning_outcomes")).scalar_one() == 0
+        assert any(
+            set(item.get("column_names") or [])
+            == {"schedule_revision_id", "course_id", "operation_kind"}
+            for item in inspector.get_unique_constraints("planning_outcomes")
+        )
+
+
+def test_current_schema_enforces_planning_outcome_foreign_keys_and_uniqueness():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    _seed_current_resource_course(engine, include_room=True, include_draft=False)
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO schedule_revisions "
+                "(id, semester_id, revision_number, state, row_version, created_at, state_changed_at, updated_at) "
+                "VALUES (1, 1, 1, 'draft', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+            )
+        )
+        insert = text(
+            "INSERT INTO planning_outcomes "
+            "(schedule_revision_id, course_id, operation_kind, classification, source_status, result_payload, completed_at) "
+            "VALUES (:revision_id, :course_id, 'single_course_generation', 'successful', 'generated', '{}', CURRENT_TIMESTAMP)"
+        )
+        connection.execute(insert, {"revision_id": 1, "course_id": 1})
+        with pytest.raises(Exception):
+            connection.execute(insert, {"revision_id": 1, "course_id": 1})
+        with pytest.raises(Exception):
+            connection.execute(insert, {"revision_id": 999, "course_id": 1})
+
+
 def test_seventh_migration_downgrade_refuses_unrepresentable_history_before_mutation():
     engine = create_engine("sqlite://")
     initialize_database(engine)

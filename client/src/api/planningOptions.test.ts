@@ -9,6 +9,7 @@ describe('planning options resource extensions', () => {
     const payload = {
       courses: [{ id: 1, name: 'Course', cohortSize: 24, availability: { available: false, reasons: ['NO_USABLE_ELIGIBLE_ROOM'] } }],
       semesters: [], timeWindows: [],
+      cohorts: [{ id: 4, name: 'Cohort', studentCount: 24 }],
       lecturers: [{ id: 2, name: 'Ada', referenceCode: 'LEC-002', isActive: true, revision: 1 }],
       rooms: [{ id: 3, name: 'Lab', referenceCode: 'ROOM-003', capacity: 30, isActive: true, revision: 1 }],
       courseResources: [{
@@ -24,6 +25,7 @@ describe('planning options resource extensions', () => {
 
     expect(result.courses[0].availability?.reasons).toContain('NO_USABLE_ELIGIBLE_ROOM')
     expect(result.courses[0].cohortSize).toBe(24)
+    expect(result.cohorts[0]).toEqual({ id: 4, name: 'Cohort', studentCount: 24 })
     expect(result.courseResources[0].eligibleRooms[0].referenceCode).toBe('ROOM-003')
     expect(result.courseResources[0].preferences).toEqual({ minimizeLecturerChanges: true, minimizeRoomChanges: true })
   })

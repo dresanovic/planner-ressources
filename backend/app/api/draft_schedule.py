@@ -1,5 +1,5 @@
 import re
-from datetime import date, time
+from datetime import date, datetime, time, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import JSONResponse
@@ -66,6 +66,10 @@ from app.services.draft_schedule_validation import (
     collect_validation_alerts,
 )
 from app.services.holiday_calendar import holiday_snapshot
+from app.services.planning_outcomes import (
+    StalePlanningOutcomeError,
+    retain_planning_outcome,
+)
 
 router = APIRouter(prefix="/api/courses/{course_id}/draft-schedule", tags=["draft schedule"])
 constraints_router = APIRouter(
@@ -108,6 +112,8 @@ def create_manual_session(
             start_time=start_time,
             end_time=end_time,
             units=request.units,
+            lecturer_id=request.lecturer_id,
+            cohort_id=request.cohort_id,
             room_id=request.room_id,
         )
         db.commit()
@@ -250,10 +256,37 @@ def generate_draft_schedule(
                     message="The holiday calendar changed during generation. Review the current calendar and retry.",
                 )]).model_dump(mode="json", by_alias=True, exclude_none=True),
             )
-        return JSONResponse(
+        try:
+            retain_planning_outcome(
+                db,
+                schedule_revision_id=request.schedule_revision_id,
+                course_id=course_id,
+                operation_kind="single_course_generation",
+                classification="failed",
+                source_status=result.errors[0].code.value if result.errors else "failed",
+                result_payload={
+                    "errors": [
+                        {
+                            "code": error.code.value,
+                            "message": error.message,
+                            "holidayDate": error.holiday_date.isoformat()
+                            if error.holiday_date
+                            else None,
+                            "holidayName": error.holiday_name,
+                        }
+                        for error in result.errors
+                    ]
+                },
+                completed_at=datetime.now(timezone.utc),
+            )
+            db.commit()
+        except StalePlanningOutcomeError:
+            db.rollback()
+        response = JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=GenerationFailureResponse(errors=result.errors).model_dump(mode="json", by_alias=True, exclude_none=True),
         )
+        return response
     try:
         # SQLite defers its physical transaction until the first write. Establish
         # the write boundary before the final holiday reload and hold it through
@@ -284,6 +317,20 @@ def generate_draft_schedule(
             semester_plan=semester,
             planning_period=planning_period,
             allowed_windows=time_windows,
+        )
+        retain_planning_outcome(
+            db,
+            schedule_revision_id=request.schedule_revision_id,
+            course_id=course_id,
+            operation_kind="single_course_generation",
+            classification="successful",
+            source_status="generated",
+            result_payload={
+                "draftScheduleId": draft.id,
+                "draftRevision": draft.revision,
+                "scheduledUnits": sum(session.units for session in result.sessions),
+            },
+            completed_at=datetime.now(timezone.utc),
         )
         db.commit()
     except Exception:

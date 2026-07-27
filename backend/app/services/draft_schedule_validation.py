@@ -48,6 +48,204 @@ class ValidationAlert:
     holiday_name: str | None = None
 
 
+@dataclass(frozen=True)
+class ValidationOccurrenceRecord:
+    occurrence_ref: str
+    course_ref: str
+    date: date
+    start_time: time
+    end_time: time
+    lecturer_refs: tuple[str, ...]
+    room_ref: str
+    cohort_ref: str
+    required_capacity: int
+
+
+@dataclass(frozen=True)
+class EvaluatedValidationFinding:
+    category: str
+    occurrence_refs: tuple[str, ...]
+    subject_ref: str | None = None
+    required_capacity: int | None = None
+    room_ref: str | None = None
+    current_capacity: int | None = None
+    holiday_date: date | None = None
+    holiday_name: str | None = None
+    issue_code: str | None = None
+
+
+@dataclass(frozen=True)
+class TeachingConstraintEvaluation:
+    generation_reasons: tuple[str, ...]
+    study_type_issue_code: str | None
+
+    @property
+    def issue_codes(self) -> tuple[str, ...]:
+        codes: list[str] = []
+        if self.generation_reasons:
+            codes.append(
+                ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION.value
+            )
+        if self.study_type_issue_code is not None:
+            codes.append(self.study_type_issue_code)
+        return tuple(codes)
+
+
+def evaluate_occurrence_records(
+    occurrences: list[ValidationOccurrenceRecord],
+    *,
+    room_capacities: dict[str, int],
+    holidays_by_date: dict[date, HolidayReference] | None,
+    eligible_lecturer_refs_by_course: dict[str, set[str]] | None = None,
+    eligible_room_refs_by_course: dict[str, set[str]] | None = None,
+    active_lecturer_refs: set[str] | None = None,
+    active_room_refs: set[str] | None = None,
+    unavailable_lecturer_refs_by_occurrence: dict[str, set[str]] | None = None,
+    unavailable_room_refs_by_occurrence: dict[str, set[str]] | None = None,
+) -> list[EvaluatedValidationFinding]:
+    """Evaluate common current facts without depending on ORM or snapshot shape."""
+    findings: list[EvaluatedValidationFinding] = []
+    unavailable_lecturer_refs_by_occurrence = (
+        unavailable_lecturer_refs_by_occurrence or {}
+    )
+    unavailable_room_refs_by_occurrence = unavailable_room_refs_by_occurrence or {}
+    for index, left in enumerate(occurrences):
+        for right in occurrences[index + 1 :]:
+            if not _record_overlap(left, right):
+                continue
+            shared = (
+                ("lecturer_conflict", set(left.lecturer_refs) & set(right.lecturer_refs)),
+                (
+                    "room_conflict",
+                    {left.room_ref} if left.room_ref == right.room_ref else set(),
+                ),
+                (
+                    "cohort_conflict",
+                    {left.cohort_ref}
+                    if left.cohort_ref == right.cohort_ref
+                    else set(),
+                ),
+            )
+            for category, subjects in shared:
+                for subject in sorted(subjects):
+                    findings.append(
+                        EvaluatedValidationFinding(
+                            category=category,
+                            occurrence_refs=tuple(
+                                sorted((left.occurrence_ref, right.occurrence_ref))
+                            ),
+                            subject_ref=subject,
+                        )
+                    )
+    for occurrence in occurrences:
+        eligible_lecturers = (
+            eligible_lecturer_refs_by_course or {}
+        ).get(occurrence.course_ref)
+        for lecturer_ref in occurrence.lecturer_refs:
+            if (
+                eligible_lecturers is not None
+                and (
+                    lecturer_ref not in eligible_lecturers
+                    or (
+                        active_lecturer_refs is not None
+                        and lecturer_ref not in active_lecturer_refs
+                    )
+                )
+            ):
+                findings.append(
+                    EvaluatedValidationFinding(
+                        category="other",
+                        occurrence_refs=(occurrence.occurrence_ref,),
+                        subject_ref=lecturer_ref,
+                        issue_code="LECTURER_INELIGIBLE",
+                    )
+                )
+            if lecturer_ref in unavailable_lecturer_refs_by_occurrence.get(
+                occurrence.occurrence_ref, set()
+            ):
+                findings.append(
+                    EvaluatedValidationFinding(
+                        category="other",
+                        occurrence_refs=(occurrence.occurrence_ref,),
+                        subject_ref=lecturer_ref,
+                        issue_code="LECTURER_UNAVAILABLE",
+                    )
+                )
+        eligible_rooms = (eligible_room_refs_by_course or {}).get(
+            occurrence.course_ref
+        )
+        if (
+            eligible_rooms is not None
+            and (
+                occurrence.room_ref not in eligible_rooms
+                or (
+                    active_room_refs is not None
+                    and occurrence.room_ref not in active_room_refs
+                )
+            )
+        ):
+            findings.append(
+                EvaluatedValidationFinding(
+                    category="other",
+                    occurrence_refs=(occurrence.occurrence_ref,),
+                    subject_ref=occurrence.room_ref,
+                    room_ref=occurrence.room_ref,
+                    issue_code="ROOM_INELIGIBLE",
+                )
+            )
+        if occurrence.room_ref in unavailable_room_refs_by_occurrence.get(
+            occurrence.occurrence_ref, set()
+        ):
+            findings.append(
+                EvaluatedValidationFinding(
+                    category="other",
+                    occurrence_refs=(occurrence.occurrence_ref,),
+                    subject_ref=occurrence.room_ref,
+                    room_ref=occurrence.room_ref,
+                    issue_code="ROOM_UNAVAILABLE",
+                )
+            )
+        capacity = room_capacities.get(occurrence.room_ref)
+        if capacity is None:
+            findings.append(
+                EvaluatedValidationFinding(
+                    category="other",
+                    occurrence_refs=(occurrence.occurrence_ref,),
+                    room_ref=occurrence.room_ref,
+                    issue_code="VALIDATION_DATA_MISSING",
+                )
+            )
+        elif capacity < occurrence.required_capacity:
+            findings.append(
+                EvaluatedValidationFinding(
+                    category="room_capacity",
+                    occurrence_refs=(occurrence.occurrence_ref,),
+                    required_capacity=occurrence.required_capacity,
+                    room_ref=occurrence.room_ref,
+                    current_capacity=capacity,
+                )
+            )
+        if holidays_by_date is None:
+            findings.append(
+                EvaluatedValidationFinding(
+                    category="other",
+                    occurrence_refs=(occurrence.occurrence_ref,),
+                    issue_code="HOLIDAY_DATA_MISSING",
+                )
+            )
+        elif occurrence.date in holidays_by_date:
+            holiday = holidays_by_date[occurrence.date]
+            findings.append(
+                EvaluatedValidationFinding(
+                    category="holiday",
+                    occurrence_refs=(occurrence.occurrence_ref,),
+                    holiday_date=holiday.date,
+                    holiday_name=holiday.name,
+                )
+            )
+    return findings
+
+
 def collect_validation_alerts(
     drafts: list[DraftSchedule],
     *,
@@ -73,55 +271,171 @@ def collect_validation_alerts(
     lecturers_by_id = lecturers_by_id or {}
     current_cohort_sizes_by_course = current_cohort_sizes_by_course or {}
 
-    for code, attr, label in [
-        (ValidationAlertCode.LECTURER_OVERLAP, "lecturer_id", "lecturer"),
-        (ValidationAlertCode.ROOM_OVERLAP, "room_id", "room"),
-        (ValidationAlertCode.COHORT_OVERLAP, "cohort_id", "Cohort"),
-    ]:
-        _add_overlap_alerts(alerts, sessions, code=code, attr=attr, label=label, rooms_by_id=rooms_by_id, lecturers_by_id=lecturers_by_id)
-
-    for draft, session in sessions:
-        if holidays_by_date is None:
+    session_by_ref = {
+        str(session.id): (draft, session) for draft, session in sessions
+    }
+    common_findings = evaluate_occurrence_records(
+        [
+            ValidationOccurrenceRecord(
+                occurrence_ref=str(session.id),
+                course_ref=str(draft.course_id),
+                date=session.date,
+                start_time=session.start_time,
+                end_time=session.end_time,
+                lecturer_refs=(str(session.lecturer_id),),
+                room_ref=str(session.room_id),
+                cohort_ref=str(session.cohort_id),
+                required_capacity=current_cohort_sizes_by_course.get(
+                    draft.course_id, draft.cohort_size_snapshot
+                ),
+            )
+            for draft, session in sessions
+        ],
+        room_capacities={
+            str(room_id): room.capacity for room_id, room in rooms_by_id.items()
+        },
+        holidays_by_date=holidays_by_date,
+        eligible_lecturer_refs_by_course={
+            str(course_id): {str(item) for item in lecturer_ids}
+            for course_id, lecturer_ids in eligible_lecturer_ids_by_course.items()
+        }
+        if eligible_lecturer_ids_by_course
+        else None,
+        eligible_room_refs_by_course={
+            str(course_id): {str(item) for item in room_ids}
+            for course_id, room_ids in eligible_room_ids_by_course.items()
+        }
+        if eligible_room_ids_by_course
+        else None,
+        active_lecturer_refs={str(item) for item in active_lecturer_ids}
+        if active_lecturer_ids is not None
+        else None,
+        active_room_refs={str(item) for item in active_room_ids}
+        if active_room_ids is not None
+        else None,
+        unavailable_lecturer_refs_by_occurrence={
+            str(session.id): {
+                str(session.lecturer_id)
+                for period in unavailability_by_resource.get(
+                    ("lecturer", session.lecturer_id), []
+                )
+                if resource_is_unavailable(
+                    [period],
+                    session.date,
+                    session.start_time,
+                    session.end_time,
+                )
+            }
+            for _draft, session in sessions
+        },
+        unavailable_room_refs_by_occurrence={
+            str(session.id): {
+                str(session.room_id)
+                for period in unavailability_by_resource.get(
+                    ("room", session.room_id), []
+                )
+                if resource_is_unavailable(
+                    [period],
+                    session.date,
+                    session.start_time,
+                    session.end_time,
+                )
+            }
+            for _draft, session in sessions
+        },
+    )
+    conflict_groups: dict[tuple[str, str], set[str]] = {}
+    for finding in common_findings:
+        if finding.category.endswith("_conflict"):
+            for occurrence_ref in finding.occurrence_refs:
+                conflict_groups.setdefault(
+                    (finding.category, occurrence_ref), set()
+                ).update(
+                    ref for ref in finding.occurrence_refs if ref != occurrence_ref
+                )
+            continue
+        occurrence_ref = finding.occurrence_refs[0]
+        _draft, session = session_by_ref[occurrence_ref]
+        if finding.category == "room_capacity":
+            alerts[session.id].append(
+                ValidationAlert(
+                    code=ValidationAlertCode.ROOM_CAPACITY,
+                    message=(
+                        f"Room capacity {finding.current_capacity} is lower than "
+                        f"Cohort size {finding.required_capacity}."
+                    ),
+                )
+            )
+        elif finding.category == "holiday":
+            alerts[session.id].append(
+                ValidationAlert(
+                    code=ValidationAlertCode.INSTITUTION_HOLIDAY,
+                    message=(
+                        f"{finding.holiday_name} on "
+                        f"{finding.holiday_date.isoformat()} is an institution holiday."
+                    ),
+                    holiday_date=finding.holiday_date,
+                    holiday_name=finding.holiday_name,
+                )
+            )
+        elif finding.issue_code == "VALIDATION_DATA_MISSING":
+            alerts[session.id].append(
+                ValidationAlert(
+                    code=ValidationAlertCode.VALIDATION_DATA_MISSING,
+                    message="Required room or Cohort data is missing for validation.",
+                )
+            )
+        elif finding.issue_code == "HOLIDAY_DATA_MISSING":
             alerts[session.id].append(
                 ValidationAlert(
                     code=ValidationAlertCode.VALIDATION_DATA_MISSING,
                     message="Institution holiday data is unavailable for validation.",
                 )
             )
-        elif session.date in holidays_by_date:
-            holiday = holidays_by_date[session.date]
-            alerts[session.id].append(
-                ValidationAlert(
-                    code=ValidationAlertCode.INSTITUTION_HOLIDAY,
-                    message=f"{holiday.name} on {holiday.date.isoformat()} is an institution holiday.",
-                    holiday_date=holiday.date,
-                    holiday_name=holiday.name,
-                )
+        elif finding.issue_code is not None:
+            code, message = {
+                "LECTURER_INELIGIBLE": (
+                    ValidationAlertCode.LECTURER_INELIGIBLE,
+                    "Assigned Lecturer is inactive or outside the current Course eligibility set.",
+                ),
+                "ROOM_INELIGIBLE": (
+                    ValidationAlertCode.ROOM_INELIGIBLE,
+                    "Assigned Room is inactive or outside the current Course eligibility set.",
+                ),
+                "LECTURER_UNAVAILABLE": (
+                    ValidationAlertCode.LECTURER_UNAVAILABLE,
+                    "Lecturer is unavailable during this session.",
+                ),
+                "ROOM_UNAVAILABLE": (
+                    ValidationAlertCode.ROOM_UNAVAILABLE,
+                    "Room is unavailable during this session.",
+                ),
+            }[finding.issue_code]
+            alerts[session.id].append(ValidationAlert(code=code, message=message))
+    conflict_metadata = {
+        "lecturer_conflict": (
+            ValidationAlertCode.LECTURER_OVERLAP,
+            "lecturer",
+        ),
+        "room_conflict": (ValidationAlertCode.ROOM_OVERLAP, "room"),
+        "cohort_conflict": (ValidationAlertCode.COHORT_OVERLAP, "Cohort"),
+    }
+    for (category, occurrence_ref), related_refs in conflict_groups.items():
+        _draft, session = session_by_ref[occurrence_ref]
+        code, label = conflict_metadata[category]
+        related = [
+            _related_session(*session_by_ref[ref], rooms_by_id, lecturers_by_id)
+            for ref in sorted(related_refs)
+        ]
+        alerts[session.id].append(
+            ValidationAlert(
+                code=code,
+                message=f"{label} overlaps with {len(related)} session(s).",
+                related_sessions=related,
             )
-        if eligible_lecturer_ids_by_course and (
-            session.lecturer_id not in eligible_lecturer_ids_by_course.get(draft.course_id, set())
-            or (active_lecturer_ids is not None and session.lecturer_id not in active_lecturer_ids)
-        ):
-            alerts[session.id].append(ValidationAlert(code=ValidationAlertCode.LECTURER_INELIGIBLE, message="Assigned Lecturer is inactive or outside the current Course eligibility set."))
-        if eligible_room_ids_by_course and (
-            session.room_id not in eligible_room_ids_by_course.get(draft.course_id, set())
-            or (active_room_ids is not None and session.room_id not in active_room_ids)
-        ):
-            alerts[session.id].append(ValidationAlert(code=ValidationAlertCode.ROOM_INELIGIBLE, message="Assigned Room is inactive or outside the current Course eligibility set."))
-        for resource_type, resource_id, code, label in (
-            ("lecturer", session.lecturer_id, ValidationAlertCode.LECTURER_UNAVAILABLE, "Lecturer"),
-            ("room", session.room_id, ValidationAlertCode.ROOM_UNAVAILABLE, "Room"),
-        ):
-            periods = unavailability_by_resource.get((resource_type, resource_id), [])
-            if resource_is_unavailable(periods, session.date, session.start_time, session.end_time):
-                alerts[session.id].append(ValidationAlert(code=code, message=f"{label} is unavailable during this session."))
-        _add_capacity_alert(
-            alerts,
-            draft,
-            session,
-            rooms_by_id,
-            current_cohort_sizes_by_course.get(draft.course_id, draft.cohort_size_snapshot),
         )
+
+    for draft, session in sessions:
         _add_generation_constraint_alert(alerts, draft, session, constraints_by_course_id)
         _add_study_type_window_alert(
             alerts,
@@ -137,6 +451,17 @@ def collect_validation_alerts(
 def sessions_overlap(left: DraftSession, right: DraftSession) -> bool:
     return (
         left.id != right.id
+        and left.date == right.date
+        and left.start_time < right.end_time
+        and left.end_time > right.start_time
+    )
+
+
+def _record_overlap(
+    left: ValidationOccurrenceRecord, right: ValidationOccurrenceRecord
+) -> bool:
+    return (
+        left.occurrence_ref != right.occurrence_ref
         and left.date == right.date
         and left.start_time < right.end_time
         and left.end_time > right.start_time
@@ -210,12 +535,23 @@ def _add_generation_constraint_alert(
             )
         )
         return
-    reasons = _generation_constraint_violation_reasons(session, constraints)
-    if reasons:
+    evaluation = evaluate_teaching_constraints(
+        session_date=session.date,
+        start_time=session.start_time,
+        end_time=session.end_time,
+        planning_start_date=constraints.planning_period.start_date,
+        planning_end_date=constraints.planning_period.end_date,
+        allowed_windows=constraints.allowed_windows,
+        is_custom=constraints.is_custom,
+    )
+    if evaluation.generation_reasons:
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION,
-                message=f"Generation constraint mismatch: {' '.join(reasons)}",
+                message=(
+                    "Generation constraint mismatch: "
+                    f"{' '.join(evaluation.generation_reasons)}"
+                ),
             )
         )
 
@@ -228,11 +564,33 @@ def _add_study_type_window_alert(
     constraints_by_course_id: dict[int, GenerationConstraints],
 ) -> None:
     constraints = constraints_by_course_id.get(draft.course_id)
-    if constraints is not None and constraints.is_custom:
-        return
-
     windows = study_windows_by_study_type_id.get(draft.study_type_id_snapshot)
-    if not windows:
+    evaluation = evaluate_teaching_constraints(
+        session_date=session.date,
+        start_time=session.start_time,
+        end_time=session.end_time,
+        planning_start_date=(
+            constraints.planning_period.start_date
+            if constraints is not None
+            else session.date
+        ),
+        planning_end_date=(
+            constraints.planning_period.end_date
+            if constraints is not None
+            else session.date
+        ),
+        allowed_windows=(
+            constraints.allowed_windows
+            if constraints is not None
+            else windows or []
+        ),
+        is_custom=constraints.is_custom if constraints is not None else False,
+        study_type_windows=windows or [],
+    )
+    if (
+        evaluation.study_type_issue_code
+        == ValidationAlertCode.VALIDATION_DATA_MISSING.value
+    ):
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.VALIDATION_DATA_MISSING,
@@ -240,7 +598,10 @@ def _add_study_type_window_alert(
             )
         )
         return
-    if not _fits_any_window(session.date, session.start_time, session.end_time, windows):
+    if (
+        evaluation.study_type_issue_code
+        == ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION.value
+    ):
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION,
@@ -252,40 +613,66 @@ def _add_study_type_window_alert(
         )
 
 
-def _generation_constraint_violation_reasons(
-    session: DraftSession,
-    constraints: GenerationConstraints,
-) -> list[str]:
+def _generation_constraint_violation_reasons_for_values(
+    *,
+    session_date: date,
+    start_time: time,
+    end_time: time,
+    planning_start_date: date,
+    planning_end_date: date,
+    allowed_windows: list[TimeWindowPlan],
+) -> tuple[str, ...]:
     reasons: list[str] = []
-    period = constraints.planning_period
-    if session.date < period.start_date:
+    if session_date < planning_start_date:
         reasons.append(
-            f"Session date {session.date.isoformat()} is before the allowed planning period "
-            f"{period.start_date.isoformat()}–{period.end_date.isoformat()}."
+            f"Session date {session_date.isoformat()} is before the allowed planning period "
+            f"{planning_start_date.isoformat()}–{planning_end_date.isoformat()}."
         )
-    elif session.date > period.end_date:
+    elif session_date > planning_end_date:
         reasons.append(
-            f"Session date {session.date.isoformat()} is after the allowed planning period "
-            f"{period.start_date.isoformat()}–{period.end_date.isoformat()}."
+            f"Session date {session_date.isoformat()} is after the allowed planning period "
+            f"{planning_start_date.isoformat()}–{planning_end_date.isoformat()}."
         )
-    if not _fits_any_window(
-        session.date,
-        session.start_time,
-        session.end_time,
-        constraints.allowed_windows,
+    if not fits_any_validation_window(
+        session_date,
+        start_time,
+        end_time,
+        allowed_windows,
     ):
-        reasons.append(_teaching_window_violation_reason(session, constraints.allowed_windows))
-    return reasons
+        reasons.append(
+            _teaching_window_violation_reason_for_values(
+                session_date=session_date,
+                start_time=start_time,
+                end_time=end_time,
+                windows=allowed_windows,
+            )
+        )
+    return tuple(reasons)
 
 
 def _teaching_window_violation_reason(
     session: DraftSession,
     windows: list[TimeWindowPlan],
 ) -> str:
+    return _teaching_window_violation_reason_for_values(
+        session_date=session.date,
+        start_time=session.start_time,
+        end_time=session.end_time,
+        windows=windows,
+    )
+
+
+def _teaching_window_violation_reason_for_values(
+    *,
+    session_date: date,
+    start_time: time,
+    end_time: time,
+    windows: list[TimeWindowPlan],
+) -> str:
     if not windows:
         return "No allowed teaching windows are configured."
 
-    weekday = session.date.weekday()
+    weekday = session_date.weekday()
     weekday_label = day_name[weekday]
     windows_for_day = sorted(
         (window for window in windows if window.weekday == weekday),
@@ -297,7 +684,7 @@ def _teaching_window_violation_reason(
             f"Allowed teaching windows: {_format_windows(windows)}."
         )
 
-    actual_time = f"{_format_time(session.start_time)}–{_format_time(session.end_time)}"
+    actual_time = f"{_format_time(start_time)}–{_format_time(end_time)}"
     allowed_times = ", ".join(
         f"{_format_time(window.start_time)}–{_format_time(window.end_time)}"
         for window in windows_for_day
@@ -324,7 +711,7 @@ def _format_time(value: time) -> str:
     return value.strftime("%H:%M")
 
 
-def _fits_any_window(
+def fits_any_validation_window(
     session_date: date,
     start_time: time,
     end_time: time,
@@ -336,6 +723,50 @@ def _fits_any_window(
         and start_time >= window.start_time
         and end_time <= window.end_time
         for window in windows
+    )
+
+
+def evaluate_teaching_constraints(
+    *,
+    session_date: date,
+    start_time: time,
+    end_time: time,
+    planning_start_date: date,
+    planning_end_date: date,
+    allowed_windows: list[TimeWindowPlan],
+    is_custom: bool,
+    study_type_windows: list[TimeWindowPlan] | None = None,
+) -> TeachingConstraintEvaluation:
+    """Evaluate established teaching constraints for live or captured facts."""
+    generation_reasons = _generation_constraint_violation_reasons_for_values(
+        session_date=session_date,
+        start_time=start_time,
+        end_time=end_time,
+        planning_start_date=planning_start_date,
+        planning_end_date=planning_end_date,
+        allowed_windows=allowed_windows,
+    )
+    effective_study_windows = (
+        allowed_windows if study_type_windows is None else study_type_windows
+    )
+    study_type_issue_code = None
+    if not is_custom:
+        if not effective_study_windows:
+            study_type_issue_code = (
+                ValidationAlertCode.VALIDATION_DATA_MISSING.value
+            )
+        elif not fits_any_validation_window(
+            session_date,
+            start_time,
+            end_time,
+            effective_study_windows,
+        ):
+            study_type_issue_code = (
+                ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION.value
+            )
+    return TeachingConstraintEvaluation(
+        generation_reasons=generation_reasons,
+        study_type_issue_code=study_type_issue_code,
     )
 
 

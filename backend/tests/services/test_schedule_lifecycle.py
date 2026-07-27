@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import time
 
 from sqlalchemy import create_engine, delete
@@ -101,6 +102,28 @@ def test_direct_first_publication_captures_stable_snapshot_and_nonblocking_condi
     assert content["snapshot"]["examSessions"][0]["configurationIdentifier"] == "FINAL"
     assert content["snapshot"]["courses"][0]["teachingSessions"][0]["validationAlerts"]
     assert content["snapshot"]["examSessions"][0]["validityIssues"]
+    assert content["snapshot"]["schemaVersion"] == 2
+    assert content["snapshot"]["courses"][0]["constraintProfile"] == {
+        "isCustom": False,
+        "sourceRevision": None,
+        "planningStartDate": "2026-09-01",
+        "planningEndDate": "2026-12-20",
+        "allowedTeachingWindows": [],
+    }
+
+    legacy_snapshot = deepcopy(content["snapshot"])
+    legacy_snapshot["schemaVersion"] = 1
+    for course in legacy_snapshot["courses"]:
+        course.pop("constraintProfile", None)
+    stored_revision = db.get(ScheduleRevision, revision["revisionId"])
+    stored_revision.snapshot_schema_version = 1
+    stored_revision.snapshot_document = legacy_snapshot
+    db.commit()
+
+    legacy_content = get_revision_content(db, revision["revisionId"])
+    assert legacy_content["contentSource"] == "captured_snapshot"
+    assert legacy_content["snapshot"] == legacy_snapshot
+    assert "constraintProfile" not in legacy_content["snapshot"]["courses"][0]
 
     with pytest.raises(LifecycleConflict) as exc_info:
         require_active_working_revision(db, 1, revision["revisionId"])

@@ -515,6 +515,34 @@ def test_manual_creation_builds_first_draft_appends_and_derives_progress():
     assert course_semester_progress(db, 1, 1) == (20, 6, 14)
 
 
+def test_manual_creation_persists_session_only_lecturer_and_cohort_overrides():
+    db = make_session()
+    seed_course(db)
+    db.add_all([
+        Lecturer(id=2, name="Grace Hopper"),
+        Cohort(id=2, name="AI 2", student_count=45),
+    ])
+    db.commit()
+
+    draft = create_manual_draft_session(
+        db,
+        1,
+        1,
+        session_date=date(2026, 9, 7),
+        start_time=time(8),
+        end_time=time(9, 45),
+        units=2,
+        lecturer_id=2,
+        cohort_id=2,
+        room_id=2,
+    )
+
+    assert draft.sessions[0].lecturer_id == 2
+    assert draft.sessions[0].cohort_id == 2
+    assert db.get(Course, 1).lecturer_id == 1
+    assert db.get(Course, 1).cohort_id == 1
+
+
 def test_manual_creation_enforces_every_hard_rule_without_changing_saved_state():
     db = make_session()
     seed_course(db)

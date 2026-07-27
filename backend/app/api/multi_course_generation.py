@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -20,6 +22,7 @@ from app.services.multi_course_generation import (
 )
 from app.services.schedule_lifecycle import LifecycleFailure, require_active_working_revision
 from app.api.schedule_lifecycle import lifecycle_failure_response
+from app.services.planning_outcomes import retain_planning_outcome
 
 router = APIRouter(prefix="/api/draft-schedules/batch", tags=["multi-course generation"])
 
@@ -75,6 +78,22 @@ def generate_multi_course_drafts(request: BatchGenerationRequest, db: Session = 
             request.courses,
             schedule_revision_id=request.schedule_revision_id,
         )
+        completed_at = datetime.now(timezone.utc)
+        for outcome in result.outcomes:
+            retain_planning_outcome(
+                db,
+                schedule_revision_id=request.schedule_revision_id,
+                course_id=outcome.course_id,
+                operation_kind="multi_course_generation",
+                classification="successful"
+                if outcome.status == "succeeded"
+                else "failed",
+                source_status=outcome.status,
+                result_payload=outcome.model_dump(
+                    mode="json", by_alias=True, exclude_none=True
+                ),
+                completed_at=completed_at,
+            )
         db.commit()
         return result
     except SemesterNotFoundError as exc:

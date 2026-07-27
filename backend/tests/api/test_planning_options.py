@@ -88,6 +88,8 @@ def test_planning_options_exclude_inactive_resources_from_new_choice_lists(clien
     db_session.add_all([
         Lecturer(id=40, name="Active Lecturer", reference_code="L-A", normalized_reference_code="l-a"),
         Lecturer(id=41, name="Inactive Lecturer", reference_code="L-I", normalized_reference_code="l-i", is_active=False),
+        Cohort(id=40, name="Active Cohort", student_count=20, normalized_name="active cohort", normalized_name_key="active cohort"),
+        Cohort(id=41, name="Inactive Cohort", student_count=20, normalized_name="inactive cohort", normalized_name_key="inactive cohort", is_active=False),
         Room(id=40, name="Active Room", reference_code="R-A", normalized_reference_code="r-a", capacity=30),
         Room(id=41, name="Inactive Room", reference_code="R-I", normalized_reference_code="r-i", capacity=30, is_active=False),
     ])
@@ -96,4 +98,5 @@ def test_planning_options_exclude_inactive_resources_from_new_choice_lists(clien
     payload = client.get("/api/planning-options").json()
 
     assert [item["name"] for item in payload["lecturers"]] == ["Active Lecturer"]
+    assert payload["cohorts"] == [{"id": 40, "name": "Active Cohort", "studentCount": 20}]
     assert [item["name"] for item in payload["rooms"]] == ["Active Room"]
