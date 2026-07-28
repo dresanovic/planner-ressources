@@ -237,10 +237,10 @@ beforeEach(() => {
 
 afterEach(() => { document.body.innerHTML = '' })
 
-async function renderPage() {
+async function renderPage(destination: 'calendar' | 'versions' | 'exams' = 'calendar') {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   await act(async () => {
-    root.render(<CourseSchedulePage catalogRevision={0} />)
+    root.render(<CourseSchedulePage catalogRevision={0} destination={destination} />)
     await new Promise((resolve) => setTimeout(resolve, 0))
   })
   return root
@@ -256,6 +256,58 @@ function summaryValue(label: string) {
 }
 
 describe('CourseSchedulePage multi-course mode', () => {
+  it('exposes exactly one focused Schedule workspace for each controlled destination', async () => {
+    const root = await renderPage('versions')
+    expect(document.querySelector<HTMLElement>('.versions-workspace-region')?.hidden).toBe(false)
+    expect(document.querySelector<HTMLElement>('.calendar-workspace-region')?.hidden).toBe(true)
+    expect(document.querySelector<HTMLElement>('.exams-workspace-region')?.hidden).toBe(true)
+    await act(async () => root.render(<CourseSchedulePage catalogRevision={0} destination="exams" />))
+    expect(document.querySelector<HTMLElement>('.versions-workspace-region')?.hidden).toBe(true)
+    expect(document.querySelector<HTMLElement>('.calendar-workspace-region')?.hidden).toBe(true)
+    expect(document.querySelector<HTMLElement>('.exams-workspace-region')?.hidden).toBe(false)
+    await act(async () => root.render(<CourseSchedulePage catalogRevision={0} destination="calendar" />))
+    expect(document.querySelector<HTMLElement>('.calendar-workspace-region')?.hidden).toBe(false)
+    expect(document.querySelectorAll('.calendar-workspace')).not.toHaveLength(0)
+  })
+
+  it('hides Planning inputs independently without hiding the compact context', async () => {
+    await renderPage()
+    expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(false)
+    await act(async () => button('Hide Planning inputs')?.click())
+    expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(true)
+    expect(document.querySelector('[aria-label="Schedule context"]')).not.toBeNull()
+    expect(document.querySelector('.planner-grid')?.getAttribute('data-planning-inputs-visible')).toBe('false')
+    await act(async () => button('Show Planning inputs')?.click())
+    expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(false)
+  })
+
+  it('identifies a retained course that is not assigned to the newly selected semester', async () => {
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      courses: [
+        { ...options.courses[0], semesterId: 1 },
+        { ...options.courses[1], semesterId: 2 },
+      ],
+      semesters: [
+        ...options.semesters,
+        { id: 2, name: 'Spring 2027', startDate: '2027-02-15', endDate: '2027-06-30' },
+      ],
+    })
+    await renderPage()
+    await act(async () => button('Hide Planning inputs')?.click())
+    const contextSelects = document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')
+    const semesterSelect = contextSelects[0]
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(semesterSelect, '2')
+      semesterSelect.dispatchEvent(new Event('change', { bubbles: true }))
+      await Promise.resolve()
+    })
+
+    const courseSelect = document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')[2]
+    expect(courseSelect.selectedOptions[0]?.textContent).toContain('not assigned to selected semester')
+    expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(true)
+  })
+
   it('loads the Working workspace by default and renders the adapted overview once', async () => {
     await renderPage()
 
@@ -385,9 +437,9 @@ describe('CourseSchedulePage multi-course mode', () => {
     })
     expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 12)
     await act(async () => {
-      ;[...document.querySelectorAll<HTMLButtonElement>('.lifecycle-history button')]
-        .find((item) => item.textContent?.includes('Revision 1') && item.textContent.includes('Draft'))
-        ?.click()
+      const revisionSelect = [...document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')][1]
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(revisionSelect, '11')
+      revisionSelect.dispatchEvent(new Event('change', { bubbles: true }))
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 11)
@@ -451,6 +503,26 @@ describe('CourseSchedulePage multi-course mode', () => {
     ))
 
     await renderPage()
+    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }))
+      await Promise.resolve()
+    })
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('.calendar-occurrence')?.click()
+      await Promise.resolve()
+    })
+    const sessionType = [...document.querySelectorAll<HTMLSelectElement>('select')]
+      .find((item) => item.previousElementSibling?.textContent === 'Session type')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(sessionType, 'teaching')
+      sessionType.dispatchEvent(new Event('change', { bubbles: true }))
+      button('List')?.click()
+      await Promise.resolve()
+    })
+    expect(document.querySelector('.session-pane')).not.toBeNull()
+    expect(document.querySelector('.active-filter-status')).not.toBeNull()
     await act(async () => {
       button('Mark ready for review')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -460,9 +532,12 @@ describe('CourseSchedulePage multi-course mode', () => {
 
     expect(document.body.textContent).toContain('Ready for review (not approved)')
     expect(document.body.textContent).toContain('Revision marked Ready for review.')
+    expect(button('List')?.getAttribute('aria-pressed')).toBe('true')
+    expect(document.querySelector('.session-pane')).not.toBeNull()
+    expect(document.querySelector('.active-filter-status')).not.toBeNull()
   })
 
-  it('hands calendar teaching edit and deletion into the established workflows', async () => {
+  it('edits teaching in the Calendar pane and retains the established deletion workflow', async () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     await renderPage()
     const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
@@ -474,9 +549,10 @@ describe('CourseSchedulePage multi-course mode', () => {
       ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
         .find((item) => item.textContent?.includes('Teaching'))?.click()
     })
-    await act(async () => button('Edit with existing editor')?.click())
+    await act(async () => button('Edit session')?.click())
     expect(button('Save')).toBeTruthy()
     await act(async () => button('Cancel')?.click())
+    expect(button('Week')?.getAttribute('aria-pressed')).toBe('true')
 
     await act(async () => button('Week')?.click())
     await act(async () => {
@@ -489,7 +565,291 @@ describe('CourseSchedulePage multi-course mode', () => {
     await act(async () => button('Cancel')?.click())
   })
 
-  it('hands calendar exam edit and deletion into the established workflows', async () => {
+  it('does not expose pane actions when editable schedule details failed to load', async () => {
+    mocks.getDraftSchedules.mockRejectedValue(new Error('draft overview unavailable'))
+    await renderPage()
+    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+        .find((item) => item.textContent?.includes('Teaching'))?.click()
+    })
+
+    expect(button('Edit session')).toBeUndefined()
+    expect(button('Delete with confirmation')).toBeUndefined()
+    expect(document.querySelector('.session-pane')?.textContent)
+      .toContain('Session actions are unavailable because the editable schedule details could not be loaded.')
+  })
+
+  it('leaves edit mode with an explanation when refreshed backing details disappear', async () => {
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    const root = await renderPage()
+    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+        .find((item) => item.textContent?.includes('Teaching'))?.click()
+    })
+    await act(async () => button('Edit session')?.click())
+    expect(document.querySelector('.session-pane-editing')).not.toBeNull()
+
+    mocks.getDraftSchedules.mockResolvedValue([])
+    await act(async () => {
+      root.render(<CourseSchedulePage catalogRevision={1} destination="calendar" />)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.querySelector('.session-pane-editing')).toBeNull()
+    expect(document.querySelector('.session-pane-detail')).not.toBeNull()
+    expect(document.querySelector('.session-pane')?.textContent)
+      .toContain('Editing ended because the current editable session details are no longer available.')
+  })
+
+  it('keeps dirty pane work by default and discards only after explicit confirmation', async () => {
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    await renderPage()
+    const calendarDate = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(calendarDate, '2026-10-05')
+      calendarDate.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    const occurrence = [...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+      .find((item) => item.textContent?.includes('Teaching'))!
+    await act(async () => occurrence.click())
+    await act(async () => button('Edit session')?.click())
+    const editorDate = document.querySelector<HTMLInputElement>('.session-pane input[type="date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(editorDate, '2026-10-06')
+      editorDate.dispatchEvent(new Event('input', { bubbles: true }))
+      editorDate.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    const close = document.querySelector<HTMLButtonElement>('[aria-label="Close session pane"]')!
+    await act(async () => close.click())
+    expect(document.body.textContent).toContain('Discard unsaved changes?')
+    await act(async () => button('Keep editing')?.click())
+    expect(document.querySelector('.session-pane-editing')).not.toBeNull()
+    expect(document.querySelector('.session-pane')?.contains(document.activeElement)).toBe(true)
+    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Close session pane"]')?.click())
+    await act(async () => button('Discard changes')?.click())
+    expect(document.querySelector('.session-pane')).toBeNull()
+    expect(document.activeElement).toBe(occurrence)
+  })
+
+  it('ignores an older save refresh after the selected semester changes', async () => {
+    const secondSemester = {
+      id: 2,
+      name: 'Spring 2027',
+      startDate: '2027-02-15',
+      endDate: '2027-06-30',
+    }
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      semesters: [...options.semesters, secondSemester],
+    })
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    mocks.updateDraftSession.mockResolvedValue(draftScheduleFixture)
+    await renderPage()
+
+    const oldLifecycle = deferred<ReturnType<typeof lifecycleOverviewFixture>>()
+    const oldCalendar = deferred<ReturnType<typeof loadedCalendarWorkspaceFixture>>()
+    const oldDrafts = deferred<typeof draftScheduleFixture[]>()
+    const oldExams = deferred<typeof examOverview>()
+    const lifecycle2Base = lifecycleOverviewFixture()
+    const revision2 = {
+      ...lifecycle2Base.activeWorkingRevision!,
+      revisionId: 22,
+      semesterId: 2,
+      revisionNumber: 4,
+    }
+    const lifecycle2 = {
+      ...lifecycle2Base,
+      semesterId: 2,
+      semesterName: secondSemester.name,
+      stateToken: 'state-2',
+      activeWorkingRevision: revision2,
+      revisions: [revision2],
+    }
+    const workspace2Base = loadedCalendarWorkspaceFixture()
+    const workspace2 = {
+      ...workspace2Base,
+      semester: {
+        semesterId: 2,
+        name: secondSemester.name,
+        startDate: secondSemester.startDate,
+        endDate: secondSemester.endDate,
+      },
+      selectedRevision: {
+        ...workspace2Base.selectedRevision,
+        revisionId: 22,
+        revisionNumber: 4,
+      },
+      availableContexts: {
+        activeWorking: {
+          ...workspace2Base.availableContexts.activeWorking!,
+          revisionId: 22,
+          revisionNumber: 4,
+        },
+        currentPublished: null,
+      },
+      workspaceToken: 'semester:2:revision:22',
+      courses: [],
+      occurrences: [],
+    }
+    const examOverview2 = { ...examOverview, semesterId: 2, courses: [] }
+    mocks.getScheduleLifecycle.mockImplementation((semesterId: number) => (
+      semesterId === 1 ? oldLifecycle.promise : Promise.resolve(lifecycle2)
+    ))
+    mocks.getCalendarWorkspace.mockImplementation((semesterId: number) => (
+      semesterId === 1 ? oldCalendar.promise : Promise.resolve(workspace2)
+    ))
+    mocks.getDraftSchedules.mockImplementation((semesterId: number) => (
+      semesterId === 1 ? oldDrafts.promise : Promise.resolve([])
+    ))
+    mocks.getExamPlanningOverview.mockImplementation((semesterId: number) => (
+      semesterId === 1 ? oldExams.promise : Promise.resolve(examOverview2)
+    ))
+    mocks.getScheduleLifecycle.mockClear()
+    mocks.getCalendarWorkspace.mockClear()
+    mocks.getDraftSchedules.mockClear()
+    mocks.getExamPlanningOverview.mockClear()
+
+    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => {
+      ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+        .find((item) => item.textContent?.includes('Teaching'))?.click()
+    })
+    await act(async () => {
+      button('Edit session')?.click()
+    })
+    await act(async () => {
+      button('Save')?.click()
+      await Promise.resolve()
+    })
+    expect(mocks.updateDraftSession).toHaveBeenCalled()
+    expect(mocks.getScheduleLifecycle).toHaveBeenCalledWith(1)
+    expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1)
+    expect(mocks.getDraftSchedules).toHaveBeenCalledWith(1)
+    expect(mocks.getExamPlanningOverview).toHaveBeenCalledWith(1)
+
+    const semesterSelect = document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')[0]
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(semesterSelect, '2')
+      semesterSelect.dispatchEvent(new Event('change', { bubbles: true }))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    await act(async () => {
+      oldLifecycle.resolve(lifecycleOverviewFixture())
+      oldCalendar.resolve(loadedCalendarWorkspaceFixture())
+      oldDrafts.resolve([draftScheduleFixture])
+      oldExams.resolve(examOverview)
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(semesterSelect.value).toBe('2')
+    expect(document.querySelector('[data-revision-id="22"]')).not.toBeNull()
+    expect(document.querySelector('[data-revision-id="11"]')).toBeNull()
+  })
+
+  it('does not start a stale refresh when an older mutation resolves after a semester change', async () => {
+    const mutation = deferred<{
+      courseId: number
+      semesterId: number
+      scheduledUnits: number
+      remainingUnits: number
+      draftSchedule: typeof draftScheduleFixture
+    }>()
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      semesters: [
+        ...options.semesters,
+        { id: 2, name: 'Spring 2027', startDate: '2027-02-15', endDate: '2027-06-30' },
+      ],
+    })
+    mocks.createManualDraftSession.mockReturnValue(mutation.promise)
+    await renderPage()
+
+    await act(async () => {
+      button('Add Draft Session')?.click()
+      await Promise.resolve()
+    })
+    const semesterSelect = document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')[0]
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(semesterSelect, '2')
+      semesterSelect.dispatchEvent(new Event('change', { bubbles: true }))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    mocks.getScheduleLifecycle.mockClear()
+    mocks.getCalendarWorkspace.mockClear()
+    mocks.getDraftSchedules.mockClear()
+    mocks.getExamPlanningOverview.mockClear()
+
+    await act(async () => {
+      mutation.resolve({
+        courseId: 1,
+        semesterId: 1,
+        scheduledUnits: 2,
+        remainingUnits: 6,
+        draftSchedule: draftScheduleFixture,
+      })
+      await mutation.promise
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(semesterSelect.value).toBe('2')
+    expect(mocks.getScheduleLifecycle).not.toHaveBeenCalled()
+    expect(mocks.getCalendarWorkspace).not.toHaveBeenCalled()
+    expect(mocks.getDraftSchedules).not.toHaveBeenCalled()
+    expect(mocks.getExamPlanningOverview).not.toHaveBeenCalled()
+    expect((button('Add Draft Session') as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('focuses the committed context after discarding a dirty course change', async () => {
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    await renderPage()
+    const calendarDate = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(calendarDate, '2026-10-05')
+      calendarDate.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    const occurrence = [...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+      .find((item) => item.textContent?.includes('Teaching'))!
+    await act(async () => occurrence.click())
+    await act(async () => button('Edit session')?.click())
+    const editorDate = document.querySelector<HTMLInputElement>('.session-pane input[type="date"]')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(editorDate, '2026-10-06')
+      editorDate.dispatchEvent(new Event('input', { bubbles: true }))
+      editorDate.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+
+    const courseSelect = [...document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')][2]
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(courseSelect, '2')
+      courseSelect.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(document.body.textContent).toContain('Discard unsaved changes?')
+    await act(async () => {
+      button('Discard changes')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.querySelector('.session-pane')).toBeNull()
+    expect(courseSelect.value).toBe('2')
+    expect(document.activeElement).toBe(document.querySelector('.schedule-context-surface h2'))
+  })
+
+  it('edits exams in the Calendar pane and retains the established deletion workflow', async () => {
     const activeExam = {
       id: 1,
       revision: 1,
@@ -577,7 +937,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
         .find((item) => item.textContent?.includes('Exam'))?.click()
     })
-    await act(async () => button('Edit with existing editor')?.click())
+    await act(async () => button('Edit session')?.click())
     expect(document.body.textContent).toContain('Correct active exam')
     await act(async () => button('Cancel')?.click())
 

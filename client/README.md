@@ -10,6 +10,20 @@ On screens wider than 820px the hierarchy remains in a persistent sidebar. At 82
 
 FS-018 changes only the client shell and the current view/category/expansion state. It adds no route, dependency, backend endpoint, API contract, authentication behavior, scheduling rule, or catalog rule.
 
+## Streamlined Schedule Workspace (FS-019)
+
+Schedule has three ordered child destinations: **Calendar**, **Versions**, and **Exams**. Only the selected workspace is exposed at a time, while the mounted Schedule owner retains compatible semester, revision, course, Calendar mode, period, filters, and clean selection state. The compact context header remains available in every destination.
+
+Selecting a teaching or exam occurrence in Calendar opens one adaptive right-side detail pane. **Edit session** reuses the established teaching and exam fields and API mutations without forcing List mode or opening a separate exam editor. Save, Cancel, close, selection changes, context changes, Schedule-child changes, and Academic Data navigation all use one dirty-work guard. The safe default is **Keep editing**; confirmed discard commits the pending destination and restores deterministic focus. List remains available as the deliberate dense-review workflow.
+
+At a Calendar pane container width of at least 70rem and a viewport wider than 820px, the session pane docks beside the Calendar. Below the container threshold it overlays from the right, and at 820px or below it becomes a full-screen modal pane with contained focus and inert background controls. Sticky actions remain reachable at 320px.
+
+On wide presentations the application navigation can be **Unpinned**. Its preference is stored locally under `resource-planner.navigation.pinned.v1`; the temporary navigation then opens as a modal left overlay and can be pinned again. Calendar's **Hide Planning inputs** control is independent and intentionally not persisted. Both controls reclaim workspace width without resetting Schedule or pane state, and pin controls are omitted from the narrow menu.
+
+Versions now uses content-sized Working and Current Published summaries with collapsed, on-demand revision history. Exams presents requirement editing, manual placement, generation constraints, and authoritative eligible/unavailable course groups in its focused workspace; selection and the preparation action remain outside the scrolling course list.
+
+FS-019 is a frontend composition and interaction change. It adds no client router, state-management dependency, backend endpoint, HTTP schema, persistence model, lifecycle state, exam eligibility rule, scheduling validation rule, authentication behavior, or external synchronization.
+
 ## Resource Eligibility and Availability (FS-008)
 
 The **Academic Data** workspace includes coded Lecturer and Room administration. Active resources are shown by default; planners can search by name/code, inspect inactive records, maintain Room capacity and recurring/dated unavailable periods, review usage before removal, and reactivate retired resources. Unreferenced resources are permanently deleted; resources used by active Courses or saved sessions are retained inactive with the affected Courses explained.

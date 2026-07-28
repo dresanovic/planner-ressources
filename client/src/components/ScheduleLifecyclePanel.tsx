@@ -46,14 +46,20 @@ export function ScheduleLifecyclePanel({ overview, selectedRevisionId, busy, onS
       {overview.revisions.length > 0 && (
         <ol className="lifecycle-history" aria-label="Revision history">
           {overview.revisions.map((revision) => (
-            <li key={revision.revisionId}>
-              <button type="button" className={revision.revisionId === selected?.revisionId ? 'selected-revision' : 'secondary-button'} disabled={busy} onClick={() => onSelectRevision(revision.revisionId)}>
-                Revision {revision.revisionNumber} · {stateLabel(revision.state)}
-              </button>
-              <div className="lifecycle-event-history">
-                {revision.originRevisionId && <small>Origin revision ID {revision.originRevisionId}</small>}
-                {revision.events.map((event) => <small key={event.eventSequence}>{eventLabel(event.eventType)} <time dateTime={event.occurredAt}>{formatVienna(event.occurredAt)}</time></small>)}
-              </div>
+            <li key={revision.revisionId} data-revision-id={revision.revisionId}>
+              <details>
+                <summary>
+                  <strong>Revision {revision.revisionNumber}</strong>
+                  <span className={`lifecycle-state state-${revision.state}`}>{stateLabel(revision.state)}</span>
+                </summary>
+                <div className="lifecycle-event-history">
+                  <button type="button" className={revision.revisionId === selected?.revisionId ? 'selected-revision' : 'secondary-button'} disabled={busy || revision.revisionId === selected?.revisionId} onClick={() => onSelectRevision(revision.revisionId)}>
+                    {revision.revisionId === selected?.revisionId ? 'Current selection' : `Open Revision ${revision.revisionNumber}`}
+                  </button>
+                  {revision.originRevisionId && <small>Origin revision ID {revision.originRevisionId}</small>}
+                  {revision.events.map((event) => <small key={event.eventSequence}>{eventLabel(event.eventType)} <time dateTime={event.occurredAt}>{formatVienna(event.occurredAt)}</time></small>)}
+                </div>
+              </details>
             </li>
           ))}
         </ol>

@@ -15,6 +15,7 @@ import {
   visibleRange,
   type WorkspaceFilters,
 } from './calendarWorkspaceUtils'
+import { calendarFindingLabel } from './calendarFindingLabel'
 
 type Props = {
   workspace: CalendarWorkspace | null
@@ -32,6 +33,12 @@ type Props = {
   onDeleteExam?: (occurrenceRef: string) => void
   selectedCourseId?: number | null
   onTraceCourse?: (courseId: number | null) => void
+  selectedOccurrenceRef?: string | null
+  onSelectedOccurrenceChange?: (occurrenceRef: string | null) => void
+  renderSessionPane?: (
+    occurrence: WorkspaceOccurrence,
+    requestClose: () => void,
+  ) => ReactNode
 }
 
 export type WorkspaceListTraceTarget = {
@@ -106,7 +113,6 @@ export function CalendarPlanningWorkspace(props: Props) {
   return (
     <>
       <CalendarPlanningWorkspaceContent
-        key={props.workspace?.workspaceToken ?? 'no-workspace'}
         {...props}
         mode={mode}
         anchor={anchor}
@@ -143,6 +149,9 @@ function CalendarPlanningWorkspaceContent({
   onDeleteExam,
   selectedCourseId,
   onTraceCourse,
+  selectedOccurrenceRef,
+  onSelectedOccurrenceChange,
+  renderSessionPane,
   mode,
   anchor,
   setMode,
@@ -151,35 +160,71 @@ function CalendarPlanningWorkspaceContent({
   onSelectionDisappeared,
 }: WorkspaceContentProps) {
   const [filters, setFilters] = useState<WorkspaceFilters>({})
-  const [selectedRef, setSelectedRef] = useState<string | null>(null)
+  const [internalSelectedRef, setInternalSelectedRef] = useState<string | null>(null)
+  const selectedRef = selectedOccurrenceRef === undefined ? internalSelectedRef : selectedOccurrenceRef
+  const updateSelection = useCallback((reference: string | null) => {
+    if (selectedOccurrenceRef === undefined) setInternalSelectedRef(reference)
+    onSelectedOccurrenceChange?.(reference)
+  }, [onSelectedOccurrenceChange, selectedOccurrenceRef])
   const [listTraceRef, setListTraceRef] = useState<string | null>(null)
   const [drilldown, setDrilldown] = useState<WorkspaceDrilldown | null>(null)
   const detailHeading = useRef<HTMLHeadingElement>(null)
   const drilldownHeading = useRef<HTMLHeadingElement>(null)
   const drilldownInitiator = useRef<HTMLButtonElement | null>(null)
   const priorTraceCourseId = useRef<number | null | undefined>(undefined)
-  const selectedRefOnUnmount = useRef<string | null>(null)
-  const selectionDisappearedHandler = useRef(onSelectionDisappeared)
+  const workspaceIdentity = useRef<string | null>(null)
 
   useEffect(() => {
-    selectedRefOnUnmount.current = selectedRef
-  }, [selectedRef])
+    if (workspace?.workspaceState !== 'loaded') {
+      workspaceIdentity.current = null
+      return
+    }
+    const nextIdentity = [
+      workspace.semester.semesterId,
+      workspace.selectedRevision.revisionId,
+      workspace.selectedRevision.designation,
+    ].join(':')
+    const identityChanged = (
+      workspaceIdentity.current != null
+      && workspaceIdentity.current !== nextIdentity
+    )
+    workspaceIdentity.current = nextIdentity
 
-  useEffect(() => {
-    selectionDisappearedHandler.current = onSelectionDisappeared
-  }, [onSelectionDisappeared])
+    if (identityChanged) {
+      const hadSelection = selectedRef != null
+      setFilters({})
+      queueMicrotask(() => updateSelection(null))
+      setListTraceRef(null)
+      setDrilldown(null)
+      if (hadSelection) {
+        onSelectionDisappeared(
+          'The selected session is no longer available in the selected revision.',
+        )
+      }
+      return
+    }
+
+    setFilters((current) => reconcileFilters(current, workspace))
+    if (
+      selectedRef != null
+      && !workspace.occurrences.some((item) => item.occurrenceRef === selectedRef)
+    ) {
+      queueMicrotask(() => updateSelection(null))
+      onSelectionDisappeared(
+        'The selected session is no longer available in the refreshed workspace.',
+      )
+    }
+    if (
+      drilldown != null
+      && workspace.summary[drilldown.metricKey].contributorRefs.length === 0
+    ) {
+      queueMicrotask(() => setDrilldown(null))
+    }
+  }, [drilldown, onSelectionDisappeared, selectedRef, updateSelection, workspace])
 
   useEffect(() => {
     if (drilldown != null) drilldownHeading.current?.focus()
   }, [drilldown])
-
-  useEffect(() => () => {
-    if (selectedRefOnUnmount.current != null) {
-      selectionDisappearedHandler.current(
-        'The selected session is no longer available in the refreshed workspace.',
-      )
-    }
-  }, [])
 
   if (loading && workspace == null) return <section className="calendar-workspace workspace-state" aria-busy="true" role="status">Loading {intendedContext ?? 'semester workspace'}…</section>
   if (error && workspace == null) return <section className="calendar-workspace workspace-state"><div role="alert"><h2>Calendar workspace unavailable</h2>{intendedContext && <p>{intendedContext}</p>}<p>{error}</p><button type="button" onClick={onRetry}>Retry</button></div><p>The established Courses overview remains available while the coherent workspace read is unavailable.</p><div className="workspace-list-mode">{renderListContent(listContent, null)}</div></section>
@@ -222,13 +267,13 @@ function CalendarPlanningWorkspaceContent({
 
   function chooseOccurrence(reference: string) {
     setListTraceRef(null)
-    setSelectedRef(reference)
-    window.setTimeout(() => detailHeading.current?.focus(), 0)
+    updateSelection(reference)
+    if (!renderSessionPane) window.setTimeout(() => detailHeading.current?.focus({ preventScroll: true }), 0)
   }
 
   function closeOccurrenceDetail() {
     const reference = selectedRef
-    setSelectedRef(null)
+    updateSelection(null)
     window.setTimeout(() => {
       const target = [...document.querySelectorAll<HTMLButtonElement>('[data-occurrence-ref]')]
         .find((item) => item.dataset.occurrenceRef === reference)
@@ -248,7 +293,7 @@ function CalendarPlanningWorkspaceContent({
         (item) => item.occurrenceRef === selectedRef,
       )
     ) {
-      setSelectedRef(null)
+      updateSelection(null)
       onSelectionDisappeared(
         'The selected session no longer matches the current result set.',
       )
@@ -338,48 +383,48 @@ function CalendarPlanningWorkspaceContent({
       </div>
       {activeFilterCount > 0 && <p className="active-filter-status" role="status">{activeFilterCount} active filter{activeFilterCount === 1 ? '' : 's'} · {projection.courses.length} courses · {projection.occurrences.length} occurrences</p>}
 
-      <h3
-        className="sr-only"
-        tabIndex={-1}
-        ref={resultsHeadingRef}
-        data-workspace-results-heading
-      >
-        Calendar results
-      </h3>
-      <div
-        className="workspace-list-mode"
-        aria-label="List mode"
-        hidden={mode !== 'list'}
-      >
-        {renderListContent(listContent, listContext)}
+      <div className={`calendar-pane-layout${selectedOccurrence ? ' has-session-pane' : ''}`}>
+        <div className="calendar-projection">
+          <h3
+            className="sr-only"
+            tabIndex={-1}
+            ref={resultsHeadingRef}
+            data-workspace-results-heading
+          >
+            Calendar results
+          </h3>
+          <div
+            className="workspace-list-mode"
+            aria-label="List mode"
+            hidden={mode !== 'list'}
+          >
+            {renderListContent(listContent, listContext)}
+          </div>
+          {mode !== 'list' && (
+            visibleOccurrences.length === 0 && visibleHolidays.length === 0 ? (
+              <p className="empty-state">{projection.occurrences.length === 0 && activeFilterCount > 0 ? 'No records match the active filters.' : 'No sessions occur in this period.'}</p>
+            ) : (
+              <>
+                {visibleOccurrences.length === 0 && activeFilterCount > 0 && <p className="empty-state">No records match the active filters. Holiday date context remains visible.</p>}
+                <CalendarSurface mode={mode} occurrences={visibleOccurrences} holidays={visibleHolidays} courses={workspace.courses} selectedRef={selectedRef} onSelect={chooseOccurrence} semesterStart={workspace.semester.startDate} semesterEnd={workspace.semester.endDate} />
+              </>
+            )
+          )}
+        </div>
+        {selectedOccurrence && renderSessionPane?.(selectedOccurrence, closeOccurrenceDetail)}
+        {selectedOccurrence && !renderSessionPane && (
+          <OccurrenceDetail
+            occurrence={selectedOccurrence}
+            workspace={workspace}
+            headingRef={detailHeading}
+            onClose={closeOccurrenceDetail}
+            onEditTeaching={onEditTeaching}
+            onDeleteTeaching={onDeleteTeaching}
+            onEditExam={onEditExam}
+            onDeleteExam={onDeleteExam}
+          />
+        )}
       </div>
-      {mode !== 'list' && (
-        visibleOccurrences.length === 0 && visibleHolidays.length === 0 ? (
-          <p className="empty-state">{projection.occurrences.length === 0 && activeFilterCount > 0 ? 'No records match the active filters.' : 'No sessions occur in this period.'}</p>
-        ) : (
-          <>
-            {visibleOccurrences.length === 0 && activeFilterCount > 0 && <p className="empty-state">No records match the active filters. Holiday date context remains visible.</p>}
-            <CalendarSurface mode={mode} occurrences={visibleOccurrences} holidays={visibleHolidays} courses={workspace.courses} selectedRef={selectedRef} onSelect={chooseOccurrence} semesterStart={workspace.semester.startDate} semesterEnd={workspace.semester.endDate} />
-          </>
-        )
-      )}
-
-      {selectedOccurrence && (
-        <OccurrenceDetail
-          occurrence={selectedOccurrence}
-          workspace={workspace}
-          headingRef={detailHeading}
-          onClose={closeOccurrenceDetail}
-          onEditTeaching={(reference) => {
-            setMode('list')
-            setSelectedRef(null)
-            onEditTeaching?.(reference)
-          }}
-          onDeleteTeaching={onDeleteTeaching}
-          onEditExam={onEditExam}
-          onDeleteExam={onDeleteExam}
-        />
-      )}
       <p className="sr-only" id="calendar-workspace-announcer" aria-live="polite" />
     </section>
   )
@@ -407,7 +452,7 @@ function CalendarPlanningWorkspaceContent({
       setMode(drilldown.priorMode)
       setAnchor(drilldown.priorAnchor)
     }
-    setSelectedRef(null)
+    updateSelection(null)
     setDrilldown(null)
     setListTraceRef(null)
     if (priorTraceCourseId.current !== undefined) {
@@ -542,7 +587,7 @@ function OccurrenceDetail({ occurrence, workspace, headingRef, onClose, onEditTe
           </>
         )}
       </dl>
-      <section aria-labelledby="current-warnings-title"><h4 id="current-warnings-title">Current warnings</h4>{findings.length ? <ul>{findings.map((item) => <li key={item.findingRef}>{findingLabel(item)}</li>)}</ul> : <p>No current warnings.</p>}</section>
+      <section aria-labelledby="current-warnings-title"><h4 id="current-warnings-title">Current warnings</h4>{findings.length ? <ul>{findings.map((item) => <li key={item.findingRef}>{calendarFindingLabel(item)}</li>)}</ul> : <p>No current warnings.</p>}</section>
       {workspace.selectedRevision.readOnly ? <p className="read-only-note">Correction actions are unavailable for Current Published. Open the Working revision to make changes.</p> : (
         <div className="detail-actions">
           {occurrence.kind === 'teaching' ? <>{onEditTeaching && <button type="button" onClick={() => onEditTeaching(occurrence.occurrenceRef)}>Edit with existing editor</button>}{onDeleteTeaching && <button type="button" className="destructive-button" onClick={() => onDeleteTeaching(occurrence.occurrenceRef)}>Delete with confirmation</button>}</> : <>{onEditExam && <button type="button" onClick={() => onEditExam(occurrence.occurrenceRef)}>Edit with existing editor</button>}{onDeleteExam && <button type="button" className="destructive-button" onClick={() => onDeleteExam(occurrence.occurrenceRef)}>Delete with confirmation</button>}</>}
@@ -555,6 +600,32 @@ function OccurrenceDetail({ occurrence, workspace, headingRef, onClose, onEditTe
 function SummaryCard({ metricKey, label, metric, value, scopeLabel, onActivate }: { metricKey: keyof LoadedCalendarWorkspace['summary']; label: string; metric: WorkspaceMetric; value: string; scopeLabel: string; onActivate: (metricKey: keyof LoadedCalendarWorkspace['summary'], label: string, metric: WorkspaceMetric, initiator: HTMLButtonElement) => void }) {
   const actionable = (metric.availability === 'available' || metric.availability === 'partial') && metric.contributorRefs.length > 0
   return <button type="button" className={`summary-card availability-${metric.availability}`} disabled={!actionable} onClick={(event) => onActivate(metricKey, label, metric, event.currentTarget)} aria-label={`${label}: ${value}. ${scopeLabel}. ${actionable ? 'Show contributing records.' : ''}`}><span>{label}</span><strong>{value}</strong><small>{metric.availability === 'partial' ? 'Known incomplete · ' : ''}{scopeLabel}</small></button>
+}
+
+function reconcileFilters(
+  filters: WorkspaceFilters,
+  workspace: LoadedCalendarWorkspace,
+): WorkspaceFilters {
+  const facets: Record<keyof WorkspaceFilters, { value: string }[]> = {
+    course: workspace.filterFacets.courses,
+    cohort: workspace.filterFacets.cohorts,
+    lecturer: workspace.filterFacets.lecturers,
+    room: workspace.filterFacets.rooms,
+    studyType: workspace.filterFacets.studyTypes,
+    sessionType: workspace.filterFacets.sessionTypes,
+    lifecycle: workspace.filterFacets.lifecycleContexts,
+    validation: workspace.filterFacets.validationCategories,
+  }
+  let changed = false
+  const next = { ...filters }
+  for (const key of Object.keys(facets) as (keyof WorkspaceFilters)[]) {
+    const value = filters[key]
+    if (value != null && !facets[key].some((facet) => facet.value === value)) {
+      delete next[key]
+      changed = true
+    }
+  }
+  return changed ? next : filters
 }
 
 function FacetSelect({ label, value, values, onChange }: { label: string; value?: string; values: { value: string; label: string }[]; onChange: (value: string | undefined) => void }) {
@@ -692,7 +763,7 @@ function contributorLabel(workspace: LoadedCalendarWorkspace, ref: string) {
     const reasons = course.needsReviewReasonRefs.map((reasonRef) => {
       if (reasonRef.startsWith('remaining:')) return `${course.remainingTeachingUnits} units remaining`
       const finding = workspace.validationFindings.find((item) => item.findingRef === reasonRef)
-      if (finding) return findingLabel(finding)
+      if (finding) return calendarFindingLabel(finding)
       const outcome = workspace.planningOutcomes.find((item) => item.outcomeRef === reasonRef)
       return outcome ? outcomeLabel(outcome) : reasonRef
     })
@@ -701,18 +772,10 @@ function contributorLabel(workspace: LoadedCalendarWorkspace, ref: string) {
   const occurrence = workspace.occurrences.find((item) => item.occurrenceRef === ref)
   if (occurrence) return `${occurrence.kind} · ${occurrence.date} ${occurrence.startTime}`
   const finding = workspace.validationFindings.find((item) => item.findingRef === ref)
-  if (finding) return findingLabel(finding)
+  if (finding) return calendarFindingLabel(finding)
   const outcome = workspace.planningOutcomes.find((item) => item.outcomeRef === ref)
   if (outcome) return outcomeLabel(outcome)
   return ref
-}
-
-function findingLabel(finding: LoadedCalendarWorkspace['validationFindings'][number]) {
-  const details = finding.details
-  if (details.kind === 'conflict') return `${details.conflictType} conflict · ${details.occurrenceRefs.join(', ')}`
-  if (details.kind === 'capacity') return `${details.roomName} capacity ${details.currentCapacity}; ${details.requiredCapacity} required`
-  if (details.kind === 'holiday') return `${details.holidayName} · ${details.holidayDate}`
-  return details.issueCode.replaceAll('_', ' ')
 }
 
 function detailValue(value: unknown) {

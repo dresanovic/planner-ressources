@@ -112,6 +112,60 @@
   display: none;
 }
 
+.navigation-pin {
+  margin-left: auto;
+  border: 0;
+  border-radius: 6px;
+  background: #edf2f8;
+  color: #173e69;
+  padding: 7px 9px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (min-width: 821px) {
+  .application-shell[data-navigation-pinned="false"] {
+    grid-template-columns: 1fr;
+  }
+
+  .application-shell[data-navigation-pinned="false"] .navigation-opener.is-unpinned {
+    display: inline-flex;
+    position: fixed;
+    z-index: 30;
+    top: .75rem;
+    left: .75rem;
+    background: #0f4c81;
+    color: #fff;
+  }
+
+  .application-shell[data-navigation-pinned="false"] .application-navigation {
+    display: none;
+    position: fixed;
+    z-index: 40;
+    inset: 0 auto 0 0;
+    width: min(20rem, calc(100vw - 3rem));
+    overflow-y: auto;
+    box-sizing: border-box;
+    box-shadow: 8px 0 24px rgb(23 32 51 / 25%);
+  }
+
+  .application-shell[data-navigation-pinned="false"] .application-navigation.is-open,
+  .application-shell[data-navigation-pinned="false"] .navigation-backdrop {
+    display: block;
+  }
+
+  .application-shell[data-navigation-pinned="false"] .navigation-backdrop {
+    position: fixed;
+    z-index: 35;
+    inset: 0;
+    background: rgb(23 32 51 / 48%);
+  }
+
+  .application-navigation.is-temporary .navigation-close {
+    display: inline-flex;
+  }
+}
+
 .application-content {
   min-width: 0;
   outline: none;
@@ -989,6 +1043,35 @@ button:disabled {
 .state-superseded,
 .state-abandoned { background: #ececf0; color: #4b4e57; }
 
+.lifecycle-history {
+  display: grid;
+  gap: .65rem;
+  margin: 1rem 0 0;
+  padding-left: 1.4rem;
+}
+
+.lifecycle-history details {
+  border: 1px solid #d7dce5;
+  border-radius: .65rem;
+  background: #fff;
+}
+
+.lifecycle-history summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  cursor: pointer;
+  padding: .7rem .8rem;
+}
+
+.lifecycle-event-history {
+  display: grid;
+  gap: .35rem;
+  border-top: 1px solid #e4e8ef;
+  padding: .75rem .8rem;
+}
+
 .lifecycle-history,
 .publication-conditions {
   margin: 0.75rem 0 0;
@@ -1015,6 +1098,8 @@ button:disabled {
 }
 
 .calendar-workspace {
+  position: relative;
+  container-type: inline-size;
   --calendar-ink: #172033;
   --calendar-muted: #586174;
   --calendar-border: #cbd3df;
@@ -1028,6 +1113,242 @@ button:disabled {
   background: #fff;
   color: var(--calendar-ink);
   padding: clamp(.75rem, 2vw, 1.25rem);
+}
+
+.planner-grid[data-planning-inputs-visible="false"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.planning-input-visibility {
+  display: flex;
+  justify-content: flex-end;
+  margin: -.35rem 0 .75rem;
+}
+
+.calendar-pane-layout {
+  position: relative;
+  min-width: 0;
+}
+
+.schedule-context-surface {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #d7dce5;
+  border-radius: .8rem;
+  background: #fff;
+  padding: .8rem 1rem;
+}
+
+.schedule-context-surface h2,
+.schedule-context-surface p {
+  margin: 0;
+}
+
+.schedule-context-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .65rem;
+}
+
+.schedule-context-field {
+  display: grid;
+  gap: .3rem;
+  min-width: 11rem;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.schedule-workspace-region[hidden],
+.input-summary[hidden] {
+  display: none !important;
+}
+
+.versions-workspace-region,
+.exams-workspace-region {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  max-width: 72rem;
+}
+
+.versions-workspace-region .lifecycle-panel,
+.exams-workspace-region .exam-card,
+.focused-exam-requirement {
+  align-self: start;
+  height: auto;
+  margin: 0;
+}
+
+.exam-generation-courses {
+  display: grid;
+  gap: 1rem;
+  max-height: 24rem;
+  overflow-y: auto;
+  border: 1px solid #d7dce5;
+  border-radius: .65rem;
+  padding: .75rem;
+}
+
+.exam-generation-courses section,
+.exam-course-choice {
+  display: grid;
+  gap: .35rem;
+}
+
+.exam-generation-courses h4 {
+  margin: 0;
+}
+
+.exam-course-choice {
+  border-bottom: 1px solid #eef1f5;
+  padding: .5rem 0;
+}
+
+.exam-generation-action-context {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: .6rem;
+  border-top: 1px solid #d7dce5;
+  background: #fff;
+  padding-top: .75rem;
+}
+
+.focused-exam-requirement {
+  display: grid;
+  gap: .75rem;
+  border: 1px solid #d7dce5;
+  border-radius: .8rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+.calendar-projection {
+  min-width: 0;
+}
+
+.session-pane {
+  position: absolute;
+  z-index: 25;
+  inset: 0 0 auto auto;
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  width: min(30rem, calc(100% - 1rem));
+  max-height: min(48rem, calc(100vh - 3rem));
+  overflow: auto;
+  box-sizing: border-box;
+  border: 1px solid #b8c4d6;
+  border-radius: .85rem;
+  background: #fff;
+  box-shadow: 0 18px 50px rgb(23 32 51 / 24%);
+  padding: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.session-pane-heading,
+.session-pane-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.session-pane-heading h2,
+.session-pane-heading p {
+  margin: 0;
+}
+
+.session-pane-close {
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  padding: .55rem;
+}
+
+.session-pane-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: .7rem;
+  margin: 0;
+}
+
+.session-pane-details div {
+  border-left: 3px solid var(--calendar-border);
+  padding-left: .6rem;
+}
+
+.session-pane-details dt {
+  color: var(--calendar-muted);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.session-pane-details dd {
+  margin: .2rem 0 0;
+}
+
+.session-pane .session-edit-fields,
+.session-pane .exam-form-grid {
+  display: grid;
+  gap: .75rem;
+}
+
+.session-pane-actions {
+  position: sticky;
+  bottom: -1rem;
+  margin: 0 -1rem -1rem;
+  border-top: 1px solid var(--calendar-border);
+  background: #fff;
+  padding: .8rem 1rem;
+}
+
+@container (min-width: 70rem) {
+  .calendar-pane-layout.has-session-pane {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(22rem, 30rem);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .calendar-pane-layout.has-session-pane .session-pane {
+    position: sticky;
+    inset: 1rem auto auto;
+    width: auto;
+    max-height: calc(100vh - 2rem);
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .schedule-context-surface,
+  .schedule-context-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .schedule-context-field {
+    min-width: 0;
+  }
+
+  .session-pane.session-pane-fullscreen {
+    position: fixed;
+    z-index: 70;
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    padding: 1rem;
+  }
+
+  .session-pane-fullscreen .session-pane-actions {
+    bottom: -1rem;
+  }
 }
 
 .calendar-context-header,

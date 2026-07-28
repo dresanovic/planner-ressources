@@ -6,6 +6,7 @@ import {
   ApplicationNavigation,
   type AcademicDataCategory,
   type PlannerView,
+  type ScheduleDestination,
 } from './ApplicationNavigation'
 
 function installMatchMedia(matches = false) {
@@ -24,17 +25,25 @@ function installMatchMedia(matches = false) {
 function Harness() {
   const [view, setView] = useState<PlannerView>('schedule')
   const [category, setCategory] = useState<AcademicDataCategory>('semesters')
+  const [destination, setDestination] = useState<ScheduleDestination>('calendar')
+  const [scheduleExpanded, setScheduleExpanded] = useState(true)
   const [expanded, setExpanded] = useState(false)
   const [open, setOpen] = useState(false)
+  const [pinned, setPinned] = useState(true)
   return <ApplicationNavigation
     view={view}
     selectedCategory={category}
+    selectedScheduleDestination={destination}
+    scheduleExpanded={scheduleExpanded}
     academicExpanded={expanded}
     navigationOpen={open}
+    navigationPinned={pinned}
     onToggleAcademic={() => setExpanded((value) => view === 'academic' ? true : !value)}
-    onSelectSchedule={() => setView('schedule')}
+    onToggleSchedule={() => setScheduleExpanded((value) => view === 'schedule' ? true : !value)}
+    onSelectScheduleDestination={(next) => { setDestination(next); setScheduleExpanded(true); setView('schedule') }}
     onSelectCategory={(next) => { setCategory(next); setExpanded(true); setView('academic') }}
     onNavigationOpenChange={setOpen}
+    onNavigationPinnedChange={setPinned}
   />
 }
 
@@ -49,7 +58,7 @@ function button(label: string) {
   return Array.from(document.querySelectorAll('button')).find((item) => item.textContent?.trim().startsWith(label)) as HTMLButtonElement
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => { document.body.innerHTML = ''; vi.unstubAllGlobals() })
 
 describe('ApplicationNavigation', () => {
   it('defines the exact fixed Academic Data metadata', () => {
@@ -68,11 +77,23 @@ describe('ApplicationNavigation', () => {
   it('exposes one primary hierarchy and no unavailable destinations', async () => {
     await renderNavigation()
     expect(document.querySelectorAll('nav[aria-label="Primary navigation"]')).toHaveLength(1)
-    expect(button('Schedule').getAttribute('aria-current')).toBe('page')
+    expect(button('Schedule').getAttribute('aria-expanded')).toBe('true')
+    expect(button('Calendar').getAttribute('aria-current')).toBe('page')
     expect(button('Academic Data').getAttribute('aria-expanded')).toBe('false')
     expect(document.body.textContent).not.toContain('Dashboard')
     act(() => button('Academic Data').click())
     expect(ACADEMIC_DATA_CATEGORIES.map(({ label }) => button(label).textContent?.trim())).toEqual(ACADEMIC_DATA_CATEGORIES.map(({ label }) => label))
+  })
+
+  it('exposes ordered Schedule children with exactly one current destination', async () => {
+    await renderNavigation()
+    expect(['Calendar', 'Versions', 'Exams'].map((label) => button(label).textContent?.trim())).toEqual(['Calendar', 'Versions', 'Exams'])
+    act(() => button('Versions').click())
+    expect(button('Versions').getAttribute('aria-current')).toBe('page')
+    expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1)
+    act(() => button('Exams').click())
+    expect(button('Exams').getAttribute('aria-current')).toBe('page')
+    expect(button('Schedule').className).toContain('is-active')
   })
 
   it('uses the parent as disclosure only and retains sole parent/child context', async () => {
@@ -105,12 +126,16 @@ describe('ApplicationNavigation', () => {
     expect(dialog?.getAttribute('aria-modal')).toBe('true')
     expect(dialog?.getAttribute('aria-labelledby')).toBe('navigation-title')
     expect(document.activeElement).toBe(button('Close menu'))
+    expect(button('Menu').hasAttribute('inert')).toBe(true)
+    expect(button('Menu').getAttribute('aria-hidden')).toBe('true')
     act(() => dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true })))
     expect(document.activeElement).toBe(button('Academic Data'))
     act(() => dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })))
     expect(document.activeElement).toBe(button('Close menu'))
     act(() => dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
     expect(document.activeElement).toBe(button('Menu'))
+    expect(button('Menu').hasAttribute('inert')).toBe(false)
+    expect(button('Menu').getAttribute('aria-hidden')).toBeNull()
     act(() => button('Menu').click())
     act(() => button('Close menu').click())
     expect(document.activeElement).toBe(button('Menu'))
@@ -123,15 +148,45 @@ describe('ApplicationNavigation', () => {
     act(() => button('Menu').click())
     expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(true)
     await act(async () => { media.dispatch(false); await Promise.resolve() })
-    expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(false)
+    expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(true)
     expect(document.querySelector('[role="dialog"]')).toBeNull()
-    expect(document.activeElement).toBe(button('Schedule'))
+    expect(document.activeElement).toBe(button('Calendar'))
+  })
+
+  it('unpins wide navigation into a modal overlay and can pin it persistently again', async () => {
+    await renderNavigation()
+    act(() => button('Unpin navigation').click())
+    expect(button('Open navigation')).toBeDefined()
+    expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(false)
+    act(() => button('Open navigation').click())
+    const dialog = document.querySelector('[role="dialog"]')
+    expect(dialog?.getAttribute('aria-modal')).toBe('true')
+    expect(document.querySelector('.navigation-backdrop')).not.toBeNull()
+    expect(document.activeElement).toBe(button('Close menu'))
+    expect(button('Open navigation').hasAttribute('inert')).toBe(true)
+    expect(button('Open navigation').getAttribute('aria-hidden')).toBe('true')
+    act(() => button('Versions').click())
+    expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(false)
+    expect(button('Open navigation').hasAttribute('inert')).toBe(false)
+    expect(button('Open navigation').getAttribute('aria-hidden')).toBeNull()
+    act(() => button('Open navigation').click())
+    act(() => button('Pin navigation').click())
+    expect(document.querySelector('[role="dialog"]')).toBeNull()
+    expect(button('Unpin navigation')).toBeDefined()
+    expect(button('Open navigation').className).not.toContain('is-unpinned')
+  })
+
+  it('omits pin controls from the narrow navigation presentation', async () => {
+    await renderNavigation(true)
+    act(() => button('Menu').click())
+    expect(button('Pin navigation')).toBeUndefined()
+    expect(button('Unpin navigation')).toBeUndefined()
   })
 
   it('dismisses the narrow panel on current and changed leaf selections', async () => {
     await renderNavigation(true)
     act(() => button('Menu').click())
-    act(() => button('Schedule').click())
+    act(() => button('Calendar').click())
     expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(false)
     act(() => button('Menu').click())
     act(() => button('Academic Data').click())
