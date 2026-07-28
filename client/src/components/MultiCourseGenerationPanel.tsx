@@ -2,6 +2,7 @@ import type { CourseOption } from '../api/planningOptions'
 
 type Props = {
   courses: CourseOption[]
+  courseDraftStatuses?: Record<number, { hasDraft: boolean; scheduledUnits: number; totalUnits: number }>
   selectedCourseIds: number[]
   disabled?: boolean
   unavailableDatesInput?: string
@@ -12,6 +13,7 @@ type Props = {
 
 export function MultiCourseGenerationPanel({
   courses,
+  courseDraftStatuses,
   selectedCourseIds,
   disabled = false,
   unavailableDatesInput = '',
@@ -42,17 +44,27 @@ export function MultiCourseGenerationPanel({
         Maximize scheduled units across the selection without creating lecturer, room, or cohort overlaps.
       </p>
       <div className="course-picker" role="group" aria-label="Courses to optimize">
-        {courses.map((course) => (
-          <label className="course-checkbox" key={course.id}>
-            <input
-              type="checkbox"
-              checked={selectedCourseIds.includes(course.id)}
-              onChange={() => toggle(course.id)}
-              disabled={disabled || (!selectedCourseIds.includes(course.id) && count >= 20)}
-            />
-            <span>{course.name}</span>
-          </label>
-        ))}
+        {courses.map((course) => {
+          const draftStatus = courseDraftStatuses?.[course.id]
+          return (
+            <label className="course-checkbox" key={course.id}>
+              <input
+                type="checkbox"
+                checked={selectedCourseIds.includes(course.id)}
+                onChange={() => toggle(course.id)}
+                disabled={disabled || (!selectedCourseIds.includes(course.id) && count >= 20)}
+              />
+              <span className="course-checkbox-name">{course.name}</span>
+              {draftStatus && (
+                <span className={`course-draft-status ${draftStatus.hasDraft ? 'has-draft' : 'no-draft'}`}>
+                  {draftStatus.hasDraft
+                    ? `Draft · ${draftStatus.scheduledUnits}/${draftStatus.totalUnits} units`
+                    : 'No draft'}
+                </span>
+              )}
+            </label>
+          )
+        })}
       </div>
       <p className={valid ? 'selection-count' : 'selection-count selection-invalid'}>
         {count} selected {valid ? '' : '— select 1 to 20 courses'}

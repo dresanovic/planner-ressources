@@ -1470,9 +1470,9 @@ Accountless review delivers the common one-course/one-lecturer collaboration out
 
 #### In scope
 
-- Planner-generated review token for one course schedule revision and its one corresponding lecturer.
+- Planner-generated review token for one lecturer (includes all the courses which are assign to this lecturor) schedule revision and its one corresponding lecturer.
 - A link containing the token that the planner copies and sends manually.
-- Token reuse for three days, planner-controlled revocation, and replacement issuance.
+- Token reuse for three days as default and the planner can override the duration, planner-controlled revocation, and replacement issuance.
 - Read-only schedule review for the scoped course.
 - Lecturer comments and “this session is not possible” flags, optionally including suggested alternatives in comment text.
 - Feedback visibly associated with the relevant schedule revision and session.
@@ -1484,7 +1484,7 @@ Accountless review delivers the common one-course/one-lecturer collaboration out
 
 #### Main workflow
 
-The planner prepares a course schedule for review, generates and copies a three-day link, and sends it manually. The lecturer opens it, reviews assigned course sessions, and may comment or flag impossible sessions. The planner reviews feedback and decides whether to revise or publish.
+The planner prepares a course schedule for review, generates and copies a three-day (default) link, and sends it manually. The lecturer opens it, reviews assigned course sessions, and may comment or flag impossible sessions. The planner reviews feedback and decides whether to revise or publish.
 
 #### Business rules
 
@@ -1535,13 +1535,13 @@ Proposed — later release.
 ```text
 Use $speckit-specify to create the specification for FS-015: Accountless Lecturer Token Review.
 
-Outcome: Let a planner share one course schedule with its corresponding lecturer through a secure temporary link and receive comments/flags without an account.
+Outcome: Let a planner share one lecturer schedule with its corresponding lecturer through a secure temporary link and receive comments/flags without an account.
 Actors: Planner user and one lecturer.
-In scope: Token scoped to one course schedule revision and lecturer; planner copy action; manual sending; reusable three-day access; revoke and replace; read-only review; comments; impossible-session flags; revision/session association; planner publication regardless of feedback.
+In scope: Token scoped to one lecturer schedule revision and lecturer; planner copy action; manual sending; reusable three-day (default) access; revoke and replace; read-only review; comments; impossible-session flags; revision/session association; planner publication regardless of feedback.
 Out of scope: Multi-lecturer token review, automated email, accounts, schedule editing, mandatory acceptance, and publication blocking.
 Rules: Expired/revoked tokens expose no data; the token has minimum scope; feedback is advisory; deadline information is not an approval gate.
 Dependency: FS-013.
-Completion: A lecturer can securely review and comment for three days while the planner retains control.
+Completion: A lecturer can securely review and comment for the number of days (configured by planner) while the planner retains control.
 Clarification topics: Replacement revocation, configurable shorter expiry, rate limits, identity display, and retention.
 
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Include explicit security, privacy, expiry, misuse, and measurable acceptance requirements without prescribing implementation.

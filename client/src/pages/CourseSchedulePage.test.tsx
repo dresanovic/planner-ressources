@@ -1125,6 +1125,16 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(mocks.getGenerationConstraints).toHaveBeenCalledTimes(1)
   })
 
+  it('shows each course draft status in several-course mode', async () => {
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    await renderPage()
+
+    act(() => button('Several courses')?.click())
+
+    const statuses = [...document.querySelectorAll('.course-draft-status')].map((status) => status.textContent)
+    expect(statuses).toEqual(['Draft · 8/8 units', 'No draft'])
+  })
+
   it('clears the batch selection when the semester changes', async () => {
     mocks.getPlanningOptions.mockResolvedValue({
       ...options,

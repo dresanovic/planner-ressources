@@ -110,6 +110,22 @@ def test_working_default_has_traceable_remaining_work_and_outcome_coverage():
         ] == "partial"
 
 
+def test_lecturer_filter_facet_uses_the_resource_name():
+    with _db() as db:
+        seed_lifecycle_semester(db, with_schedule=True)
+        lecturer = db.get(Lecturer, 1)
+        lecturer.name = "Ada Lovelace"
+        initial = get_lifecycle_overview(db, 1)
+        create_working_revision(db, 1, initial["stateToken"])
+        db.commit()
+
+        workspace = get_calendar_workspace(db, 1)
+
+        assert workspace["filterFacets"]["lecturers"] == [
+            {"value": "lecturer:1", "label": "Ada Lovelace"}
+        ]
+
+
 def test_working_default_preserves_study_type_window_validation_code():
     with _db() as db:
         seed_lifecycle_semester(db, with_schedule=True)

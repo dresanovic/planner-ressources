@@ -37,6 +37,30 @@ describe('MultiCourseGenerationPanel', () => {
     expect(onChange).toHaveBeenCalledWith([])
   })
 
+  it('shows informational draft status without changing course selection', () => {
+    const onChange = vi.fn()
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    act(() => root.render(
+      <MultiCourseGenerationPanel
+        courses={courses}
+        courseDraftStatuses={{
+          1: { hasDraft: true, scheduledUnits: 4, totalUnits: 8 },
+          2: { hasDraft: false, scheduledUnits: 0, totalUnits: 8 },
+          3: { hasDraft: true, scheduledUnits: 8, totalUnits: 8 },
+        }}
+        selectedCourseIds={[]}
+        onChange={onChange}
+        onGenerate={vi.fn()}
+      />,
+    ))
+
+    const statuses = [...document.querySelectorAll('.course-draft-status')].map((status) => status.textContent)
+    expect(statuses).toEqual(['Draft · 4/8 units', 'No draft', 'Draft · 8/8 units'])
+
+    act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click())
+    expect(onChange).toHaveBeenCalledWith([1])
+  })
+
   it('allows two unavailable dates to be entered character by character', () => {
     function Harness() {
       const [datesInput, setDatesInput] = useState('')

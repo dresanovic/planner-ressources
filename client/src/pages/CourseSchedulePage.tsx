@@ -219,6 +219,19 @@ export function CourseSchedulePage({
       : null,
     [selectedCourse, selectedSemesterId, loadedOverviewSemesterId, overviewLoading, overviewRefreshError, schedules],
   )
+  const batchCourseDraftStatuses = useMemo(
+    () => selectedSemesterId && loadedOverviewSemesterId === selectedSemesterId && !overviewLoading && !overviewRefreshError
+      ? Object.fromEntries(semesterCourses.map((course) => {
+          const progress = deriveCourseProgress(course.totalUnits, schedules, course.id, selectedSemesterId)
+          return [course.id, {
+            hasDraft: schedules.some((schedule) => schedule.courseId === course.id && schedule.semesterId === selectedSemesterId),
+            scheduledUnits: progress.scheduledUnits,
+            totalUnits: progress.totalUnits,
+          }]
+        }))
+      : undefined,
+    [semesterCourses, selectedSemesterId, loadedOverviewSemesterId, overviewLoading, overviewRefreshError, schedules],
+  )
   const unavailableDates = useMemo(
     () => [...new Set(unavailableDatesInput.split(',').map((value) => value.trim()).filter(Boolean))].sort(),
     [unavailableDatesInput],
@@ -1186,7 +1199,7 @@ export function CourseSchedulePage({
                     </button>
                   </>
                 ) : (
-                  <MultiCourseGenerationPanel courses={semesterCourses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
+                  <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
                 )}
                 {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
               </>
