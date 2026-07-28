@@ -2,18 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
   AllowedTeachingWindow,
-  DraftScheduleContext,
   DraftSession,
   DraftSchedule,
   GenerationConstraints,
   PlanningEntity,
   ReviewFilters,
   SessionEditFailure,
-  UpdateDraftSessionRequest,
   ViewMode,
 } from '../api/draftSchedule'
 import type { PlanningOptions, RoomOption } from '../api/planningOptions'
-import type { LecturerRecord, ResourceCandidate } from '../api/resourceCatalog'
+import type { LecturerRecord } from '../api/resourceCatalog'
 import type { ExamSession } from '../api/examScheduling'
 import type { WorkspaceListContext } from './CalendarPlanningWorkspace'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
@@ -21,8 +19,16 @@ import {
   groupSessionsByWeek,
   sortSessionsChronologically,
 } from './scheduleReviewUtils'
+import { TeachingSessionEditor } from './TeachingSessionEditor'
+import {
+  buildTeachingSessionEditModels,
+  createTeachingSessionDraft,
+  derivedLengthLabel,
+  resourceLabel,
+  type EditableDraftSessionRequest,
+  type TeachingSessionEditModel,
+} from './sessionEditModel'
 
-type EditableDraftSessionRequest = Omit<UpdateDraftSessionRequest, 'scheduleRevisionId'>
 const EMPTY_ROOMS: RoomOption[] = []
 const EMPTY_LECTURERS: LecturerRecord[] = []
 const EMPTY_COURSE_RESOURCES: PlanningOptions['courseResources'] = []
@@ -79,7 +85,7 @@ function DraftSchedulePanelStateful({
   const listTraceTargetRef = useRef<HTMLDivElement>(null)
   const listTraceReference = workspaceListContext?.traceTarget?.reference
   const overviewSessions = useMemo(
-    () => flattenSchedules(schedules, rooms, lecturers, courseResources),
+    () => buildTeachingSessionEditModels(schedules, rooms, lecturers, courseResources),
     [schedules, rooms, lecturers, courseResources],
   )
   const filterOptions = useMemo(() => buildFilterOptions(overviewSessions, schedules, exams, examCourseNames), [overviewSessions, schedules, exams, examCourseNames])
@@ -241,7 +247,7 @@ function DraftSchedulePanelStateful({
               {visibleSessions.map((session) => (
                 <div className="session-row" key={`${session.draftScheduleId}-${session.id}`}>
                   {editingSessionId === session.id && editDraft ? (
-                    <SessionEditFields
+                    <TeachingSessionEditor
                       session={session}
                       draft={editDraft}
                       isSaving={isSavingEdit}
@@ -342,21 +348,15 @@ function DraftSchedulePanelStateful({
     }))
   }
 
-  function openEdit(session: OverviewSession) {
+  function openEdit(session: TeachingSessionEditModel) {
     if (isBusy || readOnly) return
     setViewMode('list')
     setEditingSessionId(session.id)
-    setEditDraft({
-      date: session.date,
-      startTime: session.startTime,
-      endTime: session.endTime,
-      lecturerId: session.lecturerId,
-      roomId: session.roomId,
-    })
+    setEditDraft(createTeachingSessionDraft(session))
     setEditErrors([])
   }
 
-  function requestDelete(session: OverviewSession) {
+  function requestDelete(session: TeachingSessionEditModel) {
     const schedule = schedules.find((item) => item.draftScheduleId === session.draftScheduleId)
     if (schedule && onDeleteSession) onDeleteSession(session, schedule)
   }
@@ -408,113 +408,6 @@ function SessionAlerts({ alerts }: { alerts: DraftSession['validationAlerts'] })
         </details>
       ))}
     </div>
-  )
-}
-
-type SessionEditFieldsProps = {
-  session: OverviewSession
-    draft: EditableDraftSessionRequest
-  isSaving: boolean
-  isDisabled: boolean
-  errors: SessionEditFailure[]
-  onChange: (draft: EditableDraftSessionRequest) => void
-  onCancel: () => void
-  onSave: () => void
-}
-
-function SessionEditFields({
-  session,
-  draft,
-  isSaving,
-  isDisabled,
-  errors,
-  onChange,
-  onCancel,
-  onSave,
-}: SessionEditFieldsProps) {
-  const availableLecturers = session.eligibleLecturers.length > 0
-    ? session.eligibleLecturers
-    : [session.lecturer]
-  const availableRooms = session.eligibleRooms.length > 0
-    ? session.eligibleRooms
-    : [{ ...session.room, capacity: session.context.cohortSize }]
-
-  return (
-    <>
-      <label className="inline-edit-field">
-        <span>Date</span>
-        <input
-          type="date"
-          autoFocus
-          value={draft.date}
-          disabled={isDisabled}
-          onChange={(event) => onChange({ ...draft, date: event.target.value })}
-        />
-      </label>
-      <label className="inline-edit-field">
-        <span>Start</span>
-        <input
-          type="time"
-          value={draft.startTime}
-          disabled={isDisabled}
-          onChange={(event) => onChange({ ...draft, startTime: event.target.value })}
-        />
-      </label>
-      <label className="inline-edit-field">
-        <span>End</span>
-        <input
-          type="time"
-          value={draft.endTime}
-          disabled={isDisabled}
-          onChange={(event) => onChange({ ...draft, endTime: event.target.value })}
-        />
-      </label>
-      <span>{derivedLengthLabel(draft.startTime, draft.endTime)}</span>
-      <span>{session.context.course.name}</span>
-      <span>{session.context.cohort.name}</span>
-      <label className="lecturer-edit-field">
-        <span>Lecturer</span>
-        <select
-          value={draft.lecturerId}
-          disabled={isDisabled}
-          onChange={(event) => onChange({ ...draft, lecturerId: Number(event.target.value) })}
-        >
-          {availableLecturers.map((lecturer) => (
-            <option value={lecturer.id} key={lecturer.id}>{resourceLabel(lecturer)}</option>
-          ))}
-        </select>
-      </label>
-      <label className="inline-edit-field">
-        <span>Room</span>
-        <select
-          value={draft.roomId}
-          disabled={isDisabled}
-          onChange={(event) => onChange({ ...draft, roomId: Number(event.target.value) })}
-        >
-          {availableRooms.map((room) => (
-            <option value={room.id} key={room.id}>
-              {resourceLabel(room)}
-              {room.capacity ? ` (${room.capacity} seats)` : ''}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="edit-actions">
-        <button type="button" onClick={onSave} disabled={isSaving || isDisabled}>
-          Save
-        </button>
-        <button type="button" className="secondary-button" onClick={onCancel} disabled={isSaving}>
-          Cancel
-        </button>
-        {errors.length > 0 && (
-          <div className="inline-error" role="alert">
-            {errors.map((error) => (
-              <span key={error.code}>{error.message}</span>
-            ))}
-          </div>
-        )}
-      </div>
-    </>
   )
 }
 
@@ -708,15 +601,6 @@ function removeWindow(constraints: GenerationConstraints, index: number): Genera
   }
 }
 
-type OverviewSession = DraftSession & {
-  draftScheduleId: number
-  context: DraftScheduleContext
-  eligibleLecturers: EditableResource[]
-  eligibleRooms: EditableResource[]
-}
-
-type EditableResource = { id: number; name: string; referenceCode?: string; capacity?: number | null }
-
 type FilterOptions = {
   courses: PlanningEntity[]
   cohorts: PlanningEntity[]
@@ -725,44 +609,7 @@ type FilterOptions = {
   studyTypes: PlanningEntity[]
 }
 
-function flattenSchedules(
-  schedules: DraftSchedule[],
-  rooms: RoomOption[],
-  lecturers: LecturerRecord[],
-  courseResources: PlanningOptions['courseResources'],
-): OverviewSession[] {
-  return schedules.flatMap((schedule) =>
-    schedule.sessions.map((session) => {
-      const configuration = courseResources.find((item) => item.courseId === schedule.courseId)
-      const listedRoom = rooms.find((item) => item.id === session.roomId)
-      const listedLecturer = lecturers.find((item) => item.id === session.lecturerId)
-      const currentLecturer = listedLecturer
-        ? { id: listedLecturer.id, name: listedLecturer.name, referenceCode: listedLecturer.referenceCode }
-        : session.lecturer
-      const currentRoom = listedRoom
-        ? { id: listedRoom.id, name: listedRoom.name, referenceCode: 'referenceCode' in listedRoom ? String(listedRoom.referenceCode) : '', capacity: listedRoom.capacity }
-        : session.room
-      return {
-        ...session,
-        lecturer: currentLecturer,
-        room: currentRoom,
-        draftScheduleId: schedule.draftScheduleId,
-        context: schedule.context,
-        eligibleLecturers: configuration
-          ? editableCandidates(configuration.eligibleLecturers, currentLecturer)
-          : lecturers.filter((item) => item.isActive || item.id === session.lecturerId).map((item) => ({ ...item })),
-        eligibleRooms: configuration
-          ? editableCandidates(configuration.eligibleRooms, currentRoom)
-          : rooms.filter((item) => item.capacity >= schedule.context.cohortSize || item.id === session.roomId).map((item) => ({
-              ...item,
-              referenceCode: 'referenceCode' in item ? String(item.referenceCode) : '',
-            })),
-      }
-    }),
-  )
-}
-
-function buildFilterOptions(sessions: OverviewSession[], schedules: DraftSchedule[], exams: ExamSession[] = [], examCourseNames: Record<number, string> = {}): FilterOptions {
+function buildFilterOptions(sessions: TeachingSessionEditModel[], schedules: DraftSchedule[], exams: ExamSession[] = [], examCourseNames: Record<number, string> = {}): FilterOptions {
   return {
     courses: uniqueEntities([...schedules.map((schedule) => schedule.context.course), ...exams.map((exam) => ({ id: exam.courseId, name: examCourseNames[exam.courseId] ?? `Course #${exam.courseId}` }))]),
     cohorts: uniqueEntities([...schedules.map((schedule) => schedule.context.cohort), ...exams.map((exam) => ({ id: exam.cohort.id, name: exam.cohort.name }))]),
@@ -772,22 +619,6 @@ function buildFilterOptions(sessions: OverviewSession[], schedules: DraftSchedul
   }
 }
 
-function editableCandidates(candidates: ResourceCandidate[], current: EditableResource): EditableResource[] {
-  const options = candidates
-    .filter((candidate) => candidate.id === current.id || (candidate.isEligible && candidate.isUsable))
-    .map((candidate) => ({
-      id: candidate.id,
-      name: candidate.name,
-      referenceCode: candidate.referenceCode,
-      capacity: candidate.capacity,
-    }))
-  return options.some((option) => option.id === current.id) ? options : [current, ...options]
-}
-
-function resourceLabel(resource: { name: string; referenceCode?: string | null }): string {
-  return resource.referenceCode ? `${resource.name} · ${resource.referenceCode}` : resource.name
-}
-
 function uniqueEntities(entities: PlanningEntity[]): PlanningEntity[] {
   return [...new Map(entities.map((entity) => [entity.id, entity])).values()].sort((a, b) =>
     a.name.localeCompare(b.name),
@@ -795,7 +626,7 @@ function uniqueEntities(entities: PlanningEntity[]): PlanningEntity[] {
 }
 
 function scopeTeachingSessions(
-  sessions: OverviewSession[],
+  sessions: TeachingSessionEditModel[],
   context?: WorkspaceListContext | null,
 ) {
   if (context == null) return sessions
@@ -822,7 +653,7 @@ function scopeExamSessions(
   return exams.filter((exam) => examIds.has(exam.id))
 }
 
-function matchesFilters(session: OverviewSession, filters: ReviewFilters): boolean {
+function matchesFilters(session: TeachingSessionEditModel, filters: ReviewFilters): boolean {
   return (
     (filters.courseId === undefined || session.courseId === filters.courseId) &&
     (filters.cohortId === undefined || session.cohortId === filters.cohortId) &&
@@ -830,27 +661,4 @@ function matchesFilters(session: OverviewSession, filters: ReviewFilters): boole
     (filters.roomId === undefined || session.roomId === filters.roomId) &&
     (filters.studyTypeId === undefined || session.studyTypeId === filters.studyTypeId)
   )
-}
-
-function derivedLengthLabel(startTime: string, endTime: string): string {
-  const minutes = minutesBetween(startTime, endTime)
-  if (minutes === null) {
-    return 'Invalid'
-  }
-  if (minutes < 60) {
-    return `${minutes} min`
-  }
-  const hours = Math.floor(minutes / 60)
-  const remainder = minutes % 60
-  return remainder === 0 ? `${hours} h` : `${hours} h ${remainder} min`
-}
-
-function minutesBetween(startTime: string, endTime: string): number | null {
-  const [startHour, startMinute] = startTime.split(':').map(Number)
-  const [endHour, endMinute] = endTime.split(':').map(Number)
-  if ([startHour, startMinute, endHour, endMinute].some((value) => Number.isNaN(value))) {
-    return null
-  }
-  const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute)
-  return minutes > 0 ? minutes : null
 }

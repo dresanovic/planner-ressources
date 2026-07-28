@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   clearGenerationConstraints,
   clearCourseDraft,
@@ -49,6 +49,12 @@ import {
 import { ExamRequirementEditor } from '../components/ExamRequirementEditor'
 import { ExamGenerationPanel } from '../components/ExamGenerationPanel'
 import { ExamManualSessionEditor } from '../components/ExamManualSessionEditor'
+import {
+  createExamPlacementDraft,
+  examPlacementDraftsEqual,
+  type ExamPlacementDraft,
+  type ExamPlacementInput,
+} from '../components/examPlacementModel'
 import { ExamDeletionDialog } from '../components/ExamDeletionDialog'
 import {
   createWorkingRevision,
@@ -72,6 +78,17 @@ import {
 } from '../api/calendarWorkspace'
 import { CalendarPlanningWorkspace } from '../components/CalendarPlanningWorkspace'
 import { calendarWorkspaceMatchesSelection } from './calendarWorkspaceSelection'
+import { SessionPane } from '../components/SessionPane'
+import { DiscardChangesDialog } from '../components/DiscardChangesDialog'
+import { TeachingSessionEditor } from '../components/TeachingSessionEditor'
+import {
+  buildTeachingSessionEditModels,
+  createTeachingSessionDraft,
+  teachingDraftsEqual,
+  type EditableDraftSessionRequest,
+} from '../components/sessionEditModel'
+import { ScheduleContextHeader } from '../components/ScheduleContextHeader'
+import type { ScheduleDestination } from '../components/ApplicationNavigation'
 
 type GenerationMode = 'single' | 'batch'
 type SessionDeletionConfirmation = {
@@ -87,14 +104,35 @@ type CourseDeletionConfirmation = {
   draftRevision: number
   scope: Extract<ScheduleDeletionScope, { kind: 'courseDraft' }>
 }
+type PaneMode = 'detail' | 'editing'
+type PendingPaneIntent = {
+  label: string
+  commit: () => void
+  restoreFocusTo?: HTMLElement | null
+  focusAfterCommit?: () => void
+}
 
-export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: number }) {
+export type ScheduleNavigationRequest = PendingPaneIntent
+type CourseSchedulePageProps = {
+  catalogRevision?: number
+  destination?: ScheduleDestination
+  onNavigationRequesterChange?: (
+    requester: ((request: ScheduleNavigationRequest) => void) | null,
+  ) => void
+}
+
+export function CourseSchedulePage({
+  catalogRevision = 0,
+  destination = 'calendar',
+  onNavigationRequesterChange,
+}: CourseSchedulePageProps) {
   const [planningOptions, setPlanningOptions] = useState<PlanningOptions | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | null>(null)
   const [generationConstraints, setGenerationConstraints] = useState<GenerationConstraints | null>(null)
   const [schedules, setSchedules] = useState<DraftSchedule[]>([])
   const [mode, setMode] = useState<GenerationMode>('single')
+  const [planningInputsVisible, setPlanningInputsVisible] = useState(true)
   const [selectedBatchCourseIds, setSelectedBatchCourseIds] = useState<number[]>([])
   const [errors, setErrors] = useState<GenerationFailure[]>([])
   const [batchErrors, setBatchErrors] = useState<OptimizationError[]>([])
@@ -120,7 +158,16 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const [deletionBusy, setDeletionBusy] = useState(false)
   const [deletionErrors, setDeletionErrors] = useState<GenerationFailure[]>([])
   const [deletionNotice, setDeletionNotice] = useState('')
-  const [calendarTeachingEditSessionId, setCalendarTeachingEditSessionId] = useState<number | null>(null)
+  const [selectedOccurrenceRef, setSelectedOccurrenceRef] = useState<string | null>(null)
+  const [paneMode, setPaneMode] = useState<PaneMode>('detail')
+  const [teachingPaneDraft, setTeachingPaneDraft] = useState<EditableDraftSessionRequest | null>(null)
+  const [teachingPaneBaseline, setTeachingPaneBaseline] = useState<EditableDraftSessionRequest | null>(null)
+  const [teachingPaneErrors, setTeachingPaneErrors] = useState<GenerationFailure[]>([])
+  const [examPaneDraft, setExamPaneDraft] = useState<ExamPlacementDraft | null>(null)
+  const [examPaneBaseline, setExamPaneBaseline] = useState<ExamPlacementDraft | null>(null)
+  const [paneStatus, setPaneStatus] = useState('')
+  const [paneError, setPaneError] = useState('')
+  const [pendingPaneIntent, setPendingPaneIntent] = useState<PendingPaneIntent | null>(null)
   const [examOverview, setExamOverview] = useState<ExamPlanningOverview | null>(null)
   const [examRefreshError, setExamRefreshError] = useState(false)
   const [examBusy, setExamBusy] = useState(false)
@@ -141,7 +188,9 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const [calendarWorkspaceLoading, setCalendarWorkspaceLoading] = useState(false)
   const [calendarWorkspaceError, setCalendarWorkspaceError] = useState('')
   const [calendarWorkspaceRefresh, setCalendarWorkspaceRefresh] = useState(0)
+  const scheduleContextHeadingRef = useRef<HTMLHeadingElement>(null)
   const calendarRequestSequence = useRef(0)
+  const overviewRefreshSequence = useRef(0)
   const selectedCourseIdRef = useRef<number | null>(null)
   const selectedSemesterIdRef = useRef<number | null>(null)
 
@@ -194,15 +243,105 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   const selectedRevisionNeedsSnapshot = selectedLifecycleRevision != null && !selectedLifecycleRevision.isActiveWorking
   const selectedRevisionAvailable = !selectedRevisionNeedsSnapshot || displayedRevisionContent != null
   const selectedRevisionLoading = selectedRevisionNeedsSnapshot && !selectedRevisionAvailable && revisionLoadFailure?.revisionId !== selectedLifecycleRevision?.revisionId
-  const displaySchedules = selectedRevisionNeedsSnapshot ? (displayedRevisionContent ? snapshotSchedules(displayedRevisionContent) : []) : schedules
-  const displayExams = selectedRevisionNeedsSnapshot ? (displayedRevisionContent ? snapshotExams(displayedRevisionContent) : []) : allExams
-  const displayExamCourseNames = displayedRevisionContent ? snapshotExamCourseNames(displayedRevisionContent) : examCourseNames
+  const displaySchedules = useMemo(
+    () => selectedRevisionNeedsSnapshot
+      ? (displayedRevisionContent ? snapshotSchedules(displayedRevisionContent) : [])
+      : schedules,
+    [displayedRevisionContent, schedules, selectedRevisionNeedsSnapshot],
+  )
+  const displayExams = useMemo(
+    () => selectedRevisionNeedsSnapshot
+      ? (displayedRevisionContent ? snapshotExams(displayedRevisionContent) : [])
+      : allExams,
+    [allExams, displayedRevisionContent, selectedRevisionNeedsSnapshot],
+  )
+  const displayExamCourseNames = useMemo(
+    () => displayedRevisionContent ? snapshotExamCourseNames(displayedRevisionContent) : examCourseNames,
+    [displayedRevisionContent, examCourseNames],
+  )
   const calendarWorkspaceMatchesIntended = calendarWorkspaceMatchesSelection(
     calendarWorkspace,
     selectedSemesterId,
     selectedLifecycleRevision,
   )
   const displayedCalendarWorkspace = calendarWorkspaceMatchesIntended ? calendarWorkspace : null
+  const loadedCalendarWorkspace = displayedCalendarWorkspace?.workspaceState === 'loaded'
+    ? displayedCalendarWorkspace
+    : null
+  const selectedOccurrence = loadedCalendarWorkspace?.occurrences.find(
+    (item) => item.occurrenceRef === selectedOccurrenceRef,
+  ) ?? null
+  const teachingEditModels = useMemo(
+    () => buildTeachingSessionEditModels(
+      displaySchedules,
+      planningOptions?.rooms ?? [],
+      planningOptions?.lecturers ?? [],
+      planningOptions?.courseResources ?? [],
+    ),
+    [displaySchedules, planningOptions],
+  )
+  const selectedTeachingModel = selectedOccurrence?.kind === 'teaching'
+    ? teachingEditModels.find((item) => item.id === Number(selectedOccurrence.occurrenceRef.split(':')[1])) ?? null
+    : null
+  const selectedPaneExam = selectedOccurrence?.kind === 'exam'
+    ? displayExams.find((item) => item.id === Number(selectedOccurrence.occurrenceRef.split(':')[1])) ?? null
+    : null
+  const selectedPaneExamState = currentExamOverview?.courses.find(
+    (course) => course.courseId === selectedPaneExam?.courseId,
+  ) ?? null
+  const selectedPaneResources = planningOptions?.courseResources.find(
+    (item) => item.courseId === selectedPaneExam?.courseId,
+  )
+  const paneExamLecturers = (selectedPaneResources?.eligibleLecturers ?? [])
+    .filter((item) => item.isEligible && item.isUsable)
+    .map((item) => ({ id: item.id, name: item.name }))
+  const paneExamRooms = (selectedPaneResources?.eligibleRooms ?? [])
+    .filter((item) => item.isEligible && item.isUsable)
+    .map((item) => ({ id: item.id, name: item.name, capacity: item.capacity ?? undefined }))
+  const paneActionModelAvailable = selectedOccurrence != null && (
+    selectedOccurrence.kind === 'teaching'
+      ? selectedTeachingModel != null
+      : selectedPaneExam != null && selectedPaneExamState != null
+  )
+  const paneDirty = paneMode === 'editing' && (
+    (teachingPaneDraft != null && teachingPaneBaseline != null && !teachingDraftsEqual(teachingPaneDraft, teachingPaneBaseline))
+    || (examPaneDraft != null && examPaneBaseline != null && !examPlacementDraftsEqual(examPaneDraft, examPaneBaseline))
+  )
+  const requestGuardedNavigation = useCallback((intent: ScheduleNavigationRequest) => {
+    if (paneDirty) {
+      const paneFocusTarget = document.querySelector<HTMLElement>(
+        '.session-pane input:not([disabled]), .session-pane select:not([disabled]), .session-pane button:not([disabled]), #session-pane-title',
+      )
+      setPendingPaneIntent({
+        ...intent,
+        restoreFocusTo: intent.restoreFocusTo ?? paneFocusTarget,
+      })
+    }
+    else intent.commit()
+  }, [paneDirty])
+
+  useEffect(() => {
+    onNavigationRequesterChange?.(requestGuardedNavigation)
+    return () => onNavigationRequesterChange?.(null)
+  }, [onNavigationRequesterChange, requestGuardedNavigation])
+
+  useEffect(() => {
+    if (paneMode !== 'editing' || selectedOccurrence == null || paneActionModelAvailable) return
+    let current = true
+    queueMicrotask(() => {
+      if (!current) return
+      setPaneMode('detail')
+      setTeachingPaneDraft(null)
+      setTeachingPaneBaseline(null)
+      setTeachingPaneErrors([])
+      setExamPaneDraft(null)
+      setExamPaneBaseline(null)
+      setPaneError('')
+      setPaneStatus('Editing ended because the current editable session details are no longer available. Review the refreshed session detail before continuing.')
+    })
+    return () => { current = false }
+  }, [paneActionModelAvailable, paneMode, selectedOccurrence])
+
   const intendedCalendarContext = selectedSemester
     ? `${selectedSemester.name} · ${selectedLifecycleRevision ? `Revision ${selectedLifecycleRevision.revisionNumber} · ${selectedLifecycleRevision.isCurrentPublication ? 'Current Published' : 'Active Working'}` : 'No revision'}`
     : undefined
@@ -364,13 +503,20 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
   }
 
   async function refreshOverview(semesterId: number, resetInteractions = true) {
+    if (selectedSemesterIdRef.current !== semesterId) return true
+    const refreshSequence = ++overviewRefreshSequence.current
     setOverviewLoading(true)
     setOverviewRefreshError(false)
+    const contextIsCurrent = () => (
+      selectedSemesterIdRef.current === semesterId
+      && overviewRefreshSequence.current === refreshSequence
+    )
     try {
       const criticalWorkspaceRefresh = Promise.all([
         getScheduleLifecycle(semesterId),
         getCalendarWorkspace(semesterId),
       ]).then(([currentLifecycle, currentCalendarWorkspace]) => {
+        if (!contextIsCurrent()) return currentLifecycle
         calendarRequestSequence.current += 1
         setLifecycleOverview(currentLifecycle)
         setLifecycleRefreshError(false)
@@ -387,6 +533,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
         ]),
         criticalWorkspaceRefresh,
       ])
+      if (!contextIsCurrent()) return true
       setSchedules(current)
       setExamOverview(currentExams)
       setExamRefreshError(false)
@@ -395,10 +542,11 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
       if (resetInteractions) setOverviewResetKey((key) => key + 1)
       return true
     } catch {
+      if (!contextIsCurrent()) return true
       setOverviewRefreshError(true)
       return false
     } finally {
-      setOverviewLoading(false)
+      if (contextIsCurrent()) setOverviewLoading(false)
     }
   }
 
@@ -715,23 +863,242 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
     }
   }
 
-  function beginCalendarTeachingEdit(occurrenceRef: string) {
-    const sessionId = Number(occurrenceRef.split(':')[1])
-    if (Number.isInteger(sessionId)) setCalendarTeachingEditSessionId(sessionId)
+  function clearPaneEditor() {
+    setPaneMode('detail')
+    setTeachingPaneDraft(null)
+    setTeachingPaneBaseline(null)
+    setTeachingPaneErrors([])
+    setExamPaneDraft(null)
+    setExamPaneBaseline(null)
+    setPaneError('')
   }
 
-  function editCalendarExam(occurrenceRef: string) {
-    const examId = Number(occurrenceRef.split(':')[1])
-    const exam = displayExams.find((item) => item.id === examId)
-    if (!exam) return
-    setSelectedCourseId(exam.courseId)
-    setExamEditor(exam)
+  function commitPaneSelection(reference: string | null) {
+    clearPaneEditor()
+    setPaneStatus('')
+    setSelectedOccurrenceRef(reference)
+  }
+
+  function requestPaneIntent(intent: PendingPaneIntent) {
+    requestGuardedNavigation(intent)
+  }
+
+  function requestCourseChange(courseId: number | null) {
+    requestPaneIntent({
+      label: 'another course',
+      commit: () => {
+        commitPaneSelection(null)
+        setSelectedCourseId(courseId)
+      },
+      focusAfterCommit: () => scheduleContextHeadingRef.current?.focus({ preventScroll: true }),
+    })
+  }
+
+  function requestSemesterChange(semesterId: number) {
+    requestPaneIntent({
+      label: 'another semester',
+      commit: () => {
+        commitPaneSelection(null)
+        overviewRefreshSequence.current += 1
+        selectedSemesterIdRef.current = semesterId
+        setSemesterSelectionMissing(false)
+        setSelectedSemesterId(semesterId)
+        setSelectedBatchCourseIds([])
+      },
+      focusAfterCommit: () => scheduleContextHeadingRef.current?.focus({ preventScroll: true }),
+    })
+  }
+
+  function requestRevisionChange(revisionId: number) {
+    requestPaneIntent({
+      label: 'another schedule revision',
+      commit: () => {
+        commitPaneSelection(null)
+        setSelectedLifecycleRevisionId(revisionId)
+      },
+      focusAfterCommit: () => scheduleContextHeadingRef.current?.focus({ preventScroll: true }),
+    })
+  }
+
+  function requestOccurrenceSelection(reference: string | null) {
+    if (reference === selectedOccurrenceRef) return
+    const selectionWasRemovedAuthoritatively = reference == null
+      && selectedOccurrenceRef != null
+      && !loadedCalendarWorkspace?.occurrences.some((item) => item.occurrenceRef === selectedOccurrenceRef)
+    if (selectionWasRemovedAuthoritatively) {
+      commitPaneSelection(null)
+      return
+    }
+    requestPaneIntent({
+      label: reference == null ? 'the calendar' : 'another session',
+      commit: () => commitPaneSelection(reference),
+    })
+  }
+
+  function beginPaneEdit() {
+    setPaneStatus('')
+    setPaneError('')
+    setTeachingPaneErrors([])
+    if (selectedTeachingModel) {
+      const draft = createTeachingSessionDraft(selectedTeachingModel)
+      setTeachingPaneBaseline(draft)
+      setTeachingPaneDraft(draft)
+      setExamPaneBaseline(null)
+      setExamPaneDraft(null)
+      setPaneMode('editing')
+      return
+    }
+    if (selectedPaneExam) {
+      const draft = createExamPlacementDraft({
+        exam: selectedPaneExam,
+        configuration: selectedPaneExamState?.configuration ?? undefined,
+        lecturers: paneExamLecturers,
+        rooms: paneExamRooms,
+      })
+      setExamPaneBaseline(draft)
+      setExamPaneDraft(draft)
+      setTeachingPaneBaseline(null)
+      setTeachingPaneDraft(null)
+      setPaneMode('editing')
+    }
+  }
+
+  function requestCancelPaneEdit() {
+    requestPaneIntent({
+      label: 'session detail',
+      commit: clearPaneEditor,
+    })
+  }
+
+  async function saveTeachingPane() {
+    if (!selectedTeachingModel || !teachingPaneDraft || !activeScheduleRevisionId) return
+    setSessionUpdating(true)
+    setTeachingPaneErrors([])
+    setPaneError('')
+    try {
+      await updateDraftSession(selectedTeachingModel.id, {
+        ...teachingPaneDraft,
+        scheduleRevisionId: activeScheduleRevisionId,
+      })
+      const refreshed = selectedSemesterId ? await refreshOverview(selectedSemesterId, false) : false
+      setPaneStatus(refreshed
+        ? 'Teaching session saved.'
+        : 'Teaching session saved, but the workspace could not be refreshed. Retry refresh before continuing.')
+      setPaneMode('detail')
+      setTeachingPaneBaseline(teachingPaneDraft)
+      setTeachingPaneDraft(null)
+    } catch (reason) {
+      const failures = Array.isArray(reason)
+        ? reason as GenerationFailure[]
+        : [{ code: 'SESSION_UPDATE_FAILED', message: 'Could not save the teaching session.' }]
+      setTeachingPaneErrors(failures)
+    } finally {
+      setSessionUpdating(false)
+    }
+  }
+
+  async function saveExamPane(request: ExamPlacementInput) {
+    if (!selectedPaneExam || !activeScheduleRevisionId) return
+    setExamBusy(true)
+    setPaneError('')
+    try {
+      const state = await updateExam(selectedPaneExam.id, {
+        ...request,
+        scheduleRevisionId: activeScheduleRevisionId,
+      } as UpdateExamRequest)
+      const refreshed = await refreshOverview(state.semesterId, false)
+      setPaneStatus(refreshed
+        ? 'Exam session saved.'
+        : 'Exam session saved, but the workspace could not be refreshed. Retry refresh before continuing.')
+      setPaneMode('detail')
+      setExamPaneBaseline(examPaneDraft)
+      setExamPaneDraft(null)
+    } catch (reason) {
+      const failure = reason as ExamSchedulingApiError
+      setPaneError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save the exam session.')
+      const conflictSemesterId = failure.currentState?.semesterId ?? selectedSemesterId
+      if (failure.status === 409 && conflictSemesterId != null) {
+        await refreshOverview(conflictSemesterId, false)
+      }
+    } finally {
+      setExamBusy(false)
+    }
   }
 
   function deleteCalendarExam(occurrenceRef: string) {
     const examId = Number(occurrenceRef.split(':')[1])
     const exam = displayExams.find((item) => item.id === examId)
     if (exam) setExamDeletion(exam)
+  }
+
+  function renderCalendarSessionPane(
+    occurrence: NonNullable<typeof selectedOccurrence>,
+  ) {
+    if (!loadedCalendarWorkspace) return null
+    const editor = occurrence.kind === 'teaching'
+      ? selectedTeachingModel && teachingPaneDraft
+        ? <TeachingSessionEditor
+            session={selectedTeachingModel}
+            draft={teachingPaneDraft}
+            isSaving={sessionUpdating}
+            isDisabled={writeBusy && !sessionUpdating}
+            errors={teachingPaneErrors}
+            onChange={setTeachingPaneDraft}
+            onCancel={requestCancelPaneEdit}
+            onSave={() => void saveTeachingPane()}
+          />
+        : null
+      : selectedPaneExam && selectedPaneExamState && examPaneDraft && examPaneBaseline
+        ? <ExamManualSessionEditor
+            mode="edit"
+            configuration={selectedPaneExamState.configuration ?? undefined}
+            exam={selectedPaneExam}
+            snapshotToken={selectedPaneExam.inputSnapshotToken}
+            semesterId={selectedPaneExamState.semesterId}
+            lecturers={paneExamLecturers}
+            rooms={paneExamRooms}
+            busy={examBusy}
+            serverError={paneError || undefined}
+            draft={examPaneDraft}
+            baseline={examPaneBaseline}
+            onDraftChange={setExamPaneDraft}
+            headingLevel="h3"
+            headingId="session-pane-exam-editor"
+            actionsClassName="session-pane-actions"
+            onCancel={requestCancelPaneEdit}
+            onSubmit={saveExamPane}
+          />
+        : null
+    return <SessionPane
+      occurrence={occurrence}
+      workspace={loadedCalendarWorkspace}
+      mode={paneMode}
+      editor={editor}
+      busy={sessionUpdating || examBusy}
+      status={paneStatus}
+      error={occurrence.kind === 'teaching' ? paneError : undefined}
+      decisionOpen={pendingPaneIntent != null}
+      actionUnavailableReason={!loadedCalendarWorkspace.selectedRevision.readOnly && !paneActionModelAvailable
+        ? 'Session actions are unavailable because the editable schedule details could not be loaded. Retry refresh before continuing.'
+        : undefined}
+      onRequestClose={() => requestPaneIntent({
+        label: 'the calendar',
+        commit: () => {
+          commitPaneSelection(null)
+          window.setTimeout(() => {
+            const origin = [...document.querySelectorAll<HTMLButtonElement>('[data-occurrence-ref]')]
+              .find((item) => item.dataset.occurrenceRef === occurrence.occurrenceRef)
+            origin?.focus({ preventScroll: true })
+          }, 0)
+        },
+      })}
+      onRequestEdit={paneMode === 'detail' && paneActionModelAvailable ? beginPaneEdit : undefined}
+      onRequestDelete={paneActionModelAvailable
+        ? () => occurrence.kind === 'teaching'
+          ? beginCalendarTeachingDeletion(occurrence.occurrenceRef)
+          : deleteCalendarExam(occurrence.occurrenceRef)
+        : undefined}
+    />
   }
 
   return (
@@ -742,8 +1109,41 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
           <div className="metadata-pill">{selectedSemester?.name ?? 'No semester selected'}</div>
         </header>
 
-        <div className="planner-grid">
-          <section className="input-summary" aria-labelledby="input-summary-title">
+        <ScheduleContextHeader
+          destination={destination}
+          semesterId={selectedSemesterId}
+          semesters={(planningOptions?.semesters ?? []).map((semester) => ({
+            id: semester.id,
+            label: semester.name,
+            unavailable: semester.id === selectedSemesterId && semesterSelectionMissing,
+          }))}
+          revisionId={selectedLifecycleRevision?.revisionId ?? null}
+          revisions={(lifecycleOverview?.revisions ?? []).map((revision) => ({
+            id: revision.revisionId,
+            label: `Revision ${revision.revisionNumber} · ${revision.state.replaceAll('_', ' ')}`,
+          }))}
+          courseId={selectedCourseId}
+          courses={selectableCourses.map((course) => ({
+            id: course.id,
+            label: course.name,
+            unavailable: course.availability?.available === false,
+            statusLabel: course.id === selectedCourseId && courseSelectionInvalid
+              ? 'not assigned to selected semester'
+              : undefined,
+          }))}
+          headingRef={scheduleContextHeadingRef}
+          onSemesterChange={requestSemesterChange}
+          onRevisionChange={requestRevisionChange}
+          onCourseChange={requestCourseChange}
+        />
+        {destination === 'calendar' && <div className="planning-input-visibility">
+          <button type="button" className="secondary-button" aria-expanded={planningInputsVisible} aria-controls="planning-inputs" onClick={() => setPlanningInputsVisible((visible) => !visible)}>
+            {planningInputsVisible ? 'Hide Planning inputs' : 'Show Planning inputs'}
+          </button>
+        </div>}
+
+        <div className="planner-grid" data-planning-inputs-visible={destination === 'calendar' && planningInputsVisible ? 'true' : 'false'}>
+          <section id="planning-inputs" className="input-summary" aria-labelledby="input-summary-title" hidden={destination !== 'calendar' || !planningInputsVisible} inert={destination !== 'calendar' || !planningInputsVisible || undefined}>
             <h2 id="input-summary-title">Planning inputs</h2>
             {planningOptions ? (
               <>
@@ -752,8 +1152,8 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
                   <button type="button" className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Several courses</button>
                 </div>
                 <div className="planning-selectors">
-                  {mode === 'single' && <SelectField label="Course" value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ` — unavailable: ${course.availability.reasons.join(', ')}` : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — not assigned to selected Semester' : ''}`} onChange={(value) => setSelectedCourseId(Number(value))} disabled={contextBusy} />}
-                  <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — unavailable' : ''}`} onChange={(value) => { setSemesterSelectionMissing(false); setSelectedSemesterId(Number(value)); setSelectedBatchCourseIds([]) }} disabled={contextBusy} />
+                  {mode === 'single' && <SelectField label="Course" value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ` — unavailable: ${course.availability.reasons.join(', ')}` : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — not assigned to selected Semester' : ''}`} onChange={(value) => requestCourseChange(Number(value))} disabled={contextBusy} />}
+                  <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — unavailable' : ''}`} onChange={(value) => requestSemesterChange(Number(value))} disabled={contextBusy} />
                 </div>
                 {mode === 'single' ? (
                   <>
@@ -794,6 +1194,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
           </section>
 
           <div className="schedule-results">
+            <section className="schedule-workspace-region calendar-workspace-region" aria-label="Calendar workspace" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
             {selectedRevisionAvailable && (!selectedLifecycleRevision || selectedLifecycleRevision.isActiveWorking || selectedLifecycleRevision.isCurrentPublication) && <CalendarPlanningWorkspace
               key={selectedSemesterId ?? 'no-semester'}
               workspace={displayedCalendarWorkspace}
@@ -803,13 +1204,14 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
               intendedContext={intendedCalendarContext}
               onRetry={() => setCalendarWorkspaceRefresh((key) => key + 1)}
               onStartDraft={() => void startInitialDraft()}
-              onSelectRevision={setSelectedLifecycleRevisionId}
-              onEditTeaching={beginCalendarTeachingEdit}
+              onSelectRevision={requestRevisionChange}
               onDeleteTeaching={beginCalendarTeachingDeletion}
-              onEditExam={editCalendarExam}
               onDeleteExam={deleteCalendarExam}
               selectedCourseId={selectedCourseId}
-              onTraceCourse={setSelectedCourseId}
+              onTraceCourse={requestCourseChange}
+              selectedOccurrenceRef={selectedOccurrenceRef}
+              onSelectedOccurrenceChange={requestOccurrenceSelection}
+              renderSessionPane={renderCalendarSessionPane}
               listContent={(workspaceListContext) => <DraftSchedulePanel
                 resetKey={overviewResetKey}
                 schedules={displaySchedules}
@@ -825,15 +1227,18 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
                 examCourseNames={displayExamCourseNames}
                 readOnly={selectedLifecycleRevision?.revisionId !== activeScheduleRevisionId}
                 contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Current publication' : 'Active working revision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
-                requestedEditSessionId={calendarTeachingEditSessionId}
-                onRequestedEditHandled={() => setCalendarTeachingEditSessionId(null)}
                 workspaceListContext={workspaceListContext}
               />}
             />}
-            {lifecycleOverview && <ScheduleLifecyclePanel overview={lifecycleOverview} selectedRevisionId={selectedLifecycleRevision?.revisionId ?? null} busy={lifecycleBusy} onStartDraft={() => void startInitialDraft()} onSelectRevision={setSelectedLifecycleRevisionId} onPreparePublication={(revision) => void preparePublication(revision)} onTransition={(revision, action) => void handleLifecycleTransition(revision, action as 'mark_ready' | 'return_to_draft' | 'restore')} onAbandon={setAbandonRevision} />}
+            </section>
+            <section className="schedule-workspace-region versions-workspace-region" aria-labelledby="versions-region-title" hidden={destination !== 'versions'} inert={destination !== 'versions' || undefined}>
+              <h2 id="versions-region-title">Versions</h2>
+            {lifecycleOverview && <ScheduleLifecyclePanel overview={lifecycleOverview} selectedRevisionId={selectedLifecycleRevision?.revisionId ?? null} busy={lifecycleBusy} onStartDraft={() => void startInitialDraft()} onSelectRevision={requestRevisionChange} onPreparePublication={(revision) => void preparePublication(revision)} onTransition={(revision, action) => void handleLifecycleTransition(revision, action as 'mark_ready' | 'return_to_draft' | 'restore')} onAbandon={setAbandonRevision} />}
             {lifecycleError && <div className="refresh-error" role="alert">{lifecycleError}</div>}
             {revisionLoadFailure && revisionLoadFailure.revisionId === selectedLifecycleRevision?.revisionId && <div className="refresh-error" role="alert"><span>{revisionLoadFailure.message}</span><button type="button" onClick={() => { setRevisionLoadFailure(null); setRevisionLoadAttempt((attempt) => attempt + 1) }}>Retry selected revision</button></div>}
             {lifecycleRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh schedule lifecycle. Schedule changes are unavailable.</span><button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)}>Retry lifecycle refresh</button></div>}
+            </section>
+            <section className="schedule-workspace-region calendar-feedback-region" aria-label="Calendar feedback" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
             {batchResult && <BatchResultSummary result={batchResult} retryDisabled={writeBusy} onRetryFailed={() => void retryFailedCourses()} />}
             {overviewRefreshError && (
               <div className="refresh-error" role="alert">
@@ -842,8 +1247,18 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
               </div>
             )}
             {deletionNotice && <div className="refresh-error" role="alert">{deletionNotice}</div>}
-            {examRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh exam planning. The last complete exam view remains visible.</span><button type="button" onClick={()=>void refreshExamOverview()}>Retry exam refresh</button></div>}
-            {selectedSemesterId && activeScheduleRevisionId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} scheduleRevisionId={activeScheduleRevisionId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshOverview(selectedSemesterId, false) }} />}
+            </section>
+            <section className="schedule-workspace-region exams-workspace-region" aria-labelledby="exams-region-title" hidden={destination !== 'exams'} inert={destination !== 'exams' || undefined}>
+              <h2 id="exams-region-title">Exams</h2>
+              {selectedExamState && <div className="focused-exam-requirement">
+                <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={writeBusy || examBusy} onSave={handleExamConfiguration} />
+                {selectedExamState.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Place exam manually</button>}
+              </div>}
+              {examError && <div className="alert-item" role="alert">{examError}</div>}
+              {examRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh exam planning. The last complete exam view remains visible.</span><button type="button" onClick={()=>void refreshExamOverview()}>Retry exam refresh</button></div>}
+              {selectedSemesterId && activeScheduleRevisionId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} scheduleRevisionId={activeScheduleRevisionId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshOverview(selectedSemesterId, false) }} />}
+            </section>
+            <section className="schedule-workspace-region calendar-history-region" aria-label="Historical schedule content" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
             {selectedRevisionAvailable && selectedLifecycleRevision && !selectedLifecycleRevision.isActiveWorking && !selectedLifecycleRevision.isCurrentPublication ? <DraftSchedulePanel
               resetKey={overviewResetKey}
               schedules={displaySchedules}
@@ -860,6 +1275,7 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
               readOnly={selectedLifecycleRevision?.revisionId !== activeScheduleRevisionId}
               contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Current publication' : selectedLifecycleRevision.isActiveWorking ? 'Active working revision' : 'Historical revision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
             /> : selectedRevisionLoading ? <p role="status">Loading selected revision…</p> : null}
+            </section>
           </div>
         </div>
       </section>
@@ -896,6 +1312,17 @@ export function CourseSchedulePage({ catalogRevision = 0 }: { catalogRevision?: 
       {examDeletion && <ExamDeletionDialog courseName={examCourseNames[examDeletion.courseId] ?? `Course #${examDeletion.courseId}`} exam={examDeletion} busy={examBusy} error={examError || undefined} onCancel={()=>setExamDeletion(null)} onConfirm={confirmExamDeletion}/>}
       {publicationPreparation && <PublicationConfirmationDialog preparation={publicationPreparation} busy={lifecycleBusy} onCancel={() => setPublicationPreparation(null)} onConfirm={() => void confirmPublication()} />}
       {abandonRevision && lifecycleOverview && <AbandonRevisionDialog semesterName={lifecycleOverview.semesterName} revision={abandonRevision} currentPublication={lifecycleOverview.currentPublication} busy={lifecycleBusy} onCancel={() => setAbandonRevision(null)} onConfirm={() => void handleLifecycleTransition(abandonRevision, 'abandon')} />}
+      {pendingPaneIntent && <DiscardChangesDialog
+        destinationLabel={pendingPaneIntent.label}
+        restoreFocusTo={pendingPaneIntent.restoreFocusTo}
+        onKeepEditing={() => setPendingPaneIntent(null)}
+        onDiscard={() => {
+          const intent = pendingPaneIntent
+          setPendingPaneIntent(null)
+          intent.commit()
+          window.setTimeout(() => intent.focusAfterCommit?.(), 0)
+        }}
+      />}
     </>
   )
 }

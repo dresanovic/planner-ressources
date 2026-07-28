@@ -3,12 +3,30 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AcademicDataCategory } from './components/ApplicationNavigation'
 
-const mocks = vi.hoisted(() => ({ scheduleMount: vi.fn(), revisions: vi.fn(), academic: vi.fn() }))
+const mocks = vi.hoisted(() => ({
+  scheduleMount: vi.fn(),
+  revisions: vi.fn(),
+  academic: vi.fn(),
+  navigationRequest: vi.fn(),
+  pendingNavigation: null as { label: string; commit: () => void } | null,
+  guardNavigation: false,
+}))
 vi.mock('./pages/CourseSchedulePage', () => ({
-  CourseSchedulePage: ({ catalogRevision }: { catalogRevision: number }) => {
+  CourseSchedulePage: ({ catalogRevision, destination, onNavigationRequesterChange }: { catalogRevision: number; destination: string; onNavigationRequesterChange?: (requester: ((request: { label: string; commit: () => void }) => void) | null) => void }) => {
     useEffect(() => { mocks.scheduleMount() }, [])
+    useEffect(() => {
+      onNavigationRequesterChange?.((request) => {
+        if (mocks.guardNavigation) {
+          mocks.pendingNavigation = request
+          mocks.navigationRequest(request.label)
+        } else {
+          request.commit()
+        }
+      })
+      return () => onNavigationRequesterChange?.(null)
+    }, [onNavigationRequesterChange])
     mocks.revisions(catalogRevision)
-    return <div>Schedule view</div>
+    return <div>Schedule view: {destination}</div>
   },
 }))
 vi.mock('./pages/AcademicDataPage', () => ({
@@ -19,6 +37,11 @@ vi.mock('./pages/AcademicDataPage', () => ({
 }))
 
 import App from './App'
+import {
+  NAVIGATION_PINNED_STORAGE_KEY,
+  readNavigationPinned,
+  writeNavigationPinned,
+} from './navigationPreference'
 
 function installMatchMedia(matches = false) {
   const listeners = new Set<() => void>()
@@ -33,6 +56,18 @@ function installMatchMedia(matches = false) {
   return media
 }
 
+function installLocalStorage() {
+  const values = new Map<string, string>()
+  const storage = {
+    getItem: vi.fn((key: string) => values.get(key) ?? null),
+    setItem: vi.fn((key: string, value: string) => { values.set(key, value) }),
+    removeItem: vi.fn((key: string) => { values.delete(key) }),
+    clear: vi.fn(() => values.clear()),
+  }
+  vi.stubGlobal('localStorage', storage)
+  return storage
+}
+
 async function renderApp() {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   await act(async () => root.render(<App />))
@@ -43,8 +78,8 @@ function button(label: string) {
   return Array.from(document.querySelectorAll('button')).find((item) => item.textContent?.trim().startsWith(label)) as HTMLButtonElement
 }
 
-beforeEach(() => installMatchMedia())
-afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals() })
+beforeEach(() => { installLocalStorage(); installMatchMedia() })
+afterEach(() => { mocks.pendingNavigation = null; mocks.guardNavigation = false; vi.clearAllMocks(); vi.unstubAllGlobals() })
 
 describe('App unified navigation', () => {
   it('starts on Schedule with one primary navigation and no duplicate or dead destinations', async () => {
@@ -54,6 +89,19 @@ describe('App unified navigation', () => {
     expect(document.querySelectorAll('.view-navigation')).toHaveLength(0)
     expect(document.querySelectorAll('a[href^="#"]')).toHaveLength(0)
     expect(document.body.textContent).not.toContain('Dashboard')
+  })
+
+  it('defaults to Calendar and reaches all retained Schedule children', async () => {
+    await renderApp()
+    expect(document.body.textContent).toContain('Schedule view: calendar')
+    act(() => button('Versions').click())
+    expect(document.body.textContent).toContain('Schedule view: versions')
+    expect(button('Versions').getAttribute('aria-current')).toBe('page')
+    act(() => button('Exams').click())
+    expect(document.body.textContent).toContain('Schedule view: exams')
+    act(() => button('Calendar').click())
+    expect(document.body.textContent).toContain('Schedule view: calendar')
+    expect(mocks.scheduleMount).toHaveBeenCalledTimes(1)
   })
 
   it('reaches every Academic Data leaf through the ordered hierarchy', async () => {
@@ -75,7 +123,7 @@ describe('App unified navigation', () => {
     await renderApp()
     act(() => button('Academic Data').click())
     act(() => button('Courses').click())
-    act(() => button('Schedule').click())
+    act(() => button('Calendar').click())
     expect(button('Academic Data').getAttribute('aria-expanded')).toBe('true')
     expect(button('Courses')).toBeDefined()
     act(() => button('Courses').click())
@@ -87,7 +135,7 @@ describe('App unified navigation', () => {
     act(() => button('Academic Data').click())
     act(() => button('Semesters').click())
     act(() => button('Mutate catalog').click())
-    act(() => button('Schedule').click())
+    act(() => button('Calendar').click())
     expect(mocks.scheduleMount).toHaveBeenCalledTimes(1)
     expect(mocks.revisions).toHaveBeenCalledWith(1)
   })
@@ -102,6 +150,22 @@ describe('App unified navigation', () => {
     act(() => button('Semesters').click())
     expect(document.activeElement).toBe(button('Semesters'))
     expect(mocks.academic).toHaveBeenCalledTimes(renderCount)
+  })
+
+  it('does not change navigation or focus until the Schedule page approves a guarded request', async () => {
+    mocks.guardNavigation = true
+    await renderApp()
+    const rooms = button('Academic Data')
+    act(() => rooms.focus())
+    act(() => rooms.click())
+    act(() => button('Rooms').click())
+    expect(mocks.navigationRequest).toHaveBeenLastCalledWith('Academic Data: rooms')
+    expect(document.body.textContent).toContain('Schedule view')
+    expect(button('Calendar').getAttribute('aria-current')).toBe('page')
+    expect(document.activeElement).not.toBe(document.querySelector('.application-content'))
+    act(() => mocks.pendingNavigation?.commit())
+    expect(document.body.textContent).toContain('Academic category: rooms')
+    expect(document.activeElement).toBe(document.querySelector('.application-content'))
   })
 
   it('blocks background interaction and preserves state through narrow transitions', async () => {
@@ -120,5 +184,37 @@ describe('App unified navigation', () => {
     act(() => button('Menu').click())
     expect(button('Rooms').getAttribute('aria-current')).toBe('page')
     expect(button('Academic Data').getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('restores and persists the independent wide navigation pin preference', async () => {
+    localStorage.setItem(NAVIGATION_PINNED_STORAGE_KEY, 'false')
+    await renderApp()
+    expect(document.querySelector('.application-shell')?.getAttribute('data-navigation-pinned')).toBe('false')
+    act(() => button('Open navigation').click())
+    act(() => button('Pin navigation').click())
+    expect(localStorage.getItem(NAVIGATION_PINNED_STORAGE_KEY)).toBe('true')
+    expect(document.querySelector('.application-shell')?.getAttribute('data-navigation-pinned')).toBe('true')
+  })
+
+  it('closes the wide temporary overlay and hands focus to a changed Schedule destination', async () => {
+    localStorage.setItem(NAVIGATION_PINNED_STORAGE_KEY, 'false')
+    await renderApp()
+    act(() => button('Open navigation').click())
+    act(() => button('Versions').click())
+    expect(document.querySelector('.application-content')?.hasAttribute('inert')).toBe(false)
+    expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(false)
+    expect(document.activeElement).toBe(document.querySelector('.application-content'))
+  })
+
+  it('uses pinned defaults for missing, invalid, or inaccessible storage', () => {
+    expect(readNavigationPinned()).toBe(true)
+    localStorage.setItem(NAVIGATION_PINNED_STORAGE_KEY, 'invalid')
+    expect(readNavigationPinned()).toBe(true)
+    const get = vi.spyOn(localStorage, 'getItem').mockImplementation(() => { throw new Error('blocked') })
+    expect(readNavigationPinned()).toBe(true)
+    get.mockRestore()
+    const set = vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('blocked') })
+    expect(() => writeNavigationPinned(false)).not.toThrow()
+    set.mockRestore()
   })
 })

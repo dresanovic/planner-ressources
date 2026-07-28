@@ -4,39 +4,82 @@ import {
   ApplicationNavigation,
   type AcademicDataCategory,
   type PlannerView,
+  type ScheduleDestination,
 } from './components/ApplicationNavigation'
-import { CourseSchedulePage } from './pages/CourseSchedulePage'
+import {
+  CourseSchedulePage,
+  type ScheduleNavigationRequest,
+} from './pages/CourseSchedulePage'
 import { AcademicDataPage } from './pages/AcademicDataPage'
+import {
+  readNavigationPinned,
+  writeNavigationPinned,
+} from './navigationPreference'
 
 function App() {
   const [view, setView] = useState<PlannerView>('schedule')
+  const [scheduleDestination, setScheduleDestination] = useState<ScheduleDestination>('calendar')
+  const [scheduleExpanded, setScheduleExpanded] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<AcademicDataCategory>('semesters')
   const [academicExpanded, setAcademicExpanded] = useState(false)
   const [navigationOpen, setNavigationOpen] = useState(false)
+  const [navigationPinned, setNavigationPinned] = useState(readNavigationPinned)
   const [catalogRevision, setCatalogRevision] = useState(0)
   const contentRef = useRef<HTMLElement>(null)
   const focusContent = useRef(false)
+  const scheduleNavigationRequester = useRef<((request: ScheduleNavigationRequest) => void) | null>(null)
 
   useEffect(() => {
     if (!focusContent.current) return
     focusContent.current = false
     contentRef.current?.focus()
-  }, [view, selectedCategory])
+  }, [scheduleDestination, view, selectedCategory])
+
+  useEffect(() => {
+    writeNavigationPinned(navigationPinned)
+  }, [navigationPinned])
 
   const setNavigationVisibility = useCallback((open: boolean) => setNavigationOpen(open), [])
+  const setScheduleNavigationRequester = useCallback((
+    requester: ((request: ScheduleNavigationRequest) => void) | null,
+  ) => {
+    scheduleNavigationRequester.current = requester
+  }, [])
 
-  function selectSchedule() {
-    if (view === 'schedule') return
-    focusContent.current = true
-    setView('schedule')
+  function selectScheduleDestination(destination: ScheduleDestination) {
+    if (view === 'schedule' && scheduleDestination === destination) return
+    const commit = () => {
+      focusContent.current = true
+      setScheduleExpanded(true)
+      setScheduleDestination(destination)
+      setView('schedule')
+    }
+    if (scheduleNavigationRequester.current) {
+      scheduleNavigationRequester.current({
+        label: `Schedule ${destination}`,
+        commit,
+      })
+    } else {
+      commit()
+    }
   }
 
   function selectCategory(category: AcademicDataCategory) {
     setAcademicExpanded(true)
     if (view === 'academic' && selectedCategory === category) return
-    focusContent.current = true
-    setSelectedCategory(category)
-    setView('academic')
+    const commit = () => {
+      focusContent.current = true
+      setSelectedCategory(category)
+      setView('academic')
+    }
+    if (view === 'schedule' && scheduleNavigationRequester.current) {
+      scheduleNavigationRequester.current({
+        label: `Academic Data: ${category}`,
+        commit,
+      })
+    } else {
+      commit()
+    }
   }
 
   function toggleAcademic() {
@@ -44,17 +87,27 @@ function App() {
     setAcademicExpanded((expanded) => !expanded)
   }
 
+  function toggleSchedule() {
+    if (view === 'schedule' && scheduleExpanded) return
+    setScheduleExpanded((expanded) => !expanded)
+  }
+
   return (
-    <div className="application-shell">
+    <div className="application-shell" data-navigation-pinned={navigationPinned ? 'true' : 'false'}>
       <ApplicationNavigation
         view={view}
         selectedCategory={selectedCategory}
+        selectedScheduleDestination={scheduleDestination}
+        scheduleExpanded={scheduleExpanded}
         academicExpanded={academicExpanded}
         navigationOpen={navigationOpen}
+        navigationPinned={navigationPinned}
         onToggleAcademic={toggleAcademic}
-        onSelectSchedule={selectSchedule}
+        onToggleSchedule={toggleSchedule}
+        onSelectScheduleDestination={selectScheduleDestination}
         onSelectCategory={selectCategory}
         onNavigationOpenChange={setNavigationVisibility}
+        onNavigationPinnedChange={setNavigationPinned}
       />
       <main
         ref={contentRef}
@@ -64,7 +117,7 @@ function App() {
         aria-hidden={navigationOpen || undefined}
         inert={navigationOpen || undefined}
       >
-        <div hidden={view !== 'schedule'}><CourseSchedulePage catalogRevision={catalogRevision} /></div>
+        <div hidden={view !== 'schedule'}><CourseSchedulePage catalogRevision={catalogRevision} destination={scheduleDestination} onNavigationRequesterChange={setScheduleNavigationRequester} /></div>
         {view === 'academic' && <AcademicDataPage category={selectedCategory} onCatalogChanged={() => setCatalogRevision((value) => value + 1)} />}
       </main>
     </div>

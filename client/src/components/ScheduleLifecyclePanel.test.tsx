@@ -43,6 +43,8 @@ describe('ScheduleLifecyclePanel', () => {
     act(() => root.render(<ScheduleLifecyclePanel overview={overview} selectedRevisionId={ready.revisionId} busy={false} onStartDraft={vi.fn()} onSelectRevision={vi.fn()} onPreparePublication={vi.fn()} onTransition={transition} onAbandon={vi.fn()} />))
     expect(document.body.textContent).toContain('Ready for review')
     expect(document.body.textContent).toContain('Return to Draft')
+    expect(document.querySelector('details')?.open).toBe(false)
+    act(() => document.querySelector('summary')?.click())
     const timestamp = document.querySelector('time')
     expect(timestamp?.dateTime).toBe('2026-07-20T10:00:00Z')
     expect(timestamp?.textContent).toContain('Europe/Vienna')

@@ -708,7 +708,7 @@ describe('CalendarPlanningWorkspace', () => {
     expect(document.body.textContent).toContain('Published content is read-only')
   })
 
-  it('preserves mode while clearing invalid filters and revision-owned selections', () => {
+  it('preserves valid filters, drilldown, and selection across a same-revision refresh', () => {
     const host = document.createElement('div')
     document.body.append(host)
     const root = createRoot(host)
@@ -746,14 +746,19 @@ describe('CalendarPlanningWorkspace', () => {
     expect(host.querySelector('.workspace-drilldown')).not.toBeNull()
     expect(host.querySelector('.active-filter-status')).not.toBeNull()
 
-    const published = publishedCalendarWorkspaceFixture() as LoadedCalendarWorkspace
-    published.selectedRevision.revisionId = working.selectedRevision.revisionId
-    published.occurrences = published.occurrences.filter((item) => item.kind === 'exam')
-    published.courses[0].occurrenceRefs = ['exam:1']
-    published.filterFacets.sessionTypes = [{ value: 'exam', label: 'Exam' }]
+    const refreshed = {
+      ...working,
+      workspaceToken: 'same-revision-refreshed',
+      selectedRevision: { ...working.selectedRevision },
+      occurrences: working.occurrences.map((occurrence) => ({ ...occurrence })),
+      filterFacets: {
+        ...working.filterFacets,
+        sessionTypes: working.filterFacets.sessionTypes.map((facet) => ({ ...facet })),
+      },
+    }
     act(() => root.render(
       <CalendarPlanningWorkspace
-        workspace={published}
+        workspace={refreshed}
         loading={false}
         listContent={<div>Existing Courses overview</div>}
         onRetry={vi.fn()}
@@ -763,10 +768,16 @@ describe('CalendarPlanningWorkspace', () => {
     expect([...host.querySelectorAll<HTMLButtonElement>('button')]
       .find((item) => item.textContent?.trim() === 'List')
       ?.getAttribute('aria-pressed')).toBe('true')
-    expect(host.querySelector('.occurrence-detail')).toBeNull()
-    expect(host.querySelector('.workspace-drilldown')).toBeNull()
-    expect(host.querySelector('.active-filter-status')).toBeNull()
+    expect(host.querySelector('.occurrence-detail')).not.toBeNull()
+    expect(host.querySelector('.workspace-drilldown')).not.toBeNull()
+    expect(host.querySelector('.active-filter-status')).not.toBeNull()
+  })
 
+  it('clears only unavailable filters, drilldown, and selection after refresh', async () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    const working = loadedCalendarWorkspaceFixture() as LoadedCalendarWorkspace
     act(() => root.render(
       <CalendarPlanningWorkspace
         workspace={working}
@@ -775,13 +786,59 @@ describe('CalendarPlanningWorkspace', () => {
         onRetry={vi.fn()}
       />,
     ))
+    const dateInput = host.querySelector<HTMLInputElement>('input[type="date"]')!
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    act(() => host.querySelector<HTMLButtonElement>('.calendar-occurrence')?.click())
+    const sessionType = [...host.querySelectorAll<HTMLSelectElement>('select')]
+      .find((item) => item.previousElementSibling?.textContent === 'Session type')!
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(sessionType, 'teaching')
+      sessionType.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    const needsReview = [...host.querySelectorAll<HTMLButtonElement>('.summary-card')]
+      .find((item) => item.textContent?.includes('Needs review'))!
+    act(() => needsReview.click())
 
-    expect([...host.querySelectorAll<HTMLButtonElement>('button')]
-      .find((item) => item.textContent?.trim() === 'List')
-      ?.getAttribute('aria-pressed')).toBe('true')
+    const refreshed = {
+      ...working,
+      workspaceToken: 'same-revision-with-removed-records',
+      occurrences: working.occurrences.filter((item) => item.kind === 'exam'),
+      courses: working.courses.map((course) => ({
+        ...course,
+        occurrenceRefs: course.occurrenceRefs.filter((reference) => reference.startsWith('exam:')),
+      })),
+      filterFacets: {
+        ...working.filterFacets,
+        sessionTypes: [{ value: 'exam', label: 'Exam' }],
+      },
+      summary: {
+        ...working.summary,
+        needsReview: {
+          ...working.summary.needsReview,
+          contributorRefs: [],
+        },
+      },
+    } satisfies LoadedCalendarWorkspace
+    await act(async () => {
+      root.render(
+        <CalendarPlanningWorkspace
+          workspace={refreshed}
+          loading={false}
+          listContent={<div>Existing Courses overview</div>}
+          onRetry={vi.fn()}
+        />,
+      )
+      await Promise.resolve()
+    })
+
     expect(host.querySelector('.occurrence-detail')).toBeNull()
     expect(host.querySelector('.workspace-drilldown')).toBeNull()
     expect(host.querySelector('.active-filter-status')).toBeNull()
+    expect(host.querySelector('[data-workspace-recovery-announcement]')?.textContent)
+      .toContain('selected session is no longer available')
   })
 
   it('recomputes partial metric coverage within verified, unverified, and mixed filters', () => {
