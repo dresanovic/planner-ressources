@@ -11,6 +11,7 @@ from sqlalchemy import (
     Integer,
     JSON,
     String,
+    Text,
     Time,
     UniqueConstraint,
     text,
@@ -68,6 +69,9 @@ class Lecturer(Base):
     unavailability_periods: Mapped[list["ResourceUnavailabilityPeriod"]] = relationship(
         back_populates="lecturer",
         cascade="all, delete-orphan",
+    )
+    review_links: Mapped[list["LecturerReviewLink"]] = relationship(
+        back_populates="lecturer",
     )
 
 
@@ -224,6 +228,11 @@ class ScheduleRevision(Base):
         cascade="all, delete-orphan",
         order_by="PlanningOutcome.completed_at",
     )
+    lecturer_review_links: Mapped[list["LecturerReviewLink"]] = relationship(
+        back_populates="schedule_revision",
+        cascade="all, delete-orphan",
+        order_by="LecturerReviewLink.issued_at",
+    )
 
 
 class ScheduleRevisionEvent(Base):
@@ -314,6 +323,324 @@ class PlanningOutcome(Base):
         back_populates="planning_outcomes"
     )
     course: Mapped["Course"] = relationship(back_populates="planning_outcomes")
+
+
+class LecturerReviewLink(Base):
+    __tablename__ = "lecturer_review_links"
+    __table_args__ = (
+        UniqueConstraint(
+            "secret_digest",
+            name="uq_lecturer_review_links_secret_digest",
+        ),
+        CheckConstraint(
+            "length(secret_digest) = 64",
+            name="ck_lecturer_review_links_digest_length",
+        ),
+        CheckConstraint(
+            "duration_days IN (1, 2, 3)",
+            name="ck_lecturer_review_links_duration",
+        ),
+        CheckConstraint(
+            "expires_at > issued_at",
+            name="ck_lecturer_review_links_expiry",
+        ),
+        CheckConstraint(
+            "status IN ('active', 'expired', 'revoked', 'replaced', 'revision_ended')",
+            name="ck_lecturer_review_links_status",
+        ),
+        CheckConstraint(
+            "end_reason IS NULL OR end_reason IN "
+            "('expired', 'revoked', 'replaced', 'abandoned', 'superseded')",
+            name="ck_lecturer_review_links_end_reason",
+        ),
+        CheckConstraint(
+            "(status = 'active' AND ended_at IS NULL AND end_reason IS NULL "
+            "AND replaced_by_id IS NULL) OR "
+            "(status = 'expired' AND ended_at IS NOT NULL "
+            "AND end_reason = 'expired' AND replaced_by_id IS NULL) OR "
+            "(status = 'revoked' AND ended_at IS NOT NULL "
+            "AND end_reason = 'revoked' AND replaced_by_id IS NULL) OR "
+            "(status = 'replaced' AND ended_at IS NOT NULL "
+            "AND end_reason = 'replaced' AND replaced_by_id IS NOT NULL) OR "
+            "(status = 'revision_ended' AND ended_at IS NOT NULL "
+            "AND end_reason IN ('abandoned', 'superseded') "
+            "AND replaced_by_id IS NULL)",
+            name="ck_lecturer_review_links_end_state",
+        ),
+        Index(
+            "uq_lecturer_review_link_active_pair",
+            "schedule_revision_id",
+            "lecturer_id",
+            unique=True,
+            sqlite_where=text("status = 'active'"),
+        ),
+        Index(
+            "ix_lecturer_review_links_revision_lecturer",
+            "schedule_revision_id",
+            "lecturer_id",
+            "issued_at",
+        ),
+        Index(
+            "ix_lecturer_review_links_status_expiry",
+            "status",
+            "expires_at",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    schedule_revision_id: Mapped[int] = mapped_column(
+        ForeignKey("schedule_revisions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    lecturer_id: Mapped[int] = mapped_column(
+        ForeignKey("lecturers.id"),
+        nullable=False,
+    )
+    intended_lecturer_name: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+    )
+    secret_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    duration_days: Mapped[int] = mapped_column(Integer, nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="active",
+    )
+    ended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    end_reason: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    replaced_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lecturer_review_links.id"),
+        nullable=True,
+    )
+    access_blocked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    schedule_revision: Mapped[ScheduleRevision] = relationship(
+        back_populates="lecturer_review_links",
+    )
+    lecturer: Mapped[Lecturer] = relationship(back_populates="review_links")
+    replaced_by: Mapped["LecturerReviewLink | None"] = relationship(
+        remote_side="LecturerReviewLink.id",
+        foreign_keys=[replaced_by_id],
+    )
+    feedback_items: Mapped[list["LecturerReviewFeedback"]] = relationship(
+        back_populates="review_link",
+        cascade="all, delete-orphan",
+        order_by="LecturerReviewFeedback.submitted_at",
+    )
+    activity_events: Mapped[list["LecturerReviewActivityEvent"]] = relationship(
+        back_populates="review_link",
+        foreign_keys="LecturerReviewActivityEvent.review_link_id",
+        order_by="LecturerReviewActivityEvent.occurred_at",
+    )
+
+
+class LecturerReviewFeedback(Base):
+    __tablename__ = "lecturer_review_feedback"
+    __table_args__ = (
+        UniqueConstraint(
+            "review_link_id",
+            "client_submission_id",
+            name="uq_lecturer_review_feedback_submission",
+        ),
+        CheckConstraint(
+            "kind IN ('revision_comment', 'session_comment', 'impossible_session')",
+            name="ck_lecturer_review_feedback_kind",
+        ),
+        CheckConstraint(
+            "session_kind IS NULL OR session_kind IN ('teaching', 'exam')",
+            name="ck_lecturer_review_feedback_session_kind",
+        ),
+        CheckConstraint(
+            "length(client_submission_id) = 36",
+            name="ck_lecturer_review_feedback_submission_id_length",
+        ),
+        CheckConstraint(
+            "length(request_fingerprint) = 64",
+            name="ck_lecturer_review_feedback_fingerprint_length",
+        ),
+        CheckConstraint(
+            "(kind = 'revision_comment' "
+            "AND session_kind IS NULL AND source_session_id IS NULL "
+            "AND session_context IS NULL AND comment_text IS NOT NULL "
+            "AND length(trim(comment_text)) BETWEEN 1 AND 2000) OR "
+            "(kind = 'session_comment' "
+            "AND session_kind IS NOT NULL AND source_session_id > 0 "
+            "AND session_context IS NOT NULL AND comment_text IS NOT NULL "
+            "AND length(trim(comment_text)) BETWEEN 1 AND 2000) OR "
+            "(kind = 'impossible_session' "
+            "AND session_kind IS NOT NULL AND source_session_id > 0 "
+            "AND session_context IS NOT NULL "
+            "AND (comment_text IS NULL "
+            "OR length(trim(comment_text)) BETWEEN 1 AND 2000))",
+            name="ck_lecturer_review_feedback_shape",
+        ),
+        Index(
+            "ix_lecturer_review_feedback_link_submitted",
+            "review_link_id",
+            "submitted_at",
+        ),
+        Index(
+            "ix_lecturer_review_feedback_session",
+            "review_link_id",
+            "session_kind",
+            "source_session_id",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    review_link_id: Mapped[int] = mapped_column(
+        ForeignKey("lecturer_review_links.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    kind: Mapped[str] = mapped_column(String(30), nullable=False)
+    session_kind: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    source_session_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    comment_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    session_context: Mapped[dict | None] = mapped_column(
+        JSON(none_as_null=True),
+        nullable=True,
+    )
+    client_submission_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    review_link: Mapped[LecturerReviewLink] = relationship(
+        back_populates="feedback_items",
+    )
+    activity_events: Mapped[list["LecturerReviewActivityEvent"]] = relationship(
+        foreign_keys="LecturerReviewActivityEvent.feedback_id",
+    )
+
+
+class LecturerReviewActivityEvent(Base):
+    __tablename__ = "lecturer_review_activity_events"
+    __table_args__ = (
+        CheckConstraint(
+            "event_type IN ('link_issued', 'link_expired', 'link_revoked', "
+            "'link_replaced', 'revision_ended', 'access_accepted', "
+            "'access_rejected', 'feedback_accepted', 'feedback_rejected', "
+            "'misuse_limit_activated')",
+            name="ck_lecturer_review_activity_event_type",
+        ),
+        CheckConstraint(
+            "reason_code IS NULL OR reason_code IN "
+            "('expired', 'revoked', 'replaced', 'abandoned', 'superseded', "
+            "'malformed_secret', 'unknown_secret', 'source_limited', "
+            "'view_limited', 'feedback_limited', 'out_of_scope', "
+            "'stale_session', 'invalid_feedback', 'idempotent_replay')",
+            name="ck_lecturer_review_activity_reason_code",
+        ),
+        Index(
+            "ix_lecturer_review_activity_link_occurred",
+            "review_link_id",
+            "occurred_at",
+        ),
+        Index(
+            "ix_lecturer_review_activity_type_occurred",
+            "event_type",
+            "occurred_at",
+        ),
+        Index(
+            "uq_lecturer_review_activity_link_expired",
+            "review_link_id",
+            unique=True,
+            sqlite_where=text(
+                "event_type = 'link_expired' AND review_link_id IS NOT NULL"
+            ),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    review_link_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lecturer_review_links.id"),
+        nullable=True,
+    )
+    schedule_revision_id: Mapped[int | None] = mapped_column(
+        ForeignKey("schedule_revisions.id"),
+        nullable=True,
+    )
+    lecturer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lecturers.id"),
+        nullable=True,
+    )
+    feedback_id: Mapped[int | None] = mapped_column(
+        ForeignKey("lecturer_review_feedback.id"),
+        nullable=True,
+    )
+    reason_code: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+    )
+
+    review_link: Mapped[LecturerReviewLink | None] = relationship(
+        back_populates="activity_events",
+        foreign_keys=[review_link_id],
+    )
+    schedule_revision: Mapped[ScheduleRevision | None] = relationship()
+    lecturer: Mapped[Lecturer | None] = relationship()
+    feedback: Mapped[LecturerReviewFeedback | None] = relationship(
+        foreign_keys=[feedback_id],
+        overlaps="activity_events",
+    )
+
+
+class LecturerReviewInvalidSourceState(Base):
+    __tablename__ = "lecturer_review_invalid_source_states"
+    __table_args__ = (
+        CheckConstraint(
+            "length(source_fingerprint) = 64",
+            name="ck_lecturer_review_invalid_source_fingerprint_length",
+        ),
+        CheckConstraint(
+            "json_valid(attempt_timestamps) "
+            "AND json_type(attempt_timestamps) = 'array' "
+            "AND json_array_length(attempt_timestamps) <= 20",
+            name="ck_lecturer_review_invalid_source_attempts",
+        ),
+        Index(
+            "ix_lecturer_review_invalid_source_cleanup",
+            "last_relevant_at",
+        ),
+    )
+
+    source_fingerprint: Mapped[str] = mapped_column(
+        String(64),
+        primary_key=True,
+    )
+    attempt_timestamps: Mapped[list[str]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+    blocked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    last_relevant_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
 
 
 class StudyType(Base):

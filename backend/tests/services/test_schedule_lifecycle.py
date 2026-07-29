@@ -1,15 +1,22 @@
 from copy import deepcopy
-from datetime import time
+from datetime import time, timedelta
+from uuid import UUID
 
-from sqlalchemy import create_engine, delete
+from sqlalchemy import create_engine, delete, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 import pytest
 
 from app.db.schema import initialize_database
-from app.models.planning import Course, DraftSchedule, DraftSession, ExamSession, Lecturer, Room, ScheduleRevision, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Course, DraftSchedule, DraftSession, ExamSession, Lecturer, LecturerReviewActivityEvent, LecturerReviewFeedback, LecturerReviewLink, Room, ScheduleRevision, Semester, StudyType, StudyTypeTimeWindow
+from app.schemas.lecturer_review import FeedbackInput
 from app.services.academic_catalog import usage_for
+from app.services.lecturer_review import (
+    get_lecturer_review_overview,
+    issue_lecturer_review_link,
+    submit_lecturer_review_feedback,
+)
 from app.services.resource_catalog import assess_resource_usage
 from app.services.schedule_lifecycle import (
     LifecycleConflict,
@@ -21,6 +28,7 @@ from app.services.schedule_lifecycle import (
     transition_revision,
 )
 from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
+from tests.lecturer_review_fixtures import DeterministicUtcClock, FIXED_UTC
 
 
 @pytest.fixture()
@@ -276,6 +284,312 @@ def test_abandon_preserves_publication_and_restore_reuses_identity_and_content(d
     assert get_revision_content(db, successor["revisionId"])["snapshot"]["courses"][0]["name"] == "Working name"
 
 
+def test_review_link_survives_first_publication_but_abandon_restore_never_reactivates(db):
+    seed_lifecycle_semester(db, with_schedule=True)
+    clock = DeterministicUtcClock()
+    initial = get_lifecycle_overview(db, 1)
+    created = create_working_revision(db, 1, initial["stateToken"])
+    db.commit()
+    first_revision = created["activeWorkingRevision"]
+    first_issued = issue_lecturer_review_link(
+        db,
+        first_revision["revisionId"],
+        1,
+        clock=clock,
+    )
+    db.commit()
+
+    first_preparation = prepare_publication(
+        db,
+        first_revision["revisionId"],
+        first_revision["revisionVersion"],
+        created["stateToken"],
+    )
+    published = transition_revision(
+        db,
+        first_revision["revisionId"],
+        action="publish",
+        expected_revision_version=first_revision["revisionVersion"],
+        expected_state_token=created["stateToken"],
+        confirmed=True,
+        publication_token=first_preparation["preparationToken"],
+    )
+    db.commit()
+    db.expire_all()
+    first_link = db.get(LecturerReviewLink, first_issued.issued_link.id)
+    assert first_link.status == "active"
+    assert first_link.ended_at is None
+    assert first_link.end_reason is None
+
+    successor_overview = create_working_revision(db, 1, published["stateToken"])
+    db.commit()
+    successor = successor_overview["activeWorkingRevision"]
+    successor_issued = issue_lecturer_review_link(
+        db,
+        successor["revisionId"],
+        1,
+        clock=clock,
+    )
+    db.commit()
+
+    abandoned = transition_revision(
+        db,
+        successor["revisionId"],
+        action="abandon",
+        expected_revision_version=successor["revisionVersion"],
+        expected_state_token=successor_overview["stateToken"],
+        confirmed=True,
+    )
+    db.commit()
+    db.expire_all()
+    successor_link = db.get(LecturerReviewLink, successor_issued.issued_link.id)
+    assert successor_link.status == "revision_ended"
+    assert successor_link.ended_at is not None
+    assert successor_link.end_reason == "abandoned"
+    assert db.scalar(
+        select(LecturerReviewActivityEvent).where(
+            LecturerReviewActivityEvent.review_link_id == successor_link.id,
+            LecturerReviewActivityEvent.event_type == "revision_ended",
+            LecturerReviewActivityEvent.reason_code == "abandoned",
+        )
+    ) is not None
+
+    abandoned_revision = next(
+        item
+        for item in abandoned["revisions"]
+        if item["revisionId"] == successor["revisionId"]
+    )
+    transition_revision(
+        db,
+        successor["revisionId"],
+        action="restore",
+        expected_revision_version=abandoned_revision["revisionVersion"],
+        expected_state_token=abandoned["stateToken"],
+        confirmed=True,
+    )
+    db.commit()
+    db.expire_all()
+    restored_link = db.get(LecturerReviewLink, successor_issued.issued_link.id)
+    assert restored_link.status == "revision_ended"
+    assert restored_link.end_reason == "abandoned"
+    terminal_events = db.scalars(
+        select(LecturerReviewActivityEvent).where(
+            LecturerReviewActivityEvent.review_link_id == restored_link.id,
+            LecturerReviewActivityEvent.event_type == "revision_ended",
+        )
+    ).all()
+    assert len(terminal_events) == 1
+
+
+def test_passed_review_deadline_without_feedback_does_not_gate_publication(db):
+    seed_lifecycle_semester(db, with_schedule=True)
+    initial = get_lifecycle_overview(db, 1)
+    created = create_working_revision(db, 1, initial["stateToken"])
+    db.commit()
+    revision = created["activeWorkingRevision"]
+    issued = issue_lecturer_review_link(
+        db,
+        revision["revisionId"],
+        1,
+        duration_days=1,
+        clock=DeterministicUtcClock(FIXED_UTC - timedelta(days=2)),
+    )
+    db.commit()
+
+    review = get_lecturer_review_overview(
+        db,
+        revision["revisionId"],
+        clock=DeterministicUtcClock(FIXED_UTC),
+    )
+    db.commit()
+    assert review.total_feedback_count == 0
+    assert review.impossible_flag_count == 0
+    assert review.links[0].status == "expired"
+    assert db.query(LecturerReviewFeedback).count() == 0
+
+    prepared = prepare_publication(
+        db,
+        revision["revisionId"],
+        revision["revisionVersion"],
+        created["stateToken"],
+    )
+    published = transition_revision(
+        db,
+        revision["revisionId"],
+        action="publish",
+        expected_revision_version=revision["revisionVersion"],
+        expected_state_token=created["stateToken"],
+        confirmed=True,
+        publication_token=prepared["preparationToken"],
+    )
+    db.commit()
+
+    assert issued.issued_link.id == review.links[0].id
+    assert published["currentPublication"]["revisionId"] == revision["revisionId"]
+    assert published["currentPublication"]["state"] == "published"
+    assert db.query(LecturerReviewFeedback).count() == 0
+
+
+def test_comments_and_flags_survive_publish_abandon_restore_and_supersession(db):
+    seed_lifecycle_semester(db, with_schedule=True)
+    initial = get_lifecycle_overview(db, 1)
+    created = create_working_revision(db, 1, initial["stateToken"])
+    db.commit()
+    first = created["activeWorkingRevision"]
+    teaching_id = db.scalar(select(DraftSession.id))
+    assert teaching_id is not None
+    first_issued = issue_lecturer_review_link(
+        db,
+        first["revisionId"],
+        1,
+        clock=DeterministicUtcClock(),
+    )
+    db.commit()
+    submit_lecturer_review_feedback(
+        db,
+        first_issued.secret,
+        FeedbackInput(
+            client_submission_id=UUID(int=1001),
+            kind="revision_comment",
+            comment="Publication remains the planner's decision.",
+        ),
+        clock=DeterministicUtcClock(),
+    )
+    submit_lecturer_review_feedback(
+        db,
+        first_issued.secret,
+        FeedbackInput(
+            client_submission_id=UUID(int=1002),
+            kind="impossible_session",
+            session_ref=f"teaching:{teaching_id}",
+            comment="This time is not possible.",
+        ),
+        clock=DeterministicUtcClock(FIXED_UTC + timedelta(seconds=1)),
+    )
+    db.commit()
+    first_feedback = _review_feedback_signatures(db)
+
+    first_prepared = prepare_publication(
+        db,
+        first["revisionId"],
+        first["revisionVersion"],
+        created["stateToken"],
+    )
+    published = transition_revision(
+        db,
+        first["revisionId"],
+        action="publish",
+        expected_revision_version=first["revisionVersion"],
+        expected_state_token=created["stateToken"],
+        confirmed=True,
+        publication_token=first_prepared["preparationToken"],
+    )
+    db.commit()
+    assert _review_feedback_signatures(db) == first_feedback
+
+    successor_overview = create_working_revision(db, 1, published["stateToken"])
+    db.commit()
+    successor = successor_overview["activeWorkingRevision"]
+    successor_issued = issue_lecturer_review_link(
+        db,
+        successor["revisionId"],
+        1,
+        clock=DeterministicUtcClock(FIXED_UTC + timedelta(minutes=1)),
+    )
+    db.commit()
+    submit_lecturer_review_feedback(
+        db,
+        successor_issued.secret,
+        FeedbackInput(
+            client_submission_id=UUID(int=1003),
+            kind="revision_comment",
+            comment="The successor still needs planner review.",
+        ),
+        clock=DeterministicUtcClock(FIXED_UTC + timedelta(minutes=1)),
+    )
+    submit_lecturer_review_feedback(
+        db,
+        successor_issued.secret,
+        FeedbackInput(
+            client_submission_id=UUID(int=1004),
+            kind="impossible_session",
+            session_ref=f"teaching:{teaching_id}",
+        ),
+        clock=DeterministicUtcClock(FIXED_UTC + timedelta(minutes=1, seconds=1)),
+    )
+    db.commit()
+    all_feedback = _review_feedback_signatures(db)
+
+    abandoned = transition_revision(
+        db,
+        successor["revisionId"],
+        action="abandon",
+        expected_revision_version=successor["revisionVersion"],
+        expected_state_token=successor_overview["stateToken"],
+        confirmed=True,
+    )
+    db.commit()
+    assert _review_feedback_signatures(db) == all_feedback
+    abandoned_revision = next(
+        item
+        for item in abandoned["revisions"]
+        if item["revisionId"] == successor["revisionId"]
+    )
+    restored = transition_revision(
+        db,
+        successor["revisionId"],
+        action="restore",
+        expected_revision_version=abandoned_revision["revisionVersion"],
+        expected_state_token=abandoned["stateToken"],
+        confirmed=True,
+    )
+    db.commit()
+    assert _review_feedback_signatures(db) == all_feedback
+
+    restored_revision = restored["activeWorkingRevision"]
+    successor_prepared = prepare_publication(
+        db,
+        successor["revisionId"],
+        restored_revision["revisionVersion"],
+        restored["stateToken"],
+    )
+    replaced = transition_revision(
+        db,
+        successor["revisionId"],
+        action="publish",
+        expected_revision_version=restored_revision["revisionVersion"],
+        expected_state_token=restored["stateToken"],
+        confirmed=True,
+        publication_token=successor_prepared["preparationToken"],
+    )
+    db.commit()
+
+    assert replaced["currentPublication"]["revisionId"] == successor["revisionId"]
+    assert next(
+        item
+        for item in replaced["revisions"]
+        if item["revisionId"] == first["revisionId"]
+    )["state"] == "superseded"
+    assert _review_feedback_signatures(db) == all_feedback
+    assert {
+        link.id: (link.status, link.end_reason)
+        for link in db.scalars(select(LecturerReviewLink))
+    } == {
+        first_issued.issued_link.id: ("revision_ended", "superseded"),
+        successor_issued.issued_link.id: ("revision_ended", "abandoned"),
+    }
+    first_review = get_lecturer_review_overview(db, first["revisionId"])
+    successor_review = get_lecturer_review_overview(db, successor["revisionId"])
+    assert (
+        first_review.total_feedback_count,
+        first_review.impossible_flag_count,
+    ) == (2, 1)
+    assert (
+        successor_review.total_feedback_count,
+        successor_review.impossible_flag_count,
+    ) == (2, 1)
+
+
 def test_inactive_snapshot_references_protect_catalog_and_resource_identity(db):
     _semester, course = seed_lifecycle_semester(db, with_schedule=True)
     _publish_initial(db)
@@ -289,3 +603,23 @@ def test_inactive_snapshot_references_protect_catalog_and_resource_identity(db):
     assert lecturer_usage["disposition"] == "inactivate"
     assert lecturer_usage["sessionUsage"]["draftSessionCount"] > 0
     assert lecturer_usage["examUsage"]["examSessionCount"] > 0
+
+
+def _review_feedback_signatures(db: Session) -> list[tuple]:
+    return [
+        (
+            item.id,
+            item.review_link_id,
+            item.kind,
+            item.session_kind,
+            item.source_session_id,
+            item.comment_text,
+            item.session_context,
+            item.client_submission_id,
+            item.request_fingerprint,
+            item.submitted_at,
+        )
+        for item in db.scalars(
+            select(LecturerReviewFeedback).order_by(LecturerReviewFeedback.id)
+        )
+    ]

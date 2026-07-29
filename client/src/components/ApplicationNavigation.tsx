@@ -15,7 +15,7 @@ export const ACADEMIC_DATA_CATEGORIES = [
 
 export type AcademicDataCategory = (typeof ACADEMIC_DATA_CATEGORIES)[number]['id']
 export type PlannerView = 'schedule' | 'academic'
-export type ScheduleDestination = 'calendar' | 'versions' | 'exams'
+export type ScheduleDestination = 'calendar' | 'versions' | 'exams' | 'reviews'
 
 // Shared with the application shell and navigation contract tests.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -23,6 +23,7 @@ export const SCHEDULE_DESTINATIONS: { id: ScheduleDestination; label: string }[]
   { id: 'calendar', label: 'Calendar' },
   { id: 'versions', label: 'Versions' },
   { id: 'exams', label: 'Exams' },
+  { id: 'reviews', label: 'Lecturer reviews' },
 ]
 
 type ApplicationNavigationProps = {

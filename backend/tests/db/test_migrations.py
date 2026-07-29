@@ -1,5 +1,6 @@
 import importlib.util
-from datetime import date, time
+import json
+from datetime import date, datetime, time, timezone
 from pathlib import Path
 
 import pytest
@@ -617,6 +618,307 @@ def test_startup_rejects_partial_versioned_lifecycle_schema():
         initialize_database(engine)
 
 
+def test_ninth_migration_adds_empty_lecturer_review_schema_to_exact_0008():
+    engine = create_engine("sqlite://")
+    _upgrade_chain_through_0008(engine)
+    ninth = _load_migration(
+        "0009_lecturer_token_review.py", "lecturer_token_review"
+    )
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO planning_outcomes "
+                "(schedule_revision_id, course_id, operation_kind, classification, "
+                "source_status, result_payload, completed_at) "
+                "VALUES (1, 1, 'single_course_generation', 'successful', "
+                "'generated', '{}', CURRENT_TIMESTAMP)"
+            )
+        )
+        ninth.op = Operations(MigrationContext.configure(connection))
+        ninth.upgrade()
+
+        inspector = inspect(connection)
+        assert {
+            "lecturer_review_links",
+            "lecturer_review_feedback",
+            "lecturer_review_activity_events",
+            "lecturer_review_invalid_source_states",
+        }.issubset(inspector.get_table_names())
+        assert connection.execute(
+            text("SELECT COUNT(*) FROM planning_outcomes")
+        ).scalar_one() == 1
+        for table_name in (
+            "lecturer_review_links",
+            "lecturer_review_feedback",
+            "lecturer_review_activity_events",
+            "lecturer_review_invalid_source_states",
+        ):
+            assert connection.execute(
+                text(f"SELECT COUNT(*) FROM {table_name}")
+            ).scalar_one() == 0
+
+
+def test_current_schema_contains_constrained_lecturer_review_tables_and_is_idempotent():
+    engine = create_engine("sqlite://")
+
+    initialize_database(engine)
+    initialize_database(engine)
+
+    inspector = inspect(engine)
+    assert {
+        "lecturer_review_links",
+        "lecturer_review_feedback",
+        "lecturer_review_activity_events",
+        "lecturer_review_invalid_source_states",
+    }.issubset(inspector.get_table_names())
+    assert {
+        "schedule_revision_id",
+        "lecturer_id",
+        "intended_lecturer_name",
+        "secret_digest",
+        "duration_days",
+        "issued_at",
+        "expires_at",
+        "status",
+        "ended_at",
+        "end_reason",
+        "replaced_by_id",
+        "access_blocked_until",
+    }.issubset(_columns_by_name(inspector, "lecturer_review_links"))
+    assert {
+        "review_link_id",
+        "kind",
+        "session_kind",
+        "source_session_id",
+        "comment_text",
+        "session_context",
+        "client_submission_id",
+        "request_fingerprint",
+        "submitted_at",
+    }.issubset(_columns_by_name(inspector, "lecturer_review_feedback"))
+    assert {
+        "event_type",
+        "review_link_id",
+        "schedule_revision_id",
+        "lecturer_id",
+        "feedback_id",
+        "reason_code",
+        "occurred_at",
+    }.issubset(_columns_by_name(inspector, "lecturer_review_activity_events"))
+    assert {
+        "source_fingerprint",
+        "attempt_timestamps",
+        "blocked_until",
+        "last_relevant_at",
+    } == set(_columns_by_name(inspector, "lecturer_review_invalid_source_states"))
+
+    link_indexes = {
+        item["name"]: tuple(item.get("column_names") or [])
+        for item in inspector.get_indexes("lecturer_review_links")
+    }
+    assert link_indexes["uq_lecturer_review_link_active_pair"] == (
+        "schedule_revision_id",
+        "lecturer_id",
+    )
+    assert "ix_lecturer_review_links_revision_lecturer" in link_indexes
+    assert "ix_lecturer_review_links_status_expiry" in link_indexes
+    invalid_source_indexes = {
+        item["name"]: tuple(item.get("column_names") or [])
+        for item in inspector.get_indexes("lecturer_review_invalid_source_states")
+    }
+    assert invalid_source_indexes["ix_lecturer_review_invalid_source_cleanup"] == (
+        "last_relevant_at",
+    )
+
+
+def test_lecturer_review_database_constraints_and_foreign_keys():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    _seed_current_resource_course(engine, include_room=True, include_draft=False)
+    now = datetime(2026, 9, 1, 8, tzinfo=timezone.utc)
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO schedule_revisions "
+                "(id, semester_id, revision_number, state, row_version, created_at, "
+                "state_changed_at, updated_at) "
+                "VALUES (1, 1, 1, 'draft', 1, CURRENT_TIMESTAMP, "
+                "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+            )
+        )
+        _insert_review_link(connection, link_id=1, digest="a" * 64, now=now)
+
+        with pytest.raises(Exception):
+            _insert_review_link(
+                connection,
+                link_id=2,
+                digest="b" * 64,
+                now=now,
+            )
+        with pytest.raises(Exception):
+            _insert_review_link(
+                connection,
+                link_id=3,
+                digest="a" * 64,
+                now=now,
+                lecturer_id=999,
+            )
+        with pytest.raises(Exception):
+            _insert_review_link(
+                connection,
+                link_id=4,
+                digest="c" * 64,
+                now=now,
+                revision_id=999,
+            )
+        with pytest.raises(Exception):
+            _insert_review_link(
+                connection,
+                link_id=5,
+                digest="d" * 64,
+                now=now,
+                duration_days=4,
+            )
+        with pytest.raises(Exception):
+            connection.execute(
+                text(
+                    "INSERT INTO lecturer_review_links "
+                    "(id, schedule_revision_id, lecturer_id, intended_lecturer_name, "
+                    "secret_digest, duration_days, issued_at, expires_at, status, "
+                    "ended_at, end_reason) VALUES "
+                    "(6, 1, 7, 'Lecturer', :digest, 1, :issued_at, :expires_at, "
+                    "'active', :ended_at, 'revoked')"
+                ),
+                {
+                    "digest": "e" * 64,
+                    "issued_at": now,
+                    "expires_at": now.replace(day=2),
+                    "ended_at": now,
+                },
+            )
+
+        feedback_insert = text(
+            "INSERT INTO lecturer_review_feedback "
+            "(review_link_id, kind, session_kind, source_session_id, comment_text, "
+            "session_context, client_submission_id, request_fingerprint, submitted_at) "
+            "VALUES (1, 'revision_comment', NULL, NULL, 'Review this', NULL, "
+            ":submission_id, :fingerprint, :submitted_at)"
+        )
+        connection.execute(
+            feedback_insert,
+            {
+                "submission_id": "11111111-1111-4111-8111-111111111111",
+                "fingerprint": "f" * 64,
+                "submitted_at": now,
+            },
+        )
+        with pytest.raises(Exception):
+            connection.execute(
+                feedback_insert,
+                {
+                    "submission_id": "11111111-1111-4111-8111-111111111111",
+                    "fingerprint": "0" * 64,
+                    "submitted_at": now,
+                },
+            )
+        with pytest.raises(Exception):
+            connection.execute(
+                text(
+                    "INSERT INTO lecturer_review_feedback "
+                    "(review_link_id, kind, session_kind, source_session_id, "
+                    "comment_text, session_context, client_submission_id, "
+                    "request_fingerprint, submitted_at) VALUES "
+                    "(1, 'session_comment', NULL, NULL, 'Missing session', NULL, "
+                    "'22222222-2222-4222-8222-222222222222', :fingerprint, :submitted_at)"
+                ),
+                {"fingerprint": "1" * 64, "submitted_at": now},
+            )
+        with pytest.raises(Exception):
+            connection.execute(
+                text(
+                    "INSERT INTO lecturer_review_feedback "
+                    "(review_link_id, kind, session_kind, source_session_id, "
+                    "comment_text, session_context, client_submission_id, "
+                    "request_fingerprint, submitted_at) VALUES "
+                    "(999, 'revision_comment', NULL, NULL, 'Unknown link', NULL, "
+                    "'33333333-3333-4333-8333-333333333333', :fingerprint, :submitted_at)"
+                ),
+                {"fingerprint": "2" * 64, "submitted_at": now},
+            )
+
+        connection.execute(
+            text(
+                "INSERT INTO lecturer_review_invalid_source_states "
+                "(source_fingerprint, attempt_timestamps, blocked_until, last_relevant_at) "
+                "VALUES (:fingerprint, :attempts, NULL, :last_relevant_at)"
+            ),
+            {
+                "fingerprint": "3" * 64,
+                "attempts": json.dumps([now.isoformat()] * 20),
+                "last_relevant_at": now,
+            },
+        )
+        with pytest.raises(Exception):
+            connection.execute(
+                text(
+                    "INSERT INTO lecturer_review_invalid_source_states "
+                    "(source_fingerprint, attempt_timestamps, blocked_until, "
+                    "last_relevant_at) VALUES "
+                    "(:fingerprint, :attempts, NULL, :last_relevant_at)"
+                ),
+                {
+                    "fingerprint": "4" * 64,
+                    "attempts": json.dumps([now.isoformat()] * 21),
+                    "last_relevant_at": now,
+                },
+            )
+
+
+def test_lecturer_review_invalid_source_state_survives_restart(tmp_path):
+    database_path = tmp_path / "lecturer-review.db"
+    database_url = f"sqlite:///{database_path}"
+    first_engine = create_engine(database_url)
+    initialize_database(first_engine)
+    with first_engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO lecturer_review_invalid_source_states "
+                "(source_fingerprint, attempt_timestamps, blocked_until, last_relevant_at) "
+                "VALUES (:fingerprint, :attempts, :blocked_until, :last_relevant_at)"
+            ),
+            {
+                "fingerprint": "5" * 64,
+                "attempts": json.dumps(["2026-09-01T08:00:00+00:00"]),
+                "blocked_until": "2026-09-01T08:10:00+00:00",
+                "last_relevant_at": "2026-09-01T08:00:00+00:00",
+            },
+        )
+    first_engine.dispose()
+
+    restarted_engine = create_engine(database_url)
+    initialize_database(restarted_engine)
+    with restarted_engine.connect() as connection:
+        assert connection.execute(
+            text(
+                "SELECT source_fingerprint, blocked_until "
+                "FROM lecturer_review_invalid_source_states"
+            )
+        ).one() == ("5" * 64, "2026-09-01T08:10:00+00:00")
+    restarted_engine.dispose()
+
+
+def test_startup_rejects_partial_lecturer_review_schema():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE lecturer_review_activity_events"))
+
+    with pytest.raises(Exception, match="complete FS-015 state"):
+        initialize_database(engine)
+
+
 def _seed_current_resource_course(engine, *, include_room: bool, include_draft: bool) -> None:
     lecturer = Lecturer(id=7, name="Lecturer", reference_code="LECT-7", normalized_reference_code="lect-7")
     room = Room(id=9, name="Room", reference_code="ROOM-9", normalized_reference_code="room-9", capacity=30)
@@ -688,6 +990,54 @@ def _upgrade_chain_through_0006(engine):
             migration.op = Operations(MigrationContext.configure(connection))
             migration.upgrade()
     return migrations
+
+
+def _upgrade_chain_through_0008(engine):
+    migrations = _upgrade_chain_through_0006(engine)
+    seventh = _load_migration(
+        "0007_versioned_schedule_lifecycle.py",
+        "review_versioned_schedule_lifecycle",
+    )
+    eighth = _load_migration(
+        "0008_calendar_workspace_outcomes.py",
+        "review_calendar_workspace_outcomes",
+    )
+    with engine.begin() as connection:
+        _seed_fs012_lifecycle_upgrade_rows(connection)
+        for migration in (seventh, eighth):
+            migration.op = Operations(MigrationContext.configure(connection))
+            migration.upgrade()
+    return (*migrations, seventh, eighth)
+
+
+def _insert_review_link(
+    connection,
+    *,
+    link_id: int,
+    digest: str,
+    now: datetime,
+    revision_id: int = 1,
+    lecturer_id: int = 7,
+    duration_days: int = 1,
+) -> None:
+    connection.execute(
+        text(
+            "INSERT INTO lecturer_review_links "
+            "(id, schedule_revision_id, lecturer_id, intended_lecturer_name, "
+            "secret_digest, duration_days, issued_at, expires_at, status) "
+            "VALUES (:id, :revision_id, :lecturer_id, 'Lecturer', :digest, "
+            ":duration_days, :issued_at, :expires_at, 'active')"
+        ),
+        {
+            "id": link_id,
+            "revision_id": revision_id,
+            "lecturer_id": lecturer_id,
+            "digest": digest,
+            "duration_days": duration_days,
+            "issued_at": now,
+            "expires_at": now.replace(day=2),
+        },
+    )
 
 
 def _seed_fs012_lifecycle_upgrade_rows(connection) -> None:

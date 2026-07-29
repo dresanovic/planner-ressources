@@ -48,12 +48,7 @@ function App() {
 
   function selectScheduleDestination(destination: ScheduleDestination) {
     if (view === 'schedule' && scheduleDestination === destination) return
-    const commit = () => {
-      focusContent.current = true
-      setScheduleExpanded(true)
-      setScheduleDestination(destination)
-      setView('schedule')
-    }
+    const commit = () => commitScheduleDestination(destination)
     if (scheduleNavigationRequester.current) {
       scheduleNavigationRequester.current({
         label: `Schedule ${destination}`,
@@ -62,6 +57,13 @@ function App() {
     } else {
       commit()
     }
+  }
+
+  function commitScheduleDestination(destination: ScheduleDestination) {
+      focusContent.current = true
+      setScheduleExpanded(true)
+      setScheduleDestination(destination)
+      setView('schedule')
   }
 
   function selectCategory(category: AcademicDataCategory) {
@@ -117,7 +119,7 @@ function App() {
         aria-hidden={navigationOpen || undefined}
         inert={navigationOpen || undefined}
       >
-        <div hidden={view !== 'schedule'}><CourseSchedulePage catalogRevision={catalogRevision} destination={scheduleDestination} onNavigationRequesterChange={setScheduleNavigationRequester} /></div>
+        <div hidden={view !== 'schedule'}><CourseSchedulePage active={view === 'schedule'} catalogRevision={catalogRevision} destination={scheduleDestination} onNavigationRequesterChange={setScheduleNavigationRequester} onScheduleDestinationChange={commitScheduleDestination} /></div>
         {view === 'academic' && <AcademicDataPage category={selectedCategory} onCatalogChanged={() => setCatalogRevision((value) => value + 1)} />}
       </main>
     </div>

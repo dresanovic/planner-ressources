@@ -99,6 +99,9 @@ describe('App unified navigation', () => {
     expect(button('Versions').getAttribute('aria-current')).toBe('page')
     act(() => button('Exams').click())
     expect(document.body.textContent).toContain('Schedule view: exams')
+    act(() => button('Lecturer reviews').click())
+    expect(document.body.textContent).toContain('Schedule view: reviews')
+    expect(button('Lecturer reviews').getAttribute('aria-current')).toBe('page')
     act(() => button('Calendar').click())
     expect(document.body.textContent).toContain('Schedule view: calendar')
     expect(mocks.scheduleMount).toHaveBeenCalledTimes(1)
@@ -165,6 +168,25 @@ describe('App unified navigation', () => {
     expect(document.activeElement).not.toBe(document.querySelector('.application-content'))
     act(() => mocks.pendingNavigation?.commit())
     expect(document.body.textContent).toContain('Academic category: rooms')
+    expect(document.activeElement).toBe(document.querySelector('.application-content'))
+  })
+
+  it('keeps Lecturer reviews pending until the Schedule page approves the guarded request', async () => {
+    mocks.guardNavigation = true
+    await renderApp()
+
+    act(() => button('Lecturer reviews').click())
+
+    expect(mocks.navigationRequest).toHaveBeenLastCalledWith('Schedule reviews')
+    expect(document.body.textContent).toContain('Schedule view: calendar')
+    expect(button('Calendar').getAttribute('aria-current')).toBe('page')
+    expect(button('Lecturer reviews').getAttribute('aria-current')).toBeNull()
+
+    act(() => mocks.pendingNavigation?.commit())
+
+    expect(document.body.textContent).toContain('Schedule view: reviews')
+    expect(button('Lecturer reviews').getAttribute('aria-current')).toBe('page')
+    expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1)
     expect(document.activeElement).toBe(document.querySelector('.application-content'))
   })
 

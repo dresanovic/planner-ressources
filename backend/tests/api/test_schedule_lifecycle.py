@@ -8,6 +8,9 @@ import pytest
 from app.db.schema import initialize_database
 from app.db.session import get_db
 from app.main import app
+from app.models.planning import LecturerReviewLink
+from app.services.lecturer_review import issue_lecturer_review_link
+from tests.lecturer_review_fixtures import DeterministicUtcClock
 from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
 
 
@@ -154,3 +157,129 @@ def test_lifecycle_api_supports_ready_successor_abandon_restore_and_replacement(
     assert replacement["currentPublication"]["revisionId"] == working["revisionId"]
     assert replacement["activeWorkingRevision"] is None
     assert next(item for item in replacement["revisions"] if item["revisionId"] == revision["revisionId"])["state"] == "superseded"
+
+
+def test_lifecycle_api_keeps_first_publication_link_and_permanently_ends_abandoned_and_superseded_links(client_and_db):
+    client, db = client_and_db
+    seed_lifecycle_semester(db, with_schedule=True)
+    clock = DeterministicUtcClock()
+
+    initial = client.get("/api/semesters/1/schedule-lifecycle").json()
+    created = client.post(
+        "/api/semesters/1/schedule-revisions",
+        json={"expectedStateToken": initial["stateToken"]},
+    ).json()
+    first_revision = created["activeWorkingRevision"]
+    first_issued = issue_lecturer_review_link(
+        db,
+        first_revision["revisionId"],
+        1,
+        clock=clock,
+    )
+    db.commit()
+    first_preparation = client.post(
+        f"/api/schedule-revisions/{first_revision['revisionId']}/publication-preparation",
+        json={
+            "expectedRevisionVersion": first_revision["revisionVersion"],
+            "expectedStateToken": created["stateToken"],
+        },
+    ).json()
+    first_publication = client.post(
+        f"/api/schedule-revisions/{first_revision['revisionId']}/transitions",
+        json={
+            "action": "publish",
+            "expectedRevisionVersion": first_revision["revisionVersion"],
+            "expectedStateToken": created["stateToken"],
+            "confirmed": True,
+            "publicationToken": first_preparation["preparationToken"],
+        },
+    )
+    assert first_publication.status_code == 200
+    db.expire_all()
+    assert db.get(LecturerReviewLink, first_issued.issued_link.id).status == "active"
+
+    successor_overview = client.post(
+        "/api/semesters/1/schedule-revisions",
+        json={"expectedStateToken": first_publication.json()["stateToken"]},
+    ).json()
+    successor = successor_overview["activeWorkingRevision"]
+    successor_issued = issue_lecturer_review_link(
+        db,
+        successor["revisionId"],
+        1,
+        clock=clock,
+    )
+    db.commit()
+    abandoned = client.post(
+        f"/api/schedule-revisions/{successor['revisionId']}/transitions",
+        json={
+            "action": "abandon",
+            "expectedRevisionVersion": successor["revisionVersion"],
+            "expectedStateToken": successor_overview["stateToken"],
+            "confirmed": True,
+        },
+    )
+    assert abandoned.status_code == 200
+    db.expire_all()
+    abandoned_link = db.get(
+        LecturerReviewLink,
+        successor_issued.issued_link.id,
+    )
+    assert abandoned_link.status == "revision_ended"
+    assert abandoned_link.end_reason == "abandoned"
+
+    abandoned_body = abandoned.json()
+    abandoned_revision = next(
+        item
+        for item in abandoned_body["revisions"]
+        if item["revisionId"] == successor["revisionId"]
+    )
+    restored = client.post(
+        f"/api/schedule-revisions/{successor['revisionId']}/transitions",
+        json={
+            "action": "restore",
+            "expectedRevisionVersion": abandoned_revision["revisionVersion"],
+            "expectedStateToken": abandoned_body["stateToken"],
+            "confirmed": True,
+        },
+    )
+    assert restored.status_code == 200
+    db.expire_all()
+    assert (
+        db.get(LecturerReviewLink, successor_issued.issued_link.id).status
+        == "revision_ended"
+    )
+
+    restored_body = restored.json()
+    restored_revision = restored_body["activeWorkingRevision"]
+    replacement_preparation = client.post(
+        f"/api/schedule-revisions/{successor['revisionId']}/publication-preparation",
+        json={
+            "expectedRevisionVersion": restored_revision["revisionVersion"],
+            "expectedStateToken": restored_body["stateToken"],
+        },
+    ).json()
+    replacement = client.post(
+        f"/api/schedule-revisions/{successor['revisionId']}/transitions",
+        json={
+            "action": "publish",
+            "expectedRevisionVersion": restored_revision["revisionVersion"],
+            "expectedStateToken": restored_body["stateToken"],
+            "confirmed": True,
+            "publicationToken": replacement_preparation["preparationToken"],
+        },
+    )
+    assert replacement.status_code == 200
+    db.expire_all()
+    superseded_link = db.get(
+        LecturerReviewLink,
+        first_issued.issued_link.id,
+    )
+    assert superseded_link.status == "revision_ended"
+    assert superseded_link.end_reason == "superseded"
+    still_abandoned_link = db.get(
+        LecturerReviewLink,
+        successor_issued.issued_link.id,
+    )
+    assert still_abandoned_link.status == "revision_ended"
+    assert still_abandoned_link.end_reason == "abandoned"

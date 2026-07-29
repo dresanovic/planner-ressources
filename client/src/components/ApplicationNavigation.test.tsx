@@ -87,12 +87,15 @@ describe('ApplicationNavigation', () => {
 
   it('exposes ordered Schedule children with exactly one current destination', async () => {
     await renderNavigation()
-    expect(['Calendar', 'Versions', 'Exams'].map((label) => button(label).textContent?.trim())).toEqual(['Calendar', 'Versions', 'Exams'])
+    expect(['Calendar', 'Versions', 'Exams', 'Lecturer reviews'].map((label) => button(label).textContent?.trim())).toEqual(['Calendar', 'Versions', 'Exams', 'Lecturer reviews'])
     act(() => button('Versions').click())
     expect(button('Versions').getAttribute('aria-current')).toBe('page')
     expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1)
     act(() => button('Exams').click())
     expect(button('Exams').getAttribute('aria-current')).toBe('page')
+    act(() => button('Lecturer reviews').click())
+    expect(button('Lecturer reviews').getAttribute('aria-current')).toBe('page')
+    expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1)
     expect(button('Schedule').className).toContain('is-active')
   })
 

@@ -89,6 +89,14 @@ import {
 } from '../components/sessionEditModel'
 import { ScheduleContextHeader } from '../components/ScheduleContextHeader'
 import type { ScheduleDestination } from '../components/ApplicationNavigation'
+import {
+  getLecturerReviewOverview,
+  issueLecturerReviewLink,
+  replaceLecturerReviewLink,
+  revokeLecturerReviewLink,
+  type LecturerReviewOverview,
+} from '../api/lecturerReview'
+import { LecturerReviewManagement } from '../components/LecturerReviewManagement'
 
 type GenerationMode = 'single' | 'batch'
 type SessionDeletionConfirmation = {
@@ -116,15 +124,21 @@ export type ScheduleNavigationRequest = PendingPaneIntent
 type CourseSchedulePageProps = {
   catalogRevision?: number
   destination?: ScheduleDestination
+  active?: boolean
   onNavigationRequesterChange?: (
     requester: ((request: ScheduleNavigationRequest) => void) | null,
+  ) => void
+  onScheduleDestinationChange?: (
+    destination: ScheduleDestination,
   ) => void
 }
 
 export function CourseSchedulePage({
   catalogRevision = 0,
   destination = 'calendar',
+  active = true,
   onNavigationRequesterChange,
+  onScheduleDestinationChange,
 }: CourseSchedulePageProps) {
   const [planningOptions, setPlanningOptions] = useState<PlanningOptions | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null)
@@ -159,6 +173,10 @@ export function CourseSchedulePage({
   const [deletionErrors, setDeletionErrors] = useState<GenerationFailure[]>([])
   const [deletionNotice, setDeletionNotice] = useState('')
   const [selectedOccurrenceRef, setSelectedOccurrenceRef] = useState<string | null>(null)
+  const [pendingReviewNavigation, setPendingReviewNavigation] = useState<{
+    revisionId: number
+    occurrenceRef: string
+  } | null>(null)
   const [paneMode, setPaneMode] = useState<PaneMode>('detail')
   const [teachingPaneDraft, setTeachingPaneDraft] = useState<EditableDraftSessionRequest | null>(null)
   const [teachingPaneBaseline, setTeachingPaneBaseline] = useState<EditableDraftSessionRequest | null>(null)
@@ -180,6 +198,9 @@ export function CourseSchedulePage({
   const [lifecycleBusy, setLifecycleBusy] = useState(false)
   const [lifecycleRefreshError, setLifecycleRefreshError] = useState(false)
   const [lifecycleError, setLifecycleError] = useState('')
+  const [lecturerReviewOverview, setLecturerReviewOverview] = useState<LecturerReviewOverview | null>(null)
+  const [lecturerReviewBusy, setLecturerReviewBusy] = useState(false)
+  const [lecturerReviewError, setLecturerReviewError] = useState('')
   const [selectedRevisionContent, setSelectedRevisionContent] = useState<ScheduleRevisionContent | null>(null)
   const [revisionLoadFailure, setRevisionLoadFailure] = useState<{ revisionId: number; message: string } | null>(null)
   const [revisionLoadAttempt, setRevisionLoadAttempt] = useState(0)
@@ -284,6 +305,39 @@ export function CourseSchedulePage({
   const selectedOccurrence = loadedCalendarWorkspace?.occurrences.find(
     (item) => item.occurrenceRef === selectedOccurrenceRef,
   ) ?? null
+
+  useEffect(() => {
+    if (
+      pendingReviewNavigation === null ||
+      destination !== 'calendar' ||
+      selectedLifecycleRevision?.revisionId !==
+        pendingReviewNavigation.revisionId ||
+      loadedCalendarWorkspace === null
+    ) {
+      return
+    }
+    const targetExists = loadedCalendarWorkspace.occurrences.some(
+      (item) =>
+        item.occurrenceRef === pendingReviewNavigation.occurrenceRef,
+    )
+    queueMicrotask(() => {
+      setPendingReviewNavigation(null)
+      if (targetExists) {
+        setSelectedOccurrenceRef(pendingReviewNavigation.occurrenceRef)
+        setPaneStatus('Opened the current session from lecturer feedback.')
+      } else {
+        setSelectedOccurrenceRef(null)
+        setPaneStatus(
+          'The current session is no longer available in this revision.',
+        )
+      }
+    })
+  }, [
+    destination,
+    loadedCalendarWorkspace,
+    pendingReviewNavigation,
+    selectedLifecycleRevision?.revisionId,
+  ])
   const teachingEditModels = useMemo(
     () => buildTeachingSessionEditModels(
       displaySchedules,
@@ -465,6 +519,33 @@ export function CourseSchedulePage({
   }, [selectedLifecycleRevision?.revisionId, selectedLifecycleRevision?.isActiveWorking, revisionLoadAttempt])
 
   useEffect(() => {
+    const revisionId = selectedLifecycleRevision?.revisionId
+    if (destination !== 'reviews' || !revisionId) return
+    let current = true
+    queueMicrotask(() => {
+      if (!current) return
+      setLecturerReviewBusy(true)
+      setLecturerReviewError('')
+    })
+    void getLecturerReviewOverview(revisionId)
+      .then((value) => {
+        if (current) setLecturerReviewOverview(value)
+      })
+      .catch(() => {
+        if (current) {
+          setLecturerReviewOverview(null)
+          setLecturerReviewError('Could not load lecturer review links and feedback.')
+        }
+      })
+      .finally(() => {
+        if (current) setLecturerReviewBusy(false)
+      })
+    return () => {
+      current = false
+    }
+  }, [destination, selectedLifecycleRevision?.revisionId])
+
+  useEffect(() => {
     if (!selectedSemesterId) return
     const permittedRevision = selectedLifecycleRevision?.isActiveWorking || selectedLifecycleRevision?.isCurrentPublication
       ? selectedLifecycleRevision.revisionId
@@ -495,6 +576,73 @@ export function CourseSchedulePage({
   async function refreshExamOverview(semesterId = selectedSemesterId) {
     if (!semesterId) return false
     try { const value = await getExamPlanningOverview(semesterId); if (selectedSemesterIdRef.current === semesterId) { setExamOverview(value); setExamRefreshError(false) }; return true } catch { if (selectedSemesterIdRef.current === semesterId) setExamRefreshError(true); return false }
+  }
+
+  async function handleIssueLecturerReview(input: {
+    lecturerId: number
+    durationDays: 1 | 2 | 3
+  }) {
+    if (!selectedLifecycleRevision) throw new Error('No revision selected.')
+    setLecturerReviewBusy(true)
+    setLecturerReviewError('')
+    try {
+      const result = await issueLecturerReviewLink(
+        selectedLifecycleRevision.revisionId,
+        input,
+      )
+      setLecturerReviewOverview(result.overview)
+      return result
+    } catch (reason) {
+      setLecturerReviewError(
+        reason instanceof Error
+          ? reason.message
+          : 'Could not issue the lecturer review link.',
+      )
+      throw reason
+    } finally {
+      setLecturerReviewBusy(false)
+    }
+  }
+
+  async function handleRevokeLecturerReview(linkId: number) {
+    setLecturerReviewBusy(true)
+    setLecturerReviewError('')
+    try {
+      const result = await revokeLecturerReviewLink(linkId)
+      setLecturerReviewOverview(result)
+      return result
+    } catch (reason) {
+      setLecturerReviewError(
+        reason instanceof Error
+          ? reason.message
+          : 'Could not revoke the lecturer review link.',
+      )
+      throw reason
+    } finally {
+      setLecturerReviewBusy(false)
+    }
+  }
+
+  async function handleReplaceLecturerReview(
+    linkId: number,
+    input: { durationDays: 1 | 2 | 3 },
+  ) {
+    setLecturerReviewBusy(true)
+    setLecturerReviewError('')
+    try {
+      const result = await replaceLecturerReviewLink(linkId, input)
+      setLecturerReviewOverview(result.overview)
+      return result
+    } catch (reason) {
+      setLecturerReviewError(
+        reason instanceof Error
+          ? reason.message
+          : 'The replacement result could not be confirmed.',
+      )
+      throw reason
+    } finally {
+      setLecturerReviewBusy(false)
+    }
   }
 
   async function handleExamConfiguration(request: SaveExamConfigurationRequest) {
@@ -948,6 +1096,21 @@ export function CourseSchedulePage({
     })
   }
 
+  function openLecturerFeedbackSession(navigation: {
+    revisionId: number
+    occurrenceRef: string
+  }) {
+    requestPaneIntent({
+      label: 'the current lecturer-feedback session',
+      commit: () => {
+        commitPaneSelection(null)
+        setPendingReviewNavigation(navigation)
+        setSelectedLifecycleRevisionId(navigation.revisionId)
+        onScheduleDestinationChange?.('calendar')
+      },
+    })
+  }
+
   function beginPaneEdit() {
     setPaneStatus('')
     setPaneError('')
@@ -1250,6 +1413,22 @@ export function CourseSchedulePage({
             {lifecycleError && <div className="refresh-error" role="alert">{lifecycleError}</div>}
             {revisionLoadFailure && revisionLoadFailure.revisionId === selectedLifecycleRevision?.revisionId && <div className="refresh-error" role="alert"><span>{revisionLoadFailure.message}</span><button type="button" onClick={() => { setRevisionLoadFailure(null); setRevisionLoadAttempt((attempt) => attempt + 1) }}>Retry selected revision</button></div>}
             {lifecycleRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh schedule lifecycle. Schedule changes are unavailable.</span><button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)}>Retry lifecycle refresh</button></div>}
+            </section>
+            <section className="schedule-workspace-region lecturer-reviews-region" aria-labelledby="lecturer-reviews-region-title" hidden={destination !== 'reviews'} inert={destination !== 'reviews' || undefined}>
+              <h2 id="lecturer-reviews-region-title">Lecturer reviews</h2>
+              {lecturerReviewBusy && lecturerReviewOverview == null && <p role="status">Loading lecturer reviews…</p>}
+              {lecturerReviewError && <div className="refresh-error" role="alert">{lecturerReviewError}</div>}
+              {active && destination === 'reviews' && lecturerReviewOverview && (
+                <LecturerReviewManagement
+                  overview={lecturerReviewOverview}
+                  busy={lecturerReviewBusy}
+                  onIssue={handleIssueLecturerReview}
+                  onRevoke={handleRevokeLecturerReview}
+                  onReplace={handleReplaceLecturerReview}
+                  onOpenCurrentSession={openLecturerFeedbackSession}
+                />
+              )}
+              {!selectedLifecycleRevision && <p>Select a Working or Current Published revision to review lecturer access.</p>}
             </section>
             <section className="schedule-workspace-region calendar-feedback-region" aria-label="Calendar feedback" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
             {batchResult && <BatchResultSummary result={batchResult} retryDisabled={writeBusy} onRetryFailed={() => void retryFailedCourses()} />}
