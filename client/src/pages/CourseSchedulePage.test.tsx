@@ -1,4 +1,4 @@
-import { act } from 'react'
+import { act, useState, type ComponentProps, type ComponentType } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   transitionScheduleRevision: vi.fn(),
   getScheduleRevision: vi.fn(),
   getCalendarWorkspace: vi.fn(),
+  getLecturerReviewOverview: vi.fn(),
 }))
 
 vi.mock('../api/planningOptions', () => ({ getPlanningOptions: mocks.getPlanningOptions }))
@@ -61,12 +62,18 @@ vi.mock('../api/calendarWorkspace', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../api/calendarWorkspace')>()),
   getCalendarWorkspace: mocks.getCalendarWorkspace,
 }))
+vi.mock('../api/lecturerReview', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../api/lecturerReview')>()),
+  getLecturerReviewOverview: mocks.getLecturerReviewOverview,
+}))
 
 import { CourseSchedulePage } from './CourseSchedulePage'
+import type { ScheduleDestination } from '../components/ApplicationNavigation'
 import { calendarWorkspaceMatchesSelection } from './calendarWorkspaceSelection'
 import { draftScheduleFixture, generationConstraintsFixture } from '../test/draftScheduleFixtures'
 import { lifecycleOverviewFixture, snapshotFixture } from '../test/lifecycleFixtures'
 import { loadedCalendarWorkspaceFixture, noRevisionWorkspaceFixture } from '../test/calendarWorkspaceFixtures'
+import { plannerLecturerReviewOverviewFixture } from '../test/lecturerReviewFixtures'
 
 function deferred<Value>() {
   let resolve!: (value: Value) => void
@@ -225,6 +232,37 @@ function publishedCalendarWithWorkingAvailable() {
   }
 }
 
+function lecturerReviewOverviewForRevision(
+  revisionId: number,
+  occurrenceRef = 'exam:1',
+) {
+  const overview = plannerLecturerReviewOverviewFixture()
+  const sessionGroup = overview.feedbackGroups.find(
+    (group) => group.level === 'session',
+  )!
+  return {
+    ...overview,
+    revision: {
+      ...overview.revision,
+      id: revisionId,
+      label: revisionId === 12 ? 'Published R2' : 'Working R1',
+      state: revisionId === 12 ? 'published' as const : 'draft' as const,
+    },
+    totalFeedbackCount: sessionGroup.items.length,
+    impossibleFlagCount: sessionGroup.impossibleFlagCount,
+    feedbackGroups: [{
+      ...sessionGroup,
+      groupRef: occurrenceRef,
+      sessionContext: sessionGroup.sessionContext && {
+        ...sessionGroup.sessionContext,
+        sessionRef: occurrenceRef,
+        sourceSessionId: Number(occurrenceRef.split(':')[1]),
+      },
+      currentNavigation: { revisionId, occurrenceRef },
+    }],
+  }
+}
+
 beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset())
   mocks.getPlanningOptions.mockResolvedValue(options)
@@ -233,14 +271,53 @@ beforeEach(() => {
   mocks.getExamPlanningOverview.mockResolvedValue(examOverview)
   mocks.getScheduleLifecycle.mockResolvedValue(lifecycleOverviewFixture())
   mocks.getCalendarWorkspace.mockResolvedValue(loadedCalendarWorkspaceFixture())
+  mocks.getLecturerReviewOverview.mockImplementation((revisionId: number) =>
+    Promise.resolve(lecturerReviewOverviewForRevision(revisionId)),
+  )
 })
 
 afterEach(() => { document.body.innerHTML = '' })
 
-async function renderPage(destination: 'calendar' | 'versions' | 'exams' = 'calendar') {
+async function renderPage(destination: ScheduleDestination = 'calendar') {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   await act(async () => {
     root.render(<CourseSchedulePage catalogRevision={0} destination={destination} />)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+  return root
+}
+
+type NavigableCourseSchedulePageProps =
+  ComponentProps<typeof CourseSchedulePage> & {
+    onScheduleDestinationChange?: (
+      destination: ScheduleDestination,
+    ) => void
+  }
+
+const NavigableCourseSchedulePage =
+  CourseSchedulePage as ComponentType<NavigableCourseSchedulePageProps>
+
+function CourseScheduleNavigationHarness() {
+  const [destination, setDestination] =
+    useState<ScheduleDestination>('calendar')
+  return (
+    <>
+      <button type="button" onClick={() => setDestination('reviews')}>
+        Show lecturer reviews
+      </button>
+      <NavigableCourseSchedulePage
+        catalogRevision={0}
+        destination={destination}
+        onScheduleDestinationChange={setDestination}
+      />
+    </>
+  )
+}
+
+async function renderNavigationHarness() {
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  await act(async () => {
+    root.render(<CourseScheduleNavigationHarness />)
     await new Promise((resolve) => setTimeout(resolve, 0))
   })
   return root
@@ -268,6 +345,115 @@ describe('CourseSchedulePage multi-course mode', () => {
     await act(async () => root.render(<CourseSchedulePage catalogRevision={0} destination="calendar" />))
     expect(document.querySelector<HTMLElement>('.calendar-workspace-region')?.hidden).toBe(false)
     expect(document.querySelectorAll('.calendar-workspace')).not.toHaveLength(0)
+  })
+
+  it('preserves the selected schedule revision when opening Lecturer reviews', async () => {
+    const lifecycle = lifecycleWithWorkingAndPublished()
+    mocks.getScheduleLifecycle.mockResolvedValue(lifecycle)
+    mocks.getScheduleRevision.mockResolvedValue({
+      revision: lifecycle.currentPublication,
+      contentSource: 'captured_snapshot',
+      snapshot: snapshotFixture(),
+    })
+    mocks.getCalendarWorkspace.mockImplementation((_semesterId, revisionId) =>
+      Promise.resolve(
+        revisionId === 12
+          ? publishedCalendarWithWorkingAvailable()
+          : workingCalendarWithPublishedAvailable(),
+      ),
+    )
+    const root = await renderPage()
+
+    await act(async () => {
+      button('Published R2')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    await act(async () => {
+      root.render(
+        <CourseSchedulePage catalogRevision={0} destination="reviews" />,
+      )
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    const revisionSelect =
+      [...document.querySelectorAll<HTMLSelectElement>(
+        '.schedule-context-field select',
+      )][1]
+    expect(revisionSelect.value).toBe('12')
+    expect(mocks.getLecturerReviewOverview).toHaveBeenLastCalledWith(12)
+    expect(
+      document.querySelector<HTMLElement>('.lecturer-reviews-region')?.hidden,
+    ).toBe(false)
+    expect(document.body.textContent).toContain('Published R2')
+  })
+
+  it('guards a feedback session jump and then opens its authoritative Calendar occurrence', async () => {
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    await renderNavigationHarness()
+    const calendarDate =
+      document.querySelector<HTMLInputElement>(
+        'input[aria-label="Choose calendar date"]',
+      )!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
+        ?.set?.call(calendarDate, '2026-10-05')
+      calendarDate.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => {
+      [...document.querySelectorAll<HTMLButtonElement>(
+        '.calendar-occurrence',
+      )]
+        .find((item) => item.textContent?.includes('Teaching'))
+        ?.click()
+    })
+    await act(async () => button('Edit session')?.click())
+    const editorDate =
+      document.querySelector<HTMLInputElement>(
+        '.session-pane input[type="date"]',
+      )!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
+        ?.set?.call(editorDate, '2026-10-06')
+      editorDate.dispatchEvent(new Event('input', { bubbles: true }))
+      editorDate.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await act(async () => {
+      button('Show lecturer reviews')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    await act(async () => button('Open current session')?.click())
+
+    expect(document.body.textContent).toContain('Discard unsaved changes?')
+    expect(
+      document.querySelector<HTMLElement>('.lecturer-reviews-region')?.hidden,
+    ).toBe(false)
+    await act(async () => button('Keep editing')?.click())
+    expect(
+      document.querySelector<HTMLElement>('.lecturer-reviews-region')?.hidden,
+    ).toBe(false)
+
+    await act(async () => button('Open current session')?.click())
+    await act(async () => {
+      button('Discard changes')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(
+      document.querySelector<HTMLElement>('.calendar-workspace-region')?.hidden,
+    ).toBe(false)
+    expect(
+      [...document.querySelectorAll<HTMLSelectElement>(
+        '.schedule-context-field select',
+      )][1].value,
+    ).toBe('11')
+    expect(document.querySelector('.session-pane')?.textContent)
+      .toContain('Exam')
+    expect(
+      document.querySelector<HTMLButtonElement>(
+        '[data-occurrence-ref="exam:1"]',
+      )?.getAttribute('aria-pressed'),
+    ).toBe('true')
   })
 
   it('hides Planning inputs independently without hiding the compact context', async () => {

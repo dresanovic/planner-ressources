@@ -1,4 +1,8 @@
-from contextlib import asynccontextmanager
+import asyncio
+import logging
+import os
+from contextlib import asynccontextmanager, suppress
+from time import monotonic
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -21,15 +25,53 @@ from app.api.holiday_calendar import router as holiday_calendar_router
 from app.api.exam_scheduling import router as exam_scheduling_router
 from app.api.schedule_lifecycle import router as schedule_lifecycle_router
 from app.api.calendar_workspace import router as calendar_workspace_router
+from app.api.lecturer_review import (
+    router as lecturer_review_router,
+)
 from app.db.schema import initialize_database
-from app.db.session import engine, get_db
+from app.db.session import SessionLocal, engine, get_db
+from app.services.lecturer_review import (
+    cleanup_invalid_source_states,
+    source_fingerprint_key_from_environment,
+)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    if get_db not in _app.dependency_overrides:
+    production = os.getenv("APP_ENV", "").casefold() == "production"
+    source_fingerprint_key_from_environment(production=production)
+    uses_default_database = get_db not in _app.dependency_overrides
+    if uses_default_database:
         initialize_database(engine)
-    yield
+    cleanup_task = (
+        asyncio.create_task(_cleanup_lecturer_review_source_state())
+        if uses_default_database
+        else None
+    )
+    try:
+        yield
+    finally:
+        if cleanup_task is not None:
+            cleanup_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await cleanup_task
+
+
+async def _cleanup_lecturer_review_source_state() -> None:
+    while True:
+        cycle_started = monotonic()
+        try:
+            with SessionLocal() as db:
+                cleanup_invalid_source_states(db)
+                db.commit()
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Lecturer review privacy cleanup failed; retrying."
+            )
+            await asyncio.sleep(5)
+            continue
+        elapsed = monotonic() - cycle_started
+        await asyncio.sleep(max(0.0, 30.0 - elapsed))
 
 
 app = FastAPI(title="Planner Resource API", lifespan=lifespan)
@@ -57,6 +99,7 @@ app.include_router(holiday_calendar_router)
 app.include_router(exam_scheduling_router)
 app.include_router(schedule_lifecycle_router)
 app.include_router(calendar_workspace_router)
+app.include_router(lecturer_review_router)
 
 
 @app.exception_handler(RequestValidationError)

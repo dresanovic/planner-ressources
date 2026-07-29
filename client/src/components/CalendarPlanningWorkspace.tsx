@@ -226,6 +226,33 @@ function CalendarPlanningWorkspaceContent({
     if (drilldown != null) drilldownHeading.current?.focus()
   }, [drilldown])
 
+  useEffect(() => {
+    if (
+      workspace?.workspaceState !== 'loaded' ||
+      selectedRef === null ||
+      mode === 'list'
+    ) {
+      return
+    }
+    const occurrence = workspace.occurrences.find(
+      (item) => item.occurrenceRef === selectedRef,
+    )
+    if (occurrence === undefined) return
+    const effective = anchor ?? currentPeriodDate(
+      new Date().toISOString().slice(0, 10),
+      workspace.semester.startDate,
+      workspace.semester.endDate,
+    ).date
+    const selectedRange = visibleRange(mode, effective)
+    if (
+      selectedRange !== null &&
+      (occurrence.date < selectedRange.start ||
+        occurrence.date > selectedRange.end)
+    ) {
+      queueMicrotask(() => setAnchor(occurrence.date))
+    }
+  }, [anchor, mode, selectedRef, setAnchor, workspace])
+
   if (loading && workspace == null) return <section className="calendar-workspace workspace-state" aria-busy="true" role="status">Loading {intendedContext ?? 'semester workspace'}…</section>
   if (error && workspace == null) return <section className="calendar-workspace workspace-state"><div role="alert"><h2>Calendar workspace unavailable</h2>{intendedContext && <p>{intendedContext}</p>}<p>{error}</p><button type="button" onClick={onRetry}>Retry</button></div><p>The established Courses overview remains available while the coherent workspace read is unavailable.</p><div className="workspace-list-mode">{renderListContent(listContent, null)}</div></section>
   if (workspace == null) return <section className="calendar-workspace workspace-state"><h2>No semester selected</h2><p>Select a semester to open its planning workspace.</p></section>

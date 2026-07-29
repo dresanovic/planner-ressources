@@ -1,0 +1,927 @@
+openapi: 3.1.0
+info:
+  title: FS-015 Lecturer Review API
+  version: 1.0.0
+  description: >
+    Cross-stack contract for planner-managed, accountless, single-lecturer
+    schedule review. The trusted gateway protects every planner operation and
+    permits anonymous access only to the two explicitly public operations.
+    Public operations accept only the temporary bearer secret.
+servers:
+  - url: /
+x-gateway-boundary:
+  contract: ./gateway-boundary.md
+  publicOperations:
+    - getPublicLecturerReview
+    - submitPublicLecturerFeedback
+  default: protected
+paths:
+  /api/schedule-revisions/{revisionId}/lecturer-review:
+    get:
+      operationId: getLecturerReviewOverview
+      summary: Get non-secret link status and retained feedback for one revision
+      description: Trusted-gateway planner authorization is required.
+      x-access-boundary: trusted-gateway
+      parameters:
+        - $ref: "#/components/parameters/RevisionId"
+      responses:
+        "200":
+          description: Complete, partial, or unavailable planner overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannerReviewOverview"
+        "404":
+          $ref: "#/components/responses/PlannerNotFound"
+
+  /api/schedule-revisions/{revisionId}/lecturer-review-links:
+    post:
+      operationId: issueLecturerReviewLink
+      summary: Issue the first active link for one revision and lecturer
+      description: >
+        Trusted-gateway planner authorization is required. The raw secret is
+        returned only by this successful response and is never included in
+        routine overview responses. The planner client constructs the public
+        fragment URL.
+      x-access-boundary: trusted-gateway
+      parameters:
+        - $ref: "#/components/parameters/RevisionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssueLinkInput"
+      responses:
+        "201":
+          description: Link committed and its raw secret revealed once
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssuedLinkResult"
+        "409":
+          $ref: "#/components/responses/PlannerConflict"
+        "422":
+          $ref: "#/components/responses/PlannerValidation"
+
+  /api/lecturer-review-links/{linkId}/revoke:
+    post:
+      operationId: revokeLecturerReviewLink
+      summary: Revoke an active link immediately
+      description: Trusted-gateway planner authorization is required.
+      x-access-boundary: trusted-gateway
+      parameters:
+        - $ref: "#/components/parameters/LinkId"
+      responses:
+        "200":
+          description: Authoritative non-secret overview after revocation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlannerReviewOverview"
+        "409":
+          $ref: "#/components/responses/PlannerConflict"
+        "404":
+          $ref: "#/components/responses/PlannerNotFound"
+
+  /api/lecturer-review-links/{linkId}/replace:
+    post:
+      operationId: replaceLecturerReviewLink
+      summary: End every earlier link for the pair and issue one replacement
+      description: >
+        Trusted-gateway planner authorization is required. The raw secret is
+        returned only by this successful response; the planner client
+        constructs the public fragment URL.
+      x-access-boundary: trusted-gateway
+      parameters:
+        - $ref: "#/components/parameters/LinkId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceLinkInput"
+      responses:
+        "201":
+          description: Replacement committed and its raw secret revealed once
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssuedLinkResult"
+        "409":
+          $ref: "#/components/responses/PlannerConflict"
+        "404":
+          $ref: "#/components/responses/PlannerNotFound"
+        "422":
+          $ref: "#/components/responses/PlannerValidation"
+
+  /api/public/lecturer-review:
+    get:
+      operationId: getPublicLecturerReview
+      summary: Read the complete minimum-scope lecturer review
+      x-access-boundary: accountless-bearer
+      security:
+        - lecturerReviewBearer: []
+      responses:
+        "200":
+          description: Complete scoped review
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Pragma:
+              schema:
+                type: string
+                const: no-cache
+            Referrer-Policy:
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              schema:
+                type: string
+                const: noindex, nofollow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicReview"
+        "404":
+          $ref: "#/components/responses/PublicUnavailable"
+        "429":
+          $ref: "#/components/responses/PublicThrottled"
+
+  /api/public/lecturer-review/feedback:
+    post:
+      operationId: submitPublicLecturerFeedback
+      summary: Append one advisory feedback item through a valid link
+      x-access-boundary: accountless-bearer
+      security:
+        - lecturerReviewBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackInput"
+      responses:
+        "201":
+          description: A new immutable feedback item was accepted
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Pragma:
+              schema:
+                type: string
+                const: no-cache
+            Referrer-Policy:
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              schema:
+                type: string
+                const: noindex, nofollow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResult"
+        "200":
+          description: Idempotent replay returned the originally accepted item
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Pragma:
+              schema:
+                type: string
+                const: no-cache
+            Referrer-Policy:
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              schema:
+                type: string
+                const: noindex, nofollow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResult"
+        "404":
+          $ref: "#/components/responses/PublicUnavailable"
+        "409":
+          description: >
+            The token remains valid, but the submitted session or submission
+            identity is no longer authoritative. The client must refresh.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Pragma:
+              schema:
+                type: string
+                const: no-cache
+            Referrer-Policy:
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              schema:
+                type: string
+                const: noindex, nofollow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicRefreshRequiredError"
+        "422":
+          description: Valid link but invalid feedback text or shape
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                const: no-store
+            Pragma:
+              schema:
+                type: string
+                const: no-cache
+            Referrer-Policy:
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              schema:
+                type: string
+                const: noindex, nofollow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicValidationError"
+        "429":
+          $ref: "#/components/responses/PublicThrottled"
+
+components:
+  securitySchemes:
+    lecturerReviewBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: Opaque 256-bit URL-safe secret
+
+  parameters:
+    RevisionId:
+      name: revisionId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    LinkId:
+      name: linkId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    PlannerNotFound:
+      description: Planner-visible resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PlannerError"
+    PlannerConflict:
+      description: Authoritative lifecycle or link state rejects the mutation
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PlannerError"
+    PlannerValidation:
+      description: Planner input is invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PlannerError"
+    PublicUnavailable:
+      description: >
+        Identical response for absent, malformed, unknown, expired, revoked,
+        replaced, abandoned, superseded, or source-throttled credentials.
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+        Pragma:
+          schema:
+            type: string
+            const: no-cache
+        Referrer-Policy:
+          schema:
+            type: string
+            const: no-referrer
+        X-Robots-Tag:
+          schema:
+            type: string
+            const: noindex, nofollow
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PublicUnavailableError"
+    PublicThrottled:
+      description: >
+        A known valid link exceeded its protected-view or feedback threshold.
+        No schedule or feedback data is returned.
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            const: no-store
+        Pragma:
+          schema:
+            type: string
+            const: no-cache
+        Referrer-Policy:
+          schema:
+            type: string
+            const: no-referrer
+        X-Robots-Tag:
+          schema:
+            type: string
+            const: noindex, nofollow
+        Retry-After:
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PublicThrottledError"
+
+  schemas:
+    IssueLinkInput:
+      type: object
+      additionalProperties: false
+      required:
+        - lecturerId
+      properties:
+        lecturerId:
+          type: integer
+          minimum: 1
+        durationDays:
+          type: integer
+          enum: [1, 2, 3]
+          default: 3
+
+    ReplaceLinkInput:
+      type: object
+      additionalProperties: false
+      properties:
+        durationDays:
+          type: integer
+          enum: [1, 2, 3]
+          default: 3
+
+    IssuedLinkResult:
+      type: object
+      additionalProperties: false
+      required:
+        - secret
+        - issuedLink
+        - overview
+      properties:
+        secret:
+          type: string
+          pattern: "^[A-Za-z0-9_-]{43}$"
+          description: >
+            Returned exactly once after commit. The planner client constructs
+            {window.location.origin}/lecturer-review/#/{secret}.
+        issuedLink:
+          $ref: "#/components/schemas/LinkSummary"
+        overview:
+          $ref: "#/components/schemas/PlannerReviewOverview"
+
+    PlannerReviewOverview:
+      type: object
+      additionalProperties: false
+      required:
+        - revision
+        - lecturers
+        - links
+        - feedbackAvailability
+        - feedbackGroups
+      properties:
+        revision:
+          $ref: "#/components/schemas/RevisionSummary"
+        lecturers:
+          type: array
+          items:
+            $ref: "#/components/schemas/LecturerAssignmentSummary"
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/LinkSummary"
+        feedbackAvailability:
+          type: string
+          enum: [complete, partial, unavailable]
+        totalFeedbackCount:
+          type: [integer, "null"]
+          minimum: 0
+          description: Null unless feedbackAvailability is complete.
+        impossibleFlagCount:
+          type: [integer, "null"]
+          minimum: 0
+          description: Null unless feedbackAvailability is complete.
+        feedbackGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannerFeedbackGroup"
+
+    RevisionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - semesterId
+        - semesterName
+        - label
+        - state
+      properties:
+        id:
+          type: integer
+        semesterId:
+          type: integer
+        semesterName:
+          type: string
+        label:
+          type: string
+        state:
+          type: string
+          enum:
+            - draft
+            - ready_for_review
+            - published
+            - abandoned
+            - superseded
+
+    LecturerAssignmentSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - lecturerId
+        - lecturerName
+        - sessionCount
+        - courses
+        - initialIssueAllowed
+      properties:
+        lecturerId:
+          type: integer
+        lecturerName:
+          type: string
+        sessionCount:
+          type: integer
+          minimum: 0
+        courses:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseIdentity"
+        initialIssueAllowed:
+          type: boolean
+
+    LinkSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - revisionId
+        - lecturerId
+        - intendedLecturerName
+        - durationDays
+        - issuedAt
+        - expiresAt
+        - timeZone
+        - status
+        - replaceAllowed
+      properties:
+        id:
+          type: integer
+        revisionId:
+          type: integer
+        lecturerId:
+          type: integer
+        intendedLecturerName:
+          type: string
+        durationDays:
+          type: integer
+          enum: [1, 2, 3]
+        issuedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        timeZone:
+          type: string
+          example: Europe/Vienna
+        status:
+          type: string
+          enum: [active, expired, revoked, replaced, revision_ended]
+        endedAt:
+          type: [string, "null"]
+          format: date-time
+        replaceAllowed:
+          type: boolean
+
+    PlannerFeedbackGroup:
+      type: object
+      additionalProperties: false
+      required:
+        - groupRef
+        - level
+        - impossibleFlagCount
+        - items
+      properties:
+        groupRef:
+          type: string
+          description: "revision or a stable teaching:{id}/exam:{id} reference"
+        level:
+          type: string
+          enum: [revision, session]
+        sessionContext:
+          anyOf:
+            - $ref: "#/components/schemas/SessionContext"
+            - type: "null"
+        currentNavigation:
+          anyOf:
+            - $ref: "#/components/schemas/PlannerSessionNavigation"
+            - type: "null"
+        impossibleFlagCount:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannerFeedbackItem"
+
+    PlannerSessionNavigation:
+      type: object
+      additionalProperties: false
+      required:
+        - revisionId
+        - occurrenceRef
+      properties:
+        revisionId:
+          type: integer
+        occurrenceRef:
+          type: string
+          pattern: "^(teaching|exam):[1-9][0-9]*$"
+
+    PlannerFeedbackItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - intendedLecturerId
+        - intendedLecturerName
+        - attribution
+        - kind
+        - comment
+        - sessionContext
+        - submittedAt
+        - timeZone
+      properties:
+        id:
+          type: integer
+        intendedLecturerId:
+          type: integer
+        intendedLecturerName:
+          type: string
+        attribution:
+          type: string
+          description: States that the item came through the intended link, not an authenticated identity.
+        kind:
+          type: string
+          enum: [revision_comment, session_comment, impossible_session]
+        comment:
+          type: [string, "null"]
+          maxLength: 2000
+        sessionContext:
+          description: >
+            The immutable context captured for this individual feedback item;
+            null only for revision-level feedback.
+          oneOf:
+            - $ref: "#/components/schemas/SessionContext"
+            - type: "null"
+        submittedAt:
+          type: string
+          format: date-time
+        timeZone:
+          type: string
+
+    PublicReview:
+      type: object
+      additionalProperties: false
+      required:
+        - intendedLecturer
+        - identityDisclaimer
+        - revision
+        - accessExpiresAt
+        - timeZone
+        - courses
+        - submittedFeedback
+      properties:
+        intendedLecturer:
+          type: string
+        identityDisclaimer:
+          type: string
+          description: The named lecturer is intended scope, not authenticated identity.
+        revision:
+          $ref: "#/components/schemas/RevisionSummary"
+        accessExpiresAt:
+          type: string
+          format: date-time
+        timeZone:
+          type: string
+        courses:
+          type: array
+          description: Empty is a valid complete current assignment projection.
+          items:
+            $ref: "#/components/schemas/PublicCourse"
+        submittedFeedback:
+          type: array
+          description: Only feedback submitted through this same link.
+          items:
+            $ref: "#/components/schemas/PublicFeedbackItem"
+
+    CourseIdentity:
+      type: object
+      additionalProperties: false
+      required:
+        - sourceCourseId
+        - code
+        - title
+      properties:
+        sourceCourseId:
+          type: integer
+        code:
+          type: string
+          example: COURSE-42
+        title:
+          type: string
+
+    PublicCourse:
+      type: object
+      additionalProperties: false
+      required:
+        - sourceCourseId
+        - code
+        - title
+        - sessions
+      properties:
+        sourceCourseId:
+          type: integer
+        code:
+          type: string
+          example: COURSE-42
+        title:
+          type: string
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicSession"
+
+    PublicSession:
+      type: object
+      additionalProperties: false
+      required:
+        - sessionRef
+        - sessionKind
+        - sourceSessionId
+        - sessionType
+        - date
+        - startTime
+        - endTime
+        - timeZone
+        - roomName
+        - cohortName
+      properties:
+        sessionRef:
+          type: string
+          pattern: "^(teaching|exam):[1-9][0-9]*$"
+        sessionKind:
+          type: string
+          enum: [teaching, exam]
+        sourceSessionId:
+          type: integer
+        sessionType:
+          type: string
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        timeZone:
+          type: string
+        roomName:
+          type: string
+        cohortName:
+          type: string
+
+    SessionContext:
+      type: object
+      additionalProperties: false
+      required:
+        - sessionRef
+        - sessionKind
+        - sourceSessionId
+        - sessionType
+        - courseSourceId
+        - courseCode
+        - courseTitle
+        - date
+        - startTime
+        - endTime
+        - timeZone
+        - roomName
+        - cohortName
+      properties:
+        sessionRef:
+          type: string
+          pattern: "^(teaching|exam):[1-9][0-9]*$"
+        sessionKind:
+          type: string
+          enum: [teaching, exam]
+        sourceSessionId:
+          type: integer
+        sessionType:
+          type: string
+        courseSourceId:
+          type: integer
+        courseCode:
+          type: string
+        courseTitle:
+          type: string
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        timeZone:
+          type: string
+        roomName:
+          type: string
+        cohortName:
+          type: string
+
+    FeedbackInput:
+      type: object
+      additionalProperties: false
+      required:
+        - clientSubmissionId
+        - kind
+      properties:
+        clientSubmissionId:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [revision_comment, session_comment, impossible_session]
+        sessionRef:
+          type: string
+          pattern: "^(teaching|exam):[1-9][0-9]*$"
+        comment:
+          type: string
+          description: At most 2,000 characters after surrounding whitespace is removed.
+      allOf:
+        - if:
+            properties:
+              kind:
+                const: revision_comment
+          then:
+            required: [comment]
+            not:
+              required: [sessionRef]
+        - if:
+            properties:
+              kind:
+                const: session_comment
+          then:
+            required: [sessionRef, comment]
+        - if:
+            properties:
+              kind:
+                const: impossible_session
+          then:
+            required: [sessionRef]
+
+    FeedbackResult:
+      type: object
+      additionalProperties: false
+      required:
+        - outcome
+        - item
+      properties:
+        outcome:
+          type: string
+          enum: [created, already_accepted]
+        item:
+          $ref: "#/components/schemas/PublicFeedbackItem"
+
+    PublicFeedbackItem:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - kind
+        - submittedAt
+        - timeZone
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+          enum: [revision_comment, session_comment, impossible_session]
+        sessionRef:
+          type: [string, "null"]
+        comment:
+          type: [string, "null"]
+          maxLength: 2000
+        submittedAt:
+          type: string
+          format: date-time
+        timeZone:
+          type: string
+
+    PlannerError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    PublicUnavailableError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          const: REVIEW_UNAVAILABLE
+        message:
+          type: string
+          const: This review is unavailable. Contact the planner for a new link.
+
+    PublicThrottledError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          const: REVIEW_TEMPORARILY_UNAVAILABLE
+        message:
+          type: string
+          const: This review is temporarily unavailable. Try again later.
+
+    PublicRefreshRequiredError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          const: REVIEW_REFRESH_REQUIRED
+        message:
+          type: string
+          const: The schedule changed. Refresh the review before submitting feedback.
+
+    PublicValidationError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          const: INVALID_FEEDBACK
+        message:
+          type: string

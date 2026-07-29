@@ -1617,3 +1617,293 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .calendar-workspace * { scroll-behavior: auto !important; transition: none !important; }
 }
+.lecturer-review-public {
+  min-height: 100vh;
+  padding: clamp(16px, 4vw, 48px);
+  color: #172033;
+  background: #eef3f8;
+}
+
+.lecturer-review-public,
+.lecturer-review-management {
+  overflow-wrap: anywhere;
+}
+
+.lecturer-review-public button,
+.lecturer-review-management button,
+.lecturer-review-management select {
+  min-height: 44px;
+}
+
+.lecturer-review-public button:focus-visible,
+.lecturer-review-management button:focus-visible,
+.lecturer-review-management select:focus-visible {
+  outline: 3px solid #075fc4;
+  outline-offset: 3px;
+}
+
+.review-card {
+  width: min(920px, 100%);
+  margin: 0 auto 20px;
+  padding: clamp(18px, 4vw, 32px);
+  border: 1px solid #d5dde7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgb(23 32 51 / 8%);
+}
+
+.review-header h1,
+.lecturer-review-management h2 {
+  margin: 4px 0 10px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #45627f;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.review-metadata {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.review-metadata div {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f5f7fa;
+}
+
+.review-metadata dt {
+  color: #526071;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.review-metadata dd {
+  margin: 4px 0 0;
+}
+
+.review-course-list,
+.review-session-list,
+.review-feedback-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-course {
+  padding: 16px;
+  border: 1px solid #dfe4eb;
+  border-radius: 10px;
+}
+
+.review-course h3 {
+  margin: 4px 0 12px;
+}
+
+.review-session-list li,
+.review-feedback-list li {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-left: 4px solid #3b72a6;
+  background: #f7f9fc;
+}
+
+.lecturer-review-management {
+  display: grid;
+  gap: 18px;
+  max-width: 920px;
+}
+
+.lecturer-review-management > *,
+.review-feedback-group,
+.review-link-history li {
+  min-width: 0;
+}
+
+.review-feedback-area,
+.review-link-history {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #cbd7e4;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.review-feedback-area h3,
+.review-feedback-group h4,
+.review-link-history h3 {
+  margin: 0;
+}
+
+.review-feedback-filter {
+  justify-self: start;
+  border: 2px solid #8b321f;
+  background: #fff5f2;
+  color: #742416;
+  font-weight: 800;
+}
+
+.review-feedback-filter[aria-pressed='true'] {
+  background: #742416;
+  color: #fff;
+}
+
+.review-feedback-filter:disabled {
+  border-color: #697586;
+  background: #f2f4f7;
+  color: #465263;
+}
+
+.review-feedback-announcement {
+  margin: 0;
+  color: #526071;
+}
+
+.review-feedback-groups,
+.review-feedback-group,
+.review-feedback-group ul,
+.review-link-history ul,
+.review-link-history li {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.review-feedback-group,
+.review-link-history li {
+  padding: 14px;
+  border: 1px solid #dfe4eb;
+  border-radius: 8px;
+  list-style: none;
+}
+
+.review-feedback-context {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.review-feedback-context div {
+  min-width: 0;
+}
+
+.review-feedback-context dt {
+  color: #526071;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.review-feedback-context dd {
+  margin: 2px 0 0;
+}
+
+.review-feedback-group ul {
+  list-style: none;
+}
+
+.review-feedback-group li {
+  padding: 12px;
+  border-left: 4px solid #742416;
+  background: #f7f9fc;
+}
+
+.review-feedback-group li p {
+  margin: 6px 0;
+}
+
+.review-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.review-issue-controls {
+  display: grid;
+  grid-template-columns: minmax(130px, auto) minmax(180px, 1fr);
+  gap: 10px 14px;
+  align-items: center;
+}
+
+.review-issue-controls button {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.review-warning,
+.review-one-time-result {
+  padding: 16px;
+  border-radius: 9px;
+}
+
+.review-warning {
+  border: 1px solid #d29a24;
+  background: #fff8e6;
+}
+
+.review-one-time-result {
+  border: 1px solid #72a985;
+  background: #f1faf4;
+}
+
+.review-secret-url {
+  padding: 12px;
+  border: 1px solid #b8c8bc;
+  background: #fff;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  user-select: all;
+}
+
+.review-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 420px) {
+  .lecturer-review-public {
+    padding: 8px;
+  }
+
+  .review-card {
+    padding: 16px;
+  }
+
+  .review-issue-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .review-issue-controls button {
+    grid-column: 1;
+    width: 100%;
+  }
+
+  .review-feedback-filter,
+  .review-feedback-group button,
+  .review-link-actions button,
+  .review-link-actions select {
+    width: 100%;
+  }
+
+  .review-feedback-context {
+    grid-template-columns: 1fr;
+  }
+
+  .review-link-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

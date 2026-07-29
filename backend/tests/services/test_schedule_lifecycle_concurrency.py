@@ -2,11 +2,12 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier, Event
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.db.schema import initialize_database
-from app.models.planning import ScheduleRevision, ScheduleRevisionEvent, Semester
+from app.models.planning import LecturerReviewActivityEvent, LecturerReviewLink, ScheduleRevision, ScheduleRevisionEvent, Semester
+from app.services.lecturer_review import issue_lecturer_review_link
 from app.services.schedule_lifecycle import (
     LifecycleConflict,
     claim_active_working_revision,
@@ -15,6 +16,7 @@ from app.services.schedule_lifecycle import (
     prepare_publication,
     transition_revision,
 )
+from tests.lecturer_review_fixtures import DeterministicUtcClock
 from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
 
 
@@ -288,6 +290,124 @@ def test_replacement_publication_rolls_back_supersession_and_publication_togethe
         current = get_lifecycle_overview(db, 1)
         assert current["currentPublication"]["revisionId"] == first_revision["revisionId"]
         assert current["activeWorkingRevision"]["revisionId"] == successor["revisionId"]
+
+
+def test_abandonment_and_link_terminalization_roll_back_as_one_transaction(tmp_path: Path):
+    database = tmp_path / "lifecycle-review-link-abandon-rollback.db"
+    engine = create_engine(f"sqlite:///{database}")
+    initialize_database(engine)
+    with Session(engine) as db:
+        seed_lifecycle_semester(db, with_schedule=True)
+        initial = get_lifecycle_overview(db, 1)
+        created = create_working_revision(db, 1, initial["stateToken"])
+        db.commit()
+        revision = created["activeWorkingRevision"]
+        issued = issue_lecturer_review_link(
+            db,
+            revision["revisionId"],
+            1,
+            clock=DeterministicUtcClock(),
+        )
+        db.commit()
+
+        transition_revision(
+            db,
+            revision["revisionId"],
+            action="abandon",
+            expected_revision_version=revision["revisionVersion"],
+            expected_state_token=created["stateToken"],
+            confirmed=True,
+        )
+        assert db.get(ScheduleRevision, revision["revisionId"]).state == "abandoned"
+        link = db.get(LecturerReviewLink, issued.issued_link.id)
+        assert link.status == "revision_ended"
+        assert link.end_reason == "abandoned"
+        db.rollback()
+
+        db.expire_all()
+        assert db.get(ScheduleRevision, revision["revisionId"]).state == "draft"
+        restored_link = db.get(LecturerReviewLink, issued.issued_link.id)
+        assert restored_link.status == "active"
+        assert restored_link.end_reason is None
+        assert db.scalar(
+            select(LecturerReviewActivityEvent.id).where(
+                LecturerReviewActivityEvent.review_link_id == restored_link.id,
+                LecturerReviewActivityEvent.event_type == "revision_ended",
+            )
+        ) is None
+
+
+def test_supersession_and_link_terminalization_roll_back_as_one_transaction(tmp_path: Path):
+    database = tmp_path / "lifecycle-review-link-supersede-rollback.db"
+    engine = create_engine(f"sqlite:///{database}")
+    initialize_database(engine)
+    with Session(engine) as db:
+        seed_lifecycle_semester(db, with_schedule=True)
+        initial = get_lifecycle_overview(db, 1)
+        first = create_working_revision(db, 1, initial["stateToken"])
+        db.commit()
+        first_revision = first["activeWorkingRevision"]
+        issued = issue_lecturer_review_link(
+            db,
+            first_revision["revisionId"],
+            1,
+            clock=DeterministicUtcClock(),
+        )
+        db.commit()
+        first_preparation = prepare_publication(
+            db,
+            first_revision["revisionId"],
+            first_revision["revisionVersion"],
+            first["stateToken"],
+        )
+        published = transition_revision(
+            db,
+            first_revision["revisionId"],
+            action="publish",
+            expected_revision_version=first_revision["revisionVersion"],
+            expected_state_token=first["stateToken"],
+            confirmed=True,
+            publication_token=first_preparation["preparationToken"],
+        )
+        db.commit()
+        assert db.get(LecturerReviewLink, issued.issued_link.id).status == "active"
+
+        successor_overview = create_working_revision(db, 1, published["stateToken"])
+        db.commit()
+        successor = successor_overview["activeWorkingRevision"]
+        successor_preparation = prepare_publication(
+            db,
+            successor["revisionId"],
+            successor["revisionVersion"],
+            successor_overview["stateToken"],
+        )
+        transition_revision(
+            db,
+            successor["revisionId"],
+            action="publish",
+            expected_revision_version=successor["revisionVersion"],
+            expected_state_token=successor_overview["stateToken"],
+            confirmed=True,
+            publication_token=successor_preparation["preparationToken"],
+        )
+        assert db.get(ScheduleRevision, first_revision["revisionId"]).state == "superseded"
+        superseded_link = db.get(LecturerReviewLink, issued.issued_link.id)
+        assert superseded_link.status == "revision_ended"
+        assert superseded_link.end_reason == "superseded"
+        db.rollback()
+
+        db.expire_all()
+        assert db.get(ScheduleRevision, first_revision["revisionId"]).state == "published"
+        assert db.get(ScheduleRevision, successor["revisionId"]).state == "draft"
+        restored_link = db.get(LecturerReviewLink, issued.issued_link.id)
+        assert restored_link.status == "active"
+        assert restored_link.end_reason is None
+        assert db.scalar(
+            select(LecturerReviewActivityEvent.id).where(
+                LecturerReviewActivityEvent.review_link_id == restored_link.id,
+                LecturerReviewActivityEvent.event_type == "revision_ended",
+            )
+        ) is None
 
 
 def test_create_and_restore_race_retains_exactly_one_working_revision(tmp_path: Path):

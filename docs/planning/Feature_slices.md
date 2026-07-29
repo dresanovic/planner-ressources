@@ -114,28 +114,28 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 
 ## Slice map
 
-| Order | Slice ID | Slice name | User outcome | Depends on | Status |
-| ----: | -------- | ---------- | ------------ | ---------- | ------ |
-| 1 | FS-001 | Single-Course Draft Schedule Generation | Generate a valid draft for one course | None | Implemented |
-| 2 | FS-002 | Review Generated Schedule in Planner UI | Inspect and filter generated sessions | FS-001 | Implemented |
-| 3 | FS-003 | Configurable Generation Constraints and Courses Overview | Control generation windows and review a semester | FS-001, FS-002 | Implemented |
-| 4 | FS-004 | Manual Session Editing | Correct existing generated sessions | FS-003 | Implemented |
-| 5 | FS-005 | Conflict Detection | See non-blocking schedule validation alerts | FS-003, FS-004 | Implemented |
-| 6 | FS-006 | Multi-Course Draft Generation | Generate several course drafts in one operation | FS-003, FS-005 | Implemented |
-| 7 | FS-007 | Academic Planning Data Administration | Maintain academic scheduling inputs in the UI | FS-006 | Implemented |
-| 8 | FS-008 | Resource Eligibility and Availability | Maintain eligible resources and availability | FS-007 | Implemented |
-| 9 | FS-018 | Unified Application Navigation | Move consistently between Schedule and Academic Data | FS-007, FS-008 | Implemented |
-| 10 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Implemented |
-| 11 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Implemented |
-| 12 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Implemented |
-| 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Implemented |
-| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented |
-| 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented |
-| 16 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Proposed — later release |
+| Order | Slice ID | Slice name | User outcome | Depends on | Status                  |
+| ----: | -------- | ---------- | ------------ | ---------- |-------------------------|
+| 1 | FS-001 | Single-Course Draft Schedule Generation | Generate a valid draft for one course | None | Implemented             |
+| 2 | FS-002 | Review Generated Schedule in Planner UI | Inspect and filter generated sessions | FS-001 | Implemented             |
+| 3 | FS-003 | Configurable Generation Constraints and Courses Overview | Control generation windows and review a semester | FS-001, FS-002 | Implemented             |
+| 4 | FS-004 | Manual Session Editing | Correct existing generated sessions | FS-003 | Implemented             |
+| 5 | FS-005 | Conflict Detection | See non-blocking schedule validation alerts | FS-003, FS-004 | Implemented             |
+| 6 | FS-006 | Multi-Course Draft Generation | Generate several course drafts in one operation | FS-003, FS-005 | Implemented             |
+| 7 | FS-007 | Academic Planning Data Administration | Maintain academic scheduling inputs in the UI | FS-006 | Implemented             |
+| 8 | FS-008 | Resource Eligibility and Availability | Maintain eligible resources and availability | FS-007 | Implemented             |
+| 9 | FS-018 | Unified Application Navigation | Move consistently between Schedule and Academic Data | FS-007, FS-008 | Implemented             |
+| 10 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Implemented             |
+| 11 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Implemented             |
+| 12 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Implemented             |
+| 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Implemented             |
+| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented             |
+| 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented             |
+| 16 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Ready for Specification |
 | 17 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015 | Proposed — later release |
 | 18 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
-**Recommended first slice:** `FS-014 – Calendar Planning Workspace and Operational Dashboard`
+**Recommended first slice:** `FS-015 – Accountless Lecturer Token Review`
 
 ## Development slices
 

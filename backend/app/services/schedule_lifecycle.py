@@ -29,6 +29,7 @@ from app.services.draft_schedule_repository import (
 )
 from app.services.draft_schedule_validation import collect_validation_alerts
 from app.services.holiday_calendar import holiday_snapshot
+from app.services.lecturer_review import terminalize_revision_links
 from app.services.resource_rules import intervals_overlap, resource_is_unavailable
 from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan
 
@@ -234,6 +235,12 @@ def transition_revision(
         revision.updated_at = changed_at
         revision.row_version += 1
         _append_event(db, revision, "abandoned", from_state, "abandoned", changed_at)
+        terminalize_revision_links(
+            db,
+            revision.id,
+            reason="abandoned",
+            clock=lambda: changed_at,
+        )
         db.flush()
         return get_lifecycle_overview(db, revision.semester_id)
     if action == "restore":
@@ -281,6 +288,12 @@ def transition_revision(
         current.updated_at = captured_at
         current.row_version += 1
         _append_event(db, current, "superseded", "published", "superseded", captured_at)
+        terminalize_revision_links(
+            db,
+            current.id,
+            reason="superseded",
+            clock=lambda: captured_at,
+        )
     revision.state = "published"
     revision.snapshot_schema_version = snapshot["schemaVersion"]
     revision.snapshot_document = snapshot
