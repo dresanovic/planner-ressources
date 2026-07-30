@@ -1,0 +1,23 @@
+name: planner-ressources
+
+services:
+  planner:
+    image: ${PLANNER_IMAGE:-ghcr.io/dresanovic/planner-ressources:latest}
+    container_name: planner-ressources
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      DATABASE_URL: sqlite:////data/planner.db
+      INSTITUTION_TIMEZONE: ${INSTITUTION_TIMEZONE:-Europe/Vienna}
+      LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY: ${LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY:?Set LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY in .env}
+    ports:
+      - "${PLANNER_PORT:-8080}:8080"
+    volumes:
+      - planner_data:/data
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+
+volumes:
+  planner_data:
+    name: planner-ressources-data

@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  workflow_call:
+  schedule:
+    - cron: "17 4 * * 1"
   push:
     branches:
       - main
@@ -27,7 +30,10 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+            backend/requirements-runtime.txt
 
       - name: Install backend dependencies
         working-directory: backend
@@ -40,7 +46,7 @@ jobs:
         run: python -m pytest
 
   frontend:
-    name: Frontend lint and build
+    name: Frontend checks
     runs-on: ubuntu-latest
 
     steps:
@@ -62,6 +68,170 @@ jobs:
         working-directory: client
         run: npm run lint
 
+      - name: Run frontend tests
+        working-directory: client
+        run: npm run test
+
       - name: Build frontend
         working-directory: client
         run: npm run build
+
+  container:
+    name: Container smoke test
+    needs:
+      - backend
+      - frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build image
+        run: docker build --file infrastructure/docker/Dockerfile --tag planner-ressources:ci .
+
+      - name: Report image size
+        run: |
+          image_size_bytes="$(docker image inspect planner-ressources:ci --format '{{.Size}}')"
+          image_size_mib="$((image_size_bytes / 1024 / 1024))"
+          echo "Container image size: ${image_size_mib} MiB"
+          echo "### Container image" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Uncompressed size: ${image_size_mib} MiB" >> "$GITHUB_STEP_SUMMARY"
+          test "$image_size_bytes" -le 471859200
+
+      - name: Verify production package inventory
+        run: |
+          docker run --rm planner-ressources:ci \
+            python -c "import importlib.metadata as m; [print(f'{d.metadata[\"Name\"]}=={d.version}') for d in m.distributions()]" \
+            > /tmp/runtime-packages.txt
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          def normalize(name: str) -> str:
+              return re.sub(r"[-_.]+", "-", name).lower()
+
+          def parse(lines: list[str]) -> dict[str, str]:
+              packages = {}
+              for line in lines:
+                  stripped = line.strip()
+                  if not stripped or stripped.startswith("#"):
+                      continue
+                  name, version = stripped.split("==", maxsplit=1)
+                  packages[normalize(name)] = version
+              return packages
+
+          expected = parse(
+              Path("backend/requirements-runtime.txt").read_text(
+                  encoding="utf-8"
+              ).splitlines()
+          )
+          actual = parse(
+              Path("/tmp/runtime-packages.txt").read_text(
+                  encoding="utf-8"
+              ).splitlines()
+          )
+          if actual != expected:
+              missing = sorted(expected.keys() - actual.keys())
+              extra = sorted(actual.keys() - expected.keys())
+              mismatched = sorted(
+                  name
+                  for name in expected.keys() & actual.keys()
+                  if expected[name] != actual[name]
+              )
+              raise SystemExit(
+                  "Runtime package lock mismatch: "
+                  f"missing={missing}, extra={extra}, "
+                  f"version_mismatch={mismatched}"
+              )
+
+          forbidden = {"pip", "pytest", "httpx", "httpcore"}
+          present = sorted(forbidden & actual.keys())
+          if present:
+              raise SystemExit(
+                  f"Forbidden runtime packages are installed: {present}"
+              )
+          PY
+
+      - name: Scan fixable critical and high vulnerabilities
+        uses: anchore/scan-action@v7
+        with:
+          image: planner-ressources:ci
+          fail-build: true
+          severity-cutoff: high
+          only-fixed: true
+
+      - name: Start image
+        run: |
+          docker volume create planner-ressources-ci-data
+          docker run --detach \
+            --name planner-ressources-ci \
+            --publish 127.0.0.1:18080:8080 \
+            --volume planner-ressources-ci-data:/data \
+            --env LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY=ci-only-fingerprint-key-00000000000000000000000000000000 \
+            planner-ressources:ci
+
+      - name: Verify image
+        run: |
+          ready=false
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/health >/dev/null \
+              && curl --fail --silent http://127.0.0.1:18080/ >/dev/null \
+              && curl --fail --silent \
+                --header 'Accept: text/html' \
+                http://127.0.0.1:18080/lecturer-review/ >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != "true" ]; then
+            docker logs planner-ressources-ci
+            exit 1
+          fi
+
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --header 'Accept: text/html' \
+            http://127.0.0.1:18080/api/does-not-exist)" = "404"
+          test "$(docker exec planner-ressources-ci id -u)" = "10001"
+
+          docker exec planner-ressources-ci \
+            python scripts/seed_dummy_planning_data.py
+          seed_counts="$(
+            docker exec planner-ressources-ci \
+              python -c "import sqlite3; connection = sqlite3.connect('/data/planner.db'); print(connection.execute('SELECT COUNT(*) FROM courses').fetchone()[0], connection.execute('SELECT COUNT(*) FROM draft_schedules').fetchone()[0], connection.execute('SELECT COUNT(*) FROM draft_sessions').fetchone()[0], connection.execute('SELECT COUNT(*) FROM exam_sessions').fetchone()[0])"
+          )"
+          test "$seed_counts" = "7 0 0 0"
+
+          database_size_before="$(
+            docker exec planner-ressources-ci \
+              sh -c 'test -s /data/planner.db && stat -c %s /data/planner.db'
+          )"
+          docker exec planner-ressources-ci \
+            python scripts/backup_sqlite_db.py --output-dir /data/backups
+          test "$(docker exec planner-ressources-ci \
+            sh -c 'find /data/backups -type f | wc -l')" -ge 1
+
+          docker restart planner-ressources-ci
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/health >/dev/null; then
+              break
+            fi
+            if [ "$attempt" = "30" ]; then
+              docker logs planner-ressources-ci
+              exit 1
+            fi
+            sleep 2
+          done
+
+          database_size_after="$(
+            docker exec planner-ressources-ci \
+              sh -c 'test -s /data/planner.db && stat -c %s /data/planner.db'
+          )"
+          test "$database_size_before" = "$database_size_after"
+
+      - name: Stop image
+        if: always()
+        run: |
+          docker rm --force planner-ressources-ci 2>/dev/null || true
+          docker volume rm planner-ressources-ci-data 2>/dev/null || true

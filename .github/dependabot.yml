@@ -1,0 +1,14 @@
+version: 2
+
+updates:
+  - package-ecosystem: docker
+    directory: /infrastructure/docker
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Vienna
+    groups:
+      container-base-images:
+        patterns:
+          - "*"

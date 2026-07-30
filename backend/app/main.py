@@ -30,6 +30,7 @@ from app.api.lecturer_review import (
 )
 from app.db.schema import initialize_database
 from app.db.session import SessionLocal, engine, get_db
+from app.frontend import mount_frontend
 from app.services.lecturer_review import (
     cleanup_invalid_source_states,
     source_fingerprint_key_from_environment,
@@ -124,3 +125,6 @@ async def structured_holiday_validation_errors(request: Request, exc: RequestVal
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+mount_frontend(app)

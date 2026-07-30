@@ -14,11 +14,14 @@ Draft Session responses include coded per-session Lecturer/Room identities and s
 
 ## Setup
 
-Install dependencies from `backend/requirements.txt`.
+Install the development and test dependencies from `backend/requirements.txt`.
 
 ```text
 pip install -r requirements.txt
 ```
+
+Production container builds install only `requirements-runtime.txt`; test
+clients and pytest are deliberately excluded from the final image.
 
 The first implementation slice uses SQLite through SQLAlchemy. By default, the backend reads and writes `planner.db` in the backend working directory:
 
