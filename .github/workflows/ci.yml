@@ -160,6 +160,7 @@ jobs:
           fail-build: true
           severity-cutoff: high
           only-fixed: true
+          output-format: table
 
       - name: Start image
         run: |
