@@ -343,6 +343,10 @@ button {
 
 button:disabled {
   background: #8aaed8;
+  cursor: not-allowed;
+}
+
+button:disabled[aria-busy='true'] {
   cursor: progress;
 }
 

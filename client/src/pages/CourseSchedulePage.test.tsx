@@ -535,6 +535,12 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, undefined)
     expect(document.body.textContent).toContain('No schedule revision exists yet')
     expect(button('Start Draft')).toBeTruthy()
+    const requirement = [...document.querySelectorAll('label')]
+      .find((item) => item.textContent?.includes('This course requires an exam'))
+      ?.querySelector<HTMLInputElement>('input')
+    expect(requirement?.disabled).toBe(false)
+    expect((button('Add Draft Session') as HTMLButtonElement).disabled).toBe(true)
+    expect(document.body.textContent).toContain('Start a Draft before adding sessions.')
   })
 
   it('requires complete lifecycle identity before accepting a cached calendar workspace', () => {
@@ -1244,7 +1250,8 @@ describe('CourseSchedulePage multi-course mode', () => {
     await act(async () => { button('Save exam requirement')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
     expect(document.body.textContent).toContain('saved, but the semester review could not be refreshed')
     expect(requirement?.disabled).toBe(true)
-    expect(button('Saving…')?.disabled).toBe(true)
+    expect(button('Saving…')).toBeUndefined()
+    expect(button('Save exam requirement')?.disabled).toBe(true)
   })
 
   it('does not warn for disabled courses and explains an enabled course without a final teaching anchor', async () => {

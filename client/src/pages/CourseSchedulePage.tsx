@@ -266,6 +266,7 @@ export function CourseSchedulePage({
   const mutationBusy = singleGenerating || batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
   const contextBusy = mutationBusy || overviewLoading || examBusy
   const writeBusy = contextBusy || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
+  const examConfigurationBusy = contextBusy || overviewRefreshError || examRefreshError
   const currentExamOverview = examOverview?.semesterId === selectedSemesterId ? examOverview : null
   const selectedExamState = useMemo(() => currentExamOverview?.courses.find((course) => course.courseId === selectedCourseId) ?? null, [currentExamOverview, selectedCourseId])
   const selectedCourseResources = useMemo(() => planningOptions?.courseResources.find((item) => item.courseId === selectedCourseId), [planningOptions, selectedCourseId])
@@ -1334,7 +1335,7 @@ export function CourseSchedulePage({
                 {mode === 'single' ? (
                   <>
                     <PlanningSummary course={selectedCourse} semester={selectedSemester} progress={selectedProgress} progressUnavailableLabel={overviewRefreshError ? 'Unavailable' : 'Loading...'} />
-                    {selectedExamState && <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={writeBusy || examBusy} onSave={handleExamConfiguration} />}
+                    {selectedExamState && <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={examConfigurationBusy} saving={examBusy} onSave={handleExamConfiguration} />}
                     {selectedExamState?.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Place exam manually</button>}
                     {examError && <div className="alert-item" role="alert">{examError}</div>}
                     {planningSelectionInvalid && <div className="refresh-error" role="alert">{semesterSelectionMissing ? 'The selected Semester is no longer available. Choose another Semester.' : courseSelectionInvalid ? 'This Course is not assigned to the selected Semester. Choose another Course.' : `This Course is unavailable: ${selectedCourse?.availability?.reasons.join(', ')}`}</div>}
@@ -1349,6 +1350,7 @@ export function CourseSchedulePage({
                         remainingUnits={selectedProgress?.remainingUnits ?? 0}
                         isBusy={writeBusy || selectedProgress == null || planningSelectionInvalid}
                         isSaving={manualSaving}
+                        requiresDraft={activeScheduleRevisionId == null}
                         errors={manualErrors}
                         onSubmit={handleCreateManualSession}
                       />
@@ -1443,7 +1445,7 @@ export function CourseSchedulePage({
             <section className="schedule-workspace-region exams-workspace-region" aria-labelledby="exams-region-title" hidden={destination !== 'exams'} inert={destination !== 'exams' || undefined}>
               <h2 id="exams-region-title">Exams</h2>
               {selectedExamState && <div className="focused-exam-requirement">
-                <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={writeBusy || examBusy} onSave={handleExamConfiguration} />
+                <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={examConfigurationBusy} saving={examBusy} onSave={handleExamConfiguration} />
                 {selectedExamState.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Place exam manually</button>}
               </div>}
               {examError && <div className="alert-item" role="alert">{examError}</div>}
@@ -1561,6 +1563,7 @@ function ManualSessionEditor({
   remainingUnits,
   isBusy,
   isSaving,
+  requiresDraft,
   errors,
   onSubmit,
 }: {
@@ -1572,6 +1575,7 @@ function ManualSessionEditor({
   remainingUnits: number
   isBusy: boolean
   isSaving: boolean
+  requiresDraft: boolean
   errors: GenerationFailure[]
   onSubmit: (payload: Omit<CreateManualDraftSessionRequest, 'scheduleRevisionId'>) => Promise<void>
 }) {
@@ -1641,7 +1645,8 @@ function ManualSessionEditor({
       <label className="constraint-field"><span>Room</span><select name="manual-room" value={roomId ?? ''} onChange={(event) => setRoomId(Number(event.target.value))}>{capacityValidRooms.map((room) => <option key={room.id} value={room.id}>{room.name} ({room.capacity} seats)</option>)}</select></label>
       {localError && <div className="alert-item" role="alert">{localError}</div>}
       {errors.length > 0 && <ErrorList errors={errors} />}
-      <button type="button" className="generate-button" onClick={submit} disabled={isBusy || !lecturerId || !cohortId || !roomId || remainingUnits <= 0}>{isSaving ? 'Adding…' : 'Add Draft Session'}</button>
+      {requiresDraft && <p className="constraint-note">Start a Draft before adding sessions.</p>}
+      <button type="button" className="generate-button" onClick={submit} disabled={isBusy || !lecturerId || !cohortId || !roomId || remainingUnits <= 0} aria-busy={isSaving || undefined}>{isSaving ? 'Adding…' : 'Add Draft Session'}</button>
       <p className="sr-only" aria-live="polite">{endTime ? `Proposed end time ${endTime}.` : ''}</p>
     </section>
   )

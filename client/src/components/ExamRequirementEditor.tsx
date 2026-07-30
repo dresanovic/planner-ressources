@@ -3,7 +3,7 @@ import type { ExamCoursePlanningState, SaveExamConfigurationRequest } from '../a
 
 type LecturerOption = { id: number; name: string; referenceCode?: string }
 
-export function ExamRequirementEditor({ state, lecturers, busy, onSave }: { state: ExamCoursePlanningState; lecturers: LecturerOption[]; busy: boolean; onSave: (request: SaveExamConfigurationRequest) => Promise<void> | void }) {
+export function ExamRequirementEditor({ state, lecturers, busy, saving, onSave }: { state: ExamCoursePlanningState; lecturers: LecturerOption[]; busy: boolean; saving: boolean; onSave: (request: SaveExamConfigurationRequest) => Promise<void> | void }) {
   const current = state.configuration
   const [enabled, setEnabled] = useState(state.enabled)
   const [identifier, setIdentifier] = useState(current?.identifier ?? 'Exam')
@@ -51,7 +51,7 @@ export function ExamRequirementEditor({ state, lecturers, busy, onSave }: { stat
         {current?.recommendedStartDate && <p className="constraint-note">Effective recommendation: {current.recommendedStartDate} to {current.recommendedEndDate}. This is a soft preference; manual placement may override it.</p>}
       </div>}
       {errors.length > 0 && <div role="alert" className="alert-item">{errors.join(' ')}</div>}
-      <div className="dialog-actions"><button type="button" className="secondary-button" onClick={reset} disabled={busy || readOnly}>Cancel changes</button><button type="button" onClick={save} disabled={busy || readOnly}>{busy ? 'Saving…' : 'Save exam requirement'}</button></div>
+      <div className="dialog-actions"><button type="button" className="secondary-button" onClick={reset} disabled={busy || readOnly}>Cancel changes</button><button type="button" onClick={save} disabled={busy || readOnly} aria-busy={saving || undefined}>{saving ? 'Saving…' : 'Save exam requirement'}</button></div>
     </section>
   )
 }
