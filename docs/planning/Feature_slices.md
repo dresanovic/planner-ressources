@@ -131,7 +131,7 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Implemented             |
 | 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented             |
 | 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented             |
-| 16 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Ready for Specification |
+| 16 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Implemented |
 | 17 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015 | Proposed — later release |
 | 18 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
