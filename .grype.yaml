@@ -1,0 +1,66 @@
+# Grype currently treats fixes available only in newer CPython branches as
+# actionable for Python 3.12. Keep these exceptions pinned to the exact runtime
+# version so they expire automatically when the base image is upgraded.
+# See: https://github.com/anchore/grype/issues/2852
+show-suppressed: true
+
+ignore:
+  - vulnerability: CVE-2026-7210
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-11940
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-6100
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-4224
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-15308
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-11972
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-9669
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-3298
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-3644
+    package:
+      name: python
+      version: 3.12.13
+      type: binary
+
+  - vulnerability: CVE-2026-4786
+    package:
+      name: python
+      version: 3.12.13
+      type: binary

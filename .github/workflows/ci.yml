@@ -161,6 +161,7 @@ jobs:
           severity-cutoff: high
           only-fixed: true
           output-format: table
+          config: .grype.yaml
 
       - name: Start image
         run: |
