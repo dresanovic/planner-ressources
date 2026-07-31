@@ -8,9 +8,47 @@ The earlier roadmap in `docs/planning/Planner_Resource_Feature_Slices_Scope.md` 
 
 ## Product overview
 
+### Underlying product problem
+
+University planners need to produce workable semester teaching and exam
+schedules from changing academic, resource, and availability information.
+Without one controlled planning workspace, conflicts, unscheduled work,
+publication state, and lecturer input are fragmented across manual exchanges.
+Lecturers currently have only a limited accountless review surface and cannot
+transfer their complete assigned schedule to Outlook or submit structured
+pre-planning unavailable dates without planner re-entry.
+
+### Why now
+
+The planner scheduling, administration, publication, calendar workspace,
+accountless lecturer-review foundation, and streamlined Schedule navigation are
+implemented. The next useful product increment is to complete the accountless
+lecturer collaboration loop before introducing the substantially broader
+authentication and role-management scope in FS-016.
+
+### Product-level success
+
+- Planner users can create and maintain maximally complete semester schedules,
+  understand conflicts and gaps, and retain publication control.
+- A lecturer can use a secure temporary link to see every assigned teaching and
+  exam session in one semester revision without seeing another lecturer's data.
+- A lecturer can provide session feedback, import a complete static schedule
+  into Outlook, and submit whole-day pre-planning unavailability without an
+  account.
+- Approved lecturer unavailable dates become authoritative planning
+  constraints without planner re-entry; rejected dates and lecturer feedback
+  never change schedules automatically.
+- Planner users can find all lecturer-originated work requiring action in one
+  Lecturer coordination destination.
+
 ### Product goal
 
-The Resource Planner helps university planner users create, review, correct, and publish semester teaching and exam schedules. Its intended outcome is to maximize scheduled teaching units while avoiding known resource conflicts, make unavoidable gaps and their causes visible, and keep the planner in control of exceptional and changing situations.
+The Resource Planner helps university planner users create, review, correct,
+and publish semester teaching and exam schedules while collecting scoped
+lecturer input without surrendering planner authority. Its intended outcome is
+to maximize scheduled teaching units while avoiding known resource conflicts,
+make unavoidable gaps and their causes visible, and keep both planning
+decisions and exceptional situations understandable and controllable.
 
 ### Initial release goal
 
@@ -18,12 +56,17 @@ The implemented baseline, FS-001 through FS-006, allows a planner user to genera
 
 The planner-only MVP is complete when it additionally allows the planner to maintain planning data and availability, use multiple eligible resources, add or delete sessions, produce conflict-aware partial or complete semester plans, avoid institution-wide holidays, schedule exams, manage versioned publication states, and operate through a calendar-centered planning workspace.
 
-Lecturer collaboration, authenticated role separation, and external data synchronization are later releases and are not prerequisites for the planner-only MVP.
+Accountless lecturer collaboration follows the completed planner-only MVP.
+Authenticated role separation and external data synchronization remain later
+releases.
 
 ### Target users and actors
 
 - **Planner user**: The primary actor. Earlier specifications use both “admin” and “office staff”; both terms mean this same planner-user role. The planner manages planning data, generation, manual corrections, review states, and publication.
-- **Lecturer**: A later-release reviewer. A lecturer may inspect assigned sessions, comment, and flag impossible sessions, but cannot change a schedule.
+- **Lecturer**: An accountless collaboration actor for the current extension. A
+  lecturer may inspect assigned sessions, comment, flag impossible sessions,
+  export the scoped schedule, and submit whole-day unavailable dates, but
+  cannot change a schedule or approve planning constraints.
 - **External planning-data provider**: An unknown future system that may supply planning records through a provider-neutral integration.
 
 ### Main user outcomes
@@ -36,7 +79,12 @@ Lecturer collaboration, authenticated role separation, and external data synchro
 - Avoid institution-wide public holidays and schedule course exams.
 - Review conflicts, remaining work, failures, and schedule states in a filterable calendar workspace.
 - Publish controlled schedule versions while retaining the current published version during later revisions.
-- Later, collect lecturer feedback and import or synchronize planning data.
+- Collect accountless lecturer feedback across all assigned courses in one
+  semester revision.
+- Let lecturers import their complete assigned schedule into Outlook through a
+  static iCalendar file.
+- Collect whole-day pre-planning lecturer unavailability for planner approval.
+- Later, provide authenticated access and import or synchronize planning data.
 
 ## Product scope
 
@@ -56,6 +104,13 @@ Lecturer collaboration, authenticated role separation, and external data synchro
 - Versioned `Draft → Ready for review → Published` lifecycle controlled by the planner.
 - A calendar-centered operational workspace based incrementally on the saved UI reference.
 - One consistent application navigation for Schedule and Academic Data without duplicate, dead, or overlapping controls.
+- Accountless lecturer calendar/list review for all sessions assigned to one
+  lecturer in one semester revision, with scoped feedback.
+- One Lecturer coordination destination for access links, schedule feedback,
+  and availability submissions.
+- Static iCalendar export of the complete token-scoped lecturer schedule.
+- Planner-issued, single-submission collection of whole-day lecturer
+  unavailability with per-date planner approval.
 
 ### Out of scope
 
@@ -66,14 +121,22 @@ Lecturer collaboration, authenticated role separation, and external data synchro
 - Treating publication as an irreversible final state.
 - Provider-specific integration behavior before a provider is selected.
 - Automated email delivery or institutional SSO in the confirmed slice sequence.
+- Live calendar subscriptions, Outlook synchronization, or an Outlook API
+  integration.
+- Partial-day, recurring, or date-range lecturer-submitted availability.
+- Persistent lecturer-availability submission drafts or approval/rejection
+  history.
+- A generic cross-product notification or Action Center.
 - Full production or room-booking execution outside the planning and publication workflow.
 
 ### Possible later scope
 
-- Accountless lecturer review through a time-limited link.
 - Authenticated planner and lecturer accounts with role-based access.
 - Provider-neutral import and synchronization of planning data.
 - Automated review-email delivery, institutional SSO, and multi-lecturer token-review workflows.
+- Live calendar subscriptions or calendar-provider synchronization.
+- A generic role-aware Action Center if future authenticated users create a
+  demonstrated need for cross-domain queues.
 - Provider-specific adapters after an external source and ownership rules are known.
 
 ## External systems and integrations
@@ -84,7 +147,23 @@ No external system is required. Planner users maintain all planning records manu
 
 ### Lecturer review link
 
-FS-015 creates a secure review URL but does not send email. The planner copies the URL and sends it through an external communication channel. No email provider integration is required.
+FS-015 creates a secure review URL scoped to one lecturer and one semester
+revision but does not send email. The planner copies the URL and sends it
+through an external communication channel. No email provider integration is
+required.
+
+### Lecturer availability link
+
+FS-021 uses a separate planner-issued URL scoped to one active lecturer and one
+semester. It permits exactly one whole-day availability submission and does not
+require an existing schedule revision or assignment. The fixed 72-hour link is
+manually delivered and is not an external-system integration.
+
+### iCalendar file export
+
+FS-020 produces a static `.ics` file for manual import into Outlook. The
+product sends no data through an Outlook or calendar-provider API, receives no
+calendar data, and cannot revoke or remove a file after download.
 
 ### Future planning-data integration
 
@@ -98,6 +177,14 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 - Its elements should be introduced gradually through relevant slices instead of through one disruptive redesign.
 - `docs/designs/resource-planner-unified-navigation-ground-truth.png` is the confirmed UX ground truth for the shared application navigation and its relationship to Academic Data screens.
 - The navigation reference is authoritative for hierarchy, active-state treatment, and removal of the separate top view switcher; it does not expand the underlying administration workflows or data fields.
+- The implemented FS-019 Schedule workspace, FS-015 Lecturer reviews
+  destination, `CalendarPlanningWorkspace`, session pane, lecturer
+  administration, and resource-availability editor are behavioral references
+  for the lecturer extensions.
+- `docs/architecture/lecturer-action-surface.md` records the accepted Lecturer
+  coordination boundary.
+- `docs/architecture/availability-link-validity.md` records the accepted fixed
+  72-hour availability-link rule.
 
 ## Product-level constraints and assumptions
 
@@ -110,6 +197,17 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 - Public holidays use one institution-wide calendar in the planner-only MVP.
 - Published schedules are immutable snapshots. Later changes happen in a new draft revision while the current published version remains visible.
 - The planner may move a revision to `Ready for review` or `Published` at any time and may publish despite missing or negative lecturer feedback.
+- Existing calendar, list, filter, session-detail, lecturer, availability, and
+  review components must be reused in access-appropriate modes rather than
+  replaced by parallel lecturer-specific implementations.
+- Accountless schedule-review and availability tokens grant separate minimum
+  capabilities. Backend authorization must enforce the same restrictions shown
+  by the UI.
+- A downloaded iCalendar file remains under the lecturer's control after token
+  expiry or revocation; the product must explain this before download.
+- Approved lecturer unavailable dates use the existing planner-controlled
+  availability model. Existing conflicting sessions are warned, never moved
+  automatically.
 - The existing FastAPI, SQLAlchemy, React, and Vite technology standards and the project constitution remain binding for later specification and implementation.
 
 ## Slice map
@@ -131,11 +229,14 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Implemented             |
 | 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented             |
 | 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented             |
-| 16 | FS-015 | Accountless Lecturer Token Review | Collect scoped lecturer feedback by secure link | FS-013 | Implemented |
-| 17 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015 | Proposed — later release |
-| 18 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
+| 16 | FS-019 | Streamlined Schedule Workspace | Use focused Schedule destinations and in-pane session correction | FS-013, FS-014, FS-018 | Implemented — manual acceptance evidence pending |
+| 17 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Ready for specification — implemented baseline retained |
+| 18 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Ready for specification |
+| 19 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
+| 20 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015, FS-020, FS-021 | Proposed — later release |
+| 21 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
-**Recommended first slice:** `FS-015 – Accountless Lecturer Token Review`
+**Recommended first slice:** `FS-015 – Accountless Lecturer Token Review extension`
 
 ## Development slices
 
@@ -941,7 +1042,7 @@ The planner can manually complete, reduce, or clear one course draft without los
 
 #### Specification status
 
-Proposed.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1046,7 +1147,7 @@ The planner receives a conflict-aware semester result that maximizes scheduled u
 
 #### Specification status
 
-Proposed.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1140,7 +1241,7 @@ New generated teaching sessions do not land on maintained public holidays, and e
 
 #### Specification status
 
-Proposed.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1237,7 +1338,7 @@ Every explicitly exam-enabled course can receive a valid generated exam or a cle
 
 #### Specification status
 
-Proposed.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1430,7 +1531,7 @@ The planner can understand and act on the complete semester planning state from 
 
 #### Specification status
 
-Ready for specification.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1453,51 +1554,91 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 
 #### User or business outcome
 
-A planner can generate a temporary course-schedule review link for the corresponding lecturer, and the lecturer can provide scoped feedback without an account.
+A planner can share one semester revision with its corresponding lecturer
+through a temporary link, and the lecturer can review every assigned teaching
+and exam session in the familiar calendar/list workspace and provide scoped
+feedback without an account.
 
 #### Rationale for this slice boundary
 
-Accountless review delivers the common one-course/one-lecturer collaboration outcome before the product introduces full authentication and role management.
+The implemented secure-link and feedback behavior, the expanded
+lecturer-scoped workspace, and the planner's Lecturer coordination surface all
+deliver one end-to-end review outcome. Static calendar export and pre-planning
+availability collection are independently valuable workflows and remain
+FS-020 and FS-021.
 
 #### Primary actors
 
 - Planner user.
-- Lecturer reviewing one course schedule.
+- Lecturer reviewing all personal assignments in one semester revision.
 
 #### Preconditions
 
 - FS-013 provides a reviewable schedule revision.
+- FS-014 and FS-019 provide the implemented calendar/list workspace, filters,
+  session pane, and Schedule navigation to reuse.
 
 #### In scope
 
-- Planner-generated review token for one lecturer (includes all the courses which are assign to this lecturor) schedule revision and its one corresponding lecturer.
+- Planner-generated review token bound to exactly one lecturer and one semester
+  revision.
+- Every teaching and exam session currently assigned to that lecturer across
+  all courses in the bound revision.
 - A link containing the token that the planner copies and sends manually.
-- Token reuse for three days as default and the planner can override the duration, planner-controlled revocation, and replacement issuance.
-- Read-only schedule review for the scoped course.
+- The implemented one-, two-, or three-day validity choice with three days as
+  default, planner-controlled revocation, and replacement issuance.
+- Reuse of the planner's calendar and list components in a restricted lecturer
+  mode.
+- The same applicable course, cohort, room, study-type, session-type,
+  lifecycle, and validation filters, while lecturer identity is fixed as
+  visible context rather than offered as a selectable filter.
+- Selection of a scoped session opens the reused detail pane with feedback
+  actions instead of planner edit, create, delete, lifecycle, or generation
+  controls.
 - Lecturer comments and “this session is not possible” flags, optionally including suggested alternatives in comment text.
 - Feedback visibly associated with the relevant schedule revision and session.
+- Rename and broaden the planner's existing `Lecturer reviews` destination to
+  `Lecturer coordination`, containing access-link management and schedule
+  feedback with counts, filters, and direct navigation to affected sessions.
 - Planner ability to publish regardless of missing or negative feedback.
 
 #### Out of scope
 
-- Multi-lecturer course review, automated email delivery, lecturer accounts, lecturer schedule editing, mandatory acceptance, and feedback as a publication gate.
+- One token covering multiple lecturers, automated email delivery, lecturer
+  accounts, lecturer schedule editing, mandatory acceptance, feedback as a
+  publication gate, iCalendar export, and lecturer availability submissions.
 
 #### Main workflow
 
-The planner prepares a course schedule for review, generates and copies a three-day (default) link, and sends it manually. The lecturer opens it, reviews assigned course sessions, and may comment or flag impossible sessions. The planner reviews feedback and decides whether to revise or publish.
+The planner opens Lecturer coordination for a Working revision, issues and
+copies a link for one assigned lecturer, and sends it manually. The lecturer
+opens the link, reviews all personal assignments in calendar or list mode,
+filters them, selects a session, and comments or flags it as impossible from
+the restricted detail pane. The planner sees the feedback in Lecturer
+coordination, opens affected sessions in the planner workspace, and decides
+whether to revise or publish.
 
 #### Business rules
 
-- The token grants only the minimum review scope for one course schedule and lecturer.
+- The token grants only the minimum review scope for one lecturer and one
+  semester revision, regardless of how many assigned courses are included.
 - It is reusable until expiry, revocation, or replacement.
 - Expired or revoked tokens expose no schedule data and provide safe feedback.
-- The lecturer cannot alter schedule records.
+- Newly assigned sessions enter scope and sessions reassigned away leave scope
+  according to the implemented FS-015 projection rules.
+- The lecturer cannot alter schedule, resource, publication, or availability
+  records.
+- Restricted actions must be enforced by backend authorization as well as the
+  displayed component mode.
 - Silence or objections do not prevent planner publication.
 - The review deadline is informational; token expiry is an access-security rule rather than an approval requirement.
 
 #### Data inputs and outputs
 
-Inputs are reviewable revision, course, lecturer identity, token lifecycle actions, comments, and impossible-session flags. Outputs are a scoped review link and revision-associated feedback.
+Inputs are the reviewable revision, lecturer identity, current assignments,
+token lifecycle actions, comments, and impossible-session flags. Outputs are a
+scoped review link, a lecturer-only schedule projection, and
+revision/session-associated feedback visible to the planner.
 
 #### Integrations
 
@@ -1505,46 +1646,64 @@ No email integration. The planner uses an external communication channel manuall
 
 #### UI references
 
-The lecturer view should reuse readable calendar/list concepts but expose only scoped review and feedback controls.
+- Reuse the implemented FS-014/FS-019 calendar, list, filters, session pane,
+  responsive behavior, and accessibility semantics.
+- Reuse the implemented FS-015 link-management and feedback components inside
+  the renamed Lecturer coordination destination.
+- `docs/architecture/lecturer-action-surface.md` defines the accepted
+  lecturer-specific coordination boundary.
 
 #### Constraints and assumptions
 
-- The dominant use case is one course schedule with one lecturer.
+- The implemented FS-015 security, privacy, expiry, safe-failure, rate-limit,
+  and immutable-feedback behavior remains authoritative.
+- Component reuse is mandatory, but access-mode composition must not expose
+  planner-only controls or data.
 - Security and privacy requirements for token generation, storage, expiry, logging, and URL exposure must be explicit in the specification.
 
 #### Dependencies
 
-- FS-013.
+- FS-013, FS-014, and FS-019.
 
 #### Completion outcome
 
-A lecturer can securely review and comment on one course schedule for up to three days without an account, while the planner retains complete authority.
+A lecturer can securely review every personal assignment in one semester
+revision through the shared calendar/list experience and provide session
+feedback, while the planner can find and act on that feedback without losing
+authority.
 
 #### Open clarification topics
 
-- Whether replacement immediately revokes every earlier token.
-- Whether the planner may configure an expiry shorter than three days.
-- Rate limits, feedback identity display, and comment retention after revision replacement.
+- Whether fixed lecturer context is rendered as a read-only field, chip, or
+  equivalent accessible context indicator.
+- Exact empty-state and filter behavior when every assignment leaves scope.
+- Responsive composition of the shared calendar and restricted detail pane.
 
 #### Specification status
 
-Proposed — later release.
+Ready for specification — implemented secure-link and feedback baseline
+retained; workspace and Lecturer coordination extension pending.
 
 #### Ready-to-copy Spec Kit prompt
 
 ```text
-Use $speckit-specify to create the specification for FS-015: Accountless Lecturer Token Review.
+Use $speckit-specify to revise the specification for FS-015: Accountless Lecturer Token Review.
 
-Outcome: Let a planner share one lecturer schedule with its corresponding lecturer through a secure temporary link and receive comments/flags without an account.
-Actors: Planner user and one lecturer.
-In scope: Token scoped to one lecturer schedule revision and lecturer; planner copy action; manual sending; reusable three-day (default) access; revoke and replace; read-only review; comments; impossible-session flags; revision/session association; planner publication regardless of feedback.
-Out of scope: Multi-lecturer token review, automated email, accounts, schedule editing, mandatory acceptance, and publication blocking.
-Rules: Expired/revoked tokens expose no data; the token has minimum scope; feedback is advisory; deadline information is not an approval gate.
-Dependency: FS-013.
-Completion: A lecturer can securely review and comment for the number of days (configured by planner) while the planner retains control.
-Clarification topics: Replacement revocation, configurable shorter expiry, rate limits, identity display, and retention.
+Product context: The Resource Planner already has an implemented secure temporary-link and immutable-feedback baseline for one lecturer and one semester revision. Planner calendar/list workflows, filters, session panes, and focused Schedule navigation are implemented under FS-014 and FS-019. The next outcome is to give accountless lecturers the same understandable schedule-review experience without granting planner authority or building parallel components.
+Product-level success: A lecturer sees every and only personal teaching and exam assignment across all courses in the bound revision, can provide session feedback, and the planner can handle that feedback in one Lecturer coordination destination.
+Actors: Planner user and one accountless lecturer.
+In scope: Preserve the implemented one-lecturer/one-revision token lifecycle, one-to-three-day validity with three-day default, manual delivery, revocation, replacement, privacy, safe-failure, misuse controls, comments, impossible-session flags, immutable attribution, and non-blocking publication. Reuse the FS-014/FS-019 calendar and list components in restricted lecturer mode; expose applicable course, cohort, room, study-type, session-type, lifecycle, and validation filters; show lecturer identity as fixed context rather than a selectable filter; open selected teaching or exam sessions in the reused detail pane with feedback actions only; rename and broaden the planner's Lecturer reviews destination to Lecturer coordination with link management, feedback counts/filters, and navigation to affected sessions.
+Out of scope: A token covering multiple lecturers, automated email, lecturer accounts, planner or lecturer schedule mutation through the public link, publication gates, iCalendar export, availability submissions, and a generic Action Center.
+Main workflow: The planner issues and manually sends a link from Lecturer coordination. The lecturer reviews all personal assignments in calendar or list mode, filters the projection, selects a session, and comments or flags it as impossible. The planner finds the item in Lecturer coordination, opens the affected session, and decides whether to revise or publish.
+Business rules: Scope is one lecturer and one revision across all assigned courses; assignment changes update the projection; expired, revoked, replaced, or unusable links expose no data; feedback is advisory and cannot block publication; planner-only operations are absent from the lecturer mode and denied by the backend.
+Data inputs and outputs: Revision, lecturer, current teaching/exam assignments, token lifecycle actions, filters, comments, and impossible-session flags produce a scoped schedule projection and traceable feedback.
+External systems and integrations: No email integration; the planner manually sends the URL through an external communication channel.
+UI references: Reuse the implemented CalendarPlanningWorkspace, list view, filters, session pane, LecturerReviewManagement behavior, FS-019 Schedule navigation, and docs/architecture/lecturer-action-surface.md.
+Dependencies and assumptions: FS-013, FS-014, and FS-019 are implemented. Existing FS-015 security and feedback semantics remain authoritative. Component reuse is mandatory, with access-specific composition and backend enforcement.
+Completion outcome: An accountless lecturer can securely review and comment on every personal assignment in the familiar calendar/list workspace, and the planner can manage the resulting feedback through Lecturer coordination.
+Known clarification topics: Fixed-context presentation, empty/filter states after assignment changes, and responsive restricted-pane composition.
 
-Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Include explicit security, privacy, expiry, misuse, and measurable acceptance requirements without prescribing implementation.
+Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define user scenarios, functional requirements, edge cases, assumptions, security and accessibility requirements, and measurable success criteria. Preserve the implemented FS-015 baseline and do not introduce unrelated implementation or product scope.
 ```
 
 ### FS-016: Authenticated Lecturer Access and Role Management
@@ -1555,7 +1714,10 @@ Planner users and lecturers can use ongoing authenticated access with permission
 
 #### Rationale for this slice boundary
 
-Persistent identity and authorization are a distinct later-release outcome. They are intentionally deferred so the planner-only MVP and simpler accountless review can be validated first.
+Persistent identity and authorization are a distinct later-release outcome.
+They are intentionally deferred until accountless schedule review, calendar
+export, and pre-planning availability submission are validated as reusable
+lecturer workflows.
 
 #### Primary actors
 
@@ -1565,7 +1727,8 @@ Persistent identity and authorization are a distinct later-release outcome. They
 
 #### Preconditions
 
-- FS-015 has established lecturer review behavior and feedback semantics.
+- FS-015, FS-020, and FS-021 have established lecturer review, export,
+  feedback, and availability semantics.
 
 #### In scope
 
@@ -1573,7 +1736,11 @@ Persistent identity and authorization are a distinct later-release outcome. They
 - Manual account creation, maintenance, deactivation, and role assignment by authorized planner users.
 - Planner access to the complete institution planning scope.
 - Lecturer access only to courses, schedule revisions, and sessions assigned to that lecturer.
-- Authenticated reuse of lecturer comment and impossible-session feedback behavior.
+- Authenticated reuse of the lecturer calendar/list workspace, comments,
+  impossible-session feedback, static iCalendar export, and personal
+  unavailable-date submission.
+- Authenticated lecturer navigation using `My schedule` and `My unavailable
+  dates`, while planners retain Lecturer coordination.
 - Safe handling of removed assignments and deactivated accounts.
 
 #### Out of scope
@@ -1582,7 +1749,11 @@ Persistent identity and authorization are a distinct later-release outcome. They
 
 #### Main workflow
 
-An authorized planner manages accounts. Users authenticate and receive role-appropriate navigation and data. Lecturers review only assigned schedules and submit advisory feedback; planners retain full planning and publication control.
+An authorized planner manages accounts. Users authenticate and receive
+role-appropriate navigation and data. Lecturers reuse the validated accountless
+workflows under authenticated identity for assigned schedules, export,
+feedback, and personal availability; planners retain full planning,
+availability-approval, and publication control.
 
 #### Business rules
 
@@ -1593,7 +1764,10 @@ An authorized planner manages accounts. Users authenticate and receive role-appr
 
 #### Data inputs and outputs
 
-Inputs include account identity, role, status, lecturer association, and course/session assignments. Outputs are authenticated sessions, authorized views/actions, and attributable feedback.
+Inputs include account identity, role, status, lecturer association,
+course/session assignments, and personal availability submissions. Outputs are
+authenticated sessions, authorized views/actions, attributable feedback,
+calendar exports, and planner-controlled availability decisions.
 
 #### Integrations
 
@@ -1601,7 +1775,9 @@ No external identity provider. Institutional SSO is possible later scope.
 
 #### UI references
 
-Planner administration and a restricted lecturer review area; detailed identity UI has no confirmed mockup.
+Planner account administration plus the existing Lecturer coordination and
+restricted lecturer workspace modes; detailed identity UI has no confirmed
+mockup.
 
 #### Constraints and assumptions
 
@@ -1609,17 +1785,21 @@ Planner administration and a restricted lecturer review area; detailed identity 
 
 #### Dependencies
 
-- FS-015.
+- FS-015, FS-020, and FS-021.
 
 #### Completion outcome
 
-Authenticated users can safely perform only their role-authorized workflows, and lecturers see only their assigned planning context.
+Authenticated users can safely perform only their role-authorized workflows,
+and lecturers can reuse schedule review, export, feedback, and personal
+availability behavior without token delivery.
 
 #### Open clarification topics
 
 - Credential creation, password reset, multifactor requirements, session lifetime, and account-recovery process.
 - Whether planner administration requires a distinct administrator permission.
 - Migration or coexistence rules for token review after accounts exist.
+- Whether authenticated availability submission retains the one-submission
+  session model or becomes an ongoing personal workflow.
 
 #### Specification status
 
@@ -1631,12 +1811,12 @@ Proposed — later release.
 Use $speckit-specify to create the specification for FS-016: Authenticated Lecturer Access and Role Management.
 
 Outcome: Provide authenticated planner and lecturer access with least-privilege permissions.
-In scope: Manually managed accounts; role/status maintenance; planner-wide access; lecturer access only to assigned courses/sessions/revisions; authenticated advisory feedback; deactivation and historical attribution.
+In scope: Manually managed accounts; role/status maintenance; planner-wide access; lecturer access only to assigned courses/sessions/revisions; authenticated reuse of the FS-015 lecturer workspace and feedback, FS-020 static iCalendar export, and FS-021 personal unavailable-date submission; role-appropriate navigation; deactivation and historical attribution.
 Out of scope: SSO, automated provisioning, lecturer schedule editing, lecturer publication rights, and broad organization-role design.
-Rules: Authorization applies to every protected read/action; deactivation preserves history; assignment changes must not leak data; planners retain full workflow control.
-Dependency: FS-015.
-Completion: Planner and lecturer users can perform only permitted workflows and lecturers see only assigned context.
-Clarification topics: Credentials, password reset, MFA, session lifetime, recovery, administrator permission, and token/account coexistence.
+Rules: Authorization applies to every protected read/action; deactivation preserves required attribution; assignment changes must not leak data; planners retain scheduling, availability-approval, and publication authority.
+Dependencies: FS-015, FS-020, and FS-021.
+Completion: Planner and lecturer users can perform only permitted workflows, and authenticated lecturers reuse the validated accountless collaboration outcomes without receiving links.
+Clarification topics: Credentials, password reset, MFA, session lifetime, recovery, administrator permission, token/account coexistence, and authenticated availability-session behavior.
 
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Include explicit authentication, authorization, privacy, misuse, audit, and measurable security requirements without choosing implementation details prematurely.
 ```
@@ -1813,7 +1993,7 @@ The planner can reach Schedule and every Academic Data category from one consist
 
 #### Specification status
 
-Ready for specification.
+Implemented.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1836,11 +2016,464 @@ Clarification topics: Expansion persistence when returning to Schedule and the e
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define scenarios, functional requirements, accessibility behavior, responsive states, edge cases, assumptions, and measurable success criteria without implementation details.
 ```
 
+### FS-019: Streamlined Schedule Workspace
+
+#### User or business outcome
+
+A planner can move among focused Calendar, Versions, Exams, and Lecturer
+coordination destinations, inspect or correct teaching and exam sessions in a
+responsive contextual pane, and reclaim workspace width without losing the
+current planning context.
+
+#### Rationale for this slice boundary
+
+This slice reorganizes implemented planner workflows without changing their
+domain outcomes. It is recorded separately because focused Schedule
+destinations, in-pane correction, and independently collapsible navigation are
+one coherent cross-workflow usability outcome and are now a dependency for the
+lecturer workspace extensions.
+
+#### Primary actors
+
+- Planner user.
+
+#### Preconditions
+
+- FS-013 provides versioned lifecycle behavior.
+- FS-014 provides the calendar workspace and operational summaries.
+- FS-018 provides the shared application navigation.
+
+#### In scope
+
+- Schedule as a parent with focused Calendar, Versions, Exams, and Lecturer
+  reviews destinations in the implemented workspace.
+- Calendar session selection opening teaching or exam detail and established
+  editing in an adaptive right-side pane without forcing List mode.
+- Compact shared semester/revision/course context across Schedule
+  destinations.
+- Independent pinning of application navigation and visibility of full
+  Planning inputs.
+- Preservation of calendar mode, visible period, filters, selection, pane, and
+  unsaved-edit safeguards across applicable navigation and responsive states.
+- Existing lifecycle, exam, scheduling, validation, and Academic Data behavior
+  preserved.
+
+#### Out of scope
+
+- New scheduling, lifecycle, publication, exam, availability, or authorization
+  rules.
+- New backend endpoints or persistence behavior.
+- Lecturer access itself; FS-015 reuses the resulting workspace components.
+
+#### Main workflow
+
+The planner opens a focused Schedule destination, changes shared context,
+returns to Calendar, selects a teaching or exam session, inspects or corrects
+it in the contextual pane, and optionally collapses navigation or Planning
+inputs while all applicable context and unsaved-change protections remain
+intact.
+
+#### Business rules
+
+- Navigation-only actions never mutate planning or academic data.
+- Planner correction preserves every established scheduling, lifecycle,
+  validation, conflict, capacity, holiday, and stale-state rule.
+- Only one Schedule child is current.
+- Unsaved changes must be explicitly retained or discarded before replacing
+  their editing context.
+
+#### Data inputs and outputs
+
+Inputs are current Schedule destination, semester/revision/course context,
+calendar state, navigation preferences, selected session, and established edit
+values. Outputs are focused workspace and presentation state plus any schedule
+change already authorized by an existing workflow.
+
+#### Integrations
+
+None.
+
+#### UI references
+
+- `specs/019-streamline-schedule-workspace` is the implemented specification
+  and design-artifact set.
+- The implemented `ApplicationNavigation`, `CourseSchedulePage`,
+  `CalendarPlanningWorkspace`, and contextual session pane are authoritative
+  behavioral references.
+
+#### Constraints and assumptions
+
+- FS-019 is merged and covered by the complete client-side automated suite.
+- Manual browser, assistive-technology, and representative-reviewer acceptance
+  evidence remains incomplete and must not be reported as passed.
+
+#### Dependencies
+
+- FS-013, FS-014, and FS-018.
+
+#### Completion outcome
+
+The focused Schedule workspace is implemented and reusable, while its remaining
+manual acceptance evidence is explicitly tracked rather than inferred.
+
+#### Open clarification topics
+
+- No unresolved product-boundary questions.
+- The remaining work is validation evidence under tasks T059 through T061 in
+  `specs/019-streamline-schedule-workspace/tasks.md`.
+
+#### Specification status
+
+Implemented — manual acceptance evidence pending.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to recreate or revise the specification for FS-019: Streamlined Schedule Workspace.
+
+Product context: The Resource Planner has implemented calendar planning, versioned publication, exam workflows, and shared application navigation. FS-019 reorganizes these planner workflows into focused Schedule destinations and a responsive in-pane correction experience without changing domain behavior.
+Product-level success: Planners can reach Calendar, Versions, Exams, and Lecturer reviews predictably, correct sessions without losing calendar context, and reclaim working width while all existing business rules remain intact.
+User or business outcome: Use focused Schedule destinations and an adaptive session pane without forced view changes or lost context.
+Primary actors: Planner user.
+In scope: Schedule children; compact shared context; teaching/exam detail and correction in the adaptive pane; retained Calendar mode, period, filters, selection, and clean-pane context; unsaved-change protection; independent navigation pinning and Planning-input visibility; established lifecycle and exam workflows in focused destinations.
+Out of scope: New backend behavior, scheduling rules, lifecycle states, permissions, lecturer access, or academic-data changes.
+Main workflow: Navigate among focused Schedule destinations, return to retained Calendar context, inspect or correct a session in the pane, and control workspace width without accidental data mutation.
+Business rules: Navigation does not mutate data; existing domain validation remains authoritative; unsaved edits require an explicit decision; current state and focus remain accessible.
+Data inputs and outputs: UI destination, context, pane, preference, and established edit state; no new domain aggregate.
+External systems and integrations: None.
+UI references: specs/019-streamline-schedule-workspace plus the implemented application navigation, CourseSchedulePage, CalendarPlanningWorkspace, and session pane.
+Dependencies and assumptions: FS-013, FS-014, and FS-018. The implementation is merged; manual acceptance tasks T059–T061 remain pending or blocked.
+Completion outcome: The streamlined planner workspace remains consistent with its implemented behavior and pending validation is reported accurately.
+Known clarification topics: No product-boundary topics; only outstanding manual acceptance evidence.
+
+Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md and the implemented baseline under specs/019-streamline-schedule-workspace. Do not introduce new domain behavior or claim unperformed validation.
+```
+
+### FS-020: Lecturer iCalendar Export
+
+#### User or business outcome
+
+An accountless lecturer can download the complete assigned teaching and exam
+schedule for one semester revision as an Outlook-compatible `.ics` file and
+import it into a personal calendar.
+
+#### Rationale for this slice boundary
+
+Static calendar transfer is an independently useful integration outcome with
+its own privacy, file-format, event-identity, and import behavior. It reuses the
+FS-015 lecturer schedule projection but does not change review feedback or
+introduce live synchronization.
+
+#### Primary actors
+
+- Accountless lecturer with a valid FS-015 schedule-review token.
+
+#### Preconditions
+
+- The revised FS-015 lecturer workspace provides a valid token-scoped schedule
+  projection for one lecturer and one semester revision.
+
+#### In scope
+
+- A download action in the lecturer calendar/list workspace.
+- One static `.ics` file containing every teaching and exam session currently
+  assigned to the scoped lecturer across all courses in the bound revision.
+- Export of the complete lecturer scope regardless of temporary calendar mode,
+  visible period, filters, or selected session.
+- Outlook as the primary import target while remaining standards-compatible
+  with other iCalendar consumers where practical.
+- Clear course/session identity, date, start/end time, session type, and
+  relevant location/context required to recognize each event.
+- Institution-local time-zone representation and stable event identifiers
+  suitable for a deterministic export.
+- A concise notice that the downloaded file remains outside product control
+  after token expiry, revocation, replacement, or revision changes.
+- Download only while the FS-015 review token is valid and its scoped schedule
+  projection is complete.
+
+#### Out of scope
+
+- A subscribed calendar URL, live feed, refresh, two-way synchronization,
+  Outlook or calendar-provider API, planner-side export, filtered/partial
+  export, automatic deletion from an imported calendar, feedback/comments,
+  internal security data, and planner-only warnings.
+
+#### Main workflow
+
+The lecturer opens a valid schedule-review link, reviews the schedule, chooses
+Download calendar, acknowledges the static-file notice, receives one `.ics`
+file for the complete scoped revision, and imports it manually into Outlook.
+
+#### Business rules
+
+- Export contains every and only session assigned to the token's lecturer in
+  the token's semester revision.
+- UI filters never reduce the exported event set.
+- A failed or incomplete schedule projection produces no misleading partial
+  file.
+- Token expiry or revocation prevents future downloads but cannot recall an
+  already downloaded file.
+- Export never changes schedule, feedback, lifecycle, or calendar-provider
+  data.
+
+#### Data inputs and outputs
+
+Inputs are the valid FS-015 token scope and its complete teaching/exam
+projection. Output is a static `.ics` file with deterministic calendar and
+event metadata.
+
+#### Integrations
+
+Manual file export/import only. Outlook is the primary target, but no Outlook
+API, account connection, or data exchange occurs.
+
+#### UI references
+
+- Reuse the FS-015 lecturer calendar/list header and existing action/button
+  patterns.
+- No separate export application or duplicate schedule view.
+
+#### Constraints and assumptions
+
+- The exported file is a snapshot at download time.
+- File possession is outside later token control and must be explained before
+  download.
+- Standards conformance and Outlook import compatibility must be measurable in
+  the later specification.
+
+#### Dependencies
+
+- FS-015.
+
+#### Completion outcome
+
+A lecturer can import one complete, correctly scoped semester-revision
+schedule into Outlook without exposing another lecturer's data or requiring a
+calendar-provider connection.
+
+#### Open clarification topics
+
+- Exact event summary, description, location, and optional context fields.
+- Calendar and file naming.
+- Stable event UID construction and expected behavior when a later static file
+  is imported again.
+- Exact iCalendar time-zone metadata and standards-validation fixtures.
+
+#### Specification status
+
+Ready for specification.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for FS-020: Lecturer iCalendar Export.
+
+Product context: FS-015 gives one accountless lecturer a secure calendar/list projection of every personal teaching and exam assignment across all courses in one semester revision. The lecturer needs a simple way to transfer that complete schedule into Outlook without an account connection or live integration.
+Product-level success: A lecturer can import the complete assigned semester-revision schedule into Outlook, with correct recognizable events and no disclosure of another lecturer's data.
+User or business outcome: Download one Outlook-compatible static .ics file for the complete token-scoped schedule.
+Primary actors: Accountless lecturer using a valid FS-015 schedule-review token.
+In scope: Download action in the reused lecturer workspace; complete teaching and exam export across all assigned courses; export independent of current filters, visible period, or selection; recognizable course/session, timing, type, location, and relevant context; institution-local timezone; stable deterministic event identifiers; standards-valid iCalendar output; privacy notice before download; download only from a valid complete FS-015 projection.
+Out of scope: Subscription URLs, live refresh, two-way sync, Outlook/calendar APIs, account connection, planner export, filtered export, feedback/comments, internal warnings/security data, and remote deletion of an imported file.
+Main workflow: Open valid review link, inspect schedule, choose Download calendar, read the static-file notice, download the .ics, and import it manually into Outlook.
+Business rules: Include every and only scoped teaching/exam session; filters never reduce export; incomplete projection produces no partial file; token ending blocks later downloads but cannot recall earlier files; export mutates no product or provider data.
+Data inputs and outputs: Valid lecturer/revision token scope and complete schedule projection produce one deterministic .ics file.
+External systems and integrations: Manual file exchange with Outlook as primary target; no API or account integration.
+UI references: Reuse the FS-015 lecturer workspace and existing action patterns.
+Dependencies and assumptions: FS-015 is revised and its projection remains authoritative. The file is a snapshot outside product control after download.
+Completion outcome: Outlook can import a complete, correctly scoped lecturer schedule from the downloaded file.
+Known clarification topics: Event fields, calendar/file naming, UID strategy and repeat imports, timezone metadata, and conformance fixtures.
+
+Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define user scenarios, functional requirements, edge cases, privacy behavior, standards and Outlook compatibility, assumptions, and measurable success criteria without prescribing an implementation library.
+```
+
+### FS-021: Lecturer Unavailability Submissions
+
+#### User or business outcome
+
+A planner can collect whole-day unavailable dates from an active lecturer
+before planning, approve or reject each submitted date, and make only approved
+dates authoritative scheduling constraints without manual re-entry.
+
+#### Rationale for this slice boundary
+
+Pre-planning availability collection is separate from post-planning session
+feedback and from schedule-review revision scope. It requires a distinct
+lecturer-and-semester token, one-time submission, planner decision workflow,
+and conversion into the existing FS-008 availability model, while remaining
+small enough for one vertical Spec Kit cycle.
+
+#### Primary actors
+
+- Planner user.
+- Accountless lecturer submitting personal unavailable dates.
+
+#### Preconditions
+
+- FS-008 provides planner-controlled dated lecturer unavailability and
+  unavailability warnings.
+- FS-015 provides proven accountless token-security patterns.
+- FS-019 and the accepted Lecturer coordination decision provide the planner
+  destination and reusable lecturer/workspace components.
+- An active lecturer and semester exist; no schedule revision or assigned
+  session is required.
+
+#### In scope
+
+- Planner-only issuance of a separate availability link for exactly one active
+  lecturer and one semester.
+- A fixed validity of 72 consecutive hours, exact displayed expiry, planner
+  revocation, and replacement.
+- Only one active availability link for the same lecturer and semester;
+  replacement ends prior access.
+- Strict capability separation from schedule-review tokens.
+- Reuse of the lecturer administration/profile and availability components in
+  a restricted `My unavailable dates` mode.
+- Selection of one or more whole dates within the scoped semester.
+- No server-persisted draft; the lecturer makes exactly one submission and the
+  successful submission immediately ends link access.
+- Each submitted date appears as Pending in Lecturer coordination and can be
+  approved or rejected independently.
+- Approved dates become existing FS-008 whole-day lecturer-unavailability
+  records without planner re-entry.
+- Rejected dates are discarded after the decision and do not create
+  user-facing decision history.
+- A simple pending count/filter and decision actions in Lecturer coordination.
+- If approval overlaps an existing session, preserve the session and show the
+  existing lecturer-unavailability warning.
+- A fresh general one-use link when another or corrected submission is needed.
+
+#### Out of scope
+
+- Partial-day time intervals, recurring weekdays, date ranges, positive
+  availability, saved lecturer drafts, edit/delete after submission,
+  approval/rejection history, automatic schedule movement, post-planning
+  session objections, combined review-and-availability tokens, authenticated
+  accounts, email/push notification, and a generic Action Center.
+
+#### Main workflow
+
+Before planning, the planner opens Lecturer coordination, selects an active
+lecturer and semester, issues the fixed 72-hour link, copies it, and sends it
+manually. The lecturer opens the restricted workspace, selects whole dates
+inside the semester, and submits once. The planner sees pending dates in
+Lecturer coordination and approves or rejects each. Approved dates immediately
+become existing planning unavailability; rejected dates disappear. If another
+submission is needed, the planner issues a new link.
+
+#### Business rules
+
+- Only a planner can issue, inspect, revoke, replace, approve, or reject.
+- One link is scoped to one lecturer, one semester, and one submission.
+- The link ends at the earliest of successful submission, 72-hour expiry,
+  revocation, or replacement.
+- Unusable links expose no lecturer, semester, availability, or decision data.
+- Every submitted date must lie within the scoped semester and duplicate dates
+  must not create duplicate unavailability.
+- Approval is per date and creates the same authoritative constraint as
+  planner-entered FS-008 unavailability.
+- Rejection creates no constraint and retains no business history.
+- Approved availability never silently moves or deletes an existing session;
+  any collision is visible as the established warning.
+- After planning exists, lecturers use FS-015 session feedback rather than this
+  pre-planning workflow to object to a scheduled date.
+
+#### Data inputs and outputs
+
+Inputs are active lecturer, semester, planner token lifecycle actions, selected
+whole dates, and per-date planner decisions. Outputs are a one-use scoped link,
+pending date decisions, approved FS-008 unavailability records, and current
+pending counts. Rejected dates leave no retained business record.
+
+#### Integrations
+
+No external integration. The planner manually sends the link through an
+external communication channel.
+
+#### UI references
+
+- Reuse the implemented lecturer administration/profile and
+  `ResourceAvailabilityEditor` concepts in restricted mode.
+- Reuse the existing Lecturer reviews destination as the broadened Lecturer
+  coordination surface.
+- `docs/architecture/lecturer-action-surface.md` and
+  `docs/architecture/availability-link-validity.md` are accepted architectural
+  context.
+
+#### Constraints and assumptions
+
+- Whole-day lecturer submissions are sufficient for the first release even
+  though planner-entered FS-008 availability supports richer intervals.
+- Component reuse must not grant public mutation access to planner-controlled
+  availability operations.
+- Minimal security events may be retained, but they are not user-facing
+  approval/rejection history.
+
+#### Dependencies
+
+- FS-008, FS-015, and FS-019.
+
+#### Completion outcome
+
+A planner can collect and decide whole-day lecturer unavailability before
+planning, and every approved date becomes a scheduling constraint without
+manual re-entry or automatic schedule movement.
+
+#### Open clarification topics
+
+- Exact handling and feedback for a submitted date already covered by existing
+  lecturer unavailability.
+- Ordering and batch ergonomics for approving/rejecting several dates while
+  preserving per-date decisions.
+- Safe concurrency behavior when submission, expiry, revocation, replacement,
+  or planner decision occurs nearly simultaneously.
+- Exact retention period for minimal security events.
+
+#### Specification status
+
+Ready for specification.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for FS-021: Lecturer Unavailability Submissions.
+
+Product context: The planner already maintains dated lecturer unavailability under FS-008, but lecturers need a simple accountless way to submit whole unavailable days before planning. Post-planning objections remain FS-015 session feedback. The planner must retain authority, avoid manual re-entry, and reuse existing lecturer, availability, token-security, and Lecturer coordination components.
+Product-level success: Approved lecturer dates become authoritative scheduling constraints without planner re-entry; rejected dates cause no schedule or history; lecturers gain no planner permissions.
+User or business outcome: Collect one whole-day availability submission through a temporary link and let the planner approve or reject each date.
+Primary actors: Planner user and one accountless lecturer.
+In scope: Planner-issued link scoped to one active lecturer and one semester without requiring a revision or assignment; fixed 72-hour expiry; displayed exact expiry; revoke and replace; one active link per pair; one successful submission; separate capability from review links; restricted My unavailable dates workspace reusing lecturer/availability components; one or more whole dates inside the semester; no persisted draft; per-date Pending decisions in Lecturer coordination; individual approval/rejection; approved dates create existing FS-008 unavailability; rejected dates are discarded; pending count/filter; existing-session warning without automatic movement; fresh link for another submission.
+Out of scope: Partial days, times, recurrence, date ranges, positive availability, saved drafts, edit/delete after submission, business decision history, automatic schedule movement, session objections, combined tokens, accounts, email/push notification, and a generic Action Center.
+Main workflow: Planner issues and manually sends a 72-hour link; lecturer selects whole dates and submits once; planner reviews Pending dates in Lecturer coordination and approves or rejects each; approved dates become FS-008 constraints; another attempt requires a new link.
+Business rules: Only planners control link and decision actions; link ends after submission, expiry, revocation, or replacement; unusable links fail safely; dates remain inside the semester; duplicates do not create duplicate constraints; rejection retains no business history; existing collisions produce warnings; later schedule objections use FS-015 feedback.
+Data inputs and outputs: Lecturer, semester, token lifecycle, whole dates, and planner decisions produce the scoped link, pending date items, approved FS-008 records, and current pending counts; rejected items are discarded.
+External systems and integrations: None; manual link delivery only.
+UI references: Reuse lecturer administration/profile, ResourceAvailabilityEditor concepts, Lecturer coordination, and the accepted docs/architecture/lecturer-action-surface.md and docs/architecture/availability-link-validity.md decisions.
+Dependencies and assumptions: FS-008, FS-015, and FS-019. Whole days are sufficient; richer planner-entered availability remains unchanged; backend permissions remain authoritative.
+Completion outcome: Approved lecturer whole-day unavailability affects subsequent planning without manual re-entry, and no lecturer action directly changes a schedule.
+Known clarification topics: Existing-duplicate behavior, per-date batch ergonomics, concurrency at submission/link ending/decision, and minimal security-event retention.
+
+Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define independently testable scenarios, requirements, security and privacy behavior, edge cases, assumptions, and measurable success criteria without merging the two token capabilities or designing authentication.
+```
+
 ## Deferred scope
 
-- **Automated email delivery**: FS-015 deliberately uses planner-copied links; an email provider is not yet selected or required.
+- **Automated email delivery**: FS-015 and FS-021 deliberately use
+  planner-copied links; an email provider is not yet selected or required.
 - **Institutional SSO and automated provisioning**: Deferred until authenticated collaboration is validated and an identity provider is known.
-- **Multi-lecturer token review**: The accountless workflow covers the dominant one-course/one-lecturer case. Multi-lecturer review may be handled through FS-016 or a later scope update.
+- **Multi-lecturer token scope**: Each accountless link intentionally represents
+  one lecturer even though FS-015 includes all of that lecturer's assigned
+  courses. Combined multi-lecturer access may be reconsidered only through a
+  later scope update.
+- **Live calendar subscription or synchronization**: FS-020 is a static file
+  export. Calendar feeds, provider APIs, refresh, and two-way synchronization
+  remain later possibilities without a confirmed need.
+- **Richer lecturer-submitted availability**: Partial-day times, recurring
+  weekdays, and date ranges remain excluded from FS-021; planners retain the
+  richer FS-008 administration workflow.
+- **Generic Action Center**: Lecturer-originated work is consolidated in
+  Lecturer coordination. A cross-product, role-aware queue is deferred until
+  authenticated roles demonstrate a need beyond existing calendar operational
+  summaries.
 - **Multiple campus or regional holiday calendars**: The planner-only MVP uses one institution-wide calendar.
 - **Provider-specific integration adapters**: Deferred until a provider-neutral contract and actual provider are known.
 - **Automatic lecturer-driven schedule changes**: Lecturers remain advisory reviewers; planner users alone change schedules.
@@ -1850,16 +2483,20 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 
 ## Product-level open assumptions
 
-- The planner-only MVP may operate without authentication because it is restricted to planner users in its initial environment.
-- One exam requirement per course is assumed until FS-012 clarification establishes otherwise.
-- A single current published revision should remain visible while a replacement draft is prepared; exact course-versus-semester revision granularity remains for FS-013 clarification.
-- Planner-maintained data remains authoritative until FS-017 defines ownership for synchronized fields.
+- The planner-only MVP may operate without authentication; current lecturer
+  collaboration remains accountless and capability-scoped until FS-016.
+- A downloaded FS-020 calendar file remains outside product control and may
+  continue to expose the exported schedule after link expiry or revocation.
+- Planner-entered or planner-approved availability remains authoritative until
+  FS-017 defines ownership for synchronized fields.
 - Optimization fairness and deterministic tie-breaking can be clarified within FS-010 without changing its global-maximization boundary.
 
 ## Change history
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-07-31 | Product-level scope change, updated slice, new slices, scope reconciliation, reordered later slice | FS-015, FS-016, FS-019, FS-020, FS-021 | Added the missing implemented FS-019 workspace with its pending manual acceptance status; broadened FS-015 into the shared lecturer calendar/list and Lecturer coordination experience; added static iCalendar export and whole-day lecturer unavailability submissions; made FS-016 reuse the completed accountless workflows. | Complete the accountless lecturer collaboration loop through reused components before introducing authentication, while preserving planner authority and separating review, export, and pre-planning availability into coherent vertical outcomes. |
+| 2026-07-31 | Status correction | FS-009–FS-012, FS-014, FS-018 | Aligned detailed-section statuses with the existing implemented statuses in the slice map. | Remove pre-existing internal contradictions without changing the confirmed slice outcomes. |
 | 2026-07-23 | Status update | FS-013, FS-014 | Marked FS-013 implemented and advanced FS-014 to Ready for specification as the recommended next slice. | Reflect completion of the versioned publication lifecycle and open the calendar workspace for specification. |
 | 2026-07-14 | Ground-truth creation | FS-001–FS-017 | Reconstructed implemented FS-001–FS-006 and replaced the old roadmap with a validated planner-MVP and later-release slice map. | Preserve implemented behavior while defining conflict-aware planning, manual administration, exams, publication, calendar operations, lecturer review, identity, and future integration as coherent vertical slices. |
 | 2026-07-16 | New slice, reordered slice, updated slice | FS-007, FS-014, FS-018 | Added unified application navigation as the recommended next slice, recorded the approved UX ground truth, and made the later calendar workspace reuse that navigation. | Separate the confirmed cross-workflow navigation outcome from implemented academic administration and remove the navigation ambiguity from FS-014. |
