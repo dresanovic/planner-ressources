@@ -1911,3 +1911,108 @@ button:disabled[aria-busy='true'] {
     grid-template-columns: 1fr;
   }
 }
+.restricted-calendar-workspace {
+  width: min(100%, 1600px);
+  margin-inline: auto;
+}
+
+.restricted-calendar-workspace .calendar-workspace {
+  margin-block: 1rem;
+}
+
+.lecturer-fixed-context {
+  display: grid;
+  gap: 0.2rem;
+  min-width: min(100%, 18rem);
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color, #c9d2dc);
+  border-radius: 0.75rem;
+  background: var(--surface-subtle, #f4f7fa);
+}
+
+.lecturer-fixed-context strong,
+.lecturer-fixed-context span,
+.lecturer-fixed-context small {
+  overflow-wrap: anywhere;
+}
+
+.schedule-occurrence-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.schedule-occurrence-list-item {
+  min-width: 0;
+}
+
+.schedule-occurrence-row {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, auto) minmax(10rem, 2fr) repeat(3, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  min-height: 3.25rem;
+  text-align: left;
+}
+
+.schedule-occurrence-row[aria-pressed='true'] {
+  outline: 3px solid currentColor;
+  outline-offset: 2px;
+}
+
+.lecturer-feedback-actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.coordination-counters,
+.coordination-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.coordination-counters span {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-color, #c9d2dc);
+  border-radius: 0.6rem;
+}
+
+.coordination-filters label {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 11rem;
+}
+
+.lecturer-feedback-actions textarea,
+.revision-feedback textarea {
+  width: 100%;
+  min-height: 6rem;
+}
+
+.restricted-session-details dd,
+.lecturer-feedback-actions label,
+.lecturer-feedback-actions span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .restricted-calendar-workspace {
+    padding-inline: 0.5rem;
+  }
+
+  .schedule-occurrence-row {
+    grid-template-columns: 1fr;
+  }
+
+  .restricted-calendar-workspace .workspace-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .restricted-calendar-workspace .workspace-filters label,
+  .restricted-calendar-workspace .workspace-filters select {
+    min-width: 0;
+    width: 100%;
+  }
+}

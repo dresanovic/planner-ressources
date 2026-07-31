@@ -15,6 +15,9 @@ it('always shows semester and only destination-meaningful revision/course contro
   expect([...host.querySelectorAll('label span')].map((item) => item.textContent)).toEqual(['Semester', 'Revision'])
   act(() => root.render(<ScheduleContextHeader destination="exams" {...props} />))
   expect([...host.querySelectorAll('label span')].map((item) => item.textContent)).toEqual(['Semester', 'Course'])
+  act(() => root.render(<ScheduleContextHeader destination="reviews" {...props} />))
+  expect(host.querySelector('h2')?.textContent).toBe('Lecturer coordination')
+  expect([...host.querySelectorAll('label span')].map((item) => item.textContent)).toEqual(['Semester', 'Revision'])
 })
 
 it('makes unavailable context explicit without color-only meaning', () => {

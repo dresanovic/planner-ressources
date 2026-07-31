@@ -126,6 +126,40 @@ def test_lecturer_filter_facet_uses_the_resource_name():
         ]
 
 
+def test_exported_validation_derivation_receives_the_complete_revision(
+    monkeypatch,
+):
+    with _db() as db:
+        seed_lifecycle_semester(db, with_schedule=True)
+        initial = get_lifecycle_overview(db, 1)
+        create_working_revision(db, 1, initial["stateToken"])
+        db.commit()
+        original = calendar_workspace.derive_calendar_validation_findings
+        received: list[set[str]] = []
+
+        def capture(db_session, courses, occurrences, holidays):
+            received.append(
+                {occurrence["occurrenceRef"] for occurrence in occurrences}
+            )
+            return original(db_session, courses, occurrences, holidays)
+
+        monkeypatch.setattr(
+            calendar_workspace,
+            "derive_calendar_validation_findings",
+            capture,
+        )
+
+        workspace = get_calendar_workspace(db, 1)
+
+        assert received == [
+            {row["occurrenceRef"] for row in workspace["occurrences"]}
+        ]
+        assert {row["kind"] for row in workspace["occurrences"]} == {
+            "teaching",
+            "exam",
+        }
+
+
 def test_working_default_preserves_study_type_window_validation_code():
     with _db() as db:
         seed_lifecycle_semester(db, with_schedule=True)

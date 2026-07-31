@@ -1,12 +1,17 @@
 # Feature Specification: FS-015 Accountless Lecturer Token Review
 
-**Working Branch**: `codex/fs-015-lecturer-token-review`
+**Working Branch**: `master`
 
 **Created**: 2026-07-28
 
+**Revised**: 2026-07-31
+
 **Status**: Draft
 
-**Input**: User description: "Let a planner share one lecturer schedule with its corresponding lecturer through a secure temporary link and receive advisory comments and impossible-session flags without requiring a lecturer account."
+**Input**: User description: "Preserve the implemented one-lecturer,
+one-revision secure-link and immutable-feedback baseline, reuse the FS-014 and
+FS-019 calendar/list workspace in restricted lecturer mode, and consolidate
+planner link and feedback work in Lecturer coordination."
 
 **Constitution Requirements**: This spec MUST be updated before production
 implementation. All user stories require clear acceptance criteria and
@@ -16,13 +21,38 @@ independent test paths.
 
 ### Session 2026-07-28
 
-- Q: If every session is reassigned away from the lecturer while their link is still valid, what should happen? → A: Keep the link valid and show an empty schedule until expiry; new assignments appear automatically.
+- Q: If every session is reassigned away from the lecturer while their link is still valid, what should happen? → A: Keep the link valid and show an empty schedule after reload or reopen; later assignments appear after a later reload or reopen.
 - Q: If the planner changes a session after the lecturer opens it but before feedback is submitted, what should happen? → A: Accept the feedback against the session's current state without requiring lecturer confirmation.
 - Q: If the lecturer submits more than one impossible-session flag for the same session, what should happen? → A: Record every successful submission as a separate immutable feedback item.
 - Q: What schedule and feedback scope should one lecturer link provide? → A: Show all sessions across the lecturer's assigned courses and allow a comment or impossible-session flag on each session, including recommended dates or times in comment text.
 - Q: In which planner workflow status can an initial lecturer review request be sent? → A: Draft or Ready for review while the revision is Working; Ready for review is recommended but not required.
 - Q: Where is planner authorization enforced for FS-015? → A: A trusted gateway/proxy protects planner pages and planner API routes; only the minimum accountless lecturer-review surface is publicly reachable.
 - Q: Which network address is authoritative for unusable-link misuse limits? → A: The trusted gateway supplies the authoritative client address, discards client-provided forwarding values, and prevents direct backend access.
+
+### Session 2026-07-31
+
+- Q: How is the lecturer represented when the lecturer filter is removed? A:
+  Show the lecturer as persistent, labeled, non-editable link context. Its
+  visual treatment may adapt to available space, but it is never selectable.
+- Q: How are assignment-driven and filter-driven empty states distinguished? A:
+  A valid projection with no current assignments shows an authoritative
+  empty-schedule explanation; a non-empty projection hidden by filters shows a
+  no-matches state with a direct clear-filters action.
+- Q: How does the restricted detail pane respond to changing width? A: Reuse
+  the established adaptive pane beside the calendar when space permits, over
+  the calendar when constrained, and as a temporary full-screen pane at the
+  established narrow presentation. Preserve mode, period, filters, selection,
+  and unsent feedback text while the target remains in scope.
+- Q: When filters are applied in Lecturer coordination, which feedback scope
+  do the counters describe? → A: Every active filter, including feedback kind,
+  updates both all feedback counters and the displayed feedback results.
+- Q: What happens to unsubmitted feedback when the lecturer closes the pane,
+  selects another session, or applies a filter that hides the target? → A:
+  Require confirmation before a lecturer-initiated discard. If the session
+  automatically leaves authorized scope, discard the text with an explanation.
+- Q: When do assignment changes update a review page that is already open? →
+  A: Update the visible projection only when the browser page is reloaded or
+  the link is reopened; feedback submission still rechecks current scope.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -68,7 +98,53 @@ selected revision.
 
 ---
 
-### User Story 2 - Submit Advisory Schedule Feedback (Priority: P2)
+### User Story 2 - Review Every Personal Assignment in the Shared Workspace (Priority: P1)
+
+The accountless lecturer uses the familiar calendar or list presentation to
+review every current personal teaching and exam assignment across all courses
+in the bound revision. The lecturer can navigate the applicable period and use
+course, cohort, room, study-type, session-type, lifecycle, and validation
+filters without being offered planner controls or a lecturer selector.
+
+**Why this priority**: The extension succeeds only if the lecturer receives the
+same understandable schedule-review experience without a reduced parallel
+workspace or broader authority.
+
+**Independent Test**: Prepare one revision containing teaching and exam
+assignments for at least three lecturers across several courses and filter
+facets. Open one lecturer's valid link, exercise calendar and list modes and
+each applicable filter alone and in combination, and verify completeness,
+privacy, fixed lecturer context, state retention, and absence of planner
+actions.
+
+**Acceptance Scenarios**:
+
+1. **Given** a valid link with assignments across several courses, **When** the
+   workspace loads, **Then** every current teaching and exam assignment for the
+   bound lecturer is available and no assignment belonging solely to another
+   lecturer is exposed.
+2. **Given** the projection is loaded, **When** the lecturer changes between
+   calendar and list modes, **Then** the bound revision, fixed lecturer context,
+   active filters, applicable visible period, and eligible selection are
+   preserved.
+3. **Given** applicable filter choices exist, **When** the lecturer filters by
+   course, cohort, room, study type, session type, lifecycle, or validation
+   state alone or in combination, **Then** only intersecting in-scope records
+   are shown and no filter expands access.
+4. **Given** lecturer identity is displayed, **When** the lecturer inspects the
+   workspace controls, **Then** that identity is labeled as fixed link context
+   and no lecturer-selection filter is available.
+5. **Given** the current projection contains assignments but filters match
+   none, **When** the result is shown, **Then** the workspace identifies a
+   filter-empty result and offers a direct clear-filters action.
+6. **Given** every assignment leaves scope while the link remains valid,
+   **When** the browser page is reloaded or the link is reopened, **Then** an
+   explicit empty schedule is shown without ending the link or exposing prior
+   or other assignments.
+
+---
+
+### User Story 3 - Submit Advisory Schedule Feedback (Priority: P2)
 
 While the link is valid, the lecturer can add a general comment about the
 scoped revision, comment on a specific session, or mark a specific session as
@@ -108,10 +184,15 @@ data changes.
 6. **Given** a comment containing unsupported active or executable content,
    **When** it is submitted and later displayed, **Then** it remains inert text
    and cannot cause an action or reveal additional data.
+7. **Given** the lecturer has entered non-blank unsubmitted feedback, **When**
+   they close the pane, select another session, or apply a filter that would
+   hide the target, **Then** they must explicitly discard the text or cancel
+   the context change; cancelling preserves the text and creates no feedback
+   item.
 
 ---
 
-### User Story 3 - End or Replace Access Immediately (Priority: P3)
+### User Story 4 - End or Replace Access Immediately (Priority: P1)
 
 The planner can revoke an active link at any time or replace it with a new link.
 Expiry, revocation, replacement, abandonment, or supersession ends access
@@ -151,48 +232,59 @@ feedback.
 
 ---
 
-### User Story 4 - Consider Feedback Without Losing Planner Control (Priority: P4)
+### User Story 5 - Coordinate Feedback Without Losing Planner Control (Priority: P3)
 
-The planner can review all feedback associated with the revision and sessions,
-see the number of impossible-session flags in a prominent filter at the top of
-the feedback area, narrow the view to flagged sessions, distinguish flags from
-comments, and decide whether to revise, ignore the feedback, or publish.
-Feedback status and the displayed review deadline remain informative and never
-become an acceptance or publication gate.
+The planner uses the renamed and broadened Lecturer coordination destination to
+manage review links, review feedback counts, filter retained feedback, open an
+affected teaching or exam session in the established Schedule workspace, and
+decide whether to revise, ignore the feedback, or publish. Feedback and the
+displayed review deadline remain informative and never become an acceptance or
+publication gate.
 
 **Why this priority**: The slice must support collaboration without weakening
 the planner-controlled lifecycle delivered by FS-013.
 
-**Independent Test**: Submit no feedback, positive comments, and
-impossible-session flags in separate cases, verify the top filter count and
-flagged-session result, and confirm that the planner can inspect an affected
-session and publish the applicable Working revision in every case using the
-unchanged FS-013 publication rules.
+**Independent Test**: Submit comments and repeated impossible-session flags for
+several sessions and lecturers, verify the renamed destination, link
+management, complete and partial count behavior, filters, navigation to current
+affected sessions, historical context for unavailable sessions, and unchanged
+FS-013 publication behavior.
 
 **Acceptance Scenarios**:
 
-1. **Given** a revision has no lecturer feedback and its review deadline has
+1. **Given** review links and retained feedback exist, **When** the planner
+   opens Lecturer coordination, **Then** link management, complete or qualified
+   feedback counts, filters, and affected-session actions are available in that
+   one renamed destination.
+2. **Given** a revision has no lecturer feedback and its review deadline has
    passed, **When** the planner publishes it, **Then** publication is not
    blocked and no lecturer acceptance is requested.
-2. **Given** a revision has one or more impossible-session flags or negative
+3. **Given** a revision has one or more impossible-session flags or negative
    comments, **When** the planner publishes it, **Then** the feedback remains
    visible and advisory and publication is not blocked.
-3. **Given** feedback refers to a session that the planner later edits, removes,
+4. **Given** feedback refers to a session that the planner later edits, removes,
    or reassigns, **When** the planner reviews the feedback, **Then** the
    original revision/session association and the session context visible at
    submission remain understandable.
-4. **Given** a link expires, is revoked, or is replaced, **When** the planner
+5. **Given** a link expires, is revoked, or is replaced, **When** the planner
    reviews its previously submitted feedback, **Then** the feedback remains in
    the linked revision history even though the link exposes no data.
-5. **Given** a revision contains comments and impossible-session flags across
+6. **Given** a revision contains comments and impossible-session flags across
    multiple sessions, **When** the planner opens the feedback area and selects
    the impossible-session filter at its top, **Then** the filter shows the
-   correct flag count and the result contains all and only the flagged
-   sessions.
-6. **Given** a revision contains no impossible-session flags, **When** the
+   flag count for the current active filter scope and the result contains all
+   and only the flagged sessions remaining in that scope.
+7. **Given** a revision contains no impossible-session flags, **When** the
    planner views or selects the impossible-session filter, **Then** its count is
    zero and the planner sees a clear empty result rather than missing or
    incomplete data.
+8. **Given** feedback targets a current session, **When** the planner follows
+   its session action from Lecturer coordination, **Then** that session opens
+   in the correct planner Schedule revision context without changing it.
+9. **Given** feedback targets a removed, reassigned, or historical session,
+   **When** the planner inspects it, **Then** the immutable submission-time
+   context remains understandable and navigation does not substitute another
+   session.
 
 ### Edge Cases
 
@@ -207,15 +299,16 @@ unchanged FS-013 publication rules.
   limited to the one active Working revision. A still-active link may be
   replaced after its bound revision becomes the Current Published revision.
 - A session is newly assigned to the scoped lecturer after link issuance; it
-  becomes visible because the link is scoped to the lecturer's current
-  projection of that revision, not to an issuance-time session list.
+  becomes visible when the browser page is reloaded or the link is reopened
+  because the link is scoped to the lecturer's current projection of that
+  revision, not to an issuance-time session list.
 - A session is reassigned away from the scoped lecturer; it ceases to be
   visible through the link, while previously submitted feedback retains its
   historical session context for the planner.
 - Every session is reassigned away from the scoped lecturer; the link remains
   valid until its existing end condition, shows an explicit empty schedule,
-  and automatically shows newly assigned sessions if assignments return before
-  the link ends.
+  and shows newly assigned sessions after a browser reload or reopen if
+  assignments return before the link ends.
 - A course has more than one eligible lecturer; each scheduled session remains
   assigned to one lecturer under the current schedule model, and a link exposes
   neither the other eligible lecturers nor their assigned sessions.
@@ -255,6 +348,30 @@ unchanged FS-013 publication rules.
 - Feedback is only partially available; the impossible-session filter MUST NOT
   present a definitive count or an empty result and instead identifies that the
   filtered result is unavailable or incomplete.
+- A selected session is removed, reassigned away, or no longer matches active
+  filters while its restricted pane is open; the pane closes or changes to an
+  accurate unavailable state, accepts no feedback for an out-of-scope target,
+  and returns focus predictably. A lecturer-initiated filter change that would
+  hide a target with non-blank unsubmitted feedback requires discard
+  confirmation; an automatic scope removal discards that text with an
+  explanation because it can no longer be retained against an authorized
+  target.
+- Filter choices become unavailable after assignment changes; invalid choices
+  are removed or identified, remaining valid filters persist, and the visible
+  result never broadens beyond current scope.
+- Every assignment leaves scope while filters are active; the workspace shows
+  the authoritative empty projection rather than implying that clearing
+  filters will restore removed assignments.
+- Schedule data is available but validation data is partial; affected
+  validation state is labeled partial or unavailable rather than "no issue."
+- The session pane changes among beside-calendar, overlay, and narrow
+  full-screen presentations; mode, period, filters, selection, scroll context,
+  and unsent feedback text remain intact while the session stays in scope.
+- Long lecturer, revision, course, cohort, room, study-type, session-type,
+  lifecycle, or validation labels must not obscure modes, filters, feedback,
+  pane-close, or link-management controls.
+- Feedback points to a session that is now removed or historical; its captured
+  context remains visible and navigation never substitutes a different session.
 
 ## Scope Boundaries
 
@@ -274,10 +391,20 @@ unchanged FS-013 publication rules.
   impossible-session flags.
 - Traceable revision/session association, advisory planner review, and
   retention with revision history.
-- A prominent planner filter at the top of the feedback area that displays the
-  impossible-session flag count and narrows the result to flagged sessions.
+- Planner coordination filters and counts for intended lecturer, course,
+  session kind, feedback kind, all feedback, comments, impossible-session
+  items, and distinct affected sessions within the selected revision.
 - Explicit minimum-scope, privacy, expiry, secret-handling, misuse-control, and
   safe-failure behavior.
+- Reuse of the FS-014 and FS-019 calendar, list, filter, session-pane,
+  responsive, focus, and Schedule-navigation behavior in restricted lecturer
+  mode.
+- Applicable course, cohort, room, study-type, session-type, lifecycle, and
+  validation filters, with lecturer identity shown as fixed context rather than
+  as a filter.
+- Rename and broaden the planner's `Lecturer reviews` destination to `Lecturer
+  coordination` for link management, feedback counts and filters, and direct
+  navigation to affected sessions.
 
 ### Out of Scope
 
@@ -297,6 +424,14 @@ unchanged FS-013 publication rules.
   editing/deletion, or real-time collaboration.
 - A general public schedule, bulk link issuance, one link spanning multiple
   revisions, or future authenticated lecturer workflows from FS-016.
+- iCalendar export, live calendar integration, or synchronization; export
+  belongs to FS-020.
+- Lecturer availability submissions or planner availability decisions; these
+  belong to FS-021.
+- A generic Action Center or aggregation of conflicts, capacity findings,
+  generation failures, or unrelated planner work.
+- Parallel lecturer-specific calendar, list, filter, or session-detail
+  components.
 
 ## Requirements *(mandatory)*
 
@@ -322,7 +457,8 @@ unchanged FS-013 publication rules.
   teaching and exam sessions currently assigned to the bound lecturer in the
   bound revision, regardless of how many courses those assignments span. If no
   sessions remain assigned, the still-valid link MUST show an explicit empty
-  schedule and MUST automatically show newly assigned sessions if assignments
+  schedule after the browser page is reloaded or the link is reopened and MUST
+  show newly assigned sessions on a later reload or reopen if assignments
   return before the link ends.
 - **FR-005**: The link MUST NOT grant access to another revision, a session
   assigned to another lecturer, planner-only data, or any planner action.
@@ -387,11 +523,12 @@ unchanged FS-013 publication rules.
 - **FR-024**: Ordinary use of the review MUST NOT disclose the link secret to
   an external destination; any navigation away from the review MUST require an
   explicit action that warns the reviewer before leaving.
-- **FR-025**: The review MUST display only the intended lecturer's name, the
-  semester and revision identity/state, course title and code, session type,
-  date, start/end time, room name, cohort/class name, and the scoped feedback
-  already submitted through that link, including its kind, text, associated
-  session where applicable, and submission time.
+- **FR-025**: The review MUST display only the intended lecturer's name; the
+  semester and revision identity/state; the in-scope course title/code, cohort,
+  room, study type, session type, date, start/end time, and teaching units or
+  exam duration; scoped lifecycle and validation context; and feedback already
+  submitted through that link, including its kind, text, associated session
+  where applicable, and submission time.
 - **FR-026**: The review MUST NOT expose student-level data, lecturer contact
   data, another lecturer's identity, unassigned sessions, planner notes,
   internal history, other revisions, administrative controls, or fields not
@@ -456,10 +593,11 @@ unchanged FS-013 publication rules.
   revision and, where applicable, session, with impossible-session flags
   distinguishable from comments.
 - **FR-044**: A prominent filter at the top of the planner feedback area MUST
-  display the total number of impossible-session flags in the selected revision
-  and allow the planner to show all and only sessions with at least one such
-  flag. The filter, its count, and its selected state MUST be keyboard-operable,
-  available to assistive technology, and understandable without color alone.
+  display the number of impossible-session flag items in the current active
+  coordination-filter scope and allow the planner to show all and only
+  sessions with at least one such in-scope flag. The filter, its count, and its
+  selected state MUST be keyboard-operable, available to assistive technology,
+  and understandable without color alone.
 - **FR-045**: The impossible-session filter count MUST count feedback flag
   items, while the filtered result MUST list each affected session once even
   when that session has multiple flags. Each result MUST provide a direct path
@@ -537,6 +675,123 @@ unchanged FS-013 publication rules.
   and expiry information MUST remain readable and operable without loss of
   content or horizontal page scrolling.
 
+#### Shared Restricted Calendar and List Workspace
+
+- **FR-064**: The lecturer review MUST reuse the established calendar and list
+  workspace behavior in a restricted access mode rather than present a parallel
+  lecturer-specific schedule workspace.
+- **FR-065**: The lecturer MUST be able to use the established applicable
+  calendar and list modes and date navigation while remaining bound to the
+  link's one lecturer and one revision.
+- **FR-066**: Changing calendar/list mode or visible period MUST preserve the
+  fixed lecturer context, revision context, active filters, and any selected
+  session that remains visible and in scope.
+- **FR-067**: The restricted workspace MUST offer filters for course, cohort,
+  room, study type, session type, lifecycle context, and validation status when
+  corresponding choices exist in the current scoped projection.
+- **FR-068**: Lecturer identity MUST be displayed persistently as labeled,
+  non-editable link context and MUST NOT be available as a selectable filter.
+- **FR-069**: Active filters MUST remain visible, combine as intersections of
+  applicable record conditions, and provide one clear-all action.
+- **FR-070**: Lifecycle filtering MUST remain inside the bound revision and
+  MUST NOT switch to or blend another Working, Published, or historical
+  revision.
+- **FR-071**: Validation filtering MUST use only established validation
+  categories applicable to scoped sessions and MUST distinguish no-current-
+  issue, partial, unavailable, and applicable issue states.
+- **FR-072**: Filters, mode changes, period navigation, and presentation changes
+  MUST change only the displayed projection and MUST NOT expand token scope or
+  mutate schedule, feedback, link, or lifecycle data.
+- **FR-073**: The workspace MUST distinguish no current assignments, no filter
+  matches, loading, an initial request failure, a full-browser-reload or
+  reopened-link request failure, and a complete loaded schedule. The schedule
+  projection MUST be complete or fail closed; only validation availability MAY
+  be complete, partial, or unavailable, and incomplete validation MUST NOT be
+  presented as no current issue.
+- **FR-074**: The visible projection MUST update when the browser page is
+  reloaded or the link is reopened. Timed background refresh and a separate
+  in-workspace refresh action are not required. Every feedback submission
+  remains subject to the current-scope check in FR-029.
+- **FR-075**: Selecting an in-scope teaching or exam session from calendar or
+  list mode MUST open the established adaptive detail pane without forcing a
+  mode change.
+- **FR-076**: The restricted pane MUST identify the session kind, course,
+  cohort, date, start/end time, teaching units or exam duration as applicable,
+  room, study type, bound revision/lifecycle context, and current scoped
+  validation status needed to evaluate the session.
+- **FR-077**: Validation detail in lecturer mode MUST identify the applicable
+  issue without exposing another lecturer, an out-of-scope session, planner
+  notes, or administrative data.
+- **FR-078**: The pane MUST expose only the permitted feedback actions and MUST
+  omit edit, create, delete, generation, availability, lifecycle, publication,
+  and administrative actions.
+- **FR-079**: Planner-only operations MUST deny requests carrying a bearer
+  secret whose exact FS-015 credential shape and digest resolve to any stored
+  lecturer review link, active or ended, even when constructed outside the
+  displayed interface. An unrelated bearer that does not resolve to a stored
+  lecturer review link MUST NOT be classified as a lecturer credential; it
+  remains subject to the trusted gateway's planner-authorization decision.
+- **FR-080**: When width permits, the pane MAY remain beside the calendar; when
+  constrained, it MUST use the established right overlay and then the
+  established temporary full-screen narrow presentation.
+- **FR-081**: Changing among pane presentations MUST preserve mode, visible
+  period, filters, selection, scroll context, and unsent feedback text while
+  the selected session remains in scope.
+- **FR-082**: If a selected session leaves scope, the pane MUST stop exposing
+  it, reject feedback for it, communicate the change, and move focus to a
+  predictable in-scope workspace location.
+- **FR-083**: When non-blank unsubmitted feedback exists, a lecturer-initiated
+  pane close, session change, or filter change that would hide the target MUST
+  require an explicit choice to discard the text or cancel the context change.
+  Cancelling MUST preserve the text and create no feedback item. If a refresh
+  or assignment change automatically removes the target from authorized scope,
+  the text MUST be discarded with an explanation and MUST NOT be submitted or
+  persisted as a feedback item.
+
+#### Lecturer Coordination Extension
+
+- **FR-084**: The planner Schedule destination named `Lecturer reviews` MUST be
+  renamed to `Lecturer coordination`; no second lecturer-review destination or
+  generic Action Center MUST be introduced.
+- **FR-085**: Lecturer coordination MUST contain the established link
+  issuance, copy result, status, revocation, and replacement behavior together
+  with retained schedule feedback.
+- **FR-086**: Lecturer coordination MUST provide counts for all feedback items,
+  comments, impossible-session items, and distinct affected sessions within
+  the current active filter scope.
+- **FR-087**: Partial or unavailable feedback MUST produce partial or
+  unavailable counts and MUST NOT be represented as definitive zero.
+- **FR-088**: Within the revision fixed by the outer Schedule context, the
+  planner MUST be able to filter retained feedback by intended lecturer,
+  course, session kind, and feedback kind when those facets exist, including
+  the prominent impossible-session filter required by FR-044. A redundant
+  one-value revision selector MUST NOT be required.
+- **FR-089**: Coordination filters MUST intersect predictably, remain visibly
+  active, recompute every feedback counter and the displayed results from the
+  same active filter scope, provide a clear-all action, and MUST NOT mutate
+  feedback, link, schedule, or lifecycle data. This rule includes feedback-kind
+  filters.
+- **FR-090**: For current session-specific feedback, the destination MUST
+  provide a direct path to that exact session in the established planner
+  Schedule workspace without changing the session automatically.
+- **FR-091**: Session navigation MUST establish or preserve the correct semester
+  and revision context and MUST NOT substitute a different session when the
+  original target is unavailable.
+- **FR-092**: Feedback for an unavailable, reassigned, removed, or historical
+  session MUST continue to show its immutable submission-time context.
+
+#### Extended Accessibility Requirements
+
+- **FR-093**: Calendar/list modes, date controls, filters, fixed lecturer
+  context, pane controls, feedback actions, coordination counts, and session
+  navigation MUST be keyboard-operable with visible focus.
+- **FR-094**: Opening an overlay or narrow full-screen pane MUST move focus into
+  it, prevent interaction with obscured content, support predictable close
+  behavior, and restore focus to the originating item or a predictable result.
+- **FR-095**: Assignment or refresh changes that close a pane, remove a filter
+  choice, or change an empty state MUST be communicated to assistive technology
+  without requiring inference from visual movement.
+
 ### Test Requirements *(mandatory)*
 
 - **TR-001**: Tests MUST be created or updated before production behavior for
@@ -576,6 +831,31 @@ unchanged FS-013 publication rules.
   automated delivery, lecturer accounts, schedule editing, feedback
   editing/deletion, approval gates, publication blocking, attachments,
   threaded discussion, and authenticated FS-016 behavior.
+- **TR-011**: Shared-workspace tests MUST verify calendar/list parity, each
+  permitted filter alone and in combination, absence of a lecturer filter,
+  fixed-context semantics, mode and filter retention, assignment-driven versus
+  filter-driven empty states, assignment changes after browser reload or link
+  reopen, stale-target rejection at submission, and absence of domain mutation.
+- **TR-012**: Restricted-pane tests MUST cover teaching and exam selection from
+  calendar and list modes, permitted details and actions, validation privacy,
+  each adaptive presentation, focus, context retention, target removal, and
+  unsent-text preservation during responsive changes, discard confirmation for
+  lecturer-initiated context replacement, cancellation, and explained discard
+  after automatic scope removal.
+- **TR-013**: Lecturer coordination tests MUST verify the renamed destination,
+  link actions, complete/partial/unavailable counts, each feedback filter,
+  flag-item versus affected-session counting, clear behavior, current-session
+  navigation, unavailable-session context, and non-blocking publication.
+- **TR-014**: Authorization tests MUST construct every named planner-only
+  operation from lecturer-link context and verify denial without mutation or
+  additional disclosure.
+- **TR-015**: Regression coverage MUST verify that established FS-013 lifecycle
+  behavior and FS-014/FS-019 planner calendar, list, filtering, pane,
+  navigation, correction, and validation behavior remain unchanged outside the
+  restricted lecturer composition and destination rename.
+- **TR-016**: Scope tests MUST additionally confirm the absence of iCalendar
+  export, availability submissions, a generic Action Center, and parallel
+  lecturer-specific workspace components.
 
 ### Key Entities
 
@@ -601,10 +881,17 @@ unchanged FS-013 publication rules.
 - **Review Access Context**: The validity, current revision state, current
   lecturer assignment scope, expiry, and misuse-control state evaluated for one
   protected view or feedback submission.
-- **Planner Feedback Filter Context**: The selected revision's complete
-  feedback availability, impossible-session flag-item count, selected
-  all-feedback or impossible-session view, and distinct affected-session
-  result used for non-mutating planner navigation.
+- **Lecturer Coordination Context**: The selected revision's complete,
+  partial, or unavailable feedback set; active intended-lecturer, course,
+  session-kind, and feedback-kind filters; filtered counts for all items,
+  comment items, impossible-session items, and distinct affected sessions;
+  and the regrouped result used for non-mutating planner navigation.
+- **Restricted Review Workspace Context**: The bound lecturer and revision,
+  calendar/list mode, visible period, active filters, result state, selected
+  session, adaptive pane state, and transient unsent feedback text.
+- **Lecturer Coordination Context**: The planner-selected link and feedback
+  scope, count availability, active filters, and exact affected-session
+  navigation target.
 
 ## Dependencies
 
@@ -616,6 +903,16 @@ unchanged FS-013 publication rules.
   teaching sessions, and exam sessions used to derive the lecturer projection.
 - No email, messaging, identity-provider, account, or external publication
   integration is required by this slice.
+
+- **FS-014 Calendar Planning Workspace** supplies the established calendar and
+  list modes, date navigation, applicable filters, schedule details,
+  validation presentation, empty states, and accessibility behavior.
+- **FS-019 Streamlined Schedule Workspace** supplies the focused Schedule
+  navigation, adaptive session pane, responsive composition, context
+  preservation, and planner navigation to an affected session.
+- `docs/architecture/lecturer-action-surface.md` supplies the accepted boundary
+  for broadening Lecturer reviews into Lecturer coordination instead of
+  introducing a generic Action Center.
 
 ## Success Criteria *(mandatory)*
 
@@ -677,11 +974,40 @@ unchanged FS-013 publication rules.
   actions remain understandable, reachable, and operable without exposing
   extra data.
 - **SC-015**: In 100% of planner filter acceptance cases, the displayed
-  impossible-session count equals the number of flag items in the selected
-  revision, activating the filter exposes every affected session exactly once
-  in one interaction, each affected session's feedback and existing planner
-  workflow are reachable in one additional interaction, and clearing the
-  filter restores the complete feedback view without changing any domain data.
+  impossible-session count equals the number of flag items in the current
+  active filter scope; switching feedback kind to impossible exposes every
+  remaining affected session exactly once in one interaction; each current
+  affected session's feedback and existing planner workflow are reachable in
+  one additional interaction; and clearing all filters restores the selected
+  revision's complete feedback view without changing any domain data.
+- **SC-016**: In an unaided usability review with at least 10 representative
+  lecturers or designated acceptance reviewers, at least 90%, rounded up, can
+  identify the fixed lecturer and revision, switch calendar/list mode, apply
+  and clear a requested filter, find a named teaching or exam session, and open
+  its detail within three minutes without guidance.
+- **SC-017**: In 100% of restricted-mode acceptance paths, planner edit, create,
+  delete, generation, availability, lifecycle, publication, and
+  administration actions are absent, and constructed attempts to perform them
+  are denied without mutation or additional disclosure.
+- **SC-018**: On the next browser reload or reopening of the link after an
+  assignment change, 100% of newly assigned sessions enter scope, reassigned or
+  removed sessions leave scope, and complete removal produces the authoritative
+  empty state without ending the link.
+- **SC-019**: In 100% of Lecturer coordination acceptance cases, every active
+  filter updates all counters and results to the same scope, complete counts
+  equal their contributing feedback, repeated flags count separately while
+  affected sessions appear once, and a current affected session is reachable
+  in one action from its result.
+- **SC-020**: In 100% of calendar/list, filter, session-pane, and responsive
+  acceptance paths at 320 CSS pixels and 200% text zoom, fixed context, modes,
+  filters, detail, feedback, close controls, and status remain reachable and
+  operable without exposing additional data or creating horizontal page
+  scrolling.
+- **SC-021**: In 100% of non-blank unsubmitted-feedback acceptance cases,
+  lecturer-initiated context replacement requires an explicit discard or
+  cancel decision, cancellation preserves the text without creating feedback,
+  and automatic scope removal discards it only with an explanation and creates
+  no feedback item.
 
 ## Assumptions
 
@@ -720,8 +1046,9 @@ unchanged FS-013 publication rules.
   ambiguous. If session details change while a review remains open, accepted
   feedback uses the session's current state without stale-version
   reconfirmation. Removing every assignment does not end the link: it shows an
-  empty schedule and automatically reflects assignments that return before
-  expiry, revocation, replacement, abandonment, or supersession.
+  empty schedule after reload or reopen and reflects assignments that return on
+  a later reload or reopen before expiry, revocation, replacement, abandonment,
+  or supersession.
 - Feedback is retained with the associated FS-013 revision history. This slice
   introduces no separate deletion or anonymization workflow and no extension
   of revision-history retention.
@@ -744,3 +1071,19 @@ unchanged FS-013 publication rules.
   acceptance reviewers for the moderated success criteria. Automated work may
   finish beforehand, but those criteria cannot be reported as passed without
   actual participants.
+- Restricted mode reuses established FS-014/FS-019 behavior through
+  access-specific composition. Reuse does not mean planner-only data or actions
+  are fetched and merely hidden.
+- The fixed lecturer indicator may adapt visually at different widths, provided
+  its label, value, non-editable meaning, and accessibility remain equivalent.
+- Filter choices are limited to values present in the current lecturer
+  projection. Lifecycle filtering never selects another revision.
+- An authoritative empty projection and a filter-empty result are distinct.
+  Clearing filters cannot restore assignments that have left scope.
+- Unsent feedback text is transient review state. It survives responsive
+  presentation changes while the target remains in scope but is not a
+  persisted draft and cannot be submitted after the target leaves scope.
+- The implemented `CalendarPlanningWorkspace`, list view, filters, session
+  pane, `LecturerReviewManagement` behavior, and FS-019 Schedule navigation are
+  behavioral references; this specification does not create parallel
+  lecturer-specific components.

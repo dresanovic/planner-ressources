@@ -23,7 +23,7 @@ export const SCHEDULE_DESTINATIONS: { id: ScheduleDestination; label: string }[]
   { id: 'calendar', label: 'Calendar' },
   { id: 'versions', label: 'Versions' },
   { id: 'exams', label: 'Exams' },
-  { id: 'reviews', label: 'Lecturer reviews' },
+  { id: 'reviews', label: 'Lecturer coordination' },
 ]
 
 type ApplicationNavigationProps = {

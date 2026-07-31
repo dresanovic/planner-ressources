@@ -38,6 +38,10 @@ from app.schemas.lecturer_review import (
     PlannerReviewOverview,
     PublicReview,
 )
+from app.services.calendar_workspace import (
+    CalendarWorkspaceError,
+    get_calendar_workspace,
+)
 
 
 UTCClock = Callable[[], datetime]
@@ -574,7 +578,7 @@ def submit_lecturer_review_feedback(
             raise LecturerReviewFailure(
                 409,
                 "REVIEW_REFRESH_REQUIRED",
-                "The schedule changed. Refresh the review before submitting feedback.",
+                "The schedule changed. Reload the browser page or reopen the link before submitting feedback.",
             )
         _event(
             db,
@@ -614,7 +618,7 @@ def submit_lecturer_review_feedback(
             raise LecturerReviewFailure(
                 409,
                 "REVIEW_REFRESH_REQUIRED",
-                "The schedule changed. Refresh the review before submitting feedback.",
+                "The schedule changed. Reload the browser page or reopen the link before submitting feedback.",
             )
 
     feedback = LecturerReviewFeedback(
@@ -636,7 +640,7 @@ def submit_lecturer_review_feedback(
         raise LecturerReviewFailure(
             409,
             "REVIEW_REFRESH_REQUIRED",
-            "The schedule changed. Refresh the review before submitting feedback.",
+            "The schedule changed. Reload the browser page or reopen the link before submitting feedback.",
         )
     _event(db, "feedback_accepted", now, link=link, feedback=feedback)
     db.flush()
@@ -770,9 +774,18 @@ def _public_projection(db: Session, link: LecturerReviewLink) -> dict[str, Any]:
     if revision.state in WORKING_STATES:
         courses = _live_public_courses(db, revision.semester_id, link.lecturer_id)
     elif revision.state == "published":
-        courses = _published_public_courses(revision, link.lecturer_id)
+        courses = _published_public_courses(db, revision, link.lecturer_id)
     else:
         raise _public_unavailable()
+    try:
+        workspace = get_calendar_workspace(
+            db, revision.semester_id, revision.id
+        )
+    except CalendarWorkspaceError as exc:
+        raise _public_unavailable() from exc
+    validation_findings = _safe_validation_projection(workspace, courses)
+    validation_availability = _validation_availability(workspace)
+    semester = revision.semester
     return {
         "intendedLecturer": link.intended_lecturer_name,
         "identityDisclaimer": (
@@ -782,6 +795,16 @@ def _public_projection(db: Session, link: LecturerReviewLink) -> dict[str, Any]:
         "revision": _revision_summary(revision),
         "accessExpiresAt": _iso(link.expires_at),
         "timeZone": TIME_ZONE,
+        "semesterStartDate": semester.start_date.isoformat(),
+        "semesterEndDate": semester.end_date.isoformat(),
+        "validationAvailability": validation_availability,
+        "validationFindings": validation_findings,
+        "filterFacets": _public_filter_facets(
+            revision,
+            courses,
+            validation_findings,
+            validation_availability,
+        ),
         "courses": courses,
         "submittedFeedback": [
             _public_feedback(item)
@@ -829,13 +852,18 @@ def _live_public_courses(
                 "sessionRef": f"teaching:{session.id}",
                 "sessionKind": "teaching",
                 "sourceSessionId": session.id,
+                "courseRef": f"course:{course.id}",
                 "sessionType": "Lecture",
                 "date": session.date.isoformat(),
                 "startTime": _clock_text(session.start_time),
                 "endTime": _clock_text(session.end_time),
                 "timeZone": TIME_ZONE,
                 "roomName": room.name,
+                "roomRef": f"room:{room.id}",
                 "cohortName": cohort.name,
+                "teachingUnits": session.units,
+                "examDurationMinutes": None,
+                "validationFindingRefs": [],
             }
         )
     for session in exams:
@@ -850,13 +878,18 @@ def _live_public_courses(
                 "sessionRef": f"exam:{session.id}",
                 "sessionKind": "exam",
                 "sourceSessionId": session.id,
+                "courseRef": f"course:{course.id}",
                 "sessionType": session.exam_type,
                 "date": session.exam_date.isoformat(),
                 "startTime": _clock_text(session.start_time),
                 "endTime": _clock_text(session.end_time),
                 "timeZone": TIME_ZONE,
                 "roomName": room.name,
+                "roomRef": f"room:{room.id}",
                 "cohortName": cohort.name,
+                "teachingUnits": None,
+                "examDurationMinutes": session.duration_minutes,
+                "validationFindingRefs": [],
             }
         )
     for course in grouped.values():
@@ -872,7 +905,7 @@ def _live_public_courses(
 
 
 def _published_public_courses(
-    revision: ScheduleRevision, lecturer_id: int
+    db: Session, revision: ScheduleRevision, lecturer_id: int
 ) -> list[dict[str, Any]]:
     snapshot = revision.snapshot_document
     if not isinstance(snapshot, dict):
@@ -892,8 +925,11 @@ def _published_public_courses(
                 course_id,
                 {
                     "sourceCourseId": course_id,
+                    "courseRef": f"course:{course_id}",
                     "code": f"COURSE-{course_id}",
                     "title": source.get("name"),
+                    "cohortName": cohort.get("name"),
+                    "studyType": source.get("studyType", {}).get("name"),
                     "sessions": [],
                 },
             )
@@ -902,13 +938,18 @@ def _published_public_courses(
                     "sessionRef": f"teaching:{session['sourceSessionId']}",
                     "sessionKind": "teaching",
                     "sourceSessionId": session["sourceSessionId"],
+                    "courseRef": f"course:{course_id}",
                     "sessionType": "Lecture",
                     "date": session["date"],
                     "startTime": _clock_text(session["startTime"]),
                     "endTime": _clock_text(session["endTime"]),
                     "timeZone": TIME_ZONE,
                     "roomName": room.get("name"),
+                    "roomRef": f"room:{room.get('sourceId')}",
                     "cohortName": cohort.get("name"),
+                    "teachingUnits": session.get("units"),
+                    "examDurationMinutes": None,
+                    "validationFindingRefs": [],
                 }
             )
     for exam in snapshot.get("examSessions", []):
@@ -923,8 +964,13 @@ def _published_public_courses(
             course_id,
             {
                 "sourceCourseId": course_id,
+                "courseRef": f"course:{course_id}",
                 "code": f"COURSE-{course_id}",
                 "title": course.get("name"),
+                "cohortName": exam.get("cohort", {}).get("name"),
+                "studyType": _published_study_type(
+                    db, snapshot, course_id
+                ),
                 "sessions": [],
             },
         )
@@ -933,18 +979,31 @@ def _published_public_courses(
                 "sessionRef": f"exam:{exam['sourceExamId']}",
                 "sessionKind": "exam",
                 "sourceSessionId": exam["sourceExamId"],
+                "courseRef": f"course:{course_id}",
                 "sessionType": exam.get("examType") or "Exam",
                 "date": exam["examDate"],
                 "startTime": _clock_text(exam["startTime"]),
                 "endTime": _clock_text(exam["endTime"]),
                 "timeZone": TIME_ZONE,
                 "roomName": exam.get("room", {}).get("name"),
+                "roomRef": f"room:{exam.get('room', {}).get('sourceId')}",
                 "cohortName": exam.get("cohort", {}).get("name"),
+                "teachingUnits": None,
+                "examDurationMinutes": exam.get("durationMinutes"),
+                "validationFindingRefs": [],
             }
         )
     for course in grouped.values():
         if (
-            not isinstance(course.get("title"), str)
+            not all(
+                isinstance(course.get(field), str)
+                for field in (
+                    "courseRef",
+                    "title",
+                    "cohortName",
+                    "studyType",
+                )
+            )
             or any(
                 not all(
                     isinstance(session.get(field), str)
@@ -955,6 +1014,7 @@ def _published_public_courses(
                         "startTime",
                         "endTime",
                         "roomName",
+                        "roomRef",
                         "cohortName",
                     )
                 )
@@ -964,6 +1024,174 @@ def _published_public_courses(
             raise _public_unavailable()
         course["sessions"].sort(key=lambda item: (item["date"], item["startTime"]))
     return [grouped[key] for key in sorted(grouped)]
+
+
+def _published_study_type(
+    db: Session, snapshot: dict[str, Any], course_id: int
+) -> str | None:
+    for source in snapshot.get("courses", []):
+        if source.get("sourceCourseId") == course_id:
+            value = source.get("studyType", {}).get("name")
+            if isinstance(value, str) and value:
+                return value
+    course = db.get(Course, course_id)
+    if course is not None and course.study_type is not None:
+        return course.study_type.name
+    return None
+
+
+_PUBLIC_FINDING_CATEGORIES = {
+    "lecturer_conflict",
+    "room_conflict",
+    "cohort_conflict",
+    "room_capacity",
+    "holiday",
+    "exam_validity",
+}
+
+_PUBLIC_FINDING_MESSAGES = {
+    "lecturer_conflict": "This session overlaps another lecturer assignment.",
+    "room_conflict": "This session overlaps another use of the assigned room.",
+    "cohort_conflict": "This session overlaps another assignment for the cohort.",
+    "room_capacity": "The assigned room may not have enough capacity.",
+    "holiday": "This session falls on an institution holiday.",
+    "exam_validity": "This exam needs review against the current exam rules.",
+    "other": "This session has a current validation item to review.",
+}
+
+
+def _safe_validation_projection(
+    workspace: dict[str, Any],
+    courses: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    sessions = [
+        session for course in courses for session in course["sessions"]
+    ]
+    scoped_refs = {session["sessionRef"] for session in sessions}
+    finding_refs_by_session: dict[str, list[str]] = {
+        ref: [] for ref in scoped_refs
+    }
+    safe_findings: list[dict[str, Any]] = []
+    for finding in workspace.get("validationFindings", []):
+        affected = sorted(
+            scoped_refs.intersection(
+                finding.get("affectedOccurrenceRefs", [])
+            )
+        )
+        if not affected:
+            continue
+        category = finding.get("category")
+        if category not in _PUBLIC_FINDING_CATEGORIES:
+            category = "other"
+        source_ref = str(finding.get("findingRef", "finding"))
+        digest = hashlib.sha256(
+            f"{source_ref}|{'|'.join(affected)}".encode("utf-8")
+        ).hexdigest()[:20]
+        safe_ref = f"public-finding:{digest}"
+        safe_findings.append(
+            {
+                "findingRef": safe_ref,
+                "category": category,
+                "message": _PUBLIC_FINDING_MESSAGES[category],
+                "affectedSessionRefs": affected,
+            }
+        )
+        for session_ref in affected:
+            finding_refs_by_session[session_ref].append(safe_ref)
+    safe_findings.sort(key=lambda row: row["findingRef"])
+    for session in sessions:
+        session["validationFindingRefs"] = sorted(
+            finding_refs_by_session[session["sessionRef"]]
+        )
+    return safe_findings
+
+
+def _validation_availability(workspace: dict[str, Any]) -> str:
+    status = (
+        workspace.get("sectionStatus", {})
+        .get("validationFindings", {})
+        .get("availability")
+    )
+    if status == "available":
+        return "complete"
+    if status == "partial":
+        return "partial"
+    return "unavailable"
+
+
+def _public_filter_facets(
+    revision: ScheduleRevision,
+    courses: list[dict[str, Any]],
+    findings: list[dict[str, Any]],
+    validation_availability: str,
+) -> dict[str, list[dict[str, str]]]:
+    sessions = [
+        session for course in courses for session in course["sessions"]
+    ]
+
+    def facets(values: list[tuple[str, str]]) -> list[dict[str, str]]:
+        return [
+            {"value": value, "label": label}
+            for value, label in sorted(set(values), key=lambda item: item[1])
+        ]
+
+    validation_values = [
+        (
+            finding["category"],
+            finding["category"].replace("_", " ").title(),
+        )
+        for finding in findings
+    ]
+    if (
+        validation_availability == "complete"
+        and any(not session["validationFindingRefs"] for session in sessions)
+    ):
+        validation_values.append(("none", "No current issue"))
+    return {
+        "courses": facets(
+            [
+                (
+                    course["courseRef"],
+                    f"{course['code']} — {course['title']}",
+                )
+                for course in courses
+            ]
+        ),
+        "cohorts": facets(
+            [
+                (course["cohortName"], course["cohortName"])
+                for course in courses
+            ]
+        ),
+        "rooms": facets(
+            [
+                (session["roomRef"], session["roomName"])
+                for session in sessions
+            ]
+        ),
+        "studyTypes": facets(
+            [
+                (course["studyType"], course["studyType"])
+                for course in courses
+            ]
+        ),
+        "sessionTypes": facets(
+            [
+                (
+                    session["sessionKind"],
+                    session["sessionKind"].title(),
+                )
+                for session in sessions
+            ]
+        ),
+        "lifecycleContexts": [
+            {
+                "value": revision.state,
+                "label": revision.state.replace("_", " ").title(),
+            }
+        ],
+        "validationCategories": facets(validation_values),
+    }
 
 
 def _link_is_usable(db: Session, link: LecturerReviewLink, now: datetime) -> bool:
@@ -1128,17 +1356,36 @@ def _current_session_context(
             "timeZone": TIME_ZONE,
             "roomName": room.name,
             "cohortName": cohort.name,
+            "studyType": course.study_type.name,
+            "teachingUnits": (
+                session.units if session_kind == "teaching" else None
+            ),
+            "examDurationMinutes": (
+                session.duration_minutes if session_kind == "exam" else None
+            ),
         }
     if revision.state != "published":
         return None
-    for course in _published_public_courses(revision, link.lecturer_id):
+    for course in _published_public_courses(db, revision, link.lecturer_id):
         for session in course["sessions"]:
             if session["sessionRef"] == f"{session_kind}:{source_session_id}":
                 return {
-                    **session,
+                    "sessionRef": session["sessionRef"],
+                    "sessionKind": session["sessionKind"],
+                    "sourceSessionId": session["sourceSessionId"],
+                    "sessionType": session["sessionType"],
                     "courseSourceId": course["sourceCourseId"],
                     "courseCode": course["code"],
                     "courseTitle": course["title"],
+                    "date": session["date"],
+                    "startTime": session["startTime"],
+                    "endTime": session["endTime"],
+                    "timeZone": session["timeZone"],
+                    "roomName": session["roomName"],
+                    "cohortName": session["cohortName"],
+                    "studyType": course["studyType"],
+                    "teachingUnits": session["teachingUnits"],
+                    "examDurationMinutes": session["examDurationMinutes"],
                 }
     return None
 
@@ -1232,12 +1479,31 @@ def _normalize_source_host(host: str) -> str:
 def _resolve_link(db: Session, secret: str) -> LecturerReviewLink | None:
     if not TOKEN_SHAPE.fullmatch(secret):
         return None
-    digest = hashlib.sha256(secret.encode("ascii")).hexdigest()
+    digest = _secret_digest(secret)
     return db.scalar(
         select(LecturerReviewLink).where(
             LecturerReviewLink.secret_digest == digest
         )
     )
+
+
+def is_stored_lecturer_review_secret(db: Session, secret: str) -> bool:
+    """Classify a bearer without changing link state or recording activity."""
+
+    if not TOKEN_SHAPE.fullmatch(secret):
+        return False
+    return (
+        db.scalar(
+            select(LecturerReviewLink.id).where(
+                LecturerReviewLink.secret_digest == _secret_digest(secret)
+            )
+        )
+        is not None
+    )
+
+
+def _secret_digest(secret: str) -> str:
+    return hashlib.sha256(secret.encode("ascii")).hexdigest()
 
 
 def _materialize_due_expiry(
@@ -1370,7 +1636,13 @@ def _course_identity(course: Course | None) -> dict[str, Any]:
 
 
 def _public_course(course: Course) -> dict[str, Any]:
-    return {**_course_identity(course), "sessions": []}
+    return {
+        **_course_identity(course),
+        "courseRef": f"course:{course.id}",
+        "cohortName": course.cohort.name,
+        "studyType": course.study_type.name,
+        "sessions": [],
+    }
 
 
 def _link_summary(link: LecturerReviewLink, now: datetime) -> dict[str, Any]:
@@ -1459,7 +1731,9 @@ def _current_session_exists(
     if revision.state == "published":
         return any(
             session["sessionRef"] == session_ref
-            for course in _published_public_courses(revision, link.lecturer_id)
+            for course in _published_public_courses(
+                db, revision, link.lecturer_id
+            )
             for session in course["sessions"]
         )
     kind, raw_id = session_ref.split(":", 1)

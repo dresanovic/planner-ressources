@@ -26,6 +26,9 @@ const mocks = vi.hoisted(() => ({
   getScheduleRevision: vi.fn(),
   getCalendarWorkspace: vi.fn(),
   getLecturerReviewOverview: vi.fn(),
+  issueLecturerReviewLink: vi.fn(),
+  revokeLecturerReviewLink: vi.fn(),
+  replaceLecturerReviewLink: vi.fn(),
 }))
 
 vi.mock('../api/planningOptions', () => ({ getPlanningOptions: mocks.getPlanningOptions }))
@@ -65,15 +68,19 @@ vi.mock('../api/calendarWorkspace', async (importOriginal) => ({
 vi.mock('../api/lecturerReview', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../api/lecturerReview')>()),
   getLecturerReviewOverview: mocks.getLecturerReviewOverview,
+  issueLecturerReviewLink: mocks.issueLecturerReviewLink,
+  revokeLecturerReviewLink: mocks.revokeLecturerReviewLink,
+  replaceLecturerReviewLink: mocks.replaceLecturerReviewLink,
 }))
 
 import { CourseSchedulePage } from './CourseSchedulePage'
 import type { ScheduleDestination } from '../components/ApplicationNavigation'
+import type { IssuedLecturerReviewLink } from '../api/lecturerReview'
 import { calendarWorkspaceMatchesSelection } from './calendarWorkspaceSelection'
 import { draftScheduleFixture, generationConstraintsFixture } from '../test/draftScheduleFixtures'
 import { lifecycleOverviewFixture, snapshotFixture } from '../test/lifecycleFixtures'
 import { loadedCalendarWorkspaceFixture, noRevisionWorkspaceFixture } from '../test/calendarWorkspaceFixtures'
-import { plannerLecturerReviewOverviewFixture } from '../test/lecturerReviewFixtures'
+import { issuedLecturerReviewLinkFixture, plannerLecturerReviewOverviewFixture } from '../test/lecturerReviewFixtures'
 
 function deferred<Value>() {
   let resolve!: (value: Value) => void
@@ -274,6 +281,7 @@ beforeEach(() => {
   mocks.getLecturerReviewOverview.mockImplementation((revisionId: number) =>
     Promise.resolve(lecturerReviewOverviewForRevision(revisionId)),
   )
+  mocks.issueLecturerReviewLink.mockResolvedValue(issuedLecturerReviewLinkFixture())
 })
 
 afterEach(() => { document.body.innerHTML = '' })
@@ -347,7 +355,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(document.querySelectorAll('.calendar-workspace')).not.toHaveLength(0)
   })
 
-  it('preserves the selected schedule revision when opening Lecturer reviews', async () => {
+  it('preserves the selected schedule revision when opening Lecturer coordination', async () => {
     const lifecycle = lifecycleWithWorkingAndPublished()
     mocks.getScheduleLifecycle.mockResolvedValue(lifecycle)
     mocks.getScheduleRevision.mockResolvedValue({
@@ -385,6 +393,104 @@ describe('CourseSchedulePage multi-course mode', () => {
       document.querySelector<HTMLElement>('.lecturer-reviews-region')?.hidden,
     ).toBe(false)
     expect(document.body.textContent).toContain('Published R2')
+  })
+
+  it('never renders coordination data from the previously selected revision', async () => {
+    const lifecycle = lifecycleWithWorkingAndPublished()
+    const publishedRequest = deferred<ReturnType<typeof lecturerReviewOverviewForRevision>>()
+    mocks.getScheduleLifecycle.mockResolvedValue(lifecycle)
+    mocks.getScheduleRevision.mockResolvedValue({
+      revision: lifecycle.currentPublication,
+      contentSource: 'captured_snapshot',
+      snapshot: snapshotFixture(),
+    })
+    mocks.getLecturerReviewOverview.mockImplementation((revisionId: number) =>
+      revisionId === 12
+        ? publishedRequest.promise
+        : Promise.resolve(lecturerReviewOverviewForRevision(revisionId)),
+    )
+    await renderPage('reviews')
+    expect(document.querySelector('.lecturer-review-management')?.textContent)
+      .toContain('Could this session start at 10:00?')
+
+    await act(async () => {
+      const revisionSelect = [...document.querySelectorAll<HTMLSelectElement>(
+        '.schedule-context-field select',
+      )][1]
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')
+        ?.set?.call(revisionSelect, '12')
+      revisionSelect.dispatchEvent(new Event('change', { bubbles: true }))
+      await Promise.resolve()
+    })
+
+    expect(document.querySelector('.lecturer-review-management')).toBeNull()
+    expect(document.body.textContent).toContain('Loading lecturer coordination')
+
+    await act(async () => {
+      publishedRequest.resolve(lecturerReviewOverviewForRevision(12))
+      await publishedRequest.promise
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(document.querySelector('.lecturer-review-management')?.textContent)
+      .toContain('Published R2')
+  })
+
+  it('ignores a completed coordination mutation after the selected revision changes', async () => {
+    const lifecycle = lifecycleWithWorkingAndPublished()
+    const issueRequest = deferred<IssuedLecturerReviewLink>()
+    const issued = issuedLecturerReviewLinkFixture()
+    mocks.getScheduleLifecycle.mockResolvedValue(lifecycle)
+    mocks.getScheduleRevision.mockResolvedValue({
+      revision: lifecycle.currentPublication,
+      contentSource: 'captured_snapshot',
+      snapshot: snapshotFixture(),
+    })
+    mocks.issueLecturerReviewLink.mockReturnValueOnce(issueRequest.promise)
+    await renderPage('reviews')
+
+    await act(async () => {
+      const lecturer = document.querySelector<HTMLSelectElement>(
+        '#lecturer-review-lecturer',
+      )!
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')
+        ?.set?.call(lecturer, '8')
+      lecturer.dispatchEvent(new Event('change', { bubbles: true }))
+      await Promise.resolve()
+    })
+    await act(async () => {
+      button('Issue review link')?.click()
+      await Promise.resolve()
+    })
+
+    await act(async () => {
+      const revisionSelect = [...document.querySelectorAll<HTMLSelectElement>(
+        '.schedule-context-field select',
+      )][1]
+      Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')
+        ?.set?.call(revisionSelect, '12')
+      revisionSelect.dispatchEvent(new Event('change', { bubbles: true }))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(document.querySelector('.lecturer-review-management')?.textContent)
+      .toContain('Published R2')
+
+    await act(async () => {
+      issueRequest.resolve({
+        ...issued,
+        issuedLink: { ...issued.issuedLink, revisionId: 11 },
+        overview: lecturerReviewOverviewForRevision(11),
+      })
+      await issueRequest.promise
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.querySelector('.lecturer-review-management')?.textContent)
+      .toContain('Published R2')
+    expect(document.body.textContent).not.toContain('Loading lecturer coordination')
+    expect(document.body.textContent).not.toContain(issued.secret)
+    expect(document.body.textContent).not.toContain(
+      'Review link issued. Copy it now',
+    )
   })
 
   it('guards a feedback session jump and then opens its authoritative Calendar occurrence', async () => {
@@ -454,6 +560,28 @@ describe('CourseSchedulePage multi-course mode', () => {
         '[data-occurrence-ref="exam:1"]',
       )?.getAttribute('aria-pressed'),
     ).toBe('true')
+  })
+
+  it('announces and focuses Calendar results when a feedback target no longer exists', async () => {
+    mocks.getLecturerReviewOverview.mockResolvedValue(
+      lecturerReviewOverviewForRevision(11, 'exam:999'),
+    )
+    await renderNavigationHarness()
+    await act(async () => {
+      button('Show lecturer reviews')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    await act(async () => {
+      button('Open current session')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.querySelector('.session-pane')).toBeNull()
+    expect(document.querySelector('.calendar-navigation-status')?.textContent)
+      .toContain('The current session is no longer available in this revision.')
+    expect(document.activeElement?.hasAttribute('data-workspace-results-heading'))
+      .toBe(true)
   })
 
   it('hides Planning inputs independently without hiding the compact context', async () => {

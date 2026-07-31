@@ -156,6 +156,71 @@ describe('lecturer review API', () => {
     }
   })
 
+  it('rejects nested public privacy canaries while accepting nullable historical context', async () => {
+    const unsafeCourse = structuredClone(publicLecturerReviewFixture())
+    Object.assign(unsafeCourse.courses[0], {
+      lecturerIds: [7],
+      plannerNotes: ['private'],
+    })
+    const historical = structuredClone(plannerLecturerReviewOverviewFixture())
+    const context = historical.feedbackGroups.find(
+      (group) => group.sessionContext !== null,
+    )?.sessionContext
+    if (context) {
+      Object.assign(
+        context as unknown as Record<string, unknown>,
+        {
+          studyType: null,
+          teachingUnits: null,
+          examDurationMinutes: null,
+        },
+      )
+    }
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(unsafeCourse), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(historical), { status: 200 }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      getPublicLecturerReview(LECTURER_REVIEW_SECRET_CANARY),
+    ).rejects.toMatchObject({ status: 502 })
+    await expect(getLecturerReviewOverview(15)).resolves.toEqual(historical)
+  })
+
+  it('rejects internally inconsistent public projection references and kind metadata', async () => {
+    const mismatchedCourse = structuredClone(publicLecturerReviewFixture())
+    mismatchedCourse.courses[0].sessions[0].courseRef = 'course:999'
+    const invalidKindMetadata = structuredClone(publicLecturerReviewFixture())
+    invalidKindMetadata.courses[0].sessions[0].teachingUnits = null
+    const missingFinding = structuredClone(publicLecturerReviewFixture())
+    missingFinding.courses[0].sessions[0].validationFindingRefs = [
+      'public-finding:missing',
+    ]
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(mismatchedCourse), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(invalidKindMetadata), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(missingFinding), { status: 200 }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await expect(
+        getPublicLecturerReview(LECTURER_REVIEW_SECRET_CANARY),
+      ).rejects.toMatchObject({ status: 502 })
+    }
+  })
+
   it('never copies a bearer secret or unsafe server detail into routine errors', async () => {
     const unsafeServerMessage =
       `Unexpected failure for ${LECTURER_REVIEW_SECRET_CANARY}`

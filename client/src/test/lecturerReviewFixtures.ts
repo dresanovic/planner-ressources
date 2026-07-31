@@ -37,6 +37,9 @@ export function lecturerReviewSessionContextFixture() {
     timeZone: TIME_ZONE,
     roomName: 'Room A-101',
     cohortName: 'CS-26',
+    studyType: 'Full-time',
+    teachingUnits: 3,
+    examDurationMinutes: null,
   }
 }
 
@@ -93,48 +96,111 @@ export function publicLecturerReviewFixture() {
     revision: lecturerReviewRevisionFixture(),
     accessExpiresAt: EXPIRES_AT,
     timeZone: TIME_ZONE,
+    semesterStartDate: '2026-09-01',
+    semesterEndDate: '2026-12-20',
+    validationAvailability: 'complete' as const,
+    validationFindings: [
+      {
+        findingRef: 'public-finding:room-capacity',
+        category: 'room_capacity' as const,
+        message: 'The assigned room may not have enough capacity.',
+        affectedSessionRefs: ['exam:202'],
+      },
+    ],
+    filterFacets: {
+      courses: [
+        { value: 'course:42', label: 'COURSE-42 — Algorithms' },
+        { value: 'course:43', label: 'COURSE-43 — Data Structures' },
+      ],
+      cohorts: [{ value: 'CS-26', label: 'CS-26' }],
+      rooms: [
+        { value: 'room:101', label: 'Room A-101' },
+        { value: 'room:202', label: 'Auditorium B' },
+      ],
+      studyTypes: [{ value: 'Full-time', label: 'Full-time' }],
+      sessionTypes: [
+        { value: 'exam', label: 'Exam' },
+        { value: 'teaching', label: 'Teaching' },
+      ],
+      lifecycleContexts: [
+        { value: 'ready_for_review', label: 'Ready For Review' },
+      ],
+      validationCategories: [
+        { value: 'none', label: 'No current issue' },
+        { value: 'room_capacity', label: 'Room Capacity' },
+      ],
+    },
     courses: [
       {
         sourceCourseId: 42,
+        courseRef: 'course:42',
         code: 'COURSE-42',
         title: 'Algorithms',
+        cohortName: 'CS-26',
+        studyType: 'Full-time',
         sessions: [
           {
             sessionRef: 'teaching:101',
             sessionKind: 'teaching' as const,
             sourceSessionId: 101,
+            courseRef: 'course:42',
             sessionType: 'Lecture',
             date: '2026-10-05',
             startTime: '09:00',
             endTime: '11:25',
             timeZone: TIME_ZONE,
             roomName: 'Room A-101',
+            roomRef: 'room:101',
             cohortName: 'CS-26',
+            teachingUnits: 3,
+            examDurationMinutes: null,
+            validationFindingRefs: [],
           },
         ],
       },
       {
         sourceCourseId: 43,
+        courseRef: 'course:43',
         code: 'COURSE-43',
         title: 'Data Structures',
+        cohortName: 'CS-26',
+        studyType: 'Full-time',
         sessions: [
           {
             sessionRef: 'exam:202',
             sessionKind: 'exam' as const,
             sourceSessionId: 202,
+            courseRef: 'course:43',
             sessionType: 'Written exam',
             date: '2026-12-14',
             startTime: '13:00',
             endTime: '15:00',
             timeZone: TIME_ZONE,
             roomName: 'Auditorium B',
+            roomRef: 'room:202',
             cohortName: 'CS-26',
+            teachingUnits: null,
+            examDurationMinutes: 120,
+            validationFindingRefs: ['public-finding:room-capacity'],
           },
         ],
       },
     ],
     submittedFeedback: publicLecturerFeedbackFixture(),
   }
+}
+
+export function longLabelPublicLecturerReviewFixture() {
+  const value = publicLecturerReviewFixture()
+  value.intendedLecturer =
+    'Dr Ada Lecturer with a deliberately long fixed-context display name'
+  value.identityDisclaimer =
+    'This link is intended for Dr Ada Lecturer with a deliberately long fixed-context display name; it does not authenticate the person using it.'
+  value.courses[0].title =
+    'Algorithms and computational problem solving across extended programme titles'
+  value.courses[0].sessions[0].roomName =
+    'Building North, fourth floor, seminar room with a deliberately long name'
+  return value
 }
 
 export function plannerLecturerReviewOverviewFixture() {
@@ -236,6 +302,9 @@ export function plannerLecturerReviewOverviewFixture() {
           timeZone: TIME_ZONE,
           roomName: 'Auditorium B',
           cohortName: 'CS-26',
+          studyType: 'Full-time',
+          teachingUnits: null,
+          examDurationMinutes: 120,
         },
         currentNavigation: {
           revisionId: 15,
@@ -265,6 +334,9 @@ export function plannerLecturerReviewOverviewFixture() {
               timeZone: TIME_ZONE,
               roomName: 'Auditorium B',
               cohortName: 'CS-26',
+              studyType: 'Full-time',
+              teachingUnits: null,
+              examDurationMinutes: 120,
             },
             submittedAt: '2026-09-28T09:40:00Z',
             timeZone: TIME_ZONE,
@@ -329,7 +401,7 @@ export const lecturerReviewPublicErrorFixtures = {
   refreshRequired: {
     code: 'REVIEW_REFRESH_REQUIRED',
     message:
-      'The schedule changed. Refresh the review before submitting feedback.',
+      'The schedule changed. Reload the browser page or reopen the link before submitting feedback.',
   },
   invalidFeedback: {
     code: 'INVALID_FEEDBACK',

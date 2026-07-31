@@ -44,7 +44,7 @@ export function ScheduleContextHeader({
       <div className="schedule-context-controls">
         <ContextSelect label="Semester" value={semesterId} options={semesters} onChange={onSemesterChange} />
         {destination !== 'exams' && <ContextSelect label="Revision" value={revisionId} options={revisions} onChange={onRevisionChange} emptyLabel="No revision available" />}
-        {destination !== 'versions' && <ContextSelect label="Course" value={courseId} options={courses} onChange={onCourseChange} emptyLabel="No course available" />}
+        {destination !== 'versions' && destination !== 'reviews' && <ContextSelect label="Course" value={courseId} options={courses} onChange={onCourseChange} emptyLabel="No course available" />}
       </div>
     </section>
   )
@@ -82,5 +82,6 @@ function ContextSelect({
 function destinationLabel(destination: ScheduleDestination) {
   if (destination === 'versions') return 'Versions'
   if (destination === 'exams') return 'Exams'
+  if (destination === 'reviews') return 'Lecturer coordination'
   return 'Calendar'
 }

@@ -112,7 +112,9 @@ def get_calendar_workspace(
             .order_by(InstitutionHoliday.date, InstitutionHoliday.id)
         )
     ]
-    findings = _derive_findings(db, courses, occurrences, holidays)
+    findings = derive_calendar_validation_findings(
+        db, courses, occurrences, holidays
+    )
     course_refs = {row["courseRef"] for row in courses}
     outcomes = [
         row for row in _outcomes(db, selected.id) if row["courseRef"] in course_refs
@@ -553,12 +555,14 @@ def _published_content(
     )
 
 
-def _derive_findings(
+def derive_calendar_validation_findings(
     db: Session,
     courses: list[dict[str, Any]],
     occurrences: list[dict[str, Any]],
     holidays: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
+    """Derive FS-014 findings for the complete selected revision."""
+
     findings: list[dict[str, Any]] = []
     course_by_ref = {row["courseRef"]: row for row in courses}
     occurrence_by_ref = {

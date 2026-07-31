@@ -131,6 +131,9 @@ class SessionContext(LecturerReviewModel):
     time_zone: str = Field(min_length=1)
     room_name: str = Field(min_length=1)
     cohort_name: str = Field(min_length=1)
+    study_type: str | None = None
+    teaching_units: int | None = Field(default=None, ge=1)
+    exam_duration_minutes: int | None = Field(default=None, ge=1)
 
 
 class PlannerFeedbackItem(LecturerReviewModel):
@@ -203,20 +206,58 @@ class PublicSession(LecturerReviewModel):
     session_ref: str = Field(pattern=r"^(teaching|exam):[1-9][0-9]*$")
     session_kind: SessionKind
     source_session_id: int = Field(ge=1)
+    course_ref: str = Field(pattern=r"^course:[1-9][0-9]*$")
     session_type: str = Field(min_length=1)
     date: date
     start_time: str = Field(min_length=1)
     end_time: str = Field(min_length=1)
     time_zone: str = Field(min_length=1)
     room_name: str = Field(min_length=1)
+    room_ref: str = Field(pattern=r"^room:[1-9][0-9]*$")
     cohort_name: str = Field(min_length=1)
+    teaching_units: int | None = Field(default=None, ge=1)
+    exam_duration_minutes: int | None = Field(default=None, ge=1)
+    validation_finding_refs: list[str]
 
 
 class PublicCourse(LecturerReviewModel):
     source_course_id: int = Field(ge=1)
+    course_ref: str = Field(pattern=r"^course:[1-9][0-9]*$")
     code: str = Field(min_length=1)
     title: str = Field(min_length=1)
+    cohort_name: str = Field(min_length=1)
+    study_type: str = Field(min_length=1)
     sessions: list[PublicSession]
+
+
+class PublicValidationFinding(LecturerReviewModel):
+    finding_ref: str = Field(min_length=1)
+    category: Literal[
+        "lecturer_conflict",
+        "room_conflict",
+        "cohort_conflict",
+        "room_capacity",
+        "holiday",
+        "exam_validity",
+        "other",
+    ]
+    message: str = Field(min_length=1)
+    affected_session_refs: list[str]
+
+
+class PublicFacetValue(LecturerReviewModel):
+    value: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+
+
+class PublicFilterFacets(LecturerReviewModel):
+    courses: list[PublicFacetValue]
+    cohorts: list[PublicFacetValue]
+    rooms: list[PublicFacetValue]
+    study_types: list[PublicFacetValue]
+    session_types: list[PublicFacetValue]
+    lifecycle_contexts: list[PublicFacetValue] = Field(max_length=1)
+    validation_categories: list[PublicFacetValue]
 
 
 class PublicFeedbackItem(LecturerReviewModel):
@@ -237,6 +278,11 @@ class PublicReview(LecturerReviewModel):
     revision: RevisionSummary
     access_expires_at: datetime
     time_zone: str = Field(min_length=1)
+    semester_start_date: date
+    semester_end_date: date
+    validation_availability: FeedbackAvailability
+    validation_findings: list[PublicValidationFinding]
+    filter_facets: PublicFilterFacets
     courses: list[PublicCourse]
     submitted_feedback: list[PublicFeedbackItem]
 
@@ -311,8 +357,8 @@ class PublicThrottledError(LecturerReviewModel):
 class PublicRefreshRequiredError(LecturerReviewModel):
     code: Literal["REVIEW_REFRESH_REQUIRED"] = "REVIEW_REFRESH_REQUIRED"
     message: Literal[
-        "The schedule changed. Refresh the review before submitting feedback."
-    ] = "The schedule changed. Refresh the review before submitting feedback."
+        "The schedule changed. Reload the browser page or reopen the link before submitting feedback."
+    ] = "The schedule changed. Reload the browser page or reopen the link before submitting feedback."
 
 
 class PublicValidationError(LecturerReviewModel):

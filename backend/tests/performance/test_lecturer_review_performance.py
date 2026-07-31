@@ -6,6 +6,7 @@ import sqlite3
 import sys
 from datetime import date, time, timedelta
 from time import perf_counter
+from typing import cast
 from uuid import UUID
 
 import sqlalchemy
@@ -24,7 +25,7 @@ from app.models.planning import (
     ExamSession,
     LecturerReviewFeedback,
 )
-from app.schemas.lecturer_review import FeedbackInput
+from app.schemas.lecturer_review import FeedbackInput, FeedbackKind
 from app.services.lecturer_review import (
     issue_lecturer_review_link,
     submit_lecturer_review_feedback,
@@ -121,7 +122,7 @@ def test_reference_scale_service_and_api_performance_guards(tmp_path, monkeypatc
                 secret,
                 FeedbackInput(
                     client_submission_id=UUID(int=20_000 + trial),
-                    kind="revision_comment",
+                    kind=FeedbackKind.REVISION_COMMENT,
                     comment=f"Measured recommendation {trial + 1}.",
                 ),
                 clock=clock,
@@ -219,19 +220,19 @@ def _seed_reference_scope(db: Session) -> str:
     )
     db.commit()
 
-    sessions = [
+    sessions: list[tuple[str, int, date, str]] = [
         ("teaching", item.id, item.date, "Lecture")
         for item in db.scalars(select(DraftSession).order_by(DraftSession.id))
     ]
-    sessions.extend(
+    sessions.extend([
         (
             "exam",
             item.id,
             item.exam_date,
-            item.exam_type,
+            cast(str, item.exam_type),
         )
         for item in db.scalars(select(ExamSession).order_by(ExamSession.id))
-    )
+    ])
     course = db.get(Course, 1)
     cohort = db.get(Cohort, 1)
     assert course is not None and cohort is not None
@@ -299,7 +300,7 @@ def _timed_submission(
         secret,
         FeedbackInput(
             client_submission_id=UUID(int=submission_number),
-            kind="revision_comment",
+            kind=FeedbackKind.REVISION_COMMENT,
             comment=f"Warm-up recommendation {submission_number}.",
         ),
         clock=clock,

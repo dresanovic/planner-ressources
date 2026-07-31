@@ -20,6 +20,7 @@ import {
   sortSessionsChronologically,
 } from './scheduleReviewUtils'
 import { TeachingSessionEditor } from './TeachingSessionEditor'
+import { ScheduleOccurrenceRow } from './ScheduleOccurrenceList'
 import {
   buildTeachingSessionEditModels,
   createTeachingSessionDraft,
@@ -245,44 +246,43 @@ function DraftSchedulePanelStateful({
                  {!readOnly && <span>Actions</span>}
               </div>
               {visibleSessions.map((session) => (
+                editingSessionId === session.id && editDraft ? (
                 <div className="session-row" key={`${session.draftScheduleId}-${session.id}`}>
-                  {editingSessionId === session.id && editDraft ? (
-                    <TeachingSessionEditor
-                      session={session}
-                      draft={editDraft}
-                      isSaving={isSavingEdit}
-                      isDisabled={isBusy}
-                      errors={editErrors}
-                      onChange={setEditDraft}
-                      onCancel={closeEdit}
-                      onSave={saveEdit}
-                    />
-                  ) : (
-                    <>
-                      <span>
-                        {session.date}
-                        <SessionAlerts alerts={session.validationAlerts} />
-                      </span>
-                      <span>
-                        {session.startTime}-{session.endTime}
-                      </span>
-                      <span>{derivedLengthLabel(session.startTime, session.endTime)}</span>
-                      <span>{session.context.course.name}</span>
-                      <span>{session.context.cohort.name}</span>
-                      <span>{resourceLabel(session.lecturer)}</span>
-                      <span>{resourceLabel(session.room)}</span>
-                      <span>{session.context.studyType.name}</span>
-                      {!readOnly && <span className="session-actions">
-                        <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
-                          Edit
-                        </button>
-                        <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>
-                          Delete
-                        </button>
-                      </span>}
-                    </>
-                  )}
+                  <TeachingSessionEditor
+                    session={session}
+                    draft={editDraft}
+                    isSaving={isSavingEdit}
+                    isDisabled={isBusy}
+                    errors={editErrors}
+                    onChange={setEditDraft}
+                    onCancel={closeEdit}
+                    onSave={saveEdit}
+                  />
                 </div>
+                ) : (
+                  <ScheduleOccurrenceRow
+                    className="session-row"
+                    occurrenceRef={`teaching:${session.id}`}
+                    kind="teaching"
+                    key={`${session.draftScheduleId}-${session.id}`}
+                  >
+                    <span>
+                      {session.date}
+                      <SessionAlerts alerts={session.validationAlerts} />
+                    </span>
+                    <span>{session.startTime}-{session.endTime}</span>
+                    <span>{derivedLengthLabel(session.startTime, session.endTime)}</span>
+                    <span>{session.context.course.name}</span>
+                    <span>{session.context.cohort.name}</span>
+                    <span>{resourceLabel(session.lecturer)}</span>
+                    <span>{resourceLabel(session.room)}</span>
+                    <span>{session.context.studyType.name}</span>
+                    {!readOnly && <span className="session-actions">
+                      <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>Edit</button>
+                      <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>Delete</button>
+                    </span>}
+                  </ScheduleOccurrenceRow>
+                )
               ))}
             </div>
           ) : (
@@ -324,14 +324,14 @@ function DraftSchedulePanelStateful({
           {visibleExams.length > 0 && (
             <div className="session-table exam-session-table" aria-label="Exam sessions">
               <div className="session-row exam-session-row session-header"><span>Kind</span><span>Date and time</span><span>Lifecycle</span><span>Exam</span><span>Course</span><span>Cohort</span><span>Lecturer</span><span>Room</span>{!readOnly && <span>Actions</span>}</div>
-              {visibleExams.map((exam) => <div className="session-row exam-session-row" key={`exam-${exam.id}`}>
+              {visibleExams.map((exam) => <ScheduleOccurrenceRow className="session-row exam-session-row" occurrenceRef={`exam:${exam.id}`} kind="exam" key={`exam-${exam.id}`}>
                 <span><strong>Exam</strong>{exam.source === 'generated' ? ' · Generated' : ' · Manual'}</span>
                 <span>{exam.date}<br/>{exam.startTime}-{exam.endTime} ({exam.durationMinutes} min)</span>
                 <span className={`exam-lifecycle ${exam.lifecycleStatus}`}>{exam.lifecycleStatus === 'active' ? 'Active' : 'Past'}</span>
                 <span>{exam.configurationIdentifier}<br/>{exam.examType}<small>Recommended {exam.recommendedStartDate}–{exam.recommendedEndDate}{exam.recommendationWasOverridden ? ' (planner override)' : ''}</small><small>Final teaching {exam.finalTeachingAnchor.date} at {exam.finalTeachingAnchor.endTime}</small>{exam.outsideRecommendedWindow && <small className="soft-notice"> Outside recommended window</small>}{exam.validityIssues.map((issue, index) => <small className="validation-alert" key={`${issue.code}-${index}`}>{issue.code.replaceAll('_', ' ')}: {issue.message}</small>)}</span>
                 <span>{examCourseNames[exam.courseId] ?? `Course #${exam.courseId}`}</span><span>{exam.cohort.name}</span><span>{resourceLabel(exam.lecturer)}</span><span>{resourceLabel(exam.room)} · capacity {exam.room.capacity}/{exam.requiredCapacity} required</span>
                 {!readOnly && <span className="session-actions"><button type="button" className="secondary-button compact-button" disabled={isBusy} onClick={()=>onEditExam?.(exam)}>Edit</button><button type="button" className="destructive-button compact-button" disabled={isBusy} onClick={()=>onDeleteExam?.(exam)}>Delete</button></span>}
-              </div>)}
+              </ScheduleOccurrenceRow>)}
             </div>
           )}
         </>

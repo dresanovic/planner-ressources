@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { loadedCalendarWorkspaceFixture } from '../test/calendarWorkspaceFixtures'
+import { publicLecturerReviewFixture } from '../test/lecturerReviewFixtures'
 import type { LoadedCalendarWorkspace } from '../api/calendarWorkspace'
 import {
   currentPeriodDate,
+  adaptLecturerReviewToWorkspace,
   movePeriod,
   projectWorkspace,
   visibleRange,
@@ -11,6 +13,56 @@ import {
 
 
 describe('calendarWorkspaceUtils', () => {
+  it('adapts the strict public DTO once into a restricted shared workspace', () => {
+    const review = publicLecturerReviewFixture()
+
+    const workspace = adaptLecturerReviewToWorkspace(review)
+
+    expect(workspace.occurrences.map((item) => item.occurrenceRef)).toEqual([
+      'teaching:101',
+      'exam:202',
+    ])
+    expect(workspace.filterFacets.lecturers).toEqual([])
+    expect(workspace.filterFacets.courses).toEqual(review.filterFacets.courses)
+    expect(workspace.validationFindings[0]).toMatchObject({
+      findingRef: 'public-finding:room-capacity',
+      affectedOccurrenceRefs: ['exam:202'],
+      details: {
+        kind: 'other',
+        issueCode: 'The assigned room may not have enough capacity.',
+      },
+    })
+    expect(workspace.selectedRevision).toMatchObject({
+      revisionNumber: null,
+      revisionLabel: review.revision.label,
+    })
+    expect(workspace.presentationSource).toBe('lecturer-review')
+    const teaching = workspace.occurrences.find(
+      (item) => item.kind === 'teaching',
+    )!
+    const exam = workspace.occurrences.find((item) => item.kind === 'exam')!
+    expect(teaching).not.toHaveProperty('source')
+    expect(exam).not.toHaveProperty('requiredCapacity')
+    expect(exam).not.toHaveProperty('currentRoomCapacity')
+    expect(exam).not.toHaveProperty('validityContext')
+    expect(exam).not.toHaveProperty('recommendationContext')
+    expect(JSON.stringify(workspace)).not.toContain('plannerNotes')
+  })
+
+  it('removes the no-issue facet when public validation is incomplete', () => {
+    const review = {
+      ...publicLecturerReviewFixture(),
+      validationAvailability: 'partial' as const,
+    }
+
+    const workspace = adaptLecturerReviewToWorkspace(review)
+
+    expect(workspace.filterFacets.validationCategories).not.toContainEqual({
+      value: 'none',
+      label: 'No current issue',
+    })
+  })
+
   it('uses UTC-safe ISO ranges and semester-boundary current dates', () => {
     expect(visibleRange('week', '2026-10-07')).toEqual({
       start: '2026-10-05',

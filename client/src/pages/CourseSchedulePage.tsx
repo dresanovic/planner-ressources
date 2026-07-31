@@ -184,6 +184,7 @@ export function CourseSchedulePage({
   const [examPaneDraft, setExamPaneDraft] = useState<ExamPlacementDraft | null>(null)
   const [examPaneBaseline, setExamPaneBaseline] = useState<ExamPlacementDraft | null>(null)
   const [paneStatus, setPaneStatus] = useState('')
+  const [calendarNavigationStatus, setCalendarNavigationStatus] = useState('')
   const [paneError, setPaneError] = useState('')
   const [pendingPaneIntent, setPendingPaneIntent] = useState<PendingPaneIntent | null>(null)
   const [examOverview, setExamOverview] = useState<ExamPlanningOverview | null>(null)
@@ -212,11 +213,25 @@ export function CourseSchedulePage({
   const scheduleContextHeadingRef = useRef<HTMLHeadingElement>(null)
   const calendarRequestSequence = useRef(0)
   const overviewRefreshSequence = useRef(0)
+  const lecturerReviewRequestSequence = useRef(0)
   const selectedCourseIdRef = useRef<number | null>(null)
   const selectedSemesterIdRef = useRef<number | null>(null)
+  const selectedLifecycleRevisionIdRef = useRef<number | null>(null)
 
   useEffect(() => { selectedCourseIdRef.current = selectedCourseId }, [selectedCourseId])
   useEffect(() => { selectedSemesterIdRef.current = selectedSemesterId }, [selectedSemesterId])
+
+  useEffect(() => {
+    if (!calendarNavigationStatus) return
+    const focusResults = () => {
+      document
+        .querySelector<HTMLElement>('[data-workspace-results-heading]')
+        ?.focus({ preventScroll: true })
+    }
+    focusResults()
+    const focusTimer = window.setTimeout(focusResults, 0)
+    return () => window.clearTimeout(focusTimer)
+  }, [calendarNavigationStatus])
 
   const selectedCourse = useMemo(
     () => planningOptions?.courses.find((course) => course.id === selectedCourseId) ?? null,
@@ -263,6 +278,10 @@ export function CourseSchedulePage({
   )
   const activeScheduleRevisionId = lifecycleOverview?.activeWorkingRevision?.revisionId ?? null
   const selectedLifecycleRevision = lifecycleOverview?.revisions.find((item) => item.revisionId === selectedLifecycleRevisionId) ?? lifecycleOverview?.activeWorkingRevision ?? lifecycleOverview?.currentPublication ?? null
+  useEffect(() => {
+    selectedLifecycleRevisionIdRef.current = selectedLifecycleRevision?.revisionId ?? null
+    lecturerReviewRequestSequence.current += 1
+  }, [selectedLifecycleRevision?.revisionId])
   const mutationBusy = singleGenerating || batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
   const contextBusy = mutationBusy || overviewLoading || examBusy
   const writeBusy = contextBusy || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
@@ -306,6 +325,11 @@ export function CourseSchedulePage({
   const selectedOccurrence = loadedCalendarWorkspace?.occurrences.find(
     (item) => item.occurrenceRef === selectedOccurrenceRef,
   ) ?? null
+  const displayedLecturerReviewOverview =
+    lecturerReviewOverview?.revision.id ===
+    selectedLifecycleRevision?.revisionId
+      ? lecturerReviewOverview
+      : null
 
   useEffect(() => {
     if (
@@ -324,11 +348,13 @@ export function CourseSchedulePage({
     queueMicrotask(() => {
       setPendingReviewNavigation(null)
       if (targetExists) {
+        setCalendarNavigationStatus('')
         setSelectedOccurrenceRef(pendingReviewNavigation.occurrenceRef)
         setPaneStatus('Opened the current session from lecturer feedback.')
       } else {
         setSelectedOccurrenceRef(null)
-        setPaneStatus(
+        setPaneStatus('')
+        setCalendarNavigationStatus(
           'The current session is no longer available in this revision.',
         )
       }
@@ -523,23 +549,28 @@ export function CourseSchedulePage({
     const revisionId = selectedLifecycleRevision?.revisionId
     if (destination !== 'reviews' || !revisionId) return
     let current = true
+    const requestSequence = ++lecturerReviewRequestSequence.current
+    const requestIsCurrent = () =>
+      current &&
+      lecturerReviewRequestSequence.current === requestSequence &&
+      selectedLifecycleRevisionIdRef.current === revisionId
     queueMicrotask(() => {
-      if (!current) return
+      if (!requestIsCurrent()) return
       setLecturerReviewBusy(true)
       setLecturerReviewError('')
     })
     void getLecturerReviewOverview(revisionId)
       .then((value) => {
-        if (current) setLecturerReviewOverview(value)
+        if (requestIsCurrent()) setLecturerReviewOverview(value)
       })
       .catch(() => {
-        if (current) {
+        if (requestIsCurrent()) {
           setLecturerReviewOverview(null)
           setLecturerReviewError('Could not load lecturer review links and feedback.')
         }
       })
       .finally(() => {
-        if (current) setLecturerReviewBusy(false)
+        if (requestIsCurrent()) setLecturerReviewBusy(false)
       })
     return () => {
       current = false
@@ -584,43 +615,58 @@ export function CourseSchedulePage({
     durationDays: 1 | 2 | 3
   }) {
     if (!selectedLifecycleRevision) throw new Error('No revision selected.')
+    const revisionId = selectedLifecycleRevision.revisionId
+    const requestSequence = ++lecturerReviewRequestSequence.current
+    const requestIsCurrent = () =>
+      lecturerReviewRequestSequence.current === requestSequence &&
+      selectedLifecycleRevisionIdRef.current === revisionId
     setLecturerReviewBusy(true)
     setLecturerReviewError('')
     try {
       const result = await issueLecturerReviewLink(
-        selectedLifecycleRevision.revisionId,
+        revisionId,
         input,
       )
-      setLecturerReviewOverview(result.overview)
+      if (requestIsCurrent()) setLecturerReviewOverview(result.overview)
       return result
     } catch (reason) {
-      setLecturerReviewError(
-        reason instanceof Error
-          ? reason.message
-          : 'Could not issue the lecturer review link.',
-      )
+      if (requestIsCurrent()) {
+        setLecturerReviewError(
+          reason instanceof Error
+            ? reason.message
+            : 'Could not issue the lecturer review link.',
+        )
+      }
       throw reason
     } finally {
-      setLecturerReviewBusy(false)
+      if (requestIsCurrent()) setLecturerReviewBusy(false)
     }
   }
 
   async function handleRevokeLecturerReview(linkId: number) {
+    if (!selectedLifecycleRevision) throw new Error('No revision selected.')
+    const revisionId = selectedLifecycleRevision.revisionId
+    const requestSequence = ++lecturerReviewRequestSequence.current
+    const requestIsCurrent = () =>
+      lecturerReviewRequestSequence.current === requestSequence &&
+      selectedLifecycleRevisionIdRef.current === revisionId
     setLecturerReviewBusy(true)
     setLecturerReviewError('')
     try {
       const result = await revokeLecturerReviewLink(linkId)
-      setLecturerReviewOverview(result)
+      if (requestIsCurrent()) setLecturerReviewOverview(result)
       return result
     } catch (reason) {
-      setLecturerReviewError(
-        reason instanceof Error
-          ? reason.message
-          : 'Could not revoke the lecturer review link.',
-      )
+      if (requestIsCurrent()) {
+        setLecturerReviewError(
+          reason instanceof Error
+            ? reason.message
+            : 'Could not revoke the lecturer review link.',
+        )
+      }
       throw reason
     } finally {
-      setLecturerReviewBusy(false)
+      if (requestIsCurrent()) setLecturerReviewBusy(false)
     }
   }
 
@@ -628,21 +674,29 @@ export function CourseSchedulePage({
     linkId: number,
     input: { durationDays: 1 | 2 | 3 },
   ) {
+    if (!selectedLifecycleRevision) throw new Error('No revision selected.')
+    const revisionId = selectedLifecycleRevision.revisionId
+    const requestSequence = ++lecturerReviewRequestSequence.current
+    const requestIsCurrent = () =>
+      lecturerReviewRequestSequence.current === requestSequence &&
+      selectedLifecycleRevisionIdRef.current === revisionId
     setLecturerReviewBusy(true)
     setLecturerReviewError('')
     try {
       const result = await replaceLecturerReviewLink(linkId, input)
-      setLecturerReviewOverview(result.overview)
+      if (requestIsCurrent()) setLecturerReviewOverview(result.overview)
       return result
     } catch (reason) {
-      setLecturerReviewError(
-        reason instanceof Error
-          ? reason.message
-          : 'The replacement result could not be confirmed.',
-      )
+      if (requestIsCurrent()) {
+        setLecturerReviewError(
+          reason instanceof Error
+            ? reason.message
+            : 'The replacement result could not be confirmed.',
+        )
+      }
       throw reason
     } finally {
-      setLecturerReviewBusy(false)
+      if (requestIsCurrent()) setLecturerReviewBusy(false)
     }
   }
 
@@ -1038,6 +1092,7 @@ export function CourseSchedulePage({
   function commitPaneSelection(reference: string | null) {
     clearPaneEditor()
     setPaneStatus('')
+    setCalendarNavigationStatus('')
     setSelectedOccurrenceRef(reference)
   }
 
@@ -1062,7 +1117,11 @@ export function CourseSchedulePage({
       commit: () => {
         commitPaneSelection(null)
         overviewRefreshSequence.current += 1
+        lecturerReviewRequestSequence.current += 1
+        selectedLifecycleRevisionIdRef.current = null
         selectedSemesterIdRef.current = semesterId
+        setLecturerReviewBusy(false)
+        setLecturerReviewError('')
         setSemesterSelectionMissing(false)
         setSelectedSemesterId(semesterId)
         setSelectedBatchCourseIds([])
@@ -1076,6 +1135,10 @@ export function CourseSchedulePage({
       label: 'another schedule revision',
       commit: () => {
         commitPaneSelection(null)
+        lecturerReviewRequestSequence.current += 1
+        selectedLifecycleRevisionIdRef.current = revisionId
+        setLecturerReviewBusy(false)
+        setLecturerReviewError('')
         setSelectedLifecycleRevisionId(revisionId)
       },
       focusAfterCommit: () => scheduleContextHeadingRef.current?.focus({ preventScroll: true }),
@@ -1373,6 +1436,15 @@ export function CourseSchedulePage({
 
           <div className="schedule-results">
             <section className="schedule-workspace-region calendar-workspace-region" aria-label="Calendar workspace" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
+            {calendarNavigationStatus && (
+              <p
+                className="mutation-feedback calendar-navigation-status"
+                role="status"
+                aria-live="polite"
+              >
+                {calendarNavigationStatus}
+              </p>
+            )}
             {selectedRevisionAvailable && (!selectedLifecycleRevision || selectedLifecycleRevision.isActiveWorking || selectedLifecycleRevision.isCurrentPublication) && <CalendarPlanningWorkspace
               key={selectedSemesterId ?? 'no-semester'}
               workspace={displayedCalendarWorkspace}
@@ -1417,12 +1489,13 @@ export function CourseSchedulePage({
             {lifecycleRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh schedule lifecycle. Schedule changes are unavailable.</span><button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)}>Retry lifecycle refresh</button></div>}
             </section>
             <section className="schedule-workspace-region lecturer-reviews-region" aria-labelledby="lecturer-reviews-region-title" hidden={destination !== 'reviews'} inert={destination !== 'reviews' || undefined}>
-              <h2 id="lecturer-reviews-region-title">Lecturer reviews</h2>
-              {lecturerReviewBusy && lecturerReviewOverview == null && <p role="status">Loading lecturer reviews…</p>}
+              <h2 id="lecturer-reviews-region-title">Lecturer coordination</h2>
+              {destination === 'reviews' && selectedLifecycleRevision && displayedLecturerReviewOverview == null && !lecturerReviewError && <p role="status">Loading lecturer coordination…</p>}
               {lecturerReviewError && <div className="refresh-error" role="alert">{lecturerReviewError}</div>}
-              {active && destination === 'reviews' && lecturerReviewOverview && (
+              {active && destination === 'reviews' && displayedLecturerReviewOverview && (
                 <LecturerReviewManagement
-                  overview={lecturerReviewOverview}
+                  key={displayedLecturerReviewOverview.revision.id}
+                  overview={displayedLecturerReviewOverview}
                   busy={lecturerReviewBusy}
                   onIssue={handleIssueLecturerReview}
                   onRevoke={handleRevokeLecturerReview}

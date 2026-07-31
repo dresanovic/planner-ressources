@@ -39,6 +39,9 @@ type Props = {
     occurrence: WorkspaceOccurrence,
     requestClose: () => void,
   ) => ReactNode
+  accessProfile?: 'planner' | 'lecturer-review'
+  fixedContext?: ReactNode
+  onRequestTargetHidingFilter?: (commitFilter: () => void) => void
 }
 
 export type WorkspaceListTraceTarget = {
@@ -152,6 +155,9 @@ function CalendarPlanningWorkspaceContent({
   selectedOccurrenceRef,
   onSelectedOccurrenceChange,
   renderSessionPane,
+  accessProfile = 'planner',
+  fixedContext,
+  onRequestTargetHidingFilter,
   mode,
   anchor,
   setMode,
@@ -159,6 +165,7 @@ function CalendarPlanningWorkspaceContent({
   resultsHeadingRef,
   onSelectionDisappeared,
 }: WorkspaceContentProps) {
+  const restricted = accessProfile === 'lecturer-review'
   const [filters, setFilters] = useState<WorkspaceFilters>({})
   const [internalSelectedRef, setInternalSelectedRef] = useState<string | null>(null)
   const selectedRef = selectedOccurrenceRef === undefined ? internalSelectedRef : selectedOccurrenceRef
@@ -254,7 +261,7 @@ function CalendarPlanningWorkspaceContent({
   }, [anchor, mode, selectedRef, setAnchor, workspace])
 
   if (loading && workspace == null) return <section className="calendar-workspace workspace-state" aria-busy="true" role="status">Loading {intendedContext ?? 'semester workspace'}…</section>
-  if (error && workspace == null) return <section className="calendar-workspace workspace-state"><div role="alert"><h2>Calendar workspace unavailable</h2>{intendedContext && <p>{intendedContext}</p>}<p>{error}</p><button type="button" onClick={onRetry}>Retry</button></div><p>The established Courses overview remains available while the coherent workspace read is unavailable.</p><div className="workspace-list-mode">{renderListContent(listContent, null)}</div></section>
+  if (error && workspace == null) return <section className="calendar-workspace workspace-state"><div role="alert"><h2>Calendar workspace unavailable</h2>{intendedContext && <p>{intendedContext}</p>}<p>{error}</p><button type="button" onClick={onRetry}>Retry</button></div>{!restricted && <p>The established Courses overview remains available while the coherent workspace read is unavailable.</p>}<div className="workspace-list-mode">{renderListContent(listContent, null)}</div></section>
   if (workspace == null) return <section className="calendar-workspace workspace-state"><h2>No semester selected</h2><p>Select a semester to open its planning workspace.</p></section>
   if (workspace.workspaceState === 'no_revision') {
     return (
@@ -269,7 +276,8 @@ function CalendarPlanningWorkspaceContent({
   }
   const loadedWorkspace = workspace
   const impairedSections = Object.entries(workspace.sectionStatus).filter(
-    ([, status]) => status.availability !== 'available',
+    ([name, status]) => status.availability !== 'available'
+      && (!restricted || name === 'validationFindings'),
   )
 
   const effectiveAnchor = anchor ?? currentPeriodDate(new Date().toISOString().slice(0, 10), workspace.semester.startDate, workspace.semester.endDate).date
@@ -313,18 +321,26 @@ function CalendarPlanningWorkspaceContent({
     value: WorkspaceFilters[Key],
   ) {
     const nextFilters = { ...filters, [key]: value }
-    setFilters(nextFilters)
-    if (
+    const hidesSelected = (
       selectedRef != null
       && !projectWorkspace(loadedWorkspace, nextFilters).occurrences.some(
         (item) => item.occurrenceRef === selectedRef,
       )
-    ) {
-      updateSelection(null)
-      onSelectionDisappeared(
-        'The selected session no longer matches the current result set.',
-      )
+    )
+    const commitFilter = () => {
+      setFilters(nextFilters)
+      if (hidesSelected) {
+        onSelectionDisappeared(
+          'The selected session no longer matches the current result set.',
+        )
+      }
     }
+    if (hidesSelected && onRequestTargetHidingFilter) {
+      onRequestTargetHidingFilter(commitFilter)
+      return
+    }
+    commitFilter()
+    if (hidesSelected) updateSelection(null)
   }
 
   function goCurrent() {
@@ -342,17 +358,18 @@ function CalendarPlanningWorkspaceContent({
       <header className="calendar-context-header">
         <div>
           <p className="eyebrow">{workspace.semester.name} · {workspace.semester.startDate}–{workspace.semester.endDate}</p>
-          <h2 id="calendar-workspace-title">Semester schedule</h2>
+          <h2 id="calendar-workspace-title">{restricted ? 'Your assigned schedule' : 'Semester schedule'}</h2>
           <p>
-            Revision {workspace.selectedRevision.revisionNumber} · {stateLabel(workspace.selectedRevision.lifecycleState)} ·{' '}
+            {revisionLabel(workspace.selectedRevision)} · {stateLabel(workspace.selectedRevision.lifecycleState)} ·{' '}
             {workspace.selectedRevision.designation === 'active_working' ? 'Active Working' : 'Current Published'}
           </p>
-          {workspace.selectedRevision.readOnly && <p className="read-only-note">Published content is read-only. Warnings are recalculated from current planning data without changing the publication.</p>}
+          {!restricted && workspace.selectedRevision.readOnly && <p className="read-only-note">Published content is read-only. Warnings are recalculated from current planning data without changing the publication.</p>}
+          {restricted && fixedContext}
         </div>
-        <div className="revision-context-switch" aria-label="Schedule revision context">
+        {!restricted && <div className="revision-context-switch" aria-label="Schedule revision context">
           {workspace.availableContexts.activeWorking && <button type="button" aria-pressed={workspace.selectedRevision.designation === 'active_working'} onClick={() => onSelectRevision?.(workspace.availableContexts.activeWorking!.revisionId)}>Working R{workspace.availableContexts.activeWorking.revisionNumber}</button>}
           {workspace.availableContexts.currentPublished && <button type="button" aria-pressed={workspace.selectedRevision.designation === 'current_published'} onClick={() => onSelectRevision?.(workspace.availableContexts.currentPublished!.revisionId)}>Published R{workspace.availableContexts.currentPublished.revisionNumber}</button>}
-        </div>
+        </div>}
       </header>
 
       {loading && <p className="active-filter-status" role="status">Refreshing workspace. Displayed values are last known until the refresh completes.</p>}
@@ -368,15 +385,15 @@ function CalendarPlanningWorkspaceContent({
         </div>
       )}
 
-      <div className="workspace-summary-grid" aria-label={`${activeFilterCount ? 'Filtered' : 'Complete revision'} operational summary`}>
+      {!restricted && <div className="workspace-summary-grid" aria-label={`${activeFilterCount ? 'Filtered' : 'Complete revision'} operational summary`}>
         <SummaryCard metricKey="unscheduledWork" label="Unscheduled work" metric={summary.unscheduledWork} value={formatUnscheduled(summary.unscheduledWork)} scopeLabel={summaryScope} onActivate={activateMetric} />
         <SummaryCard metricKey="conflicts" label="Conflicts" metric={summary.conflicts} value={formatMetric(summary.conflicts, 'distinctFindingCount')} scopeLabel={summaryScope} onActivate={activateMetric} />
         <SummaryCard metricKey="capacityIssues" label="Capacity issues" metric={summary.capacityIssues} value={formatMetric(summary.capacityIssues, 'affectedOccurrenceCount')} scopeLabel={summaryScope} onActivate={activateMetric} />
         <SummaryCard metricKey="planningFailures" label="Planning failures" metric={summary.planningFailures} value={formatPlanningOutcomes(summary.planningFailures)} scopeLabel={summaryScope} onActivate={activateMetric} />
         <SummaryCard metricKey="needsReview" label="Needs review" metric={summary.needsReview} value={formatMetric(summary.needsReview, 'distinctCourseCount')} scopeLabel={summaryScope} onActivate={activateMetric} />
-      </div>
+      </div>}
 
-      {drilldown && drilldownMetric && (
+      {!restricted && drilldown && drilldownMetric && (
         <section className="workspace-drilldown" aria-labelledby="drilldown-title">
           <div><h3 id="drilldown-title" tabIndex={-1} ref={drilldownHeading} data-workspace-drilldown-heading>{drilldown.label} contributors</h3><p>{drilldownMetric.contributorRefs.length} affected record{drilldownMetric.contributorRefs.length === 1 ? '' : 's'} in the {activeFilterCount ? 'filtered subset' : 'complete revision'}.</p></div>
           <button type="button" onClick={clearDrilldown}>Clear drilldown</button>
@@ -400,7 +417,7 @@ function CalendarPlanningWorkspaceContent({
       <div className="workspace-filters" aria-label="Workspace filters">
         <FacetSelect label="Course" value={filters.course} values={workspace.filterFacets.courses} onChange={(value) => applyFilter('course', value)} />
         <FacetSelect label="Cohort" value={filters.cohort} values={workspace.filterFacets.cohorts} onChange={(value) => applyFilter('cohort', value)} />
-        <FacetSelect label="Lecturer" value={filters.lecturer} values={workspace.filterFacets.lecturers} onChange={(value) => applyFilter('lecturer', value)} />
+        {!restricted && <FacetSelect label="Lecturer" value={filters.lecturer} values={workspace.filterFacets.lecturers} onChange={(value) => applyFilter('lecturer', value)} />}
         <FacetSelect label="Room" value={filters.room} values={workspace.filterFacets.rooms} onChange={(value) => applyFilter('room', value)} />
         <FacetSelect label="Study type" value={filters.studyType} values={workspace.filterFacets.studyTypes} onChange={(value) => applyFilter('studyType', value)} />
         <FacetSelect label="Session type" value={filters.sessionType} values={workspace.filterFacets.sessionTypes} onChange={(value) => applyFilter('sessionType', value as WorkspaceFilters['sessionType'])} />
@@ -429,7 +446,7 @@ function CalendarPlanningWorkspaceContent({
           </div>
           {mode !== 'list' && (
             visibleOccurrences.length === 0 && visibleHolidays.length === 0 ? (
-              <p className="empty-state">{projection.occurrences.length === 0 && activeFilterCount > 0 ? 'No records match the active filters.' : 'No sessions occur in this period.'}</p>
+              <p className="empty-state">{projection.occurrences.length === 0 && activeFilterCount > 0 ? 'No records match the active filters.' : restricted && workspace.occurrences.length === 0 ? 'There are currently no teaching or exam assignments for this lecturer in this revision.' : 'No sessions occur in this period.'}</p>
             ) : (
               <>
                 {visibleOccurrences.length === 0 && activeFilterCount > 0 && <p className="empty-state">No records match the active filters. Holiday date context remains visible.</p>}
@@ -590,7 +607,7 @@ function OccurrenceDetail({ occurrence, workspace, headingRef, onClose, onEditTe
       <div className="detail-heading"><h3 id="occurrence-detail-title" tabIndex={-1} ref={headingRef}>{occurrence.kind === 'teaching' ? 'Teaching session' : 'Exam session'} · {course?.name}</h3><button type="button" onClick={onClose} aria-label="Close session detail">×</button></div>
       <dl>
         <div><dt>Lifecycle</dt><dd>{stateLabel(workspace.selectedRevision.lifecycleState)}</dd></div>
-        <div><dt>Revision</dt><dd>R{workspace.selectedRevision.revisionNumber} · {workspace.selectedRevision.designation === 'active_working' ? 'Working' : 'Current Published'}</dd></div>
+        <div><dt>Revision</dt><dd>{revisionLabel(workspace.selectedRevision)} · {workspace.selectedRevision.designation === 'active_working' ? 'Working' : 'Current Published'}</dd></div>
         <div><dt>Course</dt><dd>{course?.name ?? occurrence.courseRef}</dd></div>
         <div><dt>Study type</dt><dd>{course?.studyType ?? 'Unavailable'}</dd></div>
         <div><dt>Date and time</dt><dd>{occurrence.date}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
@@ -600,16 +617,18 @@ function OccurrenceDetail({ occurrence, workspace, headingRef, onClose, onEditTe
         {occurrence.kind === 'teaching' ? (
           <>
             <div><dt>Teaching units</dt><dd>{occurrence.teachingUnits}</dd></div>
-            <div><dt>Source</dt><dd>{occurrence.source}</dd></div>
+            {occurrence.source !== undefined && <div><dt>Source</dt><dd>{occurrence.source}</dd></div>}
           </>
         ) : (
           <>
             <div><dt>Exam type</dt><dd>{occurrence.examType}</dd></div>
             <div><dt>Duration</dt><dd>{occurrence.durationMinutes} minutes</dd></div>
-            <div><dt>Capacity</dt><dd>{occurrence.requiredCapacity} required; {occurrence.currentRoomCapacity == null ? 'current room capacity unavailable' : `${occurrence.currentRoomCapacity} current`}</dd></div>
-            <div><dt>Configuration</dt><dd>{detailValue(occurrence.validityContext.configurationIdentifier)} · revision {detailValue(occurrence.validityContext.configurationRevision)}</dd></div>
-            <div><dt>Final teaching</dt><dd>{detailValue(occurrence.validityContext.finalTeachingDate)} at {detailValue(occurrence.validityContext.finalTeachingEndTime)}</dd></div>
-            <div><dt>Source</dt><dd>{detailValue(occurrence.validityContext.source)}</dd></div>
+            {occurrence.requiredCapacity !== undefined && <div><dt>Capacity</dt><dd>{occurrence.requiredCapacity} required; {occurrence.currentRoomCapacity == null ? 'current room capacity unavailable' : `${occurrence.currentRoomCapacity} current`}</dd></div>}
+            {occurrence.validityContext && <>
+              <div><dt>Configuration</dt><dd>{detailValue(occurrence.validityContext.configurationIdentifier)} · revision {detailValue(occurrence.validityContext.configurationRevision)}</dd></div>
+              <div><dt>Final teaching</dt><dd>{detailValue(occurrence.validityContext.finalTeachingDate)} at {detailValue(occurrence.validityContext.finalTeachingEndTime)}</dd></div>
+              <div><dt>Source</dt><dd>{detailValue(occurrence.validityContext.source)}</dd></div>
+            </>}
             {occurrence.recommendationContext && <div><dt>Recommended period</dt><dd>{detailValue(occurrence.recommendationContext.recommendedStartDate)}–{detailValue(occurrence.recommendationContext.recommendedEndDate)}{occurrence.recommendationContext.recommendationWasOverridden === true ? ' · planner override' : ''}</dd></div>}
           </>
         )}
@@ -807,6 +826,10 @@ function contributorLabel(workspace: LoadedCalendarWorkspace, ref: string) {
 
 function detailValue(value: unknown) {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : 'Unavailable'
+}
+
+function revisionLabel(revision: LoadedCalendarWorkspace['selectedRevision']) {
+  return revision.revisionLabel ?? `Revision ${revision.revisionNumber}`
 }
 
 function outcomeLabel(outcome: LoadedCalendarWorkspace['planningOutcomes'][number]) {

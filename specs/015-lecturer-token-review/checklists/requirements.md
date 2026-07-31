@@ -1,7 +1,7 @@
-# Specification Quality Checklist: Accountless Lecturer Token Review
+# Specification Quality Checklist: FS-015 Accountless Lecturer Token Review
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-07-28
+**Created**: 2026-07-31
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -31,6 +31,15 @@
 
 ## Notes
 
+- Revision validation completed on 2026-07-31. All checklist items pass and no
+  clarification markers remain.
+- The three known extension topics are resolved as fixed labeled lecturer
+  context, distinct assignment/filter empty states, and the established
+  adaptive restricted-pane composition.
+- The revision adds independently testable calendar/list reuse, filter,
+  restricted-pane, Lecturer coordination, backend-denial, accessibility, and
+  responsive requirements without changing the implemented security and
+  immutable-feedback baseline.
 - Validation completed on 2026-07-28 in three review iterations. The second
   iteration clarified replacement after publication, accountless access,
   comment validation, feedback display fields, and privacy-bounded retention of

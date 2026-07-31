@@ -26,7 +26,6 @@ from app.models.planning import (
 )
 from tests.lecturer_review_fixtures import (
     DeterministicUtcClock,
-    FIXED_UTC,
     install_api_clock,
     seed_lecturer_review_fixture,
 )
@@ -269,10 +268,16 @@ def test_public_projection_is_complete_and_minimum_scope(client_and_db):
         "revision",
         "accessExpiresAt",
         "timeZone",
+        "semesterStartDate",
+        "semesterEndDate",
+        "validationAvailability",
+        "validationFindings",
+        "filterFacets",
         "courses",
         "submittedFeedback",
     }
     assert payload["intendedLecturer"] == "Ada Lovelace"
+    assert "lecturers" not in payload["filterFacets"]
     assert {course["sourceCourseId"] for course in payload["courses"]} == {1, 2}
     session_refs = {
         session["sessionRef"]
@@ -285,6 +290,52 @@ def test_public_projection_is_complete_and_minimum_scope(client_and_db):
         "teaching:201",
         "exam:401",
     }
+    assert set(payload["filterFacets"]) == {
+        "courses",
+        "cohorts",
+        "rooms",
+        "studyTypes",
+        "sessionTypes",
+        "lifecycleContexts",
+        "validationCategories",
+    }
+    for course in payload["courses"]:
+        assert set(course) == {
+            "sourceCourseId",
+            "courseRef",
+            "code",
+            "title",
+            "cohortName",
+            "studyType",
+            "sessions",
+        }
+        for session in course["sessions"]:
+            assert set(session) == {
+                "sessionRef",
+                "sessionKind",
+                "sourceSessionId",
+                "courseRef",
+                "sessionType",
+                "date",
+                "startTime",
+                "endTime",
+                "timeZone",
+                "roomName",
+                "roomRef",
+                "cohortName",
+                "teachingUnits",
+                "examDurationMinutes",
+                "validationFindingRefs",
+            }
+    for finding in payload["validationFindings"]:
+        assert set(finding) == {
+            "findingRef",
+            "category",
+            "message",
+            "affectedSessionRefs",
+        }
+        assert set(finding["affectedSessionRefs"]) <= session_refs
+        assert finding["findingRef"].startswith("public-finding:")
     serialized = str(payload).casefold()
     for forbidden in (
         "grace hopper",
@@ -293,6 +344,10 @@ def test_public_projection_is_complete_and_minimum_scope(client_and_db):
         "student",
         "planner",
         "validationalerts",
+        "subjectref",
+        "affectedcourserefs",
+        "details",
+        "lecturerrefs",
     ):
         assert forbidden not in serialized
 
@@ -791,6 +846,9 @@ def test_planner_overview_groups_retained_feedback_with_exact_flag_counts(
         "timeZone": "Europe/Vienna",
         "roomName": "Room 101",
         "cohortName": "Cohort 1",
+        "studyType": "Full-time",
+        "teachingUnits": 2,
+        "examDurationMinutes": None,
     }
     assert retained["currentNavigation"] is None
     for group_ref in ("teaching:101", "teaching:301", "exam:401"):
@@ -1036,7 +1094,7 @@ def test_public_failure_equivalence_activity_evidence_and_privacy_canaries(
         [
             {
                 column.name: getattr(event, column.name)
-                for column in LecturerReviewActivityEvent.__table__.columns
+                for column in LecturerReviewActivityEvent.__table__.columns.values()
             }
             for event in events
         ]

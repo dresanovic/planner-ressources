@@ -11,6 +11,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
+import app.services.lecturer_review as lecturer_review_service
 from app.db.schema import initialize_database
 from app.models.planning import (
     LecturerReviewActivityEvent,
@@ -369,6 +370,11 @@ def test_public_projection_is_exactly_minimum_scope(db):
         "revision",
         "accessExpiresAt",
         "timeZone",
+        "semesterStartDate",
+        "semesterEndDate",
+        "validationAvailability",
+        "validationFindings",
+        "filterFacets",
         "courses",
         "submittedFeedback",
     }
@@ -388,20 +394,36 @@ def test_public_projection_is_exactly_minimum_scope(db):
         "COURSE-2",
     }
     for course in public["courses"]:
-        assert set(course) == {"sourceCourseId", "code", "title", "sessions"}
+        assert set(course) == {
+            "sourceCourseId",
+            "courseRef",
+            "code",
+            "title",
+            "cohortName",
+            "studyType",
+            "sessions",
+        }
         for item in course["sessions"]:
             assert set(item) == {
                 "sessionRef",
                 "sessionKind",
                 "sourceSessionId",
+                "courseRef",
                 "sessionType",
                 "date",
                 "startTime",
                 "endTime",
                 "timeZone",
                 "roomName",
+                "roomRef",
                 "cohortName",
+                "teachingUnits",
+                "examDurationMinutes",
+                "validationFindingRefs",
             }
+    assert "lecturers" not in public["filterFacets"]
+    assert public["semesterStartDate"] == "2026-09-01"
+    assert public["semesterEndDate"] == "2026-12-20"
 
     serialized = repr(public)
     assert "Grace Hopper" not in serialized
@@ -421,6 +443,59 @@ def test_public_projection_is_exactly_minimum_scope(db):
         "secretDigest",
     }:
         assert forbidden_key not in serialized
+
+
+@pytest.mark.parametrize(
+    ("workspace_availability", "public_availability"),
+    [("partial", "partial"), ("unavailable", "unavailable")],
+)
+def test_incomplete_validation_never_offers_a_no_issue_filter(
+    db,
+    monkeypatch,
+    workspace_availability: str,
+    public_availability: str,
+):
+    session, fixture = db
+    result = issue_lecturer_review_link(
+        session,
+        fixture.working_revision_id,
+        fixture.primary_lecturer_id,
+        duration_days=3,
+        clock=DeterministicUtcClock(),
+    )
+    session.commit()
+    original_get_calendar_workspace = (
+        lecturer_review_service.get_calendar_workspace
+    )
+
+    def incomplete_workspace(*args, **kwargs):
+        workspace = original_get_calendar_workspace(*args, **kwargs)
+        workspace["sectionStatus"]["validationFindings"][
+            "availability"
+        ] = workspace_availability
+        workspace["validationFindings"] = []
+        return workspace
+
+    monkeypatch.setattr(
+        lecturer_review_service,
+        "get_calendar_workspace",
+        incomplete_workspace,
+    )
+
+    public = _json(
+        get_public_lecturer_review(
+            session,
+            _value(result, "secret"),
+            clock=DeterministicUtcClock(),
+        )
+    )
+
+    assert public["validationAvailability"] == public_availability
+    assert public["validationFindings"] == []
+    assert "none" not in {
+        facet["value"]
+        for facet in public["filterFacets"]["validationCategories"]
+    }
 
 
 @pytest.mark.parametrize(
@@ -633,7 +708,47 @@ def test_session_feedback_captures_authoritative_current_context(db):
         "timeZone": "Europe/Vienna",
         "roomName": "Room 201",
         "cohortName": "Cohort 1",
+        "studyType": "Full-time",
+        "teachingUnits": 2,
+        "examDurationMinutes": None,
     }
+
+
+def test_public_validation_sanitizes_cross_scope_counterparts(db):
+    session, fixture = db
+    other = session.get(DraftSession, 301)
+    scoped = session.get(DraftSession, 101)
+    assert other is not None and scoped is not None
+    other.date = scoped.date
+    other.start_time = scoped.start_time
+    other.end_time = scoped.end_time
+    other.room_id = scoped.room_id
+    issued = issue_lecturer_review_link(
+        session,
+        fixture.working_revision_id,
+        fixture.primary_lecturer_id,
+        clock=DeterministicUtcClock(),
+    )
+    session.commit()
+
+    public = _json(
+        get_public_lecturer_review(
+            session,
+            _value(issued, "secret"),
+            clock=DeterministicUtcClock(),
+        )
+    )
+
+    room_conflict = next(
+        finding
+        for finding in public["validationFindings"]
+        if finding["category"] == "room_conflict"
+    )
+    assert room_conflict["affectedSessionRefs"] == ["teaching:101"]
+    serialized = repr(room_conflict)
+    assert "teaching:301" not in serialized
+    assert "Grace Hopper" not in serialized
+    assert "room:1" not in serialized
 
 
 def test_each_planner_feedback_item_retains_its_submission_context(db):

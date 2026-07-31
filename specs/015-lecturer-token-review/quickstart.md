@@ -1,6 +1,6 @@
 # FS-015 Validation Quickstart
 
-This guide validates the completed FS-015 implementation against
+This guide validates the FS-015 extension after implementation against
 [spec.md](spec.md), [data-model.md](data-model.md), the
 [API contract](contracts/lecturer-review.openapi.yaml), and the
 [UI contract](contracts/lecturer-review-ui.md). It does not replace the full
@@ -37,7 +37,7 @@ Run focused backend tests first:
 
 ```powershell
 Set-Location C:\Codex\planner-resource\backend
-python -m pytest tests/services/test_lecturer_review.py tests/services/test_lecturer_review_concurrency.py tests/api/test_lecturer_review.py tests/performance/test_lecturer_review_performance.py tests/db/test_migrations.py
+python -m pytest tests/services/test_calendar_workspace.py tests/services/test_lecturer_review.py tests/services/test_lecturer_review_concurrency.py tests/api/test_lecturer_review.py tests/performance/test_lecturer_review_performance.py tests/db/test_migrations.py
 ```
 
 Run FS-013 regression tests, then the full backend suite:
@@ -51,7 +51,7 @@ Run focused client tests, then full client verification:
 
 ```powershell
 Set-Location C:\Codex\planner-resource\client
-npm test -- src/api/lecturerReview.test.ts src/components/LecturerReviewManagement.test.tsx src/pages/LecturerReviewPage.test.tsx
+npm test -- src/api/lecturerReview.test.ts src/components/CalendarPlanningWorkspace.test.tsx src/components/LecturerReviewManagement.test.tsx src/components/SessionPane.test.tsx src/pages/CourseSchedulePage.test.tsx src/pages/LecturerReviewPage.test.tsx
 npm test
 npm run lint
 npm run build
@@ -59,9 +59,10 @@ npm run build
 
 Expected result: every command exits successfully. Focused suites cover the
 contract shapes, security boundaries, exact thresholds, races, one-time secret
-handling, planner filter, public feedback, and lifecycle non-effects.
+handling, shared restricted workspace and pane, coordination filters and
+counters, public feedback, and lifecycle non-effects.
 
-Latest local execution record, 2026-07-28:
+Implemented-baseline local execution record, 2026-07-28:
 
 - Focused FS-015 backend: `109 passed` (exit 0).
 - FS-013 lifecycle regression: `26 passed` (exit 0).
@@ -74,7 +75,17 @@ Latest local execution record, 2026-07-28:
 
 Because the full backend command did not exit successfully, T057 remains open.
 The separately modified seed script was preserved rather than changed as part
-of FS-015.
+of FS-015. This record predates the calendar/list and Lecturer coordination
+extension and does not prove its new acceptance cases. No extension test run is
+claimed by this planning artifact.
+
+Pre-extension checkpoint, 2026-07-31:
+
+- Focused backend command including FS-014 calendar regression:
+  `131 passed` (exit 0).
+- Focused client command: `6` files and `133` tests passed (exit 0).
+- This checkpoint records the starting baseline only; it does not claim that
+  any extension task or acceptance criterion has passed.
 
 ## 2. Start a disposable local validation environment
 
@@ -119,6 +130,10 @@ release.
    `X-Real-IP` while exercising the unusable-link threshold.
 6. Repeat from two real client addresses.
 7. Inspect the deployed Uvicorn proxy-trust configuration.
+8. Send active and ended stored lecturer bearer credentials to representative
+   planner calendar, coordination, link-management, lifecycle, publication,
+   and schedule-mutation APIs. Repeat with an unrelated 43-character URL-safe
+   bearer and with the deployment's authorized planner request shape.
 
 Expected result:
 
@@ -133,121 +148,137 @@ Expected result:
 - The gateway peer/CIDR is recorded explicitly, proxy trust is not wildcard,
   and an application restart does not reset an active rejection period.
 - Public calls are same-origin HTTPS requests with credentials omitted.
+- Stored active and ended lecturer bearer requests to planner APIs are rejected
+  before target validation or service execution, expose no planner data, and
+  cause no state change. The unrelated bearer is not classified as a lecturer
+  credential, and the gateway-authorized planner path remains usable.
 
 Failure of any item blocks production release.
 
-## 4. Validate issue, copy, and minimum scope
+## 4. Validate issue, copy, and restricted workspace
 
-1. Open **Schedule → Lecturer reviews** for a Working Draft revision.
+1. Open **Schedule > Lecturer coordination** for a Working Draft revision.
 2. Confirm Ready for review is recommended but Draft issuance is enabled
    without another confirmation.
-3. Select a lecturer with assignments across multiple courses.
-4. Leave duration at its default and issue the link.
-5. Verify the transient result identifies the lecturer, revision, course
-   context, issued time, expiry exactly 72 hours later, time zone, and active
-   status.
-6. Verify the bearer/manual/private-delivery warning and copy action.
-7. Copy the link and confirm the success announcement; test clipboard denial
-   separately and confirm failure is announced without changing the link.
-8. Open the copied URL in a private browser session with no lecturer account.
+3. Select a lecturer with teaching and exam assignments across multiple
+   courses, leave duration at the three-day default, and issue the link.
+4. Verify the transient one-time result, manual/private-delivery warning, copy
+   success announcement, and clipboard-denial alert.
+5. Open the copied URL in a private browser session with no lecturer account.
+6. Exercise Week, Day, Month, and List modes and applicable period navigation.
+7. Intersect course, cohort, room, study-type, session-type, lifecycle, and
+   validation filters when corresponding facet choices exist.
+8. Select teaching and exam occurrences from both calendar and list modes and
+   resize through wide, constrained, and narrow pane presentations.
 
 Expected result:
 
-- The planner can issue and copy within 60 seconds and five deliberate
-  interactions.
-- The address fragment disappears after bootstrap while
-  `/lecturer-review/` remains in the address bar.
-- The lecturer sees all and only the bound lecturer's teaching/exam sessions
-  across courses.
-- Courses with other eligible lecturers reveal neither those names nor their
-  sessions.
-- No planner shell, navigation, findings, notes, lifecycle actions, student
-  data, or contacts are loaded.
-- Network inspection shows the token only in the authorization header, never
-  in request paths or query strings.
-- The issue/replacement response returns the raw secret once; the planner
-  client constructs `/lecturer-review/#/{secret}` without a backend-generated
-  origin.
-- Public API requests are relative/same-origin and use no browser credentials.
+- Issue and copy remain possible within 60 seconds and five deliberate
+  interactions; 1-, 2-, and 3-day choices produce exact 24-, 48-, and 72-hour
+  validity.
+- The fragment disappears after bootstrap, the token is sent only in the
+  authorization header, and public requests remain relative, same-origin, and
+  credential-free.
+- The lecturer sees every and only the bound lecturer's current assignments
+  across courses. Lecturer identity is fixed labeled context, not a filter.
+- The public page uses established calendar/list behavior without loading
+  planner navigation, planner API adapters, operational summaries, mutation
+  callbacks, other lecturers, contacts, student data, planner notes, or raw
+  validation details.
+- The shared pane shows only lecturer-safe teaching/exam context and feedback
+  actions. Planner edit, delete, create, generation, lifecycle, publication,
+  availability, configuration, capacity, and administration controls are
+  absent from the DOM.
+- Mode, period, active filters, eligible selection, scroll origin, and drafts
+  survive mode and responsive presentation changes.
+- A complete zero-assignment projection is distinguished from a nonempty
+  projection whose records are all hidden by filters.
 
-Repeat with 1-day and 2-day choices and verify exact 24-hour and 48-hour
-expiry. Attempt issuance for a lecturer with no assignments and for a
-Published/historical revision; each attempt must create no link.
+Attempt issuance for a lecturer with no assignments and for a historical
+revision; each attempt creates no link.
 
-## 5. Validate dynamic assignment scope
+## 5. Validate reload-only assignment updates
 
 With a valid link open:
 
-1. Reassign one scoped session to another lecturer through the planner.
-2. Refresh the public review.
-3. Add a new session for the bound lecturer and refresh.
-4. Remove every assignment for the lecturer and refresh.
-5. Restore an assignment and refresh again.
+1. Reassign one visible session to another lecturer and add a different
+   session for the bound lecturer through the planner.
+2. Wait longer than any normal UI interval and change public workspace modes,
+   periods, and filters without reloading.
+3. Perform a full browser reload or reopen the link.
+4. Remove every assignment, reload, then restore an assignment and reload.
 
 Expected result:
 
-- Reassigned sessions disappear and new assignments appear.
-- The zero-assignment result is a valid explicit empty schedule, not an ended
-  link.
-- Restored assignments appear without issuing another link.
+- No timer, background request, mode change, filter change, or in-workspace
+  refresh action updates the already loaded projection.
+- The next full browser reload or reopened link omits the reassigned session
+  and includes the new assignment.
+- Zero assignments is an authoritative empty schedule, not an ended link;
+  restored assignments appear without issuing another link.
 - No intermediate or partial public schedule is presented as complete.
 
-## 6. Validate advisory feedback
+## 6. Validate advisory feedback and draft safety
 
-Through the valid public review:
-
-1. Submit a revision comment.
-2. Submit a comment on one teaching session with a recommended date/time.
-3. Mark one exam session **Not possible** without a comment.
-4. Mark that same session **Not possible** again with an explanation.
-5. Reopen the original link.
+1. Enter nonblank session feedback, then try pane close, another session, and a
+   filter that would hide the target. For each trigger, test Cancel and Discard.
+2. Confirm responsive pane changes do not prompt and preserve the draft.
+3. Submit a revision comment, a session comment, one exam **Not possible**
+   item without text, and another impossible item for the same session with
+   text.
+4. Reopen the original link.
 
 Expected result:
 
-- Each deliberate submission has a clear accepted result and creates a
-  separate immutable item.
-- An ambiguous retry with the same logical submission identity creates no
-  duplicate.
-- Prior same-link feedback is visible after reopen.
-- Planner feedback identifies the revision, intended lecturer-link
-  attribution, session where applicable, submission time/time zone, and
-  submission-time session context.
-- No feedback changes the schedule or any FS-013 action.
+- Cancel retains the draft and context. Discard clears both drafts for the
+  target, performs the requested context change, and creates no feedback.
+- Every deliberate submission creates a separate immutable item; an ambiguous
+  retry with the same client submission identity creates no duplicate.
+- Success clears only the submitted draft, announces acceptance, and appends
+  the returned item locally without reloading the assignment projection.
+- Same-link history is visible after reopen and no feedback changes the
+  schedule, publication eligibility, or any lifecycle action.
 
 Boundary checks:
 
-- Blank revision/session comments and 2,001-character comments are rejected
-  with no partial item.
-- A 2,000-character comment is accepted.
-- Text such as `<script>alert(1)</script>` is displayed literally and never
-  executes.
-- Edit an in-scope session after opening the public view, then submit: feedback
-  is associated with the authoritative current state.
-- Reassign the session away before submission: the stale submission is
-  rejected, the projection is refreshed, and no feedback is created.
+- Blank required comments and 2,001-character text are rejected; 2,000
+  characters are accepted; markup-looking text is rendered literally.
+- Edit an in-scope session after opening, then submit: the backend associates
+  feedback with authoritative current context.
+- Reassign the selected session away before submission: the backend rejects
+  the stale target, creates no item, clears the unauthorized target and draft,
+  and directs the reviewer to reload or reopen. It does not automatically
+  reload the projection.
+- Automatic authorized-scope loss discards affected drafts, explains the
+  removal, and creates no feedback.
 
-## 7. Validate planner flag recognition
+## 7. Validate Lecturer coordination
 
-1. Open **Schedule → Lecturer reviews** for the feedback revision.
-2. Inspect the **Not possible** filter before any flags, after one flag, and
-   after two flags on the same session plus a flag on another session.
-3. Activate and clear the filter using only the keyboard.
-4. Open one current flagged session.
-5. Repeat with feedback loading forced into partial and unavailable test
-   states.
+1. Open **Schedule > Lecturer coordination** for the feedback revision.
+2. Apply intended-lecturer, course, session-kind, and feedback-kind filters
+   individually and in intersections, including **Not possible**.
+3. For each filter state, inspect all feedback, comment, impossible-item, and
+   distinct-affected-session counters.
+4. Clear all filters using only the keyboard, open one current affected
+   session, and repeat with partial and unavailable feedback states.
 
 Expected result:
 
-- Complete zero displays `0` and an explicit empty filtered result.
-- The count equals flag items: two flags on one session count as two.
-- The filtered result lists that session once and exposes both items.
-- All and only affected sessions are shown.
-- Opening a current session takes one further action, honors the existing
-  unsaved-change guard, and opens the Calendar session workflow.
-- Removed/reassigned sessions retain understandable captured context and do not
-  offer a guessed navigation target.
-- Partial/unavailable data never displays a definitive zero.
-- Clearing the filter changes no link, feedback, schedule, or revision data.
+- Items are filtered before regrouping, and every active filter recomputes the
+  displayed result and all four counters from exactly the same item set.
+- Comment count includes revision and session comment items; optional text on
+  an impossible item does not make it a comment. Course/session-kind filters
+  exclude revision comments.
+- Repeated impossible items count separately, while distinct affected
+  sessions count an occurrence once.
+- Complete empty scopes may show exact zero; partial or unavailable data never
+  presents missing data as definitive zero.
+- Link management and history remain outside feedback filters.
+- Opening a current session honors the existing unsaved-change guard,
+  establishes the correct revision, and selects the exact occurrence.
+  Historical, removed, or reassigned items keep captured context without a
+  guessed navigation target.
+- Clearing filters changes no link, feedback, schedule, or revision data.
 
 ## 8. Validate revoke, replace, expiry, and lifecycle end
 
@@ -378,7 +409,7 @@ call and ends after the SQLite commit. It includes no browser navigation,
 rendering, deployed gateway, network, or result-announcement time and therefore
 does **not** constitute SC-010/SC-011 end-to-end acceptance.
 
-Recorded automated guard run on 2026-07-28:
+Implemented-baseline automated guard run on 2026-07-28:
 
 - Environment: Windows 11 `10.0.22631`, Python `3.12.8`, SQLAlchemy `2.0.34`,
   SQLite `3.51.2`, pytest with FastAPI TestClient, file-backed SQLite, no
@@ -397,10 +428,11 @@ Recorded automated guard run on 2026-07-28:
   all 20 service submissions committed a unique feedback item within two
   seconds and five seconds. No duplicate feedback ID was created.
 
-### Local browser end-to-end performance evidence
+### Implemented-baseline local browser end-to-end performance evidence
 
 Recorded on 2026-07-28 with the same 100-session, 200-retained-feedback
-file-backed SQLite fixture:
+file-backed SQLite fixture. This predates the shared-workspace extension and
+must be repeated after implementation:
 
 - Environment: Windows 11 `10.0.22631`, Codex in-app Chromium browser, Vite
   development server with a same-origin `/api` proxy, FastAPI/Uvicorn on
@@ -503,18 +535,104 @@ there are no browser end-to-end measurements to report.
 
 Manually validate at 320 CSS pixels and 200% browser text zoom:
 
-- all session fields and feedback forms wrap without horizontal page scroll;
-- keyboard-only issue/copy/revoke/replace/filter/refresh/feedback paths;
-- logical focus after filter, submission, errors, and opening a session;
+- fixed lecturer context, mode and period controls, filters, calendar/list
+  records, session details, drafts, feedback forms, status, and pane close
+  controls wrap without horizontal page scroll;
+- keyboard-only issue/copy/revoke/replace/filter/mode/selection/pane/feedback
+  paths, with no in-workspace refresh control;
+- logical focus after filter changes, discard/cancel, submission, errors,
+  responsive pane transitions, close, and exact-session navigation;
 - screen-reader announcements for identity disclaimer, revision/state, expiry,
-  counts/completeness, copy result, submission result, unavailable, and
-  throttled states;
-- flag/comment distinction without color.
+  result scope, count completeness, copy result, submission result,
+  automatic scope loss, unavailable, and throttled states;
+- lifecycle, validation, feedback kind, count completeness, and
+  flag/comment distinction without color.
 
-Finally conduct SC-006/SC-007 with at least 10 representative lecturers or
-designated acceptance reviewers. Record participant count, completion times,
-task outcomes, and understanding answers. These two criteria remain pending
-until the real moderated review is complete.
+Finally conduct SC-006, SC-007, and SC-016 with at least 10 representative
+lecturers or designated acceptance reviewers. Record participant count,
+completion times, task outcomes, filter/session-detail completion, and
+understanding answers. These three criteria remain pending until the real
+moderated review is complete.
+
+## 13. Extension implementation evidence (2026-07-31)
+
+The FS-015 shared-workspace extension was implemented and exercised locally
+against the final source state.
+
+Automated backend evidence:
+
+- Focused FS-015, concurrency, API, bearer-boundary, performance, and migration
+  suite: `139 passed, 301 warnings in 21.42s`, exit code 0.
+- Focused FS-013 lifecycle and publication regression suite:
+  `26 passed, 27 warnings in 8.28s`, exit code 0.
+- Full backend suite: `466 passed, 1158 warnings in 81.46s`, exit code 0.
+- Reference-scale guard: `1 passed, 1 warning in 3.74s`, exit code 0. All
+  20 complete 100-session/200-feedback openings took `0.033130` to `0.050943`
+  seconds; all 20 unique committed submissions took `0.009495` to `0.020446`
+  seconds.
+- The Windows Python environment emits a post-test diagnostic from optional
+  NumPy 1.x-compiled pyarrow/numexpr/bottleneck modules loaded through
+  pandas/OR-Tools. It occurs after pytest reports completion and does not
+  change the recorded exit code 0. This environment issue should be repaired
+  independently; it did not suppress or skip the passing assertions.
+
+Automated client evidence:
+
+- Focused transport, shared workspace/list/pane, draft dialog, Lecturer
+  coordination, Schedule navigation, public page, and bootstrap suite:
+  `11 files passed`, `170 tests passed`, exit code 0.
+- Full client suite: `46 files passed`, `314 tests passed`, exit code 0.
+- ESLint: passed with no findings.
+- TypeScript plus Vite production build: passed; 72 modules transformed.
+
+The automated security, privacy, and accessibility checks cover:
+
+- exact public operation allowlisting and stored active/ended lecturer-bearer
+  denial on non-public APIs;
+- strict safe DTO keys and reference integrity, raw-secret/contact/planner-note/
+  other-lecturer/raw-finding privacy canaries, literal feedback text, generic
+  terminal failures, and non-cacheable public responses;
+- lecturer-only assignment projection, authoritative empty scope, reload-only
+  assignment updates, local feedback-history append, stale-scope clearing, and
+  no planner controls in the restricted DOM;
+- Week/Day/Month/List operation, applicable intersecting filters, fixed
+  lecturer context, teaching/exam selection, long labels at 320 CSS pixels,
+  live regions, keyboard activation, non-color semantics, focus containment,
+  inert obscured content, and focus restoration;
+- item-first Lecturer coordination filters, identical-scope counters, repeated
+  impossible items, partial/unavailable qualification, exact current-session
+  navigation, historical context retention, and non-blocking publication.
+
+Manual/release evidence status:
+
+- **Pending — release blocking where required by the specification**:
+  production HTTPS and gateway configuration, anonymous/direct-backend denial,
+  trusted-peer/CIDR and forwarding-header overwrite, deployed restart-safe
+  misuse state, and deployed 20-opening/20-submission browser timings. No
+  production-like target or gateway evidence owner was supplied for this run.
+- **Pending**: physical 200% zoom inspection, real screen-reader pass, and
+  cross-browser/device responsive inspection. Automated DOM, focus, semantic,
+  and 320-CSS-pixel checks passed but do not replace these manual protocols.
+- **Pending**: the SC-006, SC-007, and SC-016 moderated protocols with at least
+  ten representative lecturers or designated reviewers. No participants were
+  available in this implementation run, so no usability success is claimed.
+- **Pending**: manual canary inspection of production gateway/application logs,
+  browser history/storage, referrers, and deployed observability surfaces.
+  Automated transport, response, rendered-DOM, and persistence canaries passed.
+
+Final consistency audit:
+
+- `spec.md`, `plan.md`, `data-model.md`, `research.md`, the UI and gateway
+  contracts, and the six-operation OpenAPI contract agree on one lecturer and
+  one revision, exactly two public operations, reload-only projection updates,
+  component reuse, advisory immutable feedback, and the single Lecturer
+  coordination destination.
+- The OpenAPI YAML parses as 3.1.0 with 6 paths and 26 schemas.
+- No extension migration, durable entity, public route, generic Action Center,
+  account, email integration, export, availability workflow, schedule mutation,
+  or publication gate was introduced.
+- `git diff --check` passed; only repository line-ending notices were emitted.
+- No `.specify/extensions.yml` post-command hook configuration exists.
 
 ## Completion evidence
 
@@ -526,9 +644,11 @@ Before commit, retain:
 - the production-like environment and all 20 review-opening and 20
   feedback-submission timing measurements;
 - privacy canary inspection;
-- keyboard/zoom/screen-reader notes;
+- restricted-workspace reuse, planner-control DOM-absence, reload-only,
+  draft-guard, keyboard, zoom, and screen-reader notes;
 - production HTTPS, exact gateway allowlist, planner rejection, direct-backend
-  denial, trusted peer/CIDR, forwarding-header overwrite, same-origin public
-  requests, identified gateway owner/configuration/runbook/evidence recorder,
-  and restart-safe unusable-link rejection confirmation;
+  denial, lecturer-bearer denial on representative planner APIs, trusted
+  peer/CIDR, forwarding-header overwrite, same-origin public requests,
+  identified gateway owner/configuration/runbook/evidence recorder, and
+  restart-safe unusable-link rejection confirmation;
 - moderated-review evidence when available.

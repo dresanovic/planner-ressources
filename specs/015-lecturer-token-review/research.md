@@ -319,50 +319,54 @@ a third-party limiting library.
 - Count only successful submissions: rejected because the requirement limits
   submission attempts and malformed floods must not bypass protection.
 
-## 13. Planner workspace and flag filter
+## 13. Planner Lecturer coordination destination
 
-**Decision**: Add one Schedule destination named **Lecturer reviews**. Its first
-feedback control is a keyboard-operable “Not possible” filter showing the
-server's flag-item count. The result groups by session, so one session appears
-once even with several flags. A server-provided occurrence reference opens the
-existing Calendar session pane through the existing dirty-navigation guard.
-Link management and feedback remain in this one destination.
+**Decision**: Rename the implemented Schedule destination to **Lecturer
+coordination** and keep link management with retained feedback. Filter
+individual immutable items by intended lecturer, course, session kind, and
+feedback kind before regrouping. Recompute all feedback, comment,
+impossible-item, and distinct-affected-session counters from the same active
+set. Use the existing guarded Schedule navigation for current occurrences.
 
-**Rationale**: A dedicated destination makes the requested prominent filter
-discoverable and avoids overloading Versions or placing token administration
-inside the editing calendar. Reusing the occurrence reference preserves one
-authorized planner workflow.
-
-**Alternatives considered**:
-
-- Put all controls in Versions: rejected because feedback review and its top
-  filter are operational work, not lifecycle transition controls.
-- Add a second feedback destination or dashboard: rejected as unnecessary
-  navigation and state.
-- Modify the planner schedule automatically from a flag: rejected because all
-  feedback is advisory.
-
-## 14. Public page isolation
-
-**Decision**: Render a dedicated `LecturerReviewPage` before the normal `App`
-shell only when `window.location.pathname` is `/lecturer-review/` and the exact
-review fragment is present. `main.tsx` dynamically imports the public page or
-the planner `App` only after that path decision. The public page consumes a
-minimum public DTO and never imports planner calendar/lifecycle components. It
-supports an explicit refresh, revision comment, and per-session comment or
-not-possible form, with no polling.
-
-**Rationale**: Planner DTOs contain broader revision, finding, resource, and
-action data. A small public view makes least privilege visible in both contract
-and code. Explicit refresh plus post-submit reload is sufficient for a
-three-day advisory review and avoids unnecessary protected requests.
+**Rationale**: The implemented destination already owns link lifecycle and
+feedback handling. Broadening that surface avoids a second dashboard or generic
+Action Center, while item-first filtering handles mixed historical groups
+without changing stored feedback.
 
 **Alternatives considered**:
 
-- Reuse `CalendarPlanningWorkspace`: rejected because hiding planner-only fields
-  after loading them is not minimum scope.
-- Polling or real-time updates: rejected because current assignments can be
-  refreshed on demand and live collaboration is out of scope.
+- Keep only the original impossible filter: rejected because planners need
+  course, lecturer, session-kind, and feedback-kind coordination in this slice.
+- Add server-side cross-revision search: rejected because the selected Schedule
+  revision is already fixed context and the current overview is complete for
+  that scope.
+- Modify the schedule automatically from feedback: rejected because every item
+  remains advisory.
+
+## 14. Public route isolation with shared restricted presentation
+
+**Decision**: Preserve exact-path bootstrap and the dedicated safe public DTO,
+then normalize that DTO to an access-neutral schedule presentation model.
+`LecturerReviewPage` composes the established calendar, neutral list, filters,
+session pane, and discard dialog through an explicit lecturer-review access
+profile. Shared presentation chunks may load; the planner `App`, planner API
+adapters, broader planner DTO, navigation, summaries, and mutation callbacks
+may not.
+
+**Rationale**: Minimum-scope transport and component reuse address different
+boundaries. A safe public DTO prevents fetch-and-hide disclosure, while an
+explicit restricted composition gives the lecturer the familiar FS-014/FS-019
+experience without a parallel calendar/list implementation.
+
+**Alternatives considered**:
+
+- Return the planner calendar DTO and hide fields in the client: rejected
+  because transport would expose other lecturers, resources, findings, and
+  planner-only context.
+- Keep the implemented flat lecturer list: rejected because mandatory
+  calendar/list and session-pane reuse is the outcome of this extension.
+- Duplicate lecturer-specific calendar/list components: rejected because they
+  would drift from FS-014/FS-019 behavior.
 
 ## 15. Feedback completeness contract
 
@@ -396,3 +400,198 @@ Kit phases.
 
 - Invent a new context file or script: rejected because it is not part of the
   repository's configured Spec Kit workflow.
+
+## 17. Implemented baseline versus extension persistence
+
+**Decision**: Keep migration `0009_lecturer_token_review.py`, all four
+implemented record types, lifecycle transactions, endpoints, and token
+transport unchanged. The calendar/list and Lecturer coordination extension
+adds no table, index, migration, persisted filter, or persisted draft.
+
+**Rationale**: The existing link, feedback, activity, and misuse records already
+represent every durable business and security fact. Workspace mode, date
+anchor, filters, pane selection, and unsubmitted feedback are transient client
+state.
+
+**Alternatives considered**:
+
+- Persist public workspace state or feedback drafts: rejected because the spec
+  makes drafts transient and does not require cross-visit restoration.
+- Add a new aggregate table for coordination counters: rejected because the
+  reference scale is small and counts derive from immutable feedback.
+
+## 18. Shared workspace reuse boundary
+
+**Decision**: Reuse `CalendarPlanningWorkspace` and `SessionPane` through a
+discriminated lecturer-review access profile. Extract one neutral selectable
+occurrence-list renderer from the established planner List path and use it in
+both access modes. Keep exact transport validation in
+`api/lecturerReview.ts`; place the single public-to-presentation adapter and
+filter mapping in `components/calendarWorkspaceUtils.ts`. Planner behavior
+remains the default.
+
+**Rationale**: The current public page is a parallel flat course/session list,
+while the specification requires the familiar calendar/list/filter/pane
+experience. An explicit access profile can remove planner-only context,
+facets, fields, summaries, and actions from the DOM while retaining modes,
+period navigation, selection, focus, and responsive behavior. A shared neutral
+list is justified because both planner and lecturer modes now need selectable
+teaching/exam occurrence rows.
+
+**Alternatives considered**:
+
+- Keep the current standalone public list: rejected because it contradicts
+  mandatory component reuse and calendar/list parity.
+- Feed `DraftSchedulePanel` fake planner values: rejected because it couples
+  the public review to edit models and risks exposing planner semantics.
+- Fetch the planner Calendar workspace and hide fields: rejected because hidden
+  planner data would cross the public security boundary.
+
+## 19. Restricted public workspace contract
+
+**Decision**: Expand the existing `PublicReview`, `PublicCourse`, and
+`PublicSession` DTOs with only the fields required for restricted presentation:
+semester bounds, stable safe course/room references, cohort, study type,
+teaching units or exam duration/type, bound lifecycle, sanitized current
+validation availability/findings, and facets for course, cohort, room, study
+type, session type, lifecycle, and validation. Do not expose a lecturer facet,
+available revisions, planner summaries/outcomes, raw finding details, contacts,
+notes, eligibility, mutation inputs, or other lecturer identities.
+
+**Rationale**: The current public DTO cannot drive the shared calendar or pane.
+A dedicated whitelist keeps the public contract smaller than the planner
+Calendar DTO and lets exact-key tests remain privacy canaries.
+
+**Alternatives considered**:
+
+- Return the full planner `CalendarWorkspace`: rejected because it contains
+  unrelated revision contexts, summaries, outcomes, and sensitive finding
+  references.
+- Add a second public endpoint: rejected because the current GET already owns
+  the complete review projection and one atomic response avoids partial scope.
+
+## 20. Validation derivation and sanitization
+
+**Decision**: Refactor the existing private FS-014 derivation in
+`backend/app/services/calendar_workspace.py` into one internal reusable
+function, retain its planner behavior through
+`backend/tests/services/test_calendar_workspace.py`, invoke it over the
+complete bound revision from the lecturer-review service, then whitelist only
+category, availability, safe message, and scoped occurrence association. An
+out-of-scope conflict counterpart, subject reference, other lecturer, planner
+note, raw configuration, and administrative capacity context never cross the
+public response.
+
+**Rationale**: Validating only scoped occurrences can falsely report no issue
+when the counterpart is outside lecturer scope. Deriving complete revision
+findings first preserves correctness; sanitizing afterward preserves privacy.
+Legacy or incomplete validation context is partial/unavailable, never
+converted to no-current-issue.
+
+**Alternatives considered**:
+
+- Validate only the lecturer subset: rejected because cross-scope conflicts can
+  disappear.
+- Send raw findings and redact in React: rejected because the public response
+  itself must be minimum-scope.
+
+## 21. Lecturer coordination filtering and counters
+
+**Decision**: Keep the existing revision-scoped planner overview endpoint.
+Within the selected Schedule revision, filter immutable feedback items
+client-side by intended lecturer, course, session kind, and feedback kind,
+regroup the filtered items, and recompute total items, comment items,
+impossible-session items, and distinct affected sessions from that identical
+active filter scope. A revision facet is not rendered when the outer Schedule
+context already fixes the only revision.
+
+Comments count `revision_comment` and `session_comment` items; optional text on
+an `impossible_session` item does not change its kind. Course and session-kind
+filters exclude revision-level comments because those items have no session
+context. Historical filters use captured submission-time context. Partial or
+unavailable feedback produces qualified, non-definitive counters rather than
+zero.
+
+**Rationale**: The current overview already contains every needed immutable
+field at the reference scale. Item-first filtering is necessary because one
+session group may contain different lecturers or feedback kinds. Retaining the
+revision-scoped endpoint is the smallest design consistent with the selected
+Schedule context.
+
+**Alternatives considered**:
+
+- Filter whole groups: rejected because nonmatching items inside a matching
+  group would remain visible and counted.
+- Add a cross-revision coordination endpoint: rejected for this slice because
+  the main workflow and current Schedule destination are revision-scoped; it
+  would expand API and navigation scope without a requirement.
+
+## 22. Reload-only assignment projection
+
+**Decision**: Load the assignment projection on initial open, full browser
+reload, or reopening the link. Remove the current in-workspace Refresh action,
+add no timer or polling, and do not re-GET the projection after successful
+feedback. Append the returned accepted feedback item locally. Every feedback
+POST continues to recheck current scope; a stale target is rejected with
+reload/reopen guidance and no item.
+
+**Rationale**: This is the clarified simplest behavior. The existing backend
+GET is dynamic and non-cacheable, and the existing POST already performs the
+authoritative current-assignment check.
+
+**Alternatives considered**:
+
+- Poll or push assignment changes: rejected as unnecessary complexity for an
+  unlikely scenario.
+- Reload after every successful feedback submission: rejected because it would
+  update the visible assignment projection outside the clarified trigger.
+
+## 23. Unsubmitted feedback protection
+
+**Decision**: Keep session comment and impossible-explanation drafts in the
+public page state keyed by occurrence. Before lecturer-initiated pane close,
+session change, or a filter that would hide the target, reuse the existing
+discard dialog with neutral feedback wording. Cancel preserves the draft and
+context; discard clears both drafts for that target and commits the navigation.
+Responsive presentation changes never prompt or clear text. Automatic scope
+loss clears the target and drafts, announces why, and creates no feedback.
+
+**Rationale**: This prevents accidental loss without creating saved drafts or a
+new backend operation.
+
+**Alternatives considered**:
+
+- Silent discard: rejected by clarification.
+- Persist one draft per session: rejected as unrelated storage and lifecycle
+  scope.
+- Block navigation until submission: rejected because advisory feedback must
+  remain optional.
+
+## 24. Lecturer bearer denial on planner APIs
+
+**Decision**: Add one centralized backend request guard that parses only the
+exact FS-015 bearer grammar (`Bearer` plus 43 URL-safe characters), hashes that
+candidate, and rejects it on every non-public `/api/**` route only when the
+digest resolves to any stored lecturer-review link, including an ended link.
+The guard runs before route validation or service execution. An unrelated
+bearer with the same length but no stored digest match is not classified as a
+lecturer credential; it and requests without a lecturer credential continue
+to rely on the trusted gateway as the planner authorization boundary. The
+public allowlist and public operations remain unchanged.
+
+**Rationale**: The current UI and gateway hide/protect planner operations, but
+planner FastAPI routes do not inspect the `Authorization` header. A constructed
+lecturer-link request could therefore reach a planner operation if it reached
+the backend. Central rejection closes FR-079 without adding planner accounts or
+dependencies to every route.
+
+**Alternatives considered**:
+
+- Add a dependency to every planner endpoint: rejected as broad, repetitive,
+  and easy to miss.
+- Treat the gateway alone as sufficient: rejected because the clarified spec
+  explicitly requires backend denial of lecturer-link requests.
+- Reject every 43-character bearer without resolving its digest: rejected
+  because the external gateway's planner credential forwarding is outside this
+  slice and an unrelated planner bearer must not be misclassified.
+- Introduce application planner authentication: rejected as FS-016 scope.

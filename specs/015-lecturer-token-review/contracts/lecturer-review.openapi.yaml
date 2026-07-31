@@ -216,7 +216,8 @@ paths:
         "409":
           description: >
             The token remains valid, but the submitted session or submission
-            identity is no longer authoritative. The client must refresh.
+            identity is no longer authoritative. The reviewer must reload the
+            browser page or reopen the link.
           headers:
             Cache-Control:
               schema:
@@ -630,6 +631,11 @@ components:
         - revision
         - accessExpiresAt
         - timeZone
+        - semesterStartDate
+        - semesterEndDate
+        - validationAvailability
+        - validationFindings
+        - filterFacets
         - courses
         - submittedFeedback
       properties:
@@ -645,6 +651,21 @@ components:
           format: date-time
         timeZone:
           type: string
+        semesterStartDate:
+          type: string
+          format: date
+        semesterEndDate:
+          type: string
+          format: date
+        validationAvailability:
+          type: string
+          enum: [complete, partial, unavailable]
+        validationFindings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicValidationFinding"
+        filterFacets:
+          $ref: "#/components/schemas/PublicFilterFacets"
         courses:
           type: array
           description: Empty is a valid complete current assignment projection.
@@ -677,16 +698,26 @@ components:
       additionalProperties: false
       required:
         - sourceCourseId
+        - courseRef
         - code
         - title
+        - cohortName
+        - studyType
         - sessions
       properties:
         sourceCourseId:
           type: integer
+        courseRef:
+          type: string
+          pattern: "^course:[1-9][0-9]*$"
         code:
           type: string
           example: COURSE-42
         title:
+          type: string
+        cohortName:
+          type: string
+        studyType:
           type: string
         sessions:
           type: array
@@ -700,13 +731,18 @@ components:
         - sessionRef
         - sessionKind
         - sourceSessionId
+        - courseRef
         - sessionType
         - date
         - startTime
         - endTime
         - timeZone
         - roomName
+        - roomRef
         - cohortName
+        - teachingUnits
+        - examDurationMinutes
+        - validationFindingRefs
       properties:
         sessionRef:
           type: string
@@ -716,6 +752,9 @@ components:
           enum: [teaching, exam]
         sourceSessionId:
           type: integer
+        courseRef:
+          type: string
+          pattern: "^course:[1-9][0-9]*$"
         sessionType:
           type: string
         date:
@@ -729,8 +768,106 @@ components:
           type: string
         roomName:
           type: string
+        roomRef:
+          type: string
+          pattern: "^room:[1-9][0-9]*$"
         cohortName:
           type: string
+        teachingUnits:
+          type: [integer, "null"]
+          minimum: 1
+          description: Required for teaching and null for exams.
+        examDurationMinutes:
+          type: [integer, "null"]
+          minimum: 1
+          description: Required for exams and null for teaching.
+        validationFindingRefs:
+          type: array
+          items:
+            type: string
+
+    PublicValidationFinding:
+      type: object
+      additionalProperties: false
+      required:
+        - findingRef
+        - category
+        - message
+        - affectedSessionRefs
+      properties:
+        findingRef:
+          type: string
+        category:
+          type: string
+          enum:
+            - lecturer_conflict
+            - room_conflict
+            - cohort_conflict
+            - room_capacity
+            - holiday
+            - exam_validity
+            - other
+        message:
+          type: string
+          description: Sanitized lecturer-safe explanation without counterpart or administrative identifiers.
+        affectedSessionRefs:
+          type: array
+          items:
+            type: string
+            pattern: "^(teaching|exam):[1-9][0-9]*$"
+
+    PublicFacetValue:
+      type: object
+      additionalProperties: false
+      required: [value, label]
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+
+    PublicFilterFacets:
+      type: object
+      additionalProperties: false
+      description: Contains no lecturer facet because lecturer identity is fixed token context.
+      required:
+        - courses
+        - cohorts
+        - rooms
+        - studyTypes
+        - sessionTypes
+        - lifecycleContexts
+        - validationCategories
+      properties:
+        courses:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicFacetValue"
+        cohorts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicFacetValue"
+        rooms:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicFacetValue"
+        studyTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicFacetValue"
+        sessionTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicFacetValue"
+        lifecycleContexts:
+          type: array
+          maxItems: 1
+          items:
+            $ref: "#/components/schemas/PublicFacetValue"
+        validationCategories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicFacetValue"
 
     SessionContext:
       type: object
@@ -779,6 +916,14 @@ components:
           type: string
         cohortName:
           type: string
+        studyType:
+          type: [string, "null"]
+        teachingUnits:
+          type: [integer, "null"]
+          minimum: 1
+        examDurationMinutes:
+          type: [integer, "null"]
+          minimum: 1
 
     FeedbackInput:
       type: object
@@ -911,7 +1056,7 @@ components:
           const: REVIEW_REFRESH_REQUIRED
         message:
           type: string
-          const: The schedule changed. Refresh the review before submitting feedback.
+          const: The schedule changed. Reload the browser page or reopen the link before submitting feedback.
 
     PublicValidationError:
       type: object

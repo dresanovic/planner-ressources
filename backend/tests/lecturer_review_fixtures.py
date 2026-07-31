@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Literal
@@ -53,6 +54,29 @@ class DeterministicUtcClock:
             raise ValueError("Pass either a timedelta or duration fields, not both.")
         self.current += delta if delta is not None else timedelta(**duration)
         return self.current
+
+
+def install_api_clock(monkeypatch, clock: DeterministicUtcClock) -> None:
+    """Install a deterministic clock on lecturer-review API service calls."""
+
+    api = importlib.import_module("app.api.lecturer_review")
+    service = importlib.import_module("app.services.lecturer_review")
+    for name in (
+        "get_lecturer_review_overview",
+        "get_public_lecturer_review",
+        "issue_lecturer_review_link",
+        "replace_lecturer_review_link",
+        "reject_invalid_feedback_attempt",
+        "revoke_lecturer_review_link",
+        "submit_lecturer_review_feedback",
+    ):
+        original = getattr(service, name)
+
+        def with_clock(*args, _original=original, **kwargs):
+            kwargs["clock"] = clock
+            return _original(*args, **kwargs)
+
+        monkeypatch.setattr(api, name, with_clock)
 
 
 @dataclass(frozen=True)

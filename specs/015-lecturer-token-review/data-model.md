@@ -2,8 +2,10 @@
 
 ## Model boundary
 
-FS-015 adds link, feedback, activity, and short-lived misuse-state records
-without changing FS-013 revision ownership or the existing schedule schema.
+The implemented FS-015 baseline added link, feedback, activity, and short-lived
+misuse-state records without changing FS-013 revision ownership or the existing
+schedule schema. This calendar/list and coordination extension adds no durable
+entity, field, index, or migration.
 `ScheduleRevision.id` and `Lecturer.id` are the stable scope identities. A
 current scheduled occurrence is identified by the pair
 `(session_kind, source_session_id)` because teaching and exam IDs may overlap.
@@ -130,16 +132,25 @@ The JSON document uses the same minimum fields as the public session contract:
 sessionRef
 sessionKind
 sourceSessionId
+sessionType
 courseSourceId
 courseCode
 courseTitle
+studyType
 date
 startTime
 endTime
 timeZone
 roomName
 cohortName
+teachingUnits?        # teaching only
+examDurationMinutes?  # exam only
 ```
+
+New feedback captures the broadened safe context when available. Historical
+feedback created by the implemented baseline remains valid when the optional
+extension fields are absent; the planner presentation labels those values
+unavailable rather than deriving them from a later session state.
 
 It contains no lecturer contact data, other lecturer identity, student data,
 planner note, lifecycle history, internal finding, or token value.
@@ -218,6 +229,11 @@ The gateway is not a persisted entity, but it is part of the security model:
   public review API operations.
 - Planner page entry points and every non-public API operation require the
   gateway's existing planner authorization.
+- Every non-public API operation additionally rejects a bearer whose exact
+  FS-015 shape and digest resolve to any stored active or ended
+  lecturer-review link before route validation or service execution. An
+  unrelated bearer is not classified as a lecturer credential; this defense
+  does not replace the gateway or introduce planner accounts.
 - The backend listener is not directly publicly reachable.
 - The gateway discards caller `Forwarded`/`X-Forwarded-*` values and writes one
   authoritative client address.
@@ -254,12 +270,39 @@ The public schedule is computed, not persisted as another aggregate:
   teaching/exam entries by the bound lecturer source ID.
 - **Abandoned/Superseded/Historical**: return the generic unavailable result.
 
-Group the complete result by course. Use `COURSE-{sourceCourseId}` as the stable
-display code because the existing Course model has no institution code. An
-empty filtered set returns a valid explicit empty schedule. Any incomplete or
-unconfirmable projection fails closed and returns no partial public data.
+Return the complete current authorized assignment projection. Use
+`COURSE-{sourceCourseId}` as the stable display code because the existing
+Course model has no institution code. An empty authorized assignment set
+returns a valid explicit empty schedule. Client display filters are applied
+only after that complete authorized set is loaded; a filter no-match is a
+different UI state and never changes token scope. Any incomplete or
+unconfirmable schedule projection fails closed and returns no partial public
+schedule. The projection is recomputed only on browser reload or reopening the
+link; an already open page does not poll.
 
-## Planner feedback read model
+## Restricted lecturer workspace read model
+
+This read model is computed by the existing public review service and is not
+persisted. It is deliberately smaller than the planner Calendar workspace.
+
+| Field group | Included values | Excluded values |
+|---|---|---|
+| Fixed context | Intended lecturer name and identity disclaimer | Lecturer selector, contact data, other lecturer IDs/names |
+| Semester/revision | Semester ID/name/start/end, bound revision ID/label/state, access expiry/time zone | Other revision selectors, history, planner lifecycle actions |
+| Course | Stable safe ref, synthetic code, title, cohort, study type, occurrence refs | Eligibility, remaining units, planning outcomes, planner notes |
+| Teaching occurrence | Stable ref, course ref, date/time, room ref/name, cohort, session type, teaching units, safe finding refs | Source/edit metadata and out-of-scope resources |
+| Exam occurrence | Stable ref, course ref, date/time, room ref/name, cohort, exam/session type, duration, safe finding refs | Capacity/configuration/recommendation internals not required by the lecturer pane |
+| Validation | `complete`, `partial`, or `unavailable`; safe category/message and scoped affected occurrence refs | Raw counterpart refs, subject refs, other lecturer identity, planner/admin details |
+| Facets | Course, cohort, room, study type, session type, bound lifecycle, validation | Lecturer facet and any value outside current token scope |
+| Feedback | Same-link immutable submitted items | Feedback from another link, lecturer, or revision |
+
+Validation is derived against the complete bound revision before sanitization
+so an in-scope session does not lose a conflict whose counterpart is outside
+scope. Only the safe finding projection is returned. Partial validation does
+not make the complete schedule partial, but it must remain visibly partial or
+unavailable rather than being represented as no issue.
+
+## Lecturer coordination read model
 
 The planner overview is a query result, not a persisted aggregate:
 
@@ -267,15 +310,39 @@ The planner overview is a query result, not a persisted aggregate:
 - lecturer eligibility/assignment summaries supplied by the server;
 - non-secret link histories and effective statuses;
 - `feedbackAvailability`: `complete`, `partial`, or `unavailable`;
-- total feedback items;
-- exact impossible flag-item count only when complete;
+- active feedback filter context: intended lecturer, course, session kind, and
+  feedback kind when applicable;
+- total feedback items, comment items, impossible-session items, and distinct
+  affected sessions for the exact same active filter scope when complete;
 - feedback grouped by revision and session;
 - distinct flagged session groups, each with its flag-item count;
-- captured submission context;
+- immutable per-item captured submission context, which remains authoritative
+  when group display context differs across edits;
 - an optional authoritative current `occurrenceRef` when the existing planner
   session workflow can still open the session.
 
-The client never infers completeness or treats missing data as zero.
+Filtering is item-first, then groups and counters are rebuilt. Comment count
+includes `revision_comment` and `session_comment`, not explanatory text on an
+`impossible_session` item. Course/session filters exclude revision comments
+because they have no session context. Repeated flags count as separate items
+while distinct affected sessions use `(revision, session_kind,
+source_session_id)`. The client never infers completeness or treats missing
+data as zero.
+
+## Transient interaction state
+
+The following values exist only in client memory and are not domain entities:
+
+- restricted calendar/list mode, date anchor, active display filters, selected
+  occurrence, pane presentation, and scroll/focus origin;
+- session comment and impossible-explanation drafts keyed by occurrence;
+- a pending discard/cancel intent;
+- Lecturer coordination filters and derived counters.
+
+Responsive pane changes preserve this state. A lecturer-initiated action that
+would replace a non-blank draft requires discard/cancel. Automatic scope loss
+clears the affected draft with an explanation. No transient state creates,
+updates, or deletes a persisted feedback item.
 
 ## Transaction boundaries
 

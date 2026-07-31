@@ -58,7 +58,7 @@ export type WorkspaceOccurrenceBase = {
 export type TeachingOccurrence = WorkspaceOccurrenceBase & {
   kind: 'teaching'
   teachingUnits: number
-  source: string
+  source?: string
 }
 export type ExamValidityContext = {
   configurationIdentifier: string
@@ -78,10 +78,10 @@ export type ExamOccurrence = WorkspaceOccurrenceBase & {
   kind: 'exam'
   examType: string
   durationMinutes: number
-  requiredCapacity: number
+  requiredCapacity?: number
   assignedRoomName: string
-  currentRoomCapacity: number | null
-  validityContext: ExamValidityContext
+  currentRoomCapacity?: number | null
+  validityContext?: ExamValidityContext
   recommendationContext?: ExamRecommendationContext | null
 }
 export type WorkspaceOccurrence = TeachingOccurrence | ExamOccurrence
@@ -156,11 +156,13 @@ export type FilterFacets = {
 }
 export type RevisionSelector = {
   revisionId: number
-  revisionNumber: number
+  revisionNumber: number | null
+  revisionLabel?: string
   lifecycleState: 'draft' | 'ready_for_review' | 'published'
   designation: RevisionDesignation
 }
 export type CalendarWorkspaceBase = {
+  presentationSource?: 'planner' | 'lecturer-review'
   semester: { semesterId: number; name: string; startDate: string; endDate: string }
   availableContexts: { activeWorking: RevisionSelector | null; currentPublished: RevisionSelector | null }
   workspaceToken: string

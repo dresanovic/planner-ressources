@@ -15,8 +15,11 @@ FastAPI backend.
   surface below.
 - The backend listener is private or loopback-bound and cannot be reached
   directly from the public network.
-- Hidden UI controls are not authorization. A blocked planner API request must
-  be rejected by the gateway before it reaches the application.
+- Hidden UI controls are not authorization. The gateway remains the primary
+  planner boundary, and the backend additionally rejects a bearer whose exact
+  FS-015 shape and digest resolve to a stored active or ended lecturer-review
+  link on every non-public `/api/...` route before route validation, service
+  execution, or mutation.
 
 The concrete planner identity mechanism belongs to the existing gateway
 deployment and is outside FS-015. Release evidence must nevertheless prove
@@ -57,9 +60,13 @@ the secret.
 `client/src/main.tsx` branches on the exact pathname `/lecturer-review/` before
 loading either application surface:
 
-- the public branch dynamically imports only `LecturerReviewPage`;
+- the public branch dynamically imports `LecturerReviewPage` and may load only
+  shared calendar, neutral list, filter, session-pane, and discard-dialog
+  presentation chunks required by its restricted access profile;
 - the planner branch dynamically imports the normal `App`;
-- the public branch never renders planner navigation or requests planner APIs;
+- the public branch never imports the planner `App`, planner API adapters,
+  navigation, operational summaries, or mutation callbacks, and never requests
+  planner APIs;
 - the fragment is removed while preserving `/lecturer-review/`;
 - public API URLs are fixed, relative, and same-origin in production;
 - public fetches use `credentials: "omit"`;
@@ -69,6 +76,22 @@ loading either application surface:
 Built assets contain no schedule or planner data. If the gateway exposes a
 shared asset directory, authorization continues to be enforced at page and API
 boundaries.
+
+## Backend lecturer-bearer denial
+
+Component reuse does not grant planner authority. Before non-public API route
+handling, the backend parses only `Bearer` followed by exactly 43 URL-safe
+characters, hashes the candidate, and classifies it as a lecturer credential
+only when its digest matches any stored lecturer-review link, including an
+ended link. The denial applies to planner calendar, list, coordination,
+link-management, lifecycle, publication, and schedule-mutation operations. It
+must occur before request validation can reveal whether a target exists and
+before any route service can read or mutate planner data.
+
+This defense does not introduce planner accounts or replace the gateway. A
+request without a stored-link digest match—including an unrelated bearer of
+the same length—continues to depend on the existing trusted-gateway
+authorization and is not classified as a lecturer credential.
 
 ## Public response policy
 
@@ -140,12 +163,17 @@ gateway:
    API operations.
 3. Anonymous `/`, planner APIs, `/health`, API documentation, unlisted public
    methods/subpaths, and direct backend access are rejected.
-4. The gateway overwrites forged forwarding headers.
-5. Repeated requests from one real source cannot evade the 20-attempt boundary
+4. Active and ended stored lecturer bearer credentials are denied on
+   representative planner calendar, coordination, link-management, lifecycle,
+   publication, and mutation APIs, with no planner data returned and no state
+   change; an unrelated exact-length bearer is not classified as a lecturer
+   credential and an authorized planner request still passes.
+5. The gateway overwrites forged forwarding headers.
+6. Repeated requests from one real source cannot evade the 20-attempt boundary
    by varying forwarding headers.
-6. Two real sources receive independent invalid-token limiter buckets.
-7. Proxy trust is restricted to the recorded gateway peer/CIDR, and restarting
+7. Two real sources receive independent invalid-token limiter buckets.
+8. Proxy trust is restricted to the recorded gateway peer/CIDR, and restarting
    the application does not reset an active unusable-link rejection period.
-8. Production public calls are same-origin, HTTPS, and use no credentials.
+9. Production public calls are same-origin, HTTPS, and use no credentials.
 
 Failure of any item blocks production release of FS-015.

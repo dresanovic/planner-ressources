@@ -6,7 +6,7 @@ import {
   LECTURER_REVIEW_COMMENT_CANARY,
   LECTURER_REVIEW_SECRET_CANARY,
   lecturerReviewFeedbackResultFixture,
-  lecturerReviewPublicErrorFixtures,
+  longLabelPublicLecturerReviewFixture,
   publicLecturerReviewFixture,
 } from '../test/lecturerReviewFixtures'
 
@@ -43,47 +43,11 @@ function button(label: string) {
   )
 }
 
-function deferred<Value>() {
-  let resolve!: (value: Value) => void
-  let reject!: (reason?: unknown) => void
-  const promise = new Promise<Value>((resolvePromise, rejectPromise) => {
-    resolve = resolvePromise
-    reject = rejectPromise
+async function click(control: HTMLElement | undefined | null) {
+  await act(async () => {
+    control?.click()
+    await Promise.resolve()
   })
-  return { promise, resolve, reject }
-}
-
-function sectionWithHeading(heading: string) {
-  const target = [...document.querySelectorAll('h1, h2, h3, h4')].find(
-    (candidate) => candidate.textContent?.trim() === heading,
-  )
-  return target?.closest<HTMLElement>('section, article, li') ?? null
-}
-
-function sessionItem(sessionType: string) {
-  return (
-    [...document.querySelectorAll<HTMLElement>('li')].find((candidate) =>
-      candidate.textContent?.includes(sessionType),
-    ) ?? null
-  )
-}
-
-function labelledControl<T extends HTMLElement>(
-  scope: ParentNode,
-  labelText: string,
-) {
-  const label = [...scope.querySelectorAll<HTMLLabelElement>('label')].find(
-    (candidate) => candidate.textContent?.includes(labelText),
-  )
-  if (!label) return null
-  if (label.htmlFor) return document.getElementById(label.htmlFor) as T | null
-  return label.querySelector<T>('input, textarea, select')
-}
-
-function scopedButton(scope: ParentNode, label: string) {
-  return [...scope.querySelectorAll<HTMLButtonElement>('button')].find(
-    (candidate) => candidate.textContent?.trim() === label,
-  )
 }
 
 async function typeIn(control: HTMLTextAreaElement, value: string) {
@@ -94,14 +58,34 @@ async function typeIn(control: HTMLTextAreaElement, value: string) {
   })
 }
 
-async function clickAndFlush(control: HTMLButtonElement | undefined) {
+function labelledControl<T extends HTMLElement>(labelText: string) {
+  const label = [...document.querySelectorAll<HTMLLabelElement>('label')].find(
+    (candidate) => candidate.textContent?.includes(labelText),
+  )
+  return label?.querySelector<T>('input, select, textarea') ?? null
+}
+
+async function change(control: HTMLSelectElement, value: string) {
   await act(async () => {
-    control?.click()
+    control.value = value
+    control.dispatchEvent(new Event('change', { bubbles: true }))
     await Promise.resolve()
   })
-  await act(async () => {
-    await Promise.resolve()
+}
+
+function feedbackItem(comment: string) {
+  return [...document.querySelectorAll<HTMLLIElement>('.review-feedback-list li')]
+    .find((item) => item.textContent?.includes(comment))
+}
+
+function deferred<Value>() {
+  let resolve!: (value: Value) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<Value>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
   })
+  return { promise, resolve, reject }
 }
 
 afterEach(() => {
@@ -109,6 +93,11 @@ afterEach(() => {
     act(() => root?.unmount())
     root = null
   }
+  document.body.innerHTML = ''
+  Object.defineProperty(window, 'innerWidth', {
+    value: 1024,
+    configurable: true,
+  })
 })
 
 beforeEach(() => {
@@ -119,764 +108,355 @@ beforeEach(() => {
   )
 })
 
-describe('LecturerReviewPage read-only schedule', () => {
-  it('renders the complete intended-lecturer scope across teaching and exam courses', async () => {
+describe('LecturerReviewPage shared restricted workspace', () => {
+  it('shows complete fixed-context teaching and exam scope in all established modes', async () => {
     await renderPage()
 
     expect(api.getPublicLecturerReview).toHaveBeenCalledWith(
       LECTURER_REVIEW_SECRET_CANARY,
     )
+    expect(document.body.textContent).toContain('Fixed by this review link')
     expect(document.body.textContent).toContain('Dr Ada Lecturer')
-    expect(document.body.textContent).toContain(
-      'does not authenticate the person using it',
-    )
-    expect(document.body.textContent).toContain('Winter semester 2026')
-    expect(document.body.textContent).toContain('Working R2')
-    expect(document.body.textContent).toMatch(/Ready for review/i)
-    expect(document.body.textContent).toMatch(/Access expires/i)
-    expect(document.body.textContent).toContain('Europe/Vienna')
-    expect(document.body.textContent).toContain('COURSE-42')
     expect(document.body.textContent).toContain('Algorithms')
-    expect(document.body.textContent).toContain('Lecture')
-    expect(document.body.textContent).toContain('Room A-101')
-    expect(document.body.textContent).toContain('COURSE-43')
     expect(document.body.textContent).toContain('Data Structures')
-    expect(document.body.textContent).toContain('Written exam')
-    expect(document.body.textContent).toContain('Auditorium B')
-    expect(document.body.textContent).toMatch(/read.?only/i)
-    expect(document.body.textContent).toMatch(/advisory/i)
-
-    expect(document.body.textContent).not.toContain('Resource Planner')
-    expect(document.body.textContent).not.toContain('Planner administration')
-    expect(document.body.textContent).not.toContain('Prof Grace Lecturer')
-    expect(document.body.textContent).not.toContain('Validation findings')
-    expect(document.querySelector('nav')).toBeNull()
+    for (const mode of ['Week', 'Day', 'Month', 'List']) {
+      expect(button(mode)).toBeDefined()
+    }
+    expect(
+      [...document.querySelectorAll('label')].some(
+        (label) => label.textContent?.trim() === 'Lecturer',
+      ),
+    ).toBe(false)
+    expect(document.body.textContent).not.toMatch(
+      /edit session|delete with confirmation|planning failures|start draft/i,
+    )
   })
 
-  it('keeps a complete empty assignment projection valid and reviewable', async () => {
-    api.getPublicLecturerReview.mockResolvedValue({
-      ...publicLecturerReviewFixture(),
+  it('distinguishes an authoritative empty projection from a filter-empty result', async () => {
+    const empty = publicLecturerReviewFixture()
+    empty.courses = []
+    empty.validationFindings = []
+    empty.filterFacets = {
       courses: [],
-      submittedFeedback: [],
-    })
-
-    await renderPage()
-
-    expect(document.body.textContent).toMatch(
-      /no (assigned )?(courses|sessions)|schedule is empty/i,
-    )
-    expect(document.body.textContent).toMatch(/Revision comment/i)
-    expect(button('Refresh schedule')).toBeDefined()
-    expect(document.body.textContent).not.toContain(
-      lecturerReviewPublicErrorFixtures.unavailable.message,
-    )
-  })
-
-  it('refreshes the authoritative schedule without changing the in-memory credential', async () => {
-    await renderPage()
-
-    await act(async () => {
-      button('Refresh schedule')?.click()
-      await Promise.resolve()
-    })
-
-    expect(api.getPublicLecturerReview).toHaveBeenCalledTimes(2)
-    expect(api.getPublicLecturerReview).toHaveBeenLastCalledWith(
-      LECTURER_REVIEW_SECRET_CANARY,
-    )
-  })
-
-  it('renders markup-looking retained feedback literally and never creates executable DOM', async () => {
-    await renderPage()
-
-    expect(document.body.textContent).toContain(LECTURER_REVIEW_COMMENT_CANARY)
-    expect(
-      document.querySelector(
-        'script, iframe, object, embed, img, svg, [onerror], [onclick]',
-      ),
-    ).toBeNull()
-  })
-
-  it('renders the one identical non-disclosing state for unusable credentials', async () => {
-    api.getPublicLecturerReview.mockRejectedValue(
-      lecturerReviewPublicErrorFixtures.unavailable,
-    )
-
-    await renderPage()
-
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
-      lecturerReviewPublicErrorFixtures.unavailable.message,
-    )
-    expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
-    expect(document.body.textContent).not.toContain('Working R2')
-    expect(document.body.textContent).not.toContain('Algorithms')
-    expect(document.body.textContent).not.toContain('2026-10-01')
-    expect(document.body.textContent).not.toContain('expired')
-    expect(document.body.textContent).not.toContain('revoked')
-  })
-
-  it('fails safely without making a request when bootstrap supplies no valid secret', async () => {
-    await renderPage(null)
-
-    expect(api.getPublicLecturerReview).not.toHaveBeenCalled()
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
-      lecturerReviewPublicErrorFixtures.unavailable.message,
-    )
-    expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
-  })
-
-  it('never writes the bearer secret or protected review to browser storage', async () => {
-    const storageWrite = vi.spyOn(Storage.prototype, 'setItem')
-
-    await renderPage()
-
-    expect(storageWrite).not.toHaveBeenCalled()
-    expect(localStorage.length).toBe(0)
-    expect(sessionStorage.length).toBe(0)
-  })
-
-  it('does not disclose a bearer copied into a transport error', async () => {
-    api.getPublicLecturerReview.mockRejectedValue(
-      new Error(
-        `Unsafe network detail for ${LECTURER_REVIEW_SECRET_CANARY}`,
-      ),
-    )
-
-    await renderPage()
-
-    expect(document.querySelector('[role="alert"]')?.textContent).toMatch(
-      /could not be reached/i,
-    )
-    expect(button('Retry review')).toBeDefined()
-    expect(document.body.textContent).not.toContain(
-      LECTURER_REVIEW_SECRET_CANARY,
-    )
-    expect(localStorage.length).toBe(0)
-    expect(sessionStorage.length).toBe(0)
-  })
-
-  it('recovers from a temporary throttle without losing the in-memory credential', async () => {
-    api.getPublicLecturerReview
-      .mockRejectedValueOnce(
-        new LecturerReviewApiError(
-          429,
-          lecturerReviewPublicErrorFixtures.throttled.message,
-          true,
-        ),
-      )
-      .mockResolvedValueOnce(publicLecturerReviewFixture())
-
-    await renderPage()
-
-    expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
-    expect(button('Retry review')).toBeDefined()
-    await clickAndFlush(button('Retry review'))
-    expect(api.getPublicLecturerReview).toHaveBeenLastCalledWith(
-      LECTURER_REVIEW_SECRET_CANARY,
-    )
-    expect(document.body.textContent).toContain('Dr Ada Lecturer')
-  })
-
-  it('ignores an older successful load after a newer terminal response', async () => {
-    const older = deferred<ReturnType<typeof publicLecturerReviewFixture>>()
-    await renderPage()
-    api.getPublicLecturerReview
-      .mockReturnValueOnce(older.promise)
-      .mockRejectedValueOnce(
-        new LecturerReviewApiError(404, 'Ended.', false),
-      )
-    const refresh = button('Refresh schedule')!
-    await act(async () => {
-      refresh.click()
-      refresh.click()
-      await Promise.resolve()
-    })
-    await act(async () => {
-      await Promise.resolve()
-    })
-    expect(document.body.textContent).toContain(
-      lecturerReviewPublicErrorFixtures.unavailable.message,
-    )
-
-    await act(async () => {
-      older.resolve(publicLecturerReviewFixture())
-      await older.promise
-      await Promise.resolve()
-    })
-
-    expect(document.body.textContent).toContain(
-      lecturerReviewPublicErrorFixtures.unavailable.message,
-    )
-    expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
-  })
-
-  it('formats protected timestamps in their declared time zone', async () => {
-    const formatter = vi.spyOn(Date.prototype, 'toLocaleString')
-    await renderPage()
-
-    expect(formatter).toHaveBeenCalledWith(
-      undefined,
-      expect.objectContaining({ timeZone: 'Europe/Vienna' }),
-    )
-    formatter.mockRestore()
-  })
-})
-
-describe('LecturerReviewPage security and accessibility regression', () => {
-  it('offers no link, form action, or script-controlled external navigation', async () => {
-    const open = vi.spyOn(window, 'open')
-    const address = window.location.href
-    await renderPage()
-
-    expect(document.querySelector('a[href]')).toBeNull()
-    expect(document.querySelector('form[action]')).toBeNull()
-    expect(
-      [...document.querySelectorAll<HTMLButtonElement>('button')].every(
-        (control) => control.type === 'button',
-      ),
-    ).toBe(true)
-
-    await clickAndFlush(button('Refresh schedule'))
-
-    expect(open).not.toHaveBeenCalled()
-    expect(window.location.href).toBe(address)
-  })
-
-  it('uses named native keyboard controls, visible focus targets, and assistive loading/status/error semantics', async () => {
-    const loading = deferred<ReturnType<typeof publicLecturerReviewFixture>>()
-    api.getPublicLecturerReview.mockReturnValueOnce(loading.promise)
-    await renderPage()
-
-    const busy = document.querySelector<HTMLElement>('main[aria-busy="true"]')
-    expect(busy).not.toBeNull()
-    expect(busy?.querySelector('[role="status"]')?.textContent).toMatch(
-      /loading|please wait/i,
-    )
-
-    await act(async () => {
-      loading.resolve(publicLecturerReviewFixture())
-      await loading.promise
-      await Promise.resolve()
-    })
-
-    const revision = sectionWithHeading('Revision comment')!
-    const comment = labelledControl<HTMLTextAreaElement>(
-      revision,
-      'Revision comment',
-    )!
-    const submit = scopedButton(revision, 'Submit revision comment')!
-    const visibleLabel = document.querySelector<HTMLLabelElement>(
-      `label[for="${comment.id}"]`,
-    )
-    expect(comment.tagName).toBe('TEXTAREA')
-    expect(visibleLabel?.textContent).toMatch(/Revision comment/i)
-    expect(submit.tagName).toBe('BUTTON')
-    expect(submit.type).toBe('button')
-    expect(comment.tabIndex).toBeGreaterThanOrEqual(0)
-    expect(submit.tabIndex).toBeGreaterThanOrEqual(0)
-
-    await typeIn(comment, 'A keyboard-submitted recommendation.')
-    submit.focus()
-    expect(document.activeElement).toBe(submit)
-    const pending = deferred<
-      ReturnType<typeof lecturerReviewFeedbackResultFixture>
-    >()
-    api.submitPublicLecturerFeedback.mockReturnValueOnce(pending.promise)
-    await act(async () => {
-      submit.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
-      )
-      submit.click()
-      submit.dispatchEvent(
-        new KeyboardEvent('keyup', { key: 'Enter', bubbles: true }),
-      )
-      await Promise.resolve()
-    })
-
-    expect(
-      document.querySelector('[role="status"]')?.textContent,
-    ).toMatch(/submitting|pending/i)
-    expect(submit.disabled).toBe(true)
-
-    await act(async () => {
-      pending.resolve(lecturerReviewFeedbackResultFixture())
-      await pending.promise
-      await Promise.resolve()
-    })
-
-    expect(
-      [...document.querySelectorAll('[role="status"]')].some((status) =>
-        /feedback accepted/i.test(status.textContent ?? ''),
-      ),
-    ).toBe(true)
-
-    api.submitPublicLecturerFeedback.mockRejectedValueOnce(
-      new LecturerReviewApiError(422, 'Feedback was not accepted.', false),
-    )
-    const currentRevision = sectionWithHeading('Revision comment')!
-    const currentComment = labelledControl<HTMLTextAreaElement>(
-      currentRevision,
-      'Revision comment',
-    )!
-    await typeIn(currentComment, 'Keep keyboard focus on rejection.')
-    const currentSubmit =
-      scopedButton(currentRevision, 'Submit revision comment')!
-    currentSubmit.focus()
-    await clickAndFlush(currentSubmit)
-
-    expect(document.querySelector('[role="alert"]')?.textContent).toMatch(
-      /not accepted/i,
-    )
-    expect(document.activeElement).toBe(currentSubmit)
-  })
-})
-
-describe('LecturerReviewPage advisory feedback', () => {
-  it('applies the 2000-character limit after trimming for every comment control', async () => {
-    await renderPage()
-    const revision = sectionWithHeading('Revision comment')!
-    const revisionComment = labelledControl<HTMLTextAreaElement>(
-      revision,
-      'Revision comment',
-    )!
-    const lecture = sessionItem('Lecture')!
-    const sessionComment = labelledControl<HTMLTextAreaElement>(
-      lecture,
-      'Session comment',
-    )!
-    const flagComment = labelledControl<HTMLTextAreaElement>(
-      lecture,
-      'Not possible explanation',
-    )!
-
-    expect(revisionComment.maxLength).toBe(-1)
-    expect(sessionComment.maxLength).toBe(-1)
-    expect(flagComment.maxLength).toBe(-1)
-
-    await typeIn(
-      revisionComment,
-      `${' '.repeat(20)}${'x'.repeat(2000)}${' '.repeat(20)}`,
-    )
-    expect(revision.textContent).toMatch(/2000\s*\/\s*2000/)
-    expect(
-      scopedButton(revision, 'Submit revision comment')?.disabled,
-    ).toBe(false)
-
-    await clickAndFlush(scopedButton(revision, 'Submit revision comment'))
-
-    expect(api.submitPublicLecturerFeedback).toHaveBeenCalledWith(
-      LECTURER_REVIEW_SECRET_CANARY,
-      expect.objectContaining({ comment: 'x'.repeat(2000) }),
-    )
-  })
-
-  it('submits a revision comment with a pending state, stable attribution, and accepted announcement', async () => {
-    const pending = deferred<
-      ReturnType<typeof lecturerReviewFeedbackResultFixture>
-    >()
-    api.submitPublicLecturerFeedback.mockReturnValue(pending.promise)
-    await renderPage()
-    const revision = sectionWithHeading('Revision comment')!
-    const comment = labelledControl<HTMLTextAreaElement>(
-      revision,
-      'Revision comment',
-    )!
-    const submit = scopedButton(revision, 'Submit revision comment')!
-
-    await typeIn(comment, '  Tuesday afternoon would be preferable.  ')
-    expect(revision.textContent).toMatch(/38\s*\/\s*2000/)
-    await act(async () => {
-      submit.click()
-      await Promise.resolve()
-    })
-
-    expect(submit.disabled).toBe(true)
-    expect(revision.textContent).toMatch(/submitting|pending/i)
-    expect(api.submitPublicLecturerFeedback).toHaveBeenCalledTimes(1)
-    expect(api.submitPublicLecturerFeedback).toHaveBeenCalledWith(
-      LECTURER_REVIEW_SECRET_CANARY,
-      expect.objectContaining({
-        kind: 'revision_comment',
-        comment: 'Tuesday afternoon would be preferable.',
-        clientSubmissionId: expect.stringMatching(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-        ),
-      }),
-    )
-
-    await act(async () => {
-      pending.resolve(lecturerReviewFeedbackResultFixture())
-      await pending.promise
-      await Promise.resolve()
-    })
-
-    expect(document.body.textContent).toMatch(/feedback accepted/i)
-    expect(comment.value).toBe('')
-    expect(api.getPublicLecturerReview).toHaveBeenCalledTimes(2)
-  })
-
-  it('submits an ordinary comment against the selected current session', async () => {
-    await renderPage()
-    const lecture = sessionItem('Lecture')!
-    const comment = labelledControl<HTMLTextAreaElement>(
-      lecture,
-      'Session comment',
-    )!
-
-    await typeIn(comment, 'Could this start at 10:00?')
-    await clickAndFlush(scopedButton(lecture, 'Submit session comment'))
-
-    expect(api.submitPublicLecturerFeedback).toHaveBeenCalledWith(
-      LECTURER_REVIEW_SECRET_CANARY,
-      expect.objectContaining({
-        kind: 'session_comment',
-        sessionRef: 'teaching:101',
-        comment: 'Could this start at 10:00?',
-        clientSubmissionId: expect.any(String),
-      }),
-    )
-    expect(document.body.textContent).toMatch(/feedback accepted/i)
-  })
-
-  it('accepts Not possible without text and a later separate flag with an optional recommendation', async () => {
-    const initial = publicLecturerReviewFixture()
-    const firstFlag = {
-      id: 704,
-      kind: 'impossible_session' as const,
-      sessionRef: 'exam:202',
-      comment: null,
-      submittedAt: '2026-09-28T10:00:00Z',
-      timeZone: 'Europe/Vienna',
+      cohorts: [],
+      rooms: [],
+      studyTypes: [],
+      sessionTypes: [],
+      lifecycleContexts: empty.filterFacets.lifecycleContexts,
+      validationCategories: [],
     }
-    const secondFlag = {
-      ...firstFlag,
-      id: 705,
-      comment: 'Available on 15 December after 14:00.',
-      submittedAt: '2026-09-28T10:05:00Z',
-    }
-    api.getPublicLecturerReview
-      .mockResolvedValueOnce(initial)
-      .mockResolvedValueOnce({
-        ...initial,
-        submittedFeedback: [...initial.submittedFeedback, firstFlag],
-      })
-      .mockResolvedValueOnce({
-        ...initial,
-        submittedFeedback: [
-          ...initial.submittedFeedback,
-          firstFlag,
-          secondFlag,
-        ],
-      })
-    api.submitPublicLecturerFeedback
-      .mockResolvedValueOnce({
-        outcome: 'created',
-        item: firstFlag,
-      })
-      .mockResolvedValueOnce({
-        outcome: 'created',
-        item: secondFlag,
-      })
+    api.getPublicLecturerReview.mockResolvedValueOnce(empty)
     await renderPage()
-    let exam = sessionItem('Written exam')!
 
-    await clickAndFlush(scopedButton(exam, 'Not possible'))
-
-    expect(api.submitPublicLecturerFeedback).toHaveBeenNthCalledWith(
-      1,
-      LECTURER_REVIEW_SECRET_CANARY,
-      expect.objectContaining({
-        kind: 'impossible_session',
-        sessionRef: 'exam:202',
-        clientSubmissionId: expect.any(String),
-      }),
-    )
-    expect(
-      api.submitPublicLecturerFeedback.mock.calls[0][1],
-    ).not.toHaveProperty('comment')
-
-    exam = sessionItem('Written exam')!
-    const recommendation = labelledControl<HTMLTextAreaElement>(
-      exam,
-      'Not possible explanation',
-    )!
-    await typeIn(recommendation, 'Available on 15 December after 14:00.')
-    await clickAndFlush(scopedButton(exam, 'Not possible'))
-
-    const firstSubmission = api.submitPublicLecturerFeedback.mock.calls[0][1]
-    const secondSubmission = api.submitPublicLecturerFeedback.mock.calls[1][1]
-    expect(secondSubmission).toEqual(
-      expect.objectContaining({
-        kind: 'impossible_session',
-        sessionRef: 'exam:202',
-        comment: 'Available on 15 December after 14:00.',
-      }),
-    )
-    expect(secondSubmission.clientSubmissionId).not.toBe(
-      firstSubmission.clientSubmissionId,
-    )
     expect(document.body.textContent).toContain(
-      'Available on 15 December after 14:00.',
+      'There are currently no teaching or exam assignments',
     )
   })
 
-  it('preserves a rejected draft, announces the reason, and creates no false success', async () => {
-    api.submitPublicLecturerFeedback.mockRejectedValue(
-      new LecturerReviewApiError(
-        422,
-        lecturerReviewPublicErrorFixtures.invalidFeedback.message,
-        false,
-      ),
-    )
+  it('uses reload-only projection semantics without polling or a refresh action', async () => {
+    vi.useFakeTimers()
     await renderPage()
-    const revision = sectionWithHeading('Revision comment')!
-    const comment = labelledControl<HTMLTextAreaElement>(
-      revision,
-      'Revision comment',
-    )!
-    await typeIn(comment, 'Keep this draft after rejection.')
+    await act(async () => {
+      vi.advanceTimersByTime(120_000)
+      await Promise.resolve()
+    })
 
-    await clickAndFlush(scopedButton(revision, 'Submit revision comment'))
-
-    expect(comment.value).toBe('Keep this draft after rejection.')
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
-      lecturerReviewPublicErrorFixtures.invalidFeedback.message,
-    )
-    expect(revision.textContent).not.toMatch(/feedback accepted/i)
-    expect(
-      scopedButton(revision, 'Submit revision comment')?.disabled,
-    ).toBe(false)
     expect(api.getPublicLecturerReview).toHaveBeenCalledTimes(1)
+    expect(button('Refresh schedule')).toBeUndefined()
+    vi.useRealTimers()
   })
 
-  it('fails closed and refreshes before allowing feedback after a scope conflict', async () => {
-    const refreshed = publicLecturerReviewFixture()
-    const refresh = deferred<typeof refreshed>()
-    api.submitPublicLecturerFeedback.mockRejectedValueOnce(
-      new LecturerReviewApiError(
-        409,
-        lecturerReviewPublicErrorFixtures.refreshRequired.message,
-        false,
-        'REVIEW_REFRESH_REQUIRED',
-      ),
-    )
-    api.getPublicLecturerReview
-      .mockResolvedValueOnce(publicLecturerReviewFixture())
-      .mockReturnValueOnce(refresh.promise)
+  it('opens exact teaching and exam occurrences in the reused restricted pane', async () => {
     await renderPage()
-    const lecture = sessionItem('Lecture')!
-    const comment = labelledControl<HTMLTextAreaElement>(
-      lecture,
-      'Session comment',
-    )!
-    await typeIn(comment, 'This session has just left scope.')
 
-    await clickAndFlush(scopedButton(lecture, 'Submit session comment'))
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    expect(document.querySelector('.session-pane')?.textContent).toContain(
+      'Teaching units',
+    )
+    expect(document.querySelector('.session-pane')?.textContent).toContain(
+      'Submit session comment',
+    )
+    expect(document.querySelector('.session-pane')?.textContent).not.toContain(
+      'Edit session',
+    )
 
-    expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
-    expect(document.body.textContent).not.toContain('Algorithms')
-    expect(document.querySelector('main[aria-busy="true"]')).not.toBeNull()
-
-    await act(async () => {
-      refresh.resolve({
-        ...refreshed,
-        courses: refreshed.courses.filter(
-          (course) => course.sourceCourseId !== 42,
-        ),
-      })
-      await refresh.promise
-      await Promise.resolve()
-    })
-
-    expect(api.getPublicLecturerReview).toHaveBeenCalledTimes(2)
-    expect(document.body.textContent).not.toContain('Algorithms')
-    expect(document.body.textContent).toContain('Data Structures')
+    await click(document.querySelector('[data-occurrence-ref="exam:202"]'))
+    expect(document.querySelector('.session-pane')?.textContent).toContain(
+      'Written exam',
+    )
+    expect(document.querySelector('.session-pane')?.textContent).toContain(
+      '120 minutes',
+    )
   })
 
-  it('reuses one logical submission identity when an ambiguous retry preserves the draft', async () => {
+  it('keeps unsent occurrence drafts behind the shared discard decision', async () => {
+    await renderPage()
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    const draft = document.querySelector<HTMLTextAreaElement>(
+      '#session-comment-teaching-101',
+    )!
+    await typeIn(draft, 'Please move this.')
+
+    await click(document.querySelector('[data-occurrence-ref="exam:202"]'))
+
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain(
+      'Discard unsent feedback?',
+    )
+    expect(document.querySelector('.session-pane')?.textContent).toContain(
+      'Algorithms',
+    )
+    await click(button('Keep writing'))
+    expect(draft.value).toBe('Please move this.')
+  })
+
+  it('commits a target-hiding filter only after the unsent-feedback decision', async () => {
+    await renderPage()
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    const draft = document.querySelector<HTMLTextAreaElement>(
+      '#session-comment-teaching-101',
+    )!
+    await typeIn(draft, 'Keep this until I decide.')
+    const sessionType = labelledControl<HTMLSelectElement>('Session type')!
+
+    await change(sessionType, 'exam')
+
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain(
+      'Discard unsent feedback?',
+    )
+    expect(sessionType.value).toBe('')
+    expect(document.querySelector('.session-pane')?.textContent).toContain(
+      'Algorithms',
+    )
+    await click(button('Keep writing'))
+    expect(draft.value).toBe('Keep this until I decide.')
+    expect(sessionType.value).toBe('')
+
+    await change(sessionType, 'exam')
+    await click(button('Discard feedback'))
+
+    expect(sessionType.value).toBe('exam')
+    expect(document.querySelector('.session-pane')).toBeNull()
+    expect(document.body.textContent).toContain('1 active filter')
+  })
+
+  it('appends accepted feedback locally and performs no projection GET', async () => {
+    const review = publicLecturerReviewFixture()
+    review.submittedFeedback = []
+    api.getPublicLecturerReview.mockResolvedValueOnce(review)
+    await renderPage()
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    const draft = document.querySelector<HTMLTextAreaElement>(
+      '#session-comment-teaching-101',
+    )!
+    await typeIn(draft, 'Could this start later?')
+
+    await click(button('Submit session comment'))
+
+    expect(api.submitPublicLecturerFeedback).toHaveBeenCalledOnce()
+    expect(api.getPublicLecturerReview).toHaveBeenCalledTimes(1)
+    expect(document.body.textContent).toContain(
+      LECTURER_REVIEW_COMMENT_CANARY,
+    )
+    expect(draft.value).toBe('')
+  })
+
+  it('keeps a stable retry UUID and preserves the draft after an ambiguous failure', async () => {
     api.submitPublicLecturerFeedback
+      .mockRejectedValueOnce(new LecturerReviewApiError(0, 'Uncertain.', true))
+      .mockResolvedValueOnce(lecturerReviewFeedbackResultFixture())
+    await renderPage()
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    const draft = document.querySelector<HTMLTextAreaElement>(
+      '#session-comment-teaching-101',
+    )!
+    await typeIn(draft, 'Retry me.')
+    await click(button('Submit session comment'))
+    expect(draft.value).toBe('Retry me.')
+    await click(button('Submit session comment'))
+
+    const first = api.submitPublicLecturerFeedback.mock.calls[0][1]
+    const second = api.submitPublicLecturerFeedback.mock.calls[1][1]
+    expect(second.clientSubmissionId).toBe(first.clientSubmissionId)
+  })
+
+  it('preserves an unrelated revision retry UUID when a session target becomes stale', async () => {
+    api.submitPublicLecturerFeedback
+      .mockRejectedValueOnce(new LecturerReviewApiError(0, 'Uncertain.', true))
       .mockRejectedValueOnce(
         new LecturerReviewApiError(
-          0,
-          'The feedback result is unknown. Retry this same submission.',
-          true,
+          409,
+          'The schedule changed.',
+          false,
+          'REVIEW_REFRESH_REQUIRED',
         ),
       )
       .mockResolvedValueOnce(lecturerReviewFeedbackResultFixture())
     await renderPage()
-    const revision = sectionWithHeading('Revision comment')!
-    const comment = labelledControl<HTMLTextAreaElement>(
-      revision,
-      'Revision comment',
+
+    const revisionDraft = document.querySelector<HTMLTextAreaElement>(
+      '#lecturer-review-revision-comment',
     )!
-    await typeIn(comment, 'Preserve me for a safe retry.')
-
-    await clickAndFlush(scopedButton(revision, 'Submit revision comment'))
-
-    expect(comment.value).toBe('Preserve me for a safe retry.')
-    expect(document.querySelector('[role="alert"]')?.textContent).toMatch(
-      /unknown|retry/i,
-    )
-    const firstSubmission =
+    await typeIn(revisionDraft, 'Keep this revision retry stable.')
+    await click(button('Submit revision comment'))
+    const firstRevisionSubmission =
       api.submitPublicLecturerFeedback.mock.calls[0][1]
 
-    await clickAndFlush(
-      scopedButton(revision, 'Retry revision comment') ??
-        scopedButton(revision, 'Submit revision comment'),
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    await typeIn(
+      document.querySelector<HTMLTextAreaElement>(
+        '#session-comment-teaching-101',
+      )!,
+      'This assignment is stale.',
     )
+    await click(button('Submit session comment'))
+    expect(revisionDraft.value).toBe('Keep this revision retry stable.')
 
-    const secondSubmission =
-      api.submitPublicLecturerFeedback.mock.calls[1][1]
-    expect(secondSubmission.clientSubmissionId).toBe(
-      firstSubmission.clientSubmissionId,
+    await click(button('Submit revision comment'))
+    const retriedRevisionSubmission =
+      api.submitPublicLecturerFeedback.mock.calls[2][1]
+    expect(retriedRevisionSubmission.clientSubmissionId).toBe(
+      firstRevisionSubmission.clientSubmissionId,
     )
-    expect(secondSubmission.comment).toBe(firstSubmission.comment)
-    expect(comment.value).toBe('')
-    expect(document.body.textContent).toMatch(/feedback accepted/i)
   })
 
-  it('shows immutable same-link history with distinct kinds and literal markup', async () => {
-    await renderPage()
-    const history = sectionWithHeading('Revision comment')!
-
-    expect(history.textContent).toMatch(/Revision comment/i)
-    expect(history.textContent).toMatch(/Session comment/i)
-    expect(history.textContent).toMatch(/Impossible session|Not possible/i)
-    expect(history.textContent).toContain(
-      'Tuesday and Thursday are generally preferable.',
-    )
-    expect(history.textContent).toContain(LECTURER_REVIEW_COMMENT_CANARY)
-    expect(history.querySelector('script')).toBeNull()
-    expect(
-      [...history.querySelectorAll('button')].some((candidate) =>
-        /edit|delete/i.test(candidate.textContent ?? ''),
+  it('clears selected scope and directs reload without an automatic GET on stale target', async () => {
+    api.submitPublicLecturerFeedback.mockRejectedValueOnce(
+      new LecturerReviewApiError(
+        409,
+        'The schedule changed.',
+        false,
+        'REVIEW_REFRESH_REQUIRED',
       ),
-    ).toBe(false)
-  })
-})
+    )
+    await renderPage()
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    await typeIn(
+      document.querySelector<HTMLTextAreaElement>(
+        '#session-comment-teaching-101',
+      )!,
+      'Stale draft.',
+    )
+    await click(button('Submit session comment'))
 
-describe('LecturerReviewPage ended-link safety', () => {
-  it('clears every protected field when a later refresh reports expiry, revoke, replacement, or revision end', async () => {
+    expect(document.querySelector('.session-pane')).toBeNull()
+    expect(document.body.textContent).toMatch(/reload the browser page|reopen the link/i)
+    expect(api.getPublicLecturerReview).toHaveBeenCalledTimes(1)
+    expect(document.activeElement?.hasAttribute('data-workspace-results-heading')).toBe(true)
+  })
+
+  it('announces and focuses results when a newly loaded projection removes the selected assignment', async () => {
+    const reduced = publicLecturerReviewFixture()
+    reduced.courses = reduced.courses.filter(
+      (course) => course.courseRef !== 'course:42',
+    )
+    reduced.filterFacets.courses = reduced.filterFacets.courses.filter(
+      (course) => course.value !== 'course:42',
+    )
+    reduced.filterFacets.rooms = reduced.filterFacets.rooms.filter(
+      (room) => room.value !== 'room:101',
+    )
     api.getPublicLecturerReview
       .mockResolvedValueOnce(publicLecturerReviewFixture())
-      .mockRejectedValueOnce(
-        new LecturerReviewApiError(
-          404,
-          'The credential was revoked after the page loaded.',
-          false,
-        ),
-      )
+      .mockResolvedValueOnce(reduced)
     await renderPage()
-    expect(document.body.textContent).toContain('Dr Ada Lecturer')
-    expect(document.body.textContent).toContain('Algorithms')
-    expect(document.body.textContent).toContain(
-      'Tuesday and Thursday are generally preferable.',
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    await typeIn(
+      document.querySelector<HTMLTextAreaElement>('#session-comment-teaching-101')!,
+      'This draft loses its assignment.',
     )
 
-    await clickAndFlush(button('Refresh schedule'))
+    await act(async () => {
+      root?.render(<LecturerReviewPage secret="FS015ChangedSecretCanary22222222222222222" />)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
 
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
-      lecturerReviewPublicErrorFixtures.unavailable.message,
-    )
-    expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
-    expect(document.body.textContent).not.toContain('Working R2')
-    expect(document.body.textContent).not.toContain('Algorithms')
-    expect(document.body.textContent).not.toContain('Room A-101')
+    expect(document.querySelector('.session-pane')).toBeNull()
+    expect(document.body.textContent).toMatch(/selected assignment.*no longer/i)
     expect(document.body.textContent).not.toContain(
-      'Tuesday and Thursday are generally preferable.',
+      'This draft loses its assignment.',
     )
-    expect(document.body.textContent).not.toMatch(
-      /expired|revoked|replaced|abandoned|superseded/i,
-    )
+    expect(document.activeElement?.hasAttribute('data-workspace-results-heading')).toBe(true)
   })
 
-  it('clears protected data when feedback submission discovers that the link ended', async () => {
-    api.submitPublicLecturerFeedback.mockRejectedValue(
-      new LecturerReviewApiError(
-        404,
-        lecturerReviewPublicErrorFixtures.unavailable.message,
-        false,
-      ),
+  it('associates same-link feedback history with safe current or historical session identity', async () => {
+    const review = publicLecturerReviewFixture()
+    review.submittedFeedback.push({
+      id: 704,
+      kind: 'session_comment',
+      sessionRef: 'teaching:999',
+      comment: 'Historical assignment comment.',
+      submittedAt: '2026-09-28T10:00:00Z',
+      timeZone: 'Europe/Vienna',
+    })
+    api.getPublicLecturerReview.mockResolvedValueOnce(review)
+    await renderPage()
+
+    const current = feedbackItem('Could this session start at 10:00?')!
+    expect(current.textContent).toMatch(/Teaching.*COURSE-42.*Algorithms/i)
+    expect(current.textContent).toContain('2026-10-05')
+    const historical = feedbackItem('Historical assignment comment.')!
+    expect(historical.textContent).toContain('Teaching session 999')
+    expect(historical.textContent).toMatch(/no longer.*current assignment projection/i)
+    expect(historical.textContent).not.toMatch(/planner|capacity|configuration/i)
+  })
+
+  it('clears every protected workspace field on a terminal feedback result', async () => {
+    api.submitPublicLecturerFeedback.mockRejectedValueOnce(
+      new LecturerReviewApiError(404, 'Unavailable.', false, 'REVIEW_UNAVAILABLE'),
     )
     await renderPage()
-    const revision = sectionWithHeading('Revision comment')!
-    const comment = labelledControl<HTMLTextAreaElement>(
-      revision,
-      'Revision comment',
-    )!
-    await typeIn(comment, 'This draft must not survive ended access.')
-
-    await clickAndFlush(scopedButton(revision, 'Submit revision comment'))
-
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
-      lecturerReviewPublicErrorFixtures.unavailable.message,
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    await typeIn(
+      document.querySelector<HTMLTextAreaElement>(
+        '#session-comment-teaching-101',
+      )!,
+      'Protected draft.',
     )
-    expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
+    await click(button('Submit session comment'))
+
+    expect(document.body.textContent).toContain('Schedule review unavailable')
     expect(document.body.textContent).not.toContain('Algorithms')
-    expect(document.body.textContent).not.toContain(
-      'This draft must not survive ended access.',
-    )
+    expect(document.body.textContent).not.toContain('Protected draft.')
   })
 
-  it('renders byte-for-byte identical safe UI for every unusable-link reason', async () => {
-    const reasons = [
-      'malformed',
-      'unknown',
-      'expired',
-      'revoked',
-      'replaced',
-      'abandoned',
-      'superseded',
-      'source throttled',
-    ]
-    const rendered: string[] = []
-
-    for (const reason of reasons) {
-      api.getPublicLecturerReview.mockRejectedValueOnce(
-        new LecturerReviewApiError(
-          404,
-          `Unsafe internal detail: ${reason}.`,
-          false,
-        ),
-      )
-      await renderPage()
-      rendered.push(document.body.innerHTML)
-      expect(document.querySelector('[role="alert"]')?.textContent).toContain(
-        lecturerReviewPublicErrorFixtures.unavailable.message,
-      )
-      expect(document.body.textContent).not.toContain(reason)
-      expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
-      await act(async () => {
-        root?.unmount()
-        root = null
-        await Promise.resolve()
-      })
-      document.body.innerHTML = ''
-    }
-
-    expect(new Set(rendered).size).toBe(1)
-  })
-})
-
-describe('LecturerReviewPage FS-015 slice exclusions', () => {
-  it('offers read-only schedule review and append-only feedback without account, approval, editing, attachment, or thread controls', async () => {
+  it('does not let an older in-flight success restore a terminal state', async () => {
+    const pending = deferred<ReturnType<typeof publicLecturerReviewFixture>>()
+    api.getPublicLecturerReview.mockReturnValueOnce(pending.promise)
     await renderPage()
+    root?.render(<LecturerReviewPage secret={null} />)
+    await act(async () => {
+      await Promise.resolve()
+    })
+    pending.resolve(publicLecturerReviewFixture())
+    await act(async () => {
+      await Promise.resolve()
+    })
 
-    expect(document.querySelector('input[type="file"]')).toBeNull()
-    expect(document.querySelector('input[type="password"]')).toBeNull()
-    expect(document.querySelector('input[type="email"]')).toBeNull()
-    expect(document.querySelector('input[type="date"]')).toBeNull()
-    expect(document.querySelector('input[type="time"]')).toBeNull()
+    expect(document.body.textContent).toContain('Schedule review unavailable')
+    expect(document.body.textContent).not.toContain('Algorithms')
+  })
 
-    const actionLabels = [
-      ...document.querySelectorAll<HTMLButtonElement>('button'),
-    ].map((candidate) => candidate.textContent?.trim() ?? '')
-    expect(actionLabels.some((label) =>
-      /approve|accept schedule|publish|edit schedule|delete feedback|reply|attach|sign in|create account/i.test(
-        label,
-      ),
-    )).toBe(false)
-    expect(document.body.textContent).toMatch(/read-only/i)
-    expect(document.body.textContent).toMatch(/advisory/i)
+  it('uses full-screen focus-contained restricted pane composition at narrow width', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      value: 320,
+      configurable: true,
+    })
+    api.getPublicLecturerReview.mockResolvedValueOnce(
+      longLabelPublicLecturerReviewFixture(),
+    )
+    await renderPage()
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+
+    const pane = document.querySelector('.session-pane')
+    expect(pane?.classList.contains('session-pane-fullscreen')).toBe(true)
+    expect(pane?.getAttribute('role')).toBe('dialog')
+    expect(pane?.getAttribute('aria-modal')).toBe('true')
+    expect(pane?.textContent).toContain(
+      'Building North, fourth floor, seminar room with a deliberately long name',
+    )
+    expect(pane?.textContent).toContain('Working R2')
+    expect(pane?.textContent).toContain('Ready for review')
+    expect(pane?.textContent).toContain('COURSE-42')
   })
 })

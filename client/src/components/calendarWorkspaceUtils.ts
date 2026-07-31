@@ -1,4 +1,5 @@
 import type { CalendarMode, LoadedCalendarWorkspace, WorkspaceCourse, WorkspaceOccurrence } from '../api/calendarWorkspace'
+import type { PublicLecturerReview } from '../api/lecturerReview'
 
 export type WorkspaceFilters = {
   course?: string
@@ -12,6 +13,212 @@ export type WorkspaceFilters = {
 }
 
 const DAY_MS = 86_400_000
+
+export function adaptLecturerReviewToWorkspace(
+  review: PublicLecturerReview,
+): LoadedCalendarWorkspace {
+  const courseRefBySession = new Map<string, string>()
+  for (const course of review.courses) {
+    for (const session of course.sessions) {
+      courseRefBySession.set(session.sessionRef, course.courseRef)
+    }
+  }
+  const findings = review.validationFindings.map((finding) => ({
+    findingRef: finding.findingRef,
+    category: finding.category,
+    validationBasis: 'current' as const,
+    affectedCourseRefs: [
+      ...new Set(
+        finding.affectedSessionRefs
+          .map((ref) => courseRefBySession.get(ref))
+          .filter((ref): ref is string => ref !== undefined),
+      ),
+    ],
+    affectedOccurrenceRefs: [...finding.affectedSessionRefs],
+    details: {
+      kind: 'other' as const,
+      issueCode: finding.message,
+      occurrenceRefs: [...finding.affectedSessionRefs],
+    },
+  }))
+  const courses = review.courses.map((course) => {
+    const teachingUnits = course.sessions.reduce(
+      (total, session) => total + (session.teachingUnits ?? 0),
+      0,
+    )
+    const findingRefs = [
+      ...new Set(
+        course.sessions.flatMap((session) => session.validationFindingRefs),
+      ),
+    ]
+    return {
+      courseRef: course.courseRef,
+      courseId: course.sourceCourseId,
+      code: course.code,
+      name: course.title,
+      cohort: course.cohortName,
+      lecturerRefs: [],
+      studyType: course.studyType,
+      planningEligible: false,
+      totalTeachingUnits: teachingUnits,
+      scheduledTeachingUnits: teachingUnits,
+      remainingTeachingUnits: 0,
+      remainingInstructionalMinutes: 0,
+      occurrenceRefs: course.sessions.map((session) => session.sessionRef),
+      findingRefs,
+      outcomeRefs: [],
+      needsReviewReasonRefs: findingRefs,
+    }
+  })
+  const occurrences = review.courses.flatMap((course) =>
+    course.sessions.map((session): WorkspaceOccurrence => {
+      const common = {
+        occurrenceRef: session.sessionRef,
+        courseRef: course.courseRef,
+        date: session.date,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        cohort: session.cohortName,
+        lecturerRefs: [],
+        roomRef: session.roomRef,
+        findingRefs: [...session.validationFindingRefs],
+      }
+      if (session.sessionKind === 'teaching') {
+        if (session.teachingUnits === null) {
+          throw new Error('A teaching review session requires teaching units.')
+        }
+        return {
+          ...common,
+          kind: 'teaching',
+          teachingUnits: session.teachingUnits,
+        }
+      }
+      if (session.examDurationMinutes === null) {
+        throw new Error('An exam review session requires a duration.')
+      }
+      return {
+        ...common,
+        kind: 'exam',
+        examType: session.sessionType,
+        durationMinutes: session.examDurationMinutes,
+        assignedRoomName: session.roomName,
+      }
+    }),
+  )
+  const contributorRefs = findings.flatMap(
+    (finding) => finding.affectedOccurrenceRefs,
+  )
+  const completeMetric = {
+    availability: review.validationAvailability === 'complete'
+      ? 'available' as const
+      : review.validationAvailability,
+    scope: 'complete_revision' as const,
+    contributorRefs,
+  }
+  const designation = review.revision.state === 'published'
+    ? 'current_published' as const
+    : 'active_working' as const
+  const selector = {
+    revisionId: review.revision.id,
+    revisionNumber: null,
+    revisionLabel: review.revision.label,
+    lifecycleState: review.revision.state as 'draft' | 'ready_for_review' | 'published',
+    designation,
+  }
+  return {
+    presentationSource: 'lecturer-review',
+    semester: {
+      semesterId: review.revision.semesterId,
+      name: review.revision.semesterName,
+      startDate: review.semesterStartDate,
+      endDate: review.semesterEndDate,
+    },
+    workspaceState: 'loaded',
+    selectedRevision: {
+      ...selector,
+      readOnly: true,
+      contentSource: designation === 'active_working'
+        ? 'active_working'
+        : 'captured_published',
+      validationBasis: 'current',
+      snapshotSchemaVersion: null,
+    },
+    availableContexts: {
+      activeWorking: designation === 'active_working' ? selector : null,
+      currentPublished: designation === 'current_published' ? selector : null,
+    },
+    workspaceToken: `lecturer-review:${review.revision.id}`,
+    sectionStatus: {
+      courses: { availability: 'available' },
+      occurrences: { availability: 'available' },
+      holidays: { availability: 'available' },
+      validationFindings: {
+        availability: review.validationAvailability === 'complete'
+          ? 'available'
+          : review.validationAvailability,
+      },
+      planningOutcomes: { availability: 'unavailable' },
+      summary: { availability: 'unavailable' },
+    },
+    courses,
+    occurrences,
+    holidays: [],
+    validationFindings: findings,
+    planningOutcomes: [],
+    summary: {
+      unscheduledWork: {
+        availability: 'not_applicable',
+        scope: 'complete_revision',
+        contributorRefs: [],
+        notApplicableReason: 'Planning authority is not available in lecturer review.',
+      },
+      conflicts: {
+        ...completeMetric,
+        contributorRefs: findings
+          .filter((finding) => finding.category.endsWith('_conflict'))
+          .map((finding) => finding.findingRef),
+        distinctFindingCount: findings.filter((finding) =>
+          finding.category.endsWith('_conflict'),
+        ).length,
+      },
+      capacityIssues: {
+        ...completeMetric,
+        contributorRefs: findings
+          .filter((finding) => finding.category === 'room_capacity')
+          .flatMap((finding) => finding.affectedOccurrenceRefs),
+        affectedOccurrenceCount: new Set(
+          findings
+            .filter((finding) => finding.category === 'room_capacity')
+            .flatMap((finding) => finding.affectedOccurrenceRefs),
+        ).size,
+      },
+      planningFailures: {
+        availability: 'not_applicable',
+        scope: 'complete_revision',
+        contributorRefs: [],
+        notApplicableReason: 'Planner outcomes are not part of lecturer review.',
+      },
+      needsReview: {
+        ...completeMetric,
+        contributorRefs: [
+          ...new Set(findings.flatMap((finding) => finding.affectedCourseRefs)),
+        ],
+        distinctCourseCount: new Set(
+          findings.flatMap((finding) => finding.affectedCourseRefs),
+        ).size,
+      },
+    },
+    filterFacets: {
+      ...review.filterFacets,
+      validationCategories: review.validationAvailability === 'complete'
+        ? review.filterFacets.validationCategories
+        : review.filterFacets.validationCategories.filter(
+            (facet) => facet.value !== 'none',
+          ),
+      lecturers: [],
+    },
+  }
+}
 
 export function parseIsoDate(value: string): Date {
   const [year, month, day] = value.split('-').map(Number)

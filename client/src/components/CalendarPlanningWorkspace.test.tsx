@@ -1057,4 +1057,31 @@ describe('CalendarPlanningWorkspace', () => {
     ))
     expect(host.textContent).toContain('Last known workspace shown. Refresh failed.')
   })
+
+  it('applies the lecturer-review access profile without planner controls', () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() => root.render(
+      <CalendarPlanningWorkspace
+        workspace={loadedCalendarWorkspaceFixture()}
+        loading={false}
+        accessProfile="lecturer-review"
+        fixedContext={<p>Lecturer Dr Ada · fixed by link</p>}
+        listContent={<div>Shared occurrence list</div>}
+        onRetry={vi.fn()}
+      />,
+    ))
+
+    expect(host.textContent).toContain('Your assigned schedule')
+    expect(host.textContent).toContain('Lecturer Dr Ada · fixed by link')
+    expect(host.querySelector('.workspace-summary-grid')).toBeNull()
+    expect(host.querySelector('.revision-context-switch')).toBeNull()
+    expect(
+      [...host.querySelectorAll('label')].some(
+        (label) => label.textContent?.trim() === 'Lecturer',
+      ),
+    ).toBe(false)
+    expect(host.textContent).not.toContain('Start Draft')
+  })
 })

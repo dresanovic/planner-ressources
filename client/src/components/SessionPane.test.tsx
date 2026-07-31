@@ -52,6 +52,80 @@ it('keeps the actionable details for every warning kind', () => {
   expect(host.textContent).toContain('Room Alpha capacity 20; 30 required')
 })
 
+it('uses the restricted safe-field branch with feedback actions only', () => {
+  const workspace = loadedCalendarWorkspaceFixture()
+  const occurrence = workspace.occurrences.find(
+    (item) => item.kind === 'exam',
+  )!
+  const host = document.body.appendChild(document.createElement('div'))
+  const root = createRoot(host)
+
+  act(() =>
+    root.render(
+      <SessionPane
+        occurrence={occurrence}
+        workspace={workspace}
+        mode="detail"
+        onRequestClose={vi.fn()}
+        onRequestEdit={vi.fn()}
+        onRequestDelete={vi.fn()}
+        restrictedReview={{
+          lecturerName: 'Dr Ada Lecturer',
+          revisionLabel: 'Working R2',
+          lifecycleState: 'ready_for_review',
+          roomName: 'Auditorium B',
+          validationAvailability: 'complete',
+          validationMessages: ['This exam needs review.'],
+          feedbackActions: <button type="button">Send feedback</button>,
+        }}
+      />,
+    ),
+  )
+
+  expect(host.textContent).toContain('Dr Ada Lecturer')
+  expect(host.textContent).toContain('Working R2')
+  expect(host.textContent).toContain('Ready for review')
+  expect(host.textContent).toContain('C-001')
+  expect(host.textContent).toContain('Auditorium B')
+  expect(host.textContent).toContain('This exam needs review.')
+  expect(host.textContent).toContain('Send feedback')
+  expect(host.textContent).not.toContain('Edit session')
+  expect(host.textContent).not.toContain('Delete')
+  expect(host.textContent).not.toContain('Configuration')
+  expect(host.textContent).not.toContain('Capacity')
+})
+
+it.each([
+  ['partial' as const, 'Validation is incomplete; a complete no-issue result is not available.'],
+  ['unavailable' as const, 'Current validation is unavailable.'],
+])('does not describe empty %s validation as warning-free', (validationAvailability, message) => {
+  const workspace = loadedCalendarWorkspaceFixture()
+  const occurrence = workspace.occurrences[0]
+  const host = document.body.appendChild(document.createElement('div'))
+  const root = createRoot(host)
+
+  act(() => root.render(
+    <SessionPane
+      occurrence={occurrence}
+      workspace={workspace}
+      mode="detail"
+      onRequestClose={vi.fn()}
+      restrictedReview={{
+        lecturerName: 'Dr Ada Lecturer',
+        revisionLabel: 'Working R2',
+        lifecycleState: 'ready_for_review',
+        roomName: 'Room A-101',
+        validationAvailability,
+        validationMessages: [],
+        feedbackActions: null,
+      }}
+    />,
+  ))
+
+  expect(host.textContent).toContain(message)
+  expect(host.textContent).not.toContain('No current warnings.')
+})
+
 it('composes either domain editor, reports status, and closes cleanly with Escape', () => {
   const workspace = loadedCalendarWorkspaceFixture()
   const occurrence = workspace.occurrences.find((item) => item.kind === 'exam')!

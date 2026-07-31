@@ -26,6 +26,13 @@ type LecturerReviewManagementProps = {
   }) => void
 }
 
+type CoordinationFilters = {
+  lecturerId?: number
+  courseSourceId?: number
+  sessionKind?: 'revision' | 'teaching' | 'exam'
+  feedbackKind?: 'revision_comment' | 'session_comment' | 'impossible_session'
+}
+
 export function LecturerReviewManagement({
   overview,
   busy,
@@ -45,6 +52,8 @@ export function LecturerReviewManagement({
   const [uncertainLinkIds, setUncertainLinkIds] = useState<Set<number>>(
     () => new Set(),
   )
+  const [feedbackFilters, setFeedbackFilters] =
+    useState<CoordinationFilters>({})
   const [notPossibleOnly, setNotPossibleOnly] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
@@ -65,6 +74,7 @@ export function LecturerReviewManagement({
       setStatus('')
       setError('')
       setUncertainLinkIds(new Set())
+      setFeedbackFilters({})
       setNotPossibleOnly(false)
     }
   }, [overview])
@@ -86,21 +96,79 @@ export function LecturerReviewManagement({
     selectedLecturer.initialIssueAllowed
   const feedbackComplete =
     currentOverview.feedbackAvailability === 'complete'
-  const visibleFeedbackGroups = notPossibleOnly
-    ? currentOverview.feedbackGroups.filter(
-        (group) =>
-          group.level === 'session' && group.impossibleFlagCount > 0,
-      )
-    : currentOverview.feedbackGroups
-
-  function toggleNotPossibleFilter() {
-    if (!feedbackComplete) return
-    const next = !notPossibleOnly
-    setNotPossibleOnly(next)
-    if (next) {
-      queueMicrotask(() => feedbackHeadingRef.current?.focus())
-    }
-  }
+  const feedbackRows = currentOverview.feedbackGroups.flatMap((group) =>
+    group.items.map((item) => ({ group, item })),
+  )
+  const itemFilteredRows = feedbackRows.filter(({ group, item }) => (
+    (feedbackFilters.lecturerId === undefined ||
+      item.intendedLecturerId === feedbackFilters.lecturerId) &&
+    (feedbackFilters.courseSourceId === undefined ||
+      item.sessionContext?.courseSourceId === feedbackFilters.courseSourceId) &&
+    (feedbackFilters.sessionKind === undefined ||
+      (feedbackFilters.sessionKind === 'revision'
+        ? group.level === 'revision'
+        : item.sessionContext?.sessionKind === feedbackFilters.sessionKind)) &&
+    (feedbackFilters.feedbackKind === undefined ||
+      item.kind === feedbackFilters.feedbackKind)
+  ))
+  const flaggedGroupRefs = new Set(
+    itemFilteredRows
+      .filter(({ item }) => item.kind === 'impossible_session')
+      .map(({ group }) => group.groupRef),
+  )
+  const filteredRows = notPossibleOnly
+    ? itemFilteredRows.filter(({ group }) => flaggedGroupRefs.has(group.groupRef))
+    : itemFilteredRows
+  const visibleFeedbackGroups = currentOverview.feedbackGroups
+    .map((group) => {
+      const items = filteredRows
+        .filter((row) => row.group.groupRef === group.groupRef)
+        .map((row) => row.item)
+      return {
+        ...group,
+        items,
+        impossibleFlagCount: items.filter(
+          (item) => item.kind === 'impossible_session',
+        ).length,
+      }
+    })
+    .filter((group) => group.items.length > 0)
+  const activeFeedbackFilterCount = Object.values(feedbackFilters).filter(
+    (value) => value !== undefined,
+  ).length + (notPossibleOnly ? 1 : 0)
+  const prominentImpossibleCount = itemFilteredRows.filter(
+    ({ item }) => item.kind === 'impossible_session',
+  ).length
+  const filteredCommentCount = filteredRows.filter(
+    ({ item }) =>
+      item.kind === 'revision_comment' || item.kind === 'session_comment',
+  ).length
+  const filteredImpossibleCount = filteredRows.filter(
+    ({ item }) => item.kind === 'impossible_session',
+  ).length
+  const filteredAffectedSessions = new Set(
+    filteredRows
+      .map(({ item }) => item.sessionContext?.sessionRef)
+      .filter((value): value is string => value !== undefined),
+  ).size
+  const feedbackLecturers = [
+    ...new Map(
+      feedbackRows.map(({ item }) => [
+        item.intendedLecturerId,
+        item.intendedLecturerName,
+      ]),
+    ),
+  ]
+  const feedbackCourses = [
+    ...new Map(
+      feedbackRows
+        .filter(({ item }) => item.sessionContext !== null)
+        .map(({ item }) => [
+          item.sessionContext!.courseSourceId,
+          `${item.sessionContext!.courseCode} · ${item.sessionContext!.courseTitle}`,
+        ]),
+    ),
+  ]
 
   async function issue() {
     if (!canIssue || selectedLecturer === null) return
@@ -223,15 +291,124 @@ export function LecturerReviewManagement({
           className="review-feedback-filter"
           aria-pressed={notPossibleOnly}
           disabled={!feedbackComplete}
-          onClick={toggleNotPossibleFilter}
+          onClick={() => {
+            const next = !notPossibleOnly
+            setNotPossibleOnly(next)
+            if (next) {
+              queueMicrotask(() => feedbackHeadingRef.current?.focus())
+            }
+          }}
         >
           <span aria-hidden="true">!</span>{' '}
           {feedbackComplete
-            ? `Not possible ${currentOverview.impossibleFlagCount}`
+            ? `Not possible ${prominentImpossibleCount}`
             : currentOverview.feedbackAvailability === 'partial'
               ? 'Not possible count incomplete'
               : 'Not possible count unavailable'}
         </button>
+        <div className="coordination-counters" aria-label="Feedback counters">
+          {feedbackComplete ? (
+            <>
+              <span><strong>{filteredRows.length}</strong> all items</span>
+              <span><strong>{filteredCommentCount}</strong> comments</span>
+              <span><strong>{filteredImpossibleCount}</strong> not possible</span>
+              <span><strong>{filteredAffectedSessions}</strong> affected sessions</span>
+            </>
+          ) : (
+            <span>
+              Exact counters {currentOverview.feedbackAvailability === 'partial'
+                ? 'are incomplete'
+                : 'are unavailable'}.
+            </span>
+          )}
+        </div>
+        <div className="coordination-filters" aria-label="Lecturer feedback filters">
+          <label>
+            <span>Feedback lecturer</span>
+            <select
+              value={feedbackFilters.lecturerId ?? ''}
+              onChange={(event) =>
+                setFeedbackFilters((current) => ({
+                  ...current,
+                  lecturerId: event.target.value
+                    ? Number(event.target.value)
+                    : undefined,
+                }))
+              }
+            >
+              <option value="">All</option>
+              {feedbackLecturers.map(([id, name]) => (
+                <option value={id} key={id}>{name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Course</span>
+            <select
+              value={feedbackFilters.courseSourceId ?? ''}
+              onChange={(event) =>
+                setFeedbackFilters((current) => ({
+                  ...current,
+                  courseSourceId: event.target.value
+                    ? Number(event.target.value)
+                    : undefined,
+                }))
+              }
+            >
+              <option value="">All</option>
+              {feedbackCourses.map(([id, name]) => (
+                <option value={id} key={id}>{name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Session kind</span>
+            <select
+              value={feedbackFilters.sessionKind ?? ''}
+              onChange={(event) =>
+                setFeedbackFilters((current) => ({
+                  ...current,
+                  sessionKind: (event.target.value || undefined) as
+                    CoordinationFilters['sessionKind'],
+                }))
+              }
+            >
+              <option value="">All</option>
+              <option value="revision">Revision</option>
+              <option value="teaching">Teaching</option>
+              <option value="exam">Exam</option>
+            </select>
+          </label>
+          <label>
+            <span>Feedback kind</span>
+            <select
+              value={feedbackFilters.feedbackKind ?? ''}
+              onChange={(event) =>
+                setFeedbackFilters((current) => ({
+                  ...current,
+                  feedbackKind: (event.target.value || undefined) as
+                    CoordinationFilters['feedbackKind'],
+                }))
+              }
+            >
+              <option value="">All</option>
+              <option value="revision_comment">Revision comment</option>
+              <option value="session_comment">Session comment</option>
+              <option value="impossible_session">Not possible</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            disabled={activeFeedbackFilterCount === 0}
+            onClick={() => {
+              setFeedbackFilters({})
+              setNotPossibleOnly(false)
+              queueMicrotask(() => feedbackHeadingRef.current?.focus())
+            }}
+          >
+            Clear feedback filters
+          </button>
+        </div>
         {!feedbackComplete && (
           <p role="status">
             {currentOverview.feedbackAvailability === 'partial'
@@ -247,18 +424,26 @@ export function LecturerReviewManagement({
           {notPossibleOnly ? 'Not possible feedback' : 'Lecturer feedback'}
         </h3>
         <p className="review-feedback-announcement" aria-live="polite">
-          {notPossibleOnly
-            ? `${visibleFeedbackGroups.length} flagged session ${
+          {feedbackComplete
+            ? `${filteredRows.length} feedback ${
+                filteredRows.length === 1 ? 'item' : 'items'
+              } in ${visibleFeedbackGroups.length} ${
                 visibleFeedbackGroups.length === 1 ? 'group' : 'groups'
               } shown.`
-            : `${visibleFeedbackGroups.length} feedback ${
-                visibleFeedbackGroups.length === 1 ? 'group' : 'groups'
-              } shown.`}
+            : currentOverview.feedbackAvailability === 'partial'
+              ? 'Displayed feedback is incomplete; exact item and group counts are not available.'
+              : 'Feedback results are unavailable; item and group counts cannot be confirmed.'}
         </p>
-        {notPossibleOnly && visibleFeedbackGroups.length === 0 ? (
-          <p role="status">No sessions have Not possible feedback.</p>
-        ) : visibleFeedbackGroups.length === 0 ? (
-          <p>No feedback has been submitted for this revision.</p>
+        {visibleFeedbackGroups.length === 0 ? (
+          <p>
+            {!feedbackComplete
+              ? currentOverview.feedbackAvailability === 'partial'
+                ? 'Feedback results are incomplete; an empty result cannot be confirmed.'
+                : 'Feedback results are unavailable; an empty result cannot be confirmed.'
+              : notPossibleOnly
+                ? 'No sessions have Not possible feedback.'
+                : 'No feedback has been submitted for this revision.'}
+          </p>
         ) : (
           <div className="review-feedback-groups">
             {visibleFeedbackGroups.map((group) => (
@@ -315,13 +500,19 @@ export function LecturerReviewManagement({
                         {formatTimestamp(item.submittedAt, item.timeZone)} ({item.timeZone})
                       </time>
                       {item.sessionContext != null && (
-                        <p>
-                          At submission: {item.sessionContext.date},{' '}
-                          {item.sessionContext.startTime}–
-                          {item.sessionContext.endTime};{' '}
-                          {item.sessionContext.roomName};{' '}
-                          {item.sessionContext.cohortName}.
-                        </p>
+                        <dl className="review-feedback-item-context">
+                          <div><dt>Captured course</dt><dd>{item.sessionContext.courseCode} · {item.sessionContext.courseTitle}</dd></div>
+                          <div><dt>Captured session</dt><dd>{humanize(item.sessionContext.sessionKind)} · {item.sessionContext.sessionType}</dd></div>
+                          <div><dt>Captured date and time</dt><dd>{item.sessionContext.date}, {item.sessionContext.startTime}–{item.sessionContext.endTime} ({item.sessionContext.timeZone})</dd></div>
+                          <div><dt>Captured room</dt><dd>{item.sessionContext.roomName}</dd></div>
+                          <div><dt>Captured cohort</dt><dd>{item.sessionContext.cohortName}</dd></div>
+                          <div><dt>Captured study type</dt><dd>{item.sessionContext.studyType ?? 'Unavailable'}</dd></div>
+                          {item.sessionContext.sessionKind === 'teaching' ? (
+                            <div><dt>Teaching units</dt><dd>{item.sessionContext.teachingUnits ?? 'Unavailable'}</dd></div>
+                          ) : (
+                            <div><dt>Duration</dt><dd>{item.sessionContext.examDurationMinutes == null ? 'Unavailable' : `${item.sessionContext.examDurationMinutes} minutes`}</dd></div>
+                          )}
+                        </dl>
                       )}
                     </li>
                   ))}

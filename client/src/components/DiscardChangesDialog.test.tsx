@@ -31,6 +31,29 @@ it('requires an explicit destructive discard action', () => {
   expect(onDiscard).toHaveBeenCalledOnce()
 })
 
+it('accepts neutral feedback copy without changing the default planner copy', () => {
+  const host = document.body.appendChild(document.createElement('div'))
+  const root = createRoot(host)
+  act(() =>
+    root.render(
+      <DiscardChangesDialog
+        destinationLabel="another session"
+        title="Discard unsent feedback?"
+        description="Your feedback has not been sent."
+        keepLabel="Keep writing"
+        discardLabel="Discard feedback"
+        onKeepEditing={vi.fn()}
+        onDiscard={vi.fn()}
+      />,
+    ),
+  )
+
+  expect(host.textContent).toContain('Discard unsent feedback?')
+  expect(host.textContent).toContain('Your feedback has not been sent.')
+  expect(host.textContent).toContain('Keep writing')
+  expect(host.textContent).toContain('Discard feedback')
+})
+
 it('restores Keep editing focus only after the pane is no longer inert', () => {
   vi.useFakeTimers()
   function Harness() {

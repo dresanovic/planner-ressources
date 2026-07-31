@@ -33,6 +33,7 @@ from app.db.session import SessionLocal, engine, get_db
 from app.frontend import mount_frontend
 from app.services.lecturer_review import (
     cleanup_invalid_source_states,
+    is_stored_lecturer_review_secret,
     source_fingerprint_key_from_environment,
 )
 
@@ -86,6 +87,42 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+_LECTURER_PUBLIC_OPERATIONS = {
+    ("GET", "/api/public/lecturer-review"),
+    ("POST", "/api/public/lecturer-review/feedback"),
+}
+
+
+@app.middleware("http")
+async def reject_lecturer_credentials_on_planner_apis(
+    request: Request,
+    call_next,
+):
+    operation = (request.method.upper(), request.url.path)
+    if (
+        request.url.path.startswith("/api/")
+        and operation not in _LECTURER_PUBLIC_OPERATIONS
+    ):
+        authorization = request.headers.get("authorization", "")
+        scheme, separator, secret = authorization.partition(" ")
+        if separator and scheme.casefold() == "bearer":
+            with SessionLocal() as db:
+                is_lecturer_secret = is_stored_lecturer_review_secret(
+                    db, secret
+                )
+            if is_lecturer_secret:
+                return JSONResponse(
+                    status_code=403,
+                    content={
+                        "code": "PLANNER_AUTHORIZATION_REQUIRED",
+                        "message": "Planner authorization is required.",
+                    },
+                )
+    return await call_next(request)
+
+
 app.include_router(draft_schedule_router)
 app.include_router(constraints_router)
 app.include_router(overview_router)

@@ -15,6 +15,15 @@ type Props = {
   onRequestClose: () => void
   onRequestEdit?: () => void
   onRequestDelete?: () => void
+  restrictedReview?: {
+    lecturerName: string
+    revisionLabel: string
+    lifecycleState: string
+    roomName: string
+    validationAvailability: 'complete' | 'partial' | 'unavailable'
+    validationMessages: string[]
+    feedbackActions: ReactNode
+  }
 }
 
 export function SessionPane({
@@ -30,6 +39,7 @@ export function SessionPane({
   onRequestClose,
   onRequestEdit,
   onRequestDelete,
+  restrictedReview,
 }: Props) {
   const [narrow, setNarrow] = useState(() => window.innerWidth <= 820)
   const paneRef = useRef<HTMLElement>(null)
@@ -126,7 +136,49 @@ export function SessionPane({
       {status && <p className="mutation-feedback" role="status" aria-live="polite">{status}</p>}
       {error && <div className="refresh-error" role="alert">{error}</div>}
 
-      {mode === 'editing' ? editor : (
+      {restrictedReview ? (
+        <>
+          <dl className="session-pane-details restricted-session-details">
+            <div><dt>Revision</dt><dd>{restrictedReview.revisionLabel}</dd></div>
+            <div><dt>Lifecycle</dt><dd>{stateLabel(restrictedReview.lifecycleState)}</dd></div>
+            <div><dt>Course</dt><dd>{course ? `${course.code} · ${course.name}` : occurrence.courseRef}</dd></div>
+            <div><dt>Study type</dt><dd>{course?.studyType ?? 'Unavailable'}</dd></div>
+            <div><dt>Date and time</dt><dd>{occurrence.date}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
+            <div><dt>Cohort</dt><dd>{occurrence.cohort}</dd></div>
+            <div><dt>Lecturer</dt><dd>{restrictedReview.lecturerName}</dd></div>
+            <div><dt>Room</dt><dd>{restrictedReview.roomName}</dd></div>
+            {occurrence.kind === 'teaching' ? (
+              <div><dt>Teaching units</dt><dd>{occurrence.teachingUnits}</dd></div>
+            ) : (
+              <>
+                <div><dt>Exam type</dt><dd>{occurrence.examType}</dd></div>
+                <div><dt>Duration</dt><dd>{occurrence.durationMinutes} minutes</dd></div>
+              </>
+            )}
+          </dl>
+          <section aria-labelledby="session-pane-warnings">
+            <h3 id="session-pane-warnings">Current warnings</h3>
+            {restrictedReview.validationMessages.length > 0 ? (
+              <ul>
+                {restrictedReview.validationMessages.map((message) => (
+                  <li key={message}>{message}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>
+                {restrictedReview.validationAvailability === 'complete'
+                  ? 'No current warnings.'
+                  : restrictedReview.validationAvailability === 'partial'
+                    ? 'Validation is incomplete; a complete no-issue result is not available.'
+                    : 'Current validation is unavailable.'}
+              </p>
+            )}
+          </section>
+          <div className="session-pane-actions lecturer-feedback-actions">
+            {restrictedReview.feedbackActions}
+          </div>
+        </>
+      ) : mode === 'editing' ? editor : (
         <>
           <dl className="session-pane-details">
             <div><dt>Lifecycle</dt><dd>{stateLabel(workspace.selectedRevision.lifecycleState)}</dd></div>
@@ -140,16 +192,18 @@ export function SessionPane({
             {occurrence.kind === 'teaching' ? (
               <>
                 <div><dt>Teaching units</dt><dd>{occurrence.teachingUnits}</dd></div>
-                <div><dt>Source</dt><dd>{occurrence.source}</dd></div>
+                {occurrence.source !== undefined && <div><dt>Source</dt><dd>{occurrence.source}</dd></div>}
               </>
             ) : (
               <>
                 <div><dt>Exam type</dt><dd>{occurrence.examType}</dd></div>
                 <div><dt>Duration</dt><dd>{occurrence.durationMinutes} minutes</dd></div>
-                <div><dt>Capacity</dt><dd>{occurrence.requiredCapacity} required; {occurrence.currentRoomCapacity == null ? 'current room capacity unavailable' : `${occurrence.currentRoomCapacity} current`}</dd></div>
-                <div><dt>Configuration</dt><dd>{detailValue(occurrence.validityContext.configurationIdentifier)} · revision {detailValue(occurrence.validityContext.configurationRevision)}</dd></div>
-                <div><dt>Final teaching</dt><dd>{detailValue(occurrence.validityContext.finalTeachingDate)} at {detailValue(occurrence.validityContext.finalTeachingEndTime)}</dd></div>
-                <div><dt>Source</dt><dd>{detailValue(occurrence.validityContext.source)}</dd></div>
+                {occurrence.requiredCapacity !== undefined && <div><dt>Capacity</dt><dd>{occurrence.requiredCapacity} required; {occurrence.currentRoomCapacity == null ? 'current room capacity unavailable' : `${occurrence.currentRoomCapacity} current`}</dd></div>}
+                {occurrence.validityContext && <>
+                  <div><dt>Configuration</dt><dd>{detailValue(occurrence.validityContext.configurationIdentifier)} · revision {detailValue(occurrence.validityContext.configurationRevision)}</dd></div>
+                  <div><dt>Final teaching</dt><dd>{detailValue(occurrence.validityContext.finalTeachingDate)} at {detailValue(occurrence.validityContext.finalTeachingEndTime)}</dd></div>
+                  <div><dt>Source</dt><dd>{detailValue(occurrence.validityContext.source)}</dd></div>
+                </>}
                 {occurrence.recommendationContext && <div><dt>Recommended period</dt><dd>{detailValue(occurrence.recommendationContext.recommendedStartDate)}–{detailValue(occurrence.recommendationContext.recommendedEndDate)}{occurrence.recommendationContext.recommendationWasOverridden ? ' · planner override' : ''}</dd></div>}
               </>
             )}
@@ -171,7 +225,7 @@ export function SessionPane({
   )
 }
 
-function stateLabel(state: LoadedCalendarWorkspace['selectedRevision']['lifecycleState']) {
+function stateLabel(state: string) {
   if (state === 'ready_for_review') return 'Ready for review'
   return state === 'published' ? 'Published' : 'Draft'
 }

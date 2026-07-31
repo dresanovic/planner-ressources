@@ -12,9 +12,11 @@ from app.schemas.lecturer_review import (
     IssuedLinkResult,
     PlannerError,
     PlannerReviewOverview,
+    PublicRefreshRequiredError,
     PublicReview,
     PublicThrottledError,
     PublicUnavailableError,
+    PublicValidationError,
     ReplaceLinkInput,
 )
 from app.services.lecturer_review import (
@@ -212,8 +214,8 @@ def read_public_lecturer_review(
     responses={
         200: {"model": FeedbackResult},
         404: {"model": PublicUnavailableError},
-        409: {"model": PublicUnavailableError},
-        422: {"model": PublicUnavailableError},
+        409: {"model": PublicRefreshRequiredError},
+        422: {"model": PublicValidationError},
         429: {"model": PublicThrottledError},
     },
     openapi_extra={
@@ -297,7 +299,7 @@ def submit_public_lecturer_feedback(
             content = {
                 "code": "REVIEW_REFRESH_REQUIRED",
                 "message": (
-                    "The schedule changed. Refresh the review before submitting feedback."
+                    "The schedule changed. Reload the browser page or reopen the link before submitting feedback."
                 ),
             }
         elif exc.status_code == 422:

@@ -63,6 +63,9 @@ export type LecturerReviewSessionContext = {
   timeZone: string
   roomName: string
   cohortName: string
+  studyType?: string | null
+  teachingUnits?: number | null
+  examDurationMinutes?: number | null
 }
 export type PlannerReviewFeedbackItem = {
   id: number
@@ -101,16 +104,50 @@ export type PublicReviewSession = {
   sessionRef: string
   sessionKind: ReviewSessionKind
   sourceSessionId: number
+  courseRef: string
   sessionType: string
   date: string
   startTime: string
   endTime: string
   timeZone: string
   roomName: string
+  roomRef: string
   cohortName: string
+  teachingUnits: number | null
+  examDurationMinutes: number | null
+  validationFindingRefs: string[]
 }
 export type PublicReviewCourse = ReviewCourseIdentity & {
+  courseRef: string
+  cohortName: string
+  studyType: string
   sessions: PublicReviewSession[]
+}
+export type PublicReviewValidationFinding = {
+  findingRef: string
+  category:
+    | 'lecturer_conflict'
+    | 'room_conflict'
+    | 'cohort_conflict'
+    | 'room_capacity'
+    | 'holiday'
+    | 'exam_validity'
+    | 'other'
+  message: string
+  affectedSessionRefs: string[]
+}
+export type PublicReviewFacetValue = {
+  value: string
+  label: string
+}
+export type PublicReviewFilterFacets = {
+  courses: PublicReviewFacetValue[]
+  cohorts: PublicReviewFacetValue[]
+  rooms: PublicReviewFacetValue[]
+  studyTypes: PublicReviewFacetValue[]
+  sessionTypes: PublicReviewFacetValue[]
+  lifecycleContexts: PublicReviewFacetValue[]
+  validationCategories: PublicReviewFacetValue[]
 }
 export type PublicReviewFeedbackItem = {
   id: number
@@ -126,6 +163,11 @@ export type PublicLecturerReview = {
   revision: ReviewRevision
   accessExpiresAt: string
   timeZone: string
+  semesterStartDate: string
+  semesterEndDate: string
+  validationAvailability: ReviewFeedbackAvailability
+  validationFindings: PublicReviewValidationFinding[]
+  filterFacets: PublicReviewFilterFacets
   courses: PublicReviewCourse[]
   submittedFeedback: PublicReviewFeedbackItem[]
 }
@@ -415,20 +457,66 @@ function validatePublicReview(value: unknown): asserts value is PublicLecturerRe
     'revision',
     'accessExpiresAt',
     'timeZone',
+    'semesterStartDate',
+    'semesterEndDate',
+    'validationAvailability',
+    'validationFindings',
+    'filterFacets',
     'courses',
     'submittedFeedback',
   ])
   requireStrings(
     value,
-    ['intendedLecturer', 'identityDisclaimer', 'accessExpiresAt', 'timeZone'],
+    [
+      'intendedLecturer',
+      'identityDisclaimer',
+      'accessExpiresAt',
+      'timeZone',
+      'semesterStartDate',
+      'semesterEndDate',
+    ],
   )
   requireTimestamp(value.accessExpiresAt)
   validateRevision(value.revision)
-  if (!Array.isArray(value.courses) || !Array.isArray(value.submittedFeedback)) {
+  if (
+    !['complete', 'partial', 'unavailable'].includes(
+      String(value.validationAvailability),
+    ) ||
+    !Array.isArray(value.validationFindings) ||
+    !Array.isArray(value.courses) ||
+    !Array.isArray(value.submittedFeedback)
+  ) {
     invalidResponse()
   }
+  validatePublicFacets(value.filterFacets)
+  value.validationFindings.forEach(validatePublicFinding)
   value.courses.forEach(validatePublicCourse)
   value.submittedFeedback.forEach(validatePublicFeedback)
+  const courses = value.courses as PublicReviewCourse[]
+  const findings =
+    value.validationFindings as PublicReviewValidationFinding[]
+  const sessionRefs = new Set(
+    courses.flatMap((course) =>
+      course.sessions.map((session) => session.sessionRef),
+    ),
+  )
+  const findingRefs = new Set(
+    findings.map((finding) => finding.findingRef),
+  )
+  if (
+    findings.some((finding) =>
+      finding.affectedSessionRefs.some((ref) => !sessionRefs.has(ref)),
+    ) ||
+    courses.some((course) =>
+      course.sessions.some(
+        (session) =>
+          session.courseRef !== course.courseRef ||
+          session.validationFindingRefs.some((ref) => !findingRefs.has(ref)),
+      ),
+    )
+  ) {
+    invalidResponse()
+  }
 }
 
 function validateRevision(value: unknown): void {
@@ -587,7 +675,7 @@ function validatePlannerFeedback(value: unknown): void {
 }
 
 function validateSessionContext(value: unknown): void {
-  assertExactKeys(value, [
+  assertRequiredAndAllowedKeys(value, [
     'sessionRef',
     'sessionKind',
     'sourceSessionId',
@@ -601,6 +689,23 @@ function validateSessionContext(value: unknown): void {
     'timeZone',
     'roomName',
     'cohortName',
+  ], [
+    'sessionRef',
+    'sessionKind',
+    'sourceSessionId',
+    'sessionType',
+    'courseSourceId',
+    'courseCode',
+    'courseTitle',
+    'date',
+    'startTime',
+    'endTime',
+    'timeZone',
+    'roomName',
+    'cohortName',
+    'studyType',
+    'teachingUnits',
+    'examDurationMinutes',
   ])
   requirePositiveIntegers(value, ['sourceSessionId', 'courseSourceId'])
   requireStrings(value, [
@@ -618,7 +723,14 @@ function validateSessionContext(value: unknown): void {
   if (
     !SESSION_REF.test(String(value.sessionRef)) ||
     !['teaching', 'exam'].includes(String(value.sessionKind)) ||
-    value.sessionRef !== `${value.sessionKind}:${value.sourceSessionId}`
+    value.sessionRef !== `${value.sessionKind}:${value.sourceSessionId}` ||
+    (value.studyType !== undefined &&
+      value.studyType !== null &&
+      typeof value.studyType !== 'string') ||
+    (value.teachingUnits !== undefined &&
+      !isNullablePositiveInteger(value.teachingUnits)) ||
+    (value.examDurationMinutes !== undefined &&
+      !isNullablePositiveInteger(value.examDurationMinutes))
   ) {
     invalidResponse()
   }
@@ -632,9 +744,24 @@ function validatePlannerNavigation(value: unknown): void {
 }
 
 function validatePublicCourse(value: unknown): void {
-  assertExactKeys(value, ['sourceCourseId', 'code', 'title', 'sessions'])
+  assertExactKeys(value, [
+    'sourceCourseId',
+    'courseRef',
+    'code',
+    'title',
+    'cohortName',
+    'studyType',
+    'sessions',
+  ])
   requirePositiveIntegers(value, ['sourceCourseId'])
-  requireStrings(value, ['code', 'title'])
+  requireStrings(value, [
+    'courseRef',
+    'code',
+    'title',
+    'cohortName',
+    'studyType',
+  ])
+  if (value.courseRef !== `course:${value.sourceCourseId}`) invalidResponse()
   if (!Array.isArray(value.sessions)) invalidResponse()
   value.sessions.forEach(validatePublicSession)
 }
@@ -644,29 +771,95 @@ function validatePublicSession(value: unknown): void {
     'sessionRef',
     'sessionKind',
     'sourceSessionId',
+    'courseRef',
     'sessionType',
     'date',
     'startTime',
     'endTime',
     'timeZone',
     'roomName',
+    'roomRef',
     'cohortName',
+    'teachingUnits',
+    'examDurationMinutes',
+    'validationFindingRefs',
   ])
   requirePositiveIntegers(value, ['sourceSessionId'])
   requireStrings(value, [
     'sessionRef',
+    'courseRef',
     'sessionType',
     'date',
     'startTime',
     'endTime',
     'timeZone',
     'roomName',
+    'roomRef',
     'cohortName',
   ])
   if (
     !SESSION_REF.test(String(value.sessionRef)) ||
-    !['teaching', 'exam'].includes(String(value.sessionKind))
+    !['teaching', 'exam'].includes(String(value.sessionKind)) ||
+    !/^course:[1-9][0-9]*$/.test(String(value.courseRef)) ||
+    !/^room:[1-9][0-9]*$/.test(String(value.roomRef)) ||
+    !isNullablePositiveInteger(value.teachingUnits) ||
+    !isNullablePositiveInteger(value.examDurationMinutes) ||
+    (value.sessionKind === 'teaching' &&
+      (value.teachingUnits === null ||
+        value.examDurationMinutes !== null)) ||
+    (value.sessionKind === 'exam' &&
+      (value.examDurationMinutes === null || value.teachingUnits !== null)) ||
+    !Array.isArray(value.validationFindingRefs) ||
+    value.validationFindingRefs.some(
+      (ref) => typeof ref !== 'string' || ref.length === 0,
+    )
   ) invalidResponse()
+}
+
+function validatePublicFinding(value: unknown): void {
+  assertExactKeys(value, [
+    'findingRef',
+    'category',
+    'message',
+    'affectedSessionRefs',
+  ])
+  requireStrings(value, ['findingRef', 'message'])
+  if (
+    ![
+      'lecturer_conflict',
+      'room_conflict',
+      'cohort_conflict',
+      'room_capacity',
+      'holiday',
+      'exam_validity',
+      'other',
+    ].includes(String(value.category)) ||
+    !Array.isArray(value.affectedSessionRefs) ||
+    value.affectedSessionRefs.some(
+      (ref) => typeof ref !== 'string' || !SESSION_REF.test(ref),
+    )
+  ) invalidResponse()
+}
+
+function validatePublicFacets(value: unknown): void {
+  assertExactKeys(value, [
+    'courses',
+    'cohorts',
+    'rooms',
+    'studyTypes',
+    'sessionTypes',
+    'lifecycleContexts',
+    'validationCategories',
+  ])
+  for (const key of Object.keys(value)) {
+    const values = value[key]
+    if (!Array.isArray(values)) invalidResponse()
+    values.forEach((facet) => {
+      assertExactKeys(facet, ['value', 'label'])
+      requireStrings(facet, ['value', 'label'])
+    })
+  }
+  if ((value.lifecycleContexts as unknown[]).length > 1) invalidResponse()
 }
 
 function validatePublicFeedback(value: unknown): void {
@@ -736,6 +929,23 @@ function isNonNegativeInteger(value: unknown) {
   return Number.isInteger(value) && Number(value) >= 0
 }
 
+function assertRequiredAndAllowedKeys(
+  value: unknown,
+  required: readonly string[],
+  allowed: readonly string[],
+): asserts value is Record<string, unknown> {
+  if (!isRecord(value)) invalidResponse()
+  const keys = Object.keys(value)
+  if (
+    required.some((key) => !keys.includes(key)) ||
+    keys.some((key) => !allowed.includes(key))
+  ) invalidResponse()
+}
+
+function isNullablePositiveInteger(value: unknown) {
+  return value === null || (Number.isInteger(value) && Number(value) >= 1)
+}
+
 function invalidResponse(): never {
   throw new LecturerReviewApiError(
     502,
@@ -748,7 +958,7 @@ function publicErrorForStatus(status: number) {
     return {
       code: 'REVIEW_REFRESH_REQUIRED',
       message:
-        'The schedule changed. Refresh the review before submitting feedback.',
+        'The schedule changed. Reload the browser page or reopen the link before submitting feedback.',
     }
   }
   if (status === 422) {

@@ -738,6 +738,56 @@ describe('LecturerReviewManagement link ending and replacement', () => {
 })
 
 describe('LecturerReviewManagement planner feedback filter', () => {
+  it('filters immutable items before regrouping and derives all four counters from the same scope', async () => {
+    await renderManagement({ currentOverview: feedbackOverview() })
+    const counters = document.querySelector('.coordination-counters')!
+
+    expect(counters.textContent).toMatch(/6.*all items/i)
+    expect(counters.textContent).toMatch(/2.*comments/i)
+    expect(counters.textContent).toMatch(/4.*not possible/i)
+    expect(counters.textContent).toMatch(/3.*affected sessions/i)
+
+    await change(
+      labelledControl<HTMLSelectElement>('Feedback kind')!,
+      'session_comment',
+    )
+    expect(counters.textContent).toMatch(/1.*all items/i)
+    expect(counters.textContent).toMatch(/1.*comments/i)
+    expect(counters.textContent).toMatch(/0.*not possible/i)
+    expect(counters.textContent).toMatch(/1.*affected sessions/i)
+    expect(document.body.textContent).not.toContain(
+      'Tuesday and Thursday are generally preferable.',
+    )
+
+    await change(
+      labelledControl<HTMLSelectElement>('Course')!,
+      '42',
+    )
+    expect(document.querySelectorAll('.review-feedback-group')).toHaveLength(1)
+
+    await click(button('Clear feedback filters'))
+    expect(counters.textContent).toMatch(/6.*all items/i)
+    expect(document.body.textContent).toContain(
+      'Tuesday and Thursday are generally preferable.',
+    )
+  })
+
+  it('counts repeated impossible items separately and affected sessions distinctly', async () => {
+    await renderManagement({ currentOverview: feedbackOverview() })
+    await change(
+      labelledControl<HTMLSelectElement>('Feedback kind')!,
+      'impossible_session',
+    )
+    const counters = document.querySelector('.coordination-counters')!
+
+    expect(counters.textContent).toMatch(/4.*all items/i)
+    expect(counters.textContent).toMatch(/4.*not possible/i)
+    expect(counters.textContent).toMatch(/3.*affected sessions/i)
+    expect(document.body.textContent).not.toContain(
+      'Could this session start at 10:00?',
+    )
+  })
+
   it('places a native keyboard-focusable Not possible filter above management with the exact flag-item count', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
     const filter = notPossibleFilter()!
@@ -810,6 +860,27 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     ).toHaveLength(1)
   })
 
+  it('intersects the Not possible toggle with item filters and clears both scopes together', async () => {
+    await renderManagement({ currentOverview: feedbackOverview() })
+    await change(labelledControl<HTMLSelectElement>('Course')!, '42')
+
+    expect(notPossibleFilter()?.textContent).toMatch(/Not possible.*1|1.*Not possible/)
+    await click(notPossibleFilter())
+
+    const counters = document.querySelector('.coordination-counters')!
+    expect(counters.textContent).toMatch(/2.*all items/i)
+    expect(counters.textContent).toMatch(/1.*comments/i)
+    expect(counters.textContent).toMatch(/1.*not possible/i)
+    expect(counters.textContent).toMatch(/1.*affected sessions/i)
+    expect(document.querySelectorAll('.review-feedback-group')).toHaveLength(1)
+
+    await click(button('Clear feedback filters'))
+
+    expect(notPossibleFilter()?.getAttribute('aria-pressed')).toBe('false')
+    expect(labelledControl<HTMLSelectElement>('Course')?.value).toBe('')
+    expect(counters.textContent).toMatch(/6.*all items/i)
+  })
+
   it('uses visible non-color kind labels and retains historical session context without a guessed action', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
     await click(notPossibleFilter())
@@ -835,6 +906,45 @@ describe('LecturerReviewManagement planner feedback filter', () => {
         (candidate) => candidate.textContent?.trim() === 'Open current session',
       ),
     ).toBe(false)
+  })
+
+  it('renders every item from its own complete captured session context', async () => {
+    const captured = feedbackOverview()
+    const teaching = captured.feedbackGroups.find(
+      (group) => group.groupRef === 'teaching:101',
+    )!
+    teaching.items[1] = {
+      ...teaching.items[1],
+      sessionContext: {
+        ...teaching.items[1].sessionContext!,
+        sessionType: 'Workshop before revision',
+        courseCode: 'HIST-42',
+        courseTitle: 'Algorithms before revision',
+        date: '2026-10-04',
+        roomName: 'Historical Lab',
+        cohortName: 'CS-25',
+        studyType: 'Part-time',
+        teachingUnits: 2,
+      },
+    }
+    await renderManagement({ currentOverview: captured })
+
+    const teachingItem = [...document.querySelectorAll<HTMLLIElement>(
+      '.review-feedback-group li',
+    )].find((item) => item.textContent?.includes('Monday morning cannot work.'))!
+    expect(teachingItem.textContent).toContain('HIST-42')
+    expect(teachingItem.textContent).toContain('Algorithms before revision')
+    expect(teachingItem.textContent).toContain('Workshop before revision')
+    expect(teachingItem.textContent).toContain('Historical Lab')
+    expect(teachingItem.textContent).toContain('Part-time')
+    expect(teachingItem.textContent).toMatch(/Teaching units.*2/i)
+
+    const examItem = [...document.querySelectorAll<HTMLLIElement>(
+      '.review-feedback-group li',
+    )].find((item) => item.textContent?.includes(LECTURER_REVIEW_COMMENT_CANARY))!
+    expect(examItem.textContent).toContain('COURSE-43')
+    expect(examItem.textContent).toContain('Written exam')
+    expect(examItem.textContent).toMatch(/Duration.*120 minutes/i)
   })
 
   it('invokes the authoritative current-session action only for a supplied navigation target', async () => {
@@ -922,6 +1032,11 @@ describe('LecturerReviewManagement planner feedback filter', () => {
       expect(filter.textContent).not.toMatch(/\b0\b/)
       expect(document.body.textContent).toMatch(message)
       expect(filter.disabled).toBe(true)
+      expect(document.querySelector('.review-feedback-announcement')?.textContent)
+        .not.toMatch(/\b0\b/)
+      expect(document.body.textContent).not.toContain(
+        'No feedback has been submitted for this revision.',
+      )
     },
   )
 })
