@@ -1,7 +1,7 @@
 # Tasks: Containerized Application Distribution
 
 **Input**: Design documents from
-`/specs/020-containerized-distribution/`
+`/specs/I-001-containerized-distribution/`
 
 **Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`,
 `contracts/`, `quickstart.md`
@@ -17,9 +17,9 @@ Completed tasks are checked; remaining pre-merge review corrections stay open.
 
 **Purpose**: Record the requested distribution scope and deployment design.
 
-- [x] T001 Create and validate the feature specification in `specs/020-containerized-distribution/spec.md` and `specs/020-containerized-distribution/checklists/requirements.md`
-- [x] T002 [P] Record packaging and release decisions in `specs/020-containerized-distribution/research.md`
-- [x] T003 [P] Define deployment entities, contract, and validation guide in `specs/020-containerized-distribution/data-model.md`, `specs/020-containerized-distribution/contracts/container-distribution.md`, and `specs/020-containerized-distribution/quickstart.md`
+- [x] T001 Create and validate the feature specification in `specs/I-001-containerized-distribution/spec.md` and `specs/I-001-containerized-distribution/checklists/requirements.md`
+- [x] T002 [P] Record packaging and release decisions in `specs/I-001-containerized-distribution/research.md`
+- [x] T003 [P] Define deployment entities, contract, and validation guide in `specs/I-001-containerized-distribution/data-model.md`, `specs/I-001-containerized-distribution/contracts/container-distribution.md`, and `specs/I-001-containerized-distribution/quickstart.md`
 
 ---
 
@@ -106,7 +106,7 @@ registry visibility instructions are explicit.
 ## Phase 6: Polish & Cross-Cutting Concerns
 
 - [x] T017 Pin production base-image digests in `infrastructure/docker/Dockerfile`
-- [x] T018 Run backend pytest, frontend lint/test/build, Compose validation, image build, routing, health, non-root, persistence, restart, and backup verification from `specs/020-containerized-distribution/quickstart.md`
+- [x] T018 Run backend pytest, frontend lint/test/build, Compose validation, image build, routing, health, non-root, persistence, restart, and backup verification from `specs/I-001-containerized-distribution/quickstart.md`
 - [x] T019 Move the runtime to the digest-pinned Python 3.12 slim Debian Trixie base in `infrastructure/docker/Dockerfile`
 - [x] T020 Split exact runtime and development dependencies in `backend/requirements-runtime.txt`, `backend/requirements-dev.txt`, and `backend/requirements.txt`, and exclude pip and test tooling from the final image
 - [x] T021 Add weekly Docker base-image digest maintenance in `.github/dependabot.yml`

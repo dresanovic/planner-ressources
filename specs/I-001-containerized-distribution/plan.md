@@ -4,7 +4,7 @@
 [spec.md](./spec.md)
 
 **Input**: Feature specification from
-`/specs/020-containerized-distribution/spec.md`
+`/specs/I-001-containerized-distribution/spec.md`
 
 ## Summary
 
@@ -97,7 +97,7 @@ and the exception is visible rather than concealed.
 ### Documentation (this feature)
 
 ```text
-specs/020-containerized-distribution/
+specs/I-001-containerized-distribution/
 |-- plan.md
 |-- research.md
 |-- data-model.md
