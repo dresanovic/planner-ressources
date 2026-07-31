@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:26-bookworm-slim@sha256:2d49d876e96237d76de412761cf05dbfe5aee325cc4406a4d41d5824c5bb8beb AS frontend-build
+FROM node:24-bookworm-slim@sha256:6f7b03f7c2c8e2e784dcf9295400527b9b1270fd37b7e9a7285cf83b6951452d AS frontend-build
 
 WORKDIR /build/client
 
@@ -11,7 +11,7 @@ COPY client/ ./
 RUN npm run build
 
 
-FROM python:3.14-slim-trixie@sha256:cea0e6040540fb2b965b6e7fb5ffa00871e632eef63719f0ea54bca189ce14a6 AS python-dependencies
+FROM python:3.12-slim-trixie@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de AS python-dependencies
 
 WORKDIR /build/backend
 
@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         -r requirements-runtime.txt
 
 
-FROM python:3.14-slim-trixie@sha256:cea0e6040540fb2b965b6e7fb5ffa00871e632eef63719f0ea54bca189ce14a6 AS runtime
+FROM python:3.12-slim-trixie@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de AS runtime
 
 ARG VERSION=""
 ARG VCS_REF=""
