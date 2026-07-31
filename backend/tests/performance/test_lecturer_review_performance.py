@@ -33,7 +33,11 @@ from app.services.schedule_lifecycle import (
     create_working_revision,
     get_lifecycle_overview,
 )
-from tests.lecturer_review_fixtures import DeterministicUtcClock, FIXED_UTC
+from tests.lecturer_review_fixtures import (
+    DeterministicUtcClock,
+    FIXED_UTC,
+    install_api_clock,
+)
 from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
 
 
@@ -60,10 +64,12 @@ def test_reference_scale_service_and_api_performance_guards(tmp_path, monkeypatc
     )
     initialize_database(engine)
     with Session(engine) as db:
+        clock = DeterministicUtcClock()
         secret = _seed_reference_scope(db)
         assert _session_count(db) == 100
         assert db.query(LecturerReviewFeedback).count() == 200
 
+        install_api_clock(monkeypatch, clock)
         app.dependency_overrides[get_db] = lambda: db
         try:
             with TestClient(app, client=("198.51.100.40", 44000)) as client:

@@ -27,6 +27,7 @@ from app.models.planning import (
 from tests.lecturer_review_fixtures import (
     DeterministicUtcClock,
     FIXED_UTC,
+    install_api_clock,
     seed_lecturer_review_fixture,
 )
 
@@ -69,27 +70,6 @@ def client_and_db(monkeypatch):
 def _assert_public_headers(response) -> None:
     for name, expected in PUBLIC_HEADERS.items():
         assert response.headers[name] == expected
-
-
-def _install_api_clock(monkeypatch, clock: DeterministicUtcClock) -> None:
-    api = importlib.import_module("app.api.lecturer_review")
-    service = importlib.import_module("app.services.lecturer_review")
-    for name in (
-        "get_lecturer_review_overview",
-        "get_public_lecturer_review",
-        "issue_lecturer_review_link",
-        "replace_lecturer_review_link",
-        "reject_invalid_feedback_attempt",
-        "revoke_lecturer_review_link",
-        "submit_lecturer_review_feedback",
-    ):
-        original = getattr(service, name)
-
-        def with_clock(*args, _original=original, **kwargs):
-            kwargs["clock"] = clock
-            return _original(*args, **kwargs)
-
-        monkeypatch.setattr(api, name, with_clock)
 
 
 def test_public_feedback_keeps_sync_database_work_off_the_event_loop():
@@ -891,7 +871,7 @@ def test_public_failure_equivalence_activity_evidence_and_privacy_canaries(
     client, db = client_and_db
     fixture = seed_lecturer_review_fixture(db)
     clock = DeterministicUtcClock()
-    _install_api_clock(monkeypatch, clock)
+    install_api_clock(monkeypatch, clock)
     service = importlib.import_module("app.services.lecturer_review")
 
     revoked = _issue_link(client)
@@ -1085,7 +1065,7 @@ def test_exact_source_boundary_valid_request_21_and_source_state_retention(
     client, db = client_and_db
     fixture = seed_lecturer_review_fixture(db)
     clock = DeterministicUtcClock()
-    _install_api_clock(monkeypatch, clock)
+    install_api_clock(monkeypatch, clock)
     service = importlib.import_module("app.services.lecturer_review")
     issued = _issue_link(client)
     secret = issued["secret"]
@@ -1187,7 +1167,7 @@ def test_exact_120_121_protected_view_boundary_preserves_review_state(
     client, db = client_and_db
     seed_lecturer_review_fixture(db)
     clock = DeterministicUtcClock()
-    _install_api_clock(monkeypatch, clock)
+    install_api_clock(monkeypatch, clock)
     issued = _issue_link(client)
     secret = issued["secret"]
     link_id = issued["issuedLink"]["id"]
@@ -1247,7 +1227,7 @@ def test_stable_source_key_survives_restart_during_window_and_active_block(
 ):
     engine = persistent_api
     clock = DeterministicUtcClock()
-    _install_api_clock(monkeypatch, clock)
+    install_api_clock(monkeypatch, clock)
     with Session(engine) as db:
         seed_lecturer_review_fixture(db)
     with TestClient(
@@ -1309,7 +1289,7 @@ def test_concurrent_same_source_is_atomic_and_normalized_sources_are_independent
 ):
     engine = persistent_api
     clock = DeterministicUtcClock()
-    _install_api_clock(monkeypatch, clock)
+    install_api_clock(monkeypatch, clock)
     with Session(engine) as db:
         seed_lecturer_review_fixture(db)
 
