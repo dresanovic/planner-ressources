@@ -34,9 +34,9 @@ it('labels the modal and presents the exact single-session consequence', () => {
   expect(dialog?.getAttribute('aria-modal')).toBe('true')
   expect(dialog?.getAttribute('aria-labelledby')).toBeTruthy()
   expect(dialog?.textContent).toContain('Planning 101')
-  expect(dialog?.textContent).toContain('2026-09-07')
-  expect(dialog?.textContent).toContain('2 units')
-  expect(dialog?.textContent).toContain('6 units remaining')
+  expect(dialog?.textContent).toContain('07.09.2026')
+  expect(dialog?.textContent).toContain('2 Lehreinheiten')
+  expect(dialog?.textContent).toContain('6 Lehreinheiten bleiben offen')
 })
 
 it('moves focus inside, traps Tab, supports Escape, and restores focus', () => {
@@ -65,8 +65,8 @@ it('explains when deleting the selected session also removes the empty parent', 
       startTime: '08:00', endTime: '09:45', unitsRemoved: 2, resultingRemainingUnits: 8, lastSession: true,
     },
   })
-  expect(document.body.textContent).toContain('last session')
-  expect(document.body.textContent).toContain('empty Draft Schedule')
+  expect(document.body.textContent).toContain('letzte Termin')
+  expect(document.body.textContent).toContain('leere Planungsentwurf')
 })
 
 it('identifies complete course-draft scope and preserved records', () => {
@@ -76,10 +76,23 @@ it('identifies complete course-draft scope and preserved records', () => {
       sessionCount: 3, unitsRemoved: 8, resultingRemainingUnits: 12,
     },
   })
-  expect(document.body.textContent).toContain('Clear this course Draft Schedule?')
-  expect(document.body.textContent).toContain('3 sessions')
-  expect(document.body.textContent).toContain('8 scheduled units will be removed')
-  expect(document.body.textContent).toContain('12 units remaining')
-  expect(document.body.textContent).toContain('saved generation constraints will be preserved')
-  expect(document.body.textContent).toContain('Clear course draft')
+  expect(document.body.textContent).toContain('Diesen Planungsentwurf leeren?')
+  expect(document.body.textContent).toContain('3 Termine werden gelöscht')
+  expect(document.body.textContent).toContain('8 geplante Lehreinheiten werden entfernt')
+  expect(document.body.textContent).toContain('12 Lehreinheiten bleiben offen')
+  expect(document.body.textContent).toContain('gespeicherte Erzeugungsregeln bleiben erhalten')
+  expect(document.body.textContent).toContain('Planungsentwurf leeren')
+})
+
+it('renders multiple deletion problems as separate actionable items', () => {
+  renderDialog({
+    problems: [
+      { key: 'stale', tone: 'blocking', title: 'Termin wurde geändert', details: ['Laden Sie den aktuellen Stand.'] },
+      { key: 'conflict', tone: 'blocking', title: 'Termin hat einen Konflikt', details: ['Prüfen Sie die Zuordnung.'] },
+    ],
+  })
+  const problems = document.querySelectorAll('.actionable-problem')
+  expect(problems).toHaveLength(2)
+  expect(problems[0].textContent).toContain('Termin wurde geändert')
+  expect(problems[1].textContent).toContain('Termin hat einen Konflikt')
 })

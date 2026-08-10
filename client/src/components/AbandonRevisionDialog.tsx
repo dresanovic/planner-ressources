@@ -20,9 +20,9 @@ export function AbandonRevisionDialog({ semesterName, revision, currentPublicati
     else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
   }
   return <div className="dialog-backdrop"><section ref={dialogRef} className="confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="abandon-title" tabIndex={-1} onKeyDown={onKeyDown}>
-    <h2 id="abandon-title">Abandon revision {revision.revisionNumber}?</h2>
-    <p>The working content for {semesterName} will be captured in history and can be restored while no other working revision exists.</p>
-    <p>{currentPublication ? `Current publication revision ${currentPublication.revisionNumber} remains visible and unchanged.` : 'This semester has no current publication.'}</p>
-    <div className="dialog-actions"><button ref={cancelRef} type="button" className="secondary-button" disabled={busy} onClick={onCancel}>Cancel</button><button type="button" className="destructive-button" disabled={busy} onClick={onConfirm}>{busy ? 'Abandoning…' : 'Abandon revision'}</button></div>
+    <h2 id="abandon-title">Revision {revision.revisionNumber} verwerfen?</h2>
+    <p>Der Arbeitsstand für {semesterName} wird im Verlauf gespeichert und kann wiederhergestellt werden, solange keine andere Arbeitsrevision besteht.</p>
+    <p>{currentPublication ? `Die aktuelle Veröffentlichung, Revision ${currentPublication.revisionNumber}, bleibt sichtbar und unverändert.` : 'Dieses Semester hat keine aktuelle Veröffentlichung.'}</p>
+    <div className="dialog-actions"><button ref={cancelRef} type="button" className="secondary-button" disabled={busy} onClick={onCancel}>Abbrechen</button><button type="button" className="destructive-button" disabled={busy} onClick={onConfirm}>{busy ? 'Wird verworfen…' : 'Revision verwerfen'}</button></div>
   </section></div>
 }

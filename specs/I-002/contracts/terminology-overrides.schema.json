@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://resource-planner.local/contracts/terminology-overrides.schema.json",
+  "title": "Resource Planner customer terminology overrides",
+  "description": "Optional partial overrides for selected German UI terminology. Omitted properties use shipped German defaults.",
+  "type": "object",
+  "properties": {
+    "course.singular": { "$ref": "#/$defs/label" },
+    "course.plural": { "$ref": "#/$defs/label" },
+    "course.navigation": { "$ref": "#/$defs/label" },
+    "course.heading": { "$ref": "#/$defs/label" },
+    "course.fieldLabel": { "$ref": "#/$defs/label" },
+    "course.tableHeading": { "$ref": "#/$defs/label" },
+    "lecturer.singular": { "$ref": "#/$defs/label" },
+    "lecturer.plural": { "$ref": "#/$defs/label" },
+    "lecturer.navigation": { "$ref": "#/$defs/label" },
+    "lecturer.heading": { "$ref": "#/$defs/label" },
+    "lecturer.fieldLabel": { "$ref": "#/$defs/label" },
+    "lecturer.tableHeading": { "$ref": "#/$defs/label" },
+    "cohort.singular": { "$ref": "#/$defs/label" },
+    "cohort.plural": { "$ref": "#/$defs/label" },
+    "cohort.navigation": { "$ref": "#/$defs/label" },
+    "cohort.heading": { "$ref": "#/$defs/label" },
+    "cohort.fieldLabel": { "$ref": "#/$defs/label" },
+    "cohort.tableHeading": { "$ref": "#/$defs/label" },
+    "room.singular": { "$ref": "#/$defs/label" },
+    "room.plural": { "$ref": "#/$defs/label" },
+    "room.navigation": { "$ref": "#/$defs/label" },
+    "room.heading": { "$ref": "#/$defs/label" },
+    "room.fieldLabel": { "$ref": "#/$defs/label" },
+    "room.tableHeading": { "$ref": "#/$defs/label" },
+    "schedule.navigation": { "$ref": "#/$defs/label" },
+    "schedule.heading": { "$ref": "#/$defs/label" },
+    "academicData.navigation": { "$ref": "#/$defs/label" },
+    "academicData.heading": { "$ref": "#/$defs/label" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001F\\u007F]+$",
+      "description": "A nonblank, single-line Unicode label rendered as text. Markup and token-substitution semantics are not supported."
+    }
+  },
+  "examples": [
+    {
+      "course.singular": "Lehrveranstaltung",
+      "course.plural": "Lehrveranstaltungen",
+      "lecturer.tableHeading": "Lehrende Person"
+    }
+  ]
+}

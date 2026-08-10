@@ -13,9 +13,9 @@ it('shows complete teaching detail and reaches editing in the second intentional
   const root = createRoot(host)
   const onEdit = vi.fn()
   act(() => root.render(<SessionPane occurrence={occurrence} workspace={workspace} mode="detail" onRequestClose={vi.fn()} onRequestEdit={onEdit} />))
-  expect(host.textContent).toContain('Teaching session')
-  expect(host.textContent).toContain('Teaching units')
-  const edit = [...host.querySelectorAll('button')].find((button) => button.textContent === 'Edit session')!
+  expect(host.textContent).toContain('Lehrtermin')
+  expect(host.textContent).toContain('Lehreinheiten')
+  const edit = [...host.querySelectorAll('button')].find((button) => button.textContent === 'Termin bearbeiten')!
   act(() => edit.click())
   expect(onEdit).toHaveBeenCalledOnce()
 })
@@ -49,7 +49,7 @@ it('keeps the actionable details for every warning kind', () => {
       onRequestClose={vi.fn()}
     />,
   ))
-  expect(host.textContent).toContain('Room Alpha capacity 20; 30 required')
+  expect(host.textContent).toContain('Room Alpha“ hat 20 Plätze; benötigt werden 30')
 })
 
 it('uses the restricted safe-field branch with feedback actions only', () => {
@@ -84,20 +84,20 @@ it('uses the restricted safe-field branch with feedback actions only', () => {
 
   expect(host.textContent).toContain('Dr Ada Lecturer')
   expect(host.textContent).toContain('Working R2')
-  expect(host.textContent).toContain('Ready for review')
+  expect(host.textContent).toContain('Bereit zur Prüfung')
   expect(host.textContent).toContain('C-001')
   expect(host.textContent).toContain('Auditorium B')
   expect(host.textContent).toContain('This exam needs review.')
   expect(host.textContent).toContain('Send feedback')
-  expect(host.textContent).not.toContain('Edit session')
+  expect(host.textContent).not.toContain('Termin bearbeiten')
   expect(host.textContent).not.toContain('Delete')
   expect(host.textContent).not.toContain('Configuration')
   expect(host.textContent).not.toContain('Capacity')
 })
 
 it.each([
-  ['partial' as const, 'Validation is incomplete; a complete no-issue result is not available.'],
-  ['unavailable' as const, 'Current validation is unavailable.'],
+  ['partial' as const, 'Die Prüfung ist unvollständig; ein vollständiges Ergebnis ohne Probleme liegt nicht vor.'],
+  ['unavailable' as const, 'Die aktuelle Prüfung ist nicht verfügbar.'],
 ])('does not describe empty %s validation as warning-free', (validationAvailability, message) => {
   const workspace = loadedCalendarWorkspaceFixture()
   const occurrence = workspace.occurrences[0]
@@ -123,7 +123,7 @@ it.each([
   ))
 
   expect(host.textContent).toContain(message)
-  expect(host.textContent).not.toContain('No current warnings.')
+  expect(host.textContent).not.toContain('Keine aktuellen Hinweise.')
 })
 
 it('composes either domain editor, reports status, and closes cleanly with Escape', () => {

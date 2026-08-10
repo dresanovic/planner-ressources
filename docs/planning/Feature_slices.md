@@ -17,14 +17,23 @@ publication state, and lecturer input are fragmented across manual exchanges.
 Lecturers currently have only a limited accountless review surface and cannot
 transfer their complete assigned schedule to Outlook or submit structured
 pre-planning unavailable dates without planner re-entry.
+Across the existing planner interface, user-facing terminology is also spread
+through individual components, calendar dates are frequently shown in the
+machine-oriented ISO form, and some alerts expose only a generic category or
+failure statement. This makes otherwise valid planning information harder to
+interpret and leaves users unsure what happened or what to do next.
 
 ### Why now
 
 The planner scheduling, administration, publication, calendar workspace,
 accountless lecturer-review foundation, and streamlined Schedule navigation are
-implemented. The next useful product increment is to complete the accountless
-lecturer collaboration loop before introducing the substantially broader
-authentication and role-management scope in FS-016.
+implemented. Recent use of the Courses overview exposed a cross-application
+clarity gap: the visible date format is unfamiliar to the intended European
+users, terminology cannot be changed consistently in one place, and alerts such
+as `OUTSIDE RECOMMENDED WINDOW` omit the applicable range and next action. The
+next selected increment addresses this usability baseline before the remaining
+lecturer collaboration extensions and the substantially broader authentication
+and role-management scope in FS-016.
 
 ### Product-level success
 
@@ -40,6 +49,12 @@ authentication and role-management scope in FS-016.
   never change schedules automatically.
 - Planner users can find all lecturer-originated work requiring action in one
   Lecturer coordination destination.
+- Every user-facing calendar date follows one European display convention, and
+  every known warning or failure gives enough context and recovery guidance for
+  the affected user to decide what to do next.
+- Selected German domain and workflow terminology can be changed consistently
+  for one customer installation through a deployment-supplied override file,
+  without rebuilding the application or editing individual screens.
 
 ### Product goal
 
@@ -78,6 +93,8 @@ releases.
 - Correct schedules manually without losing saved generation constraints.
 - Avoid institution-wide public holidays and schedule course exams.
 - Review conflicts, remaining work, failures, and schedule states in a filterable calendar workspace.
+- Read consistent interface terminology and European-formatted dates, and act
+  on warnings or failures without having to interpret internal codes.
 - Publish controlled schedule versions while retaining the current published version during later revisions.
 - Collect accountless lecturer feedback across all assigned courses in one
   semester revision.
@@ -111,6 +128,15 @@ releases.
 - Static iCalendar export of the complete token-scoped lecturer schedule.
 - Planner-issued, single-submission collection of whole-day lecturer
   unavailability with per-date planner approval.
+- One shipped German terminology catalog with optional customer-specific
+  deployment overrides for selected reusable terms across planner and
+  accountless lecturer surfaces.
+- European `DD.MM.YYYY` presentation for human-visible calendar dates throughout
+  the application, with machine contracts retaining their required standard
+  representations.
+- Contextual, actionable warning and error messages that identify the affected
+  item, explain the applicable condition when known, and state the available
+  recovery or next action.
 
 ### Out of scope
 
@@ -127,6 +153,8 @@ releases.
 - Persistent lecturer-availability submission drafts or approval/rejection
   history.
 - A generic cross-product notification or Action Center.
+- Runtime language switching, translation management, an administrator-facing
+  label editor, or a full localization platform.
 - Full production or room-booking execution outside the planning and publication workflow.
 
 ### Possible later scope
@@ -185,6 +213,10 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
   coordination boundary.
 - `docs/architecture/availability-link-validity.md` records the accepted fixed
   72-hour availability-link rule.
+- The user-provided Courses overview screenshot from 2026-08-10 is the
+  motivating example for FS-022: it shows ISO dates and an `Affected record`
+  alert containing `OUTSIDE RECOMMENDED WINDOW` without the actual recommended
+  period or an available next action.
 
 ## Product-level constraints and assumptions
 
@@ -208,6 +240,18 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 - Approved lecturer unavailable dates use the existing planner-controlled
   availability model. Existing conflicting sessions are warned, never moved
   automatically.
+- Human-visible calendar dates, including visible date-entry values, use
+  zero-padded `DD.MM.YYYY`; API payloads, persistence values,
+  sorting/comparison values, non-visible submission values, and standards-based
+  exports may retain ISO or another mandated machine format.
+- Selected reusable German domain and workflow terms are resolved from one
+  effective catalog: shipped German defaults plus one optional customer override
+  file supplied during deployment or startup. Ordinary German copy is not
+  customer-configurable, and users cannot switch languages or edit terminology.
+- A known validation, warning, or operation failure must be presented in plain
+  German with the affected record or field, the reason or violated rule when
+  known, and a concrete next action. Internal codes, stack traces, secret values,
+  and raw infrastructure details are not user-facing explanations.
 - The existing FastAPI, SQLAlchemy, React, and Vite technology standards and the project constitution remain binding for later specification and implementation.
 
 ## Slice map
@@ -230,13 +274,14 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented             |
 | 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented             |
 | 16 | FS-019 | Streamlined Schedule Workspace | Use focused Schedule destinations and in-pane session correction | FS-013, FS-014, FS-018 | Implemented — manual acceptance evidence pending |
-| 17 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Ready for specification — implemented baseline retained |
-| 18 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Ready for specification |
-| 19 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
-| 20 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015, FS-020, FS-021 | Proposed — later release |
-| 21 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
+| 17 | FS-022 | Consistent Labels, European Dates, and Actionable Messages | Understand interface wording, dates, warnings, and failures consistently | FS-019 | Specified — tasks complete; ready for implementation |
+| 18 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Ready for specification — implemented baseline retained |
+| 19 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Ready for specification |
+| 20 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
+| 21 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015, FS-020, FS-021 | Proposed — later release |
+| 22 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
-**Recommended first slice:** `FS-015 – Accountless Lecturer Token Review extension`
+**Recommended first slice:** `FS-022 – Consistent Labels, European Dates, and Actionable Messages` (initiative artifact directory: `specs/I-002/`)
 
 ## Development slices
 
@@ -2455,6 +2500,288 @@ Known clarification topics: Existing-duplicate behavior, per-date batch ergonomi
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define independently testable scenarios, requirements, security and privacy behavior, edge cases, assumptions, and measurable success criteria without merging the two token capabilities or designing authentication.
 ```
 
+### FS-022: Consistent Labels, European Dates, and Actionable Messages
+
+#### User or business outcome
+
+Planner users and lecturers can understand the same terminology, calendar dates,
+warnings, and failures consistently throughout the application and can tell what
+to do next when the system reports a problem.
+
+#### Rationale for this slice boundary
+
+Controlled labels, European date presentation, and actionable messages are
+separate presentation concerns but deliver one cross-workflow usability outcome:
+the application communicates planning information clearly and consistently.
+They share the same application-wide inventory and regression boundary and are
+small enough to specify together without changing scheduling behavior.
+
+#### Primary actors
+
+- Planner user.
+- Lecturer using an accountless review or availability surface.
+
+#### Preconditions
+
+- FS-019 provides the current planner navigation, Schedule workspace, session
+  details, and correction surfaces that form the principal UI baseline.
+- Existing domain validations and machine-readable API error contracts remain
+  available as the source conditions for user-facing messages.
+
+#### In scope
+
+- One complete shipped German default catalog for selected reusable domain and
+  workflow terms, plus one optional customer override file supplied during
+  deployment or startup.
+- Stable context-specific identifiers and complete values for singular, plural,
+  navigation, heading, field, and table contexts, without automatic German
+  inflection or token substitution into ordinary copy.
+- A complete inventory and migration of the selected configurable terminology
+  across current planner and accountless lecturer surfaces.
+- Zero-padded `DD.MM.YYYY` presentation for every human-visible calendar date,
+  including lists, calendars, detail panes, summaries, dialogs, notices,
+  generated user-facing text, and date entry presentation.
+- Consistent European formatting of date ranges without changing their meaning.
+- Contextual messages for validation warnings, field errors, failed operations,
+  stale data, connectivity failures, and unexpected service failures.
+- Each known message identifying the failed or affected action, record or field;
+  explaining the cause, violated rule, or relevant values when known; and
+  stating a concrete recovery or next action.
+- Warning language that clearly distinguishes non-blocking conditions from
+  failures and states whether the current record remains saved or usable.
+- Separate presentation of multiple actionable problems rather than an
+  undifferentiated combined sentence.
+- Safe fallback messages for genuinely unknown failures that name the attempted
+  action, preserve user-entered work where possible, and offer retry or refresh
+  guidance without exposing sensitive or internal diagnostic data.
+
+#### Out of scope
+
+- Non-German application languages, runtime locale switching, translation
+  workflows, automatic pluralization or inflection, remote translation services,
+  and runtime terminology administration.
+- Customer configuration of ordinary German sentences, instructions, notices,
+  confirmations, or complete warning and error message templates.
+- Renaming stored academic records or values entered by users.
+- Changing domain rules, warning severity, save/block behavior, API semantics,
+  database date representation, or ordering/comparison logic.
+- Translating technical interchange formats such as API payloads, iCalendar
+  content, URLs, logs, or source-level test fixtures into display format.
+- A generic notification center, support-ticket workflow, or exposure of stack
+  traces, internal exception text, bearer values, or secrets.
+
+#### Main workflow
+
+A user opens any planner or accountless lecturer screen and sees German
+application copy plus selected terminology resolved from the shipped defaults
+and optional customer overrides. All calendar dates are presented as
+`DD.MM.YYYY`. When a known warning or failure occurs, the German message names
+the affected action or record, includes the relevant rule or values,
+distinguishes whether the condition blocks the action, and provides a direct
+safe action or points precisely to the existing control.
+
+For the motivating Courses overview case, an outside-recommended-window warning
+must identify the course or exam, show the scheduled date and actual recommended
+start and end dates in European format, state that the condition is non-blocking,
+and explain how the planner can edit the date or retain the intentional override.
+
+#### Business rules
+
+- `DD.MM.YYYY` means a two-digit day, two-digit month, and four-digit year, for
+  example `11.09.2026`.
+- Date formatting must not shift the calendar day because of timezone
+  conversion. Existing institution-local time behavior remains authoritative.
+- Machine-readable dates remain machine-readable at storage and integration
+  boundaries; conversion occurs only where a date becomes user-facing.
+- A raw internal error code may support diagnostics but cannot be the only or
+  primary explanation shown to the user.
+- Known messages follow the sequence: what happened, what item or field is
+  affected, why it happened or which values/rule apply, and what the user can do
+  next.
+- Messages must not promise recovery actions the current screen does not offer.
+- When an exact cause is unavailable, the message must not invent one; it names
+  the attempted action and offers the safest available retry, refresh, or
+  preservation guidance.
+- Customer terminology overrides take effect on the installation's next startup
+  without an application rebuild and do not alter user data.
+- Omitted overrides use shipped German defaults. Empty, unreadable, unknown, or
+  unresolved overrides must be detected before an affected interface is served
+  and must never render as an empty label or raw catalog key.
+- Date fields always display and accept `DD.MM.YYYY`; an accessible calendar
+  picker may supplement the field but may not replace it with a
+  browser-dependent visible format.
+
+#### Data inputs and outputs
+
+Inputs are shipped German terminology defaults, optional customer override
+values, machine-readable calendar dates, domain validation details, affected
+record and field context, attempted actions, and recoverability information.
+Outputs are consistent customer-specific German terminology,
+European-formatted display dates, and safe actionable German messages. No new
+business record or external data exchange is introduced.
+
+#### Integrations
+
+None. Existing APIs and standards-based exports retain their established date
+and error contracts unless a later specification explicitly changes them.
+
+#### UI references
+
+- The existing React/Vite planner and accountless lecturer surfaces are the
+  coverage baseline.
+- The user-provided Courses overview screenshot from 2026-08-10 demonstrates
+  the two principal defects: ISO dates such as `2026-09-11` and the context-poor
+  `KI Grundlagen · OUTSIDE RECOMMENDED WINDOW` warning.
+- Existing visual hierarchy and interaction patterns remain unchanged except
+  where additional message detail requires readable wrapping or grouping.
+
+#### Constraints and assumptions
+
+- The application language is German. The deliberately small terminology
+  catalog is not a complete internationalization system.
+- Customer configuration is an optional deployment/startup override file over
+  shipped German defaults, not an in-application editor or runtime switch.
+- Each grammatical or UI context has its own complete catalog value; no
+  inflection engine or sentence token substitution is required.
+- The European standard applies to calendar dates, not to changing the existing
+  24-hour clock, duration, number, or timezone rules.
+- Date controls always display and accept `DD.MM.YYYY` while preserving valid
+  machine values submitted to existing APIs. An accessible calendar picker may
+  supplement this field behavior.
+- The work covers all current user-facing surfaces, including less frequent
+  dialogs and failure states, not only the Courses overview screenshot.
+
+#### Dependencies
+
+- FS-019.
+- Existing domain error codes and validation detail from the implemented slices.
+
+#### Completion outcome
+
+A representative user can move across planner and accountless lecturer
+workflows without encountering an ISO-formatted human date or a migrated static
+configurable term outside the effective German catalog, and can use every tested
+known warning or failure to identify the affected context and the next available
+action. The
+outside-recommended-window case explicitly shows the scheduled date,
+recommended range, non-blocking status, and correction or retention options.
+
+#### Open clarification topics
+
+None. Implementation-level file structure and key naming remain planning
+decisions within the confirmed deployment override and context-specific value
+rules.
+
+#### Specification status
+
+Specified with planning and task generation complete; ready for implementation.
+The initiative's detailed Spec Kit artifacts use the exact directory
+`specs/I-002/`.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for the following development
+slice. Store all generated specification artifacts in the exact initiative
+directory specs/I-002/; do not create a differently named feature directory.
+
+Slice ID: FS-022
+Slice name: Consistent Labels, European Dates, and Actionable Messages
+
+Product context:
+The Resource Planner's current planner and accountless lecturer interfaces use
+static wording distributed across components, frequently expose ISO calendar
+dates, and sometimes show only generic categories or failures. The user-provided
+Courses overview screenshot demonstrates `2026-09-11` and `KI Grundlagen ·
+OUTSIDE RECOMMENDED WINDOW` without the recommended range or next action.
+
+Product-level success:
+Users see consistent terminology, every human-visible calendar date follows the
+European `DD.MM.YYYY` convention, and known warnings or failures explain the
+affected context, cause or rule, blocking status, and next available action.
+
+User or business outcome:
+Planner users and lecturers can understand dates, warnings, failures, and
+interface terminology consistently throughout the application and know what to
+do next when a problem is reported.
+
+Primary actors:
+Planner user; lecturer using an accountless review or availability surface.
+
+In scope:
+German-only application copy; one shipped German default catalog for selected
+reusable domain/workflow terminology; one optional customer override file
+supplied during deployment or startup; complete context-specific values without
+automatic inflection; planner and accountless lecturer terminology inventory;
+`DD.MM.YYYY` display and entry for all human-visible calendar dates and ranges;
+precise contextual German messages with direct safe recovery actions or precise
+directions to existing controls; separate problem rendering; safe unknown-error
+fallbacks; and regression coverage. The outside-recommended-window message must
+show the affected course or exam, scheduled date, recommended start/end dates,
+non-blocking status, and edit-or-retain guidance.
+
+Out of scope:
+Non-German application languages, runtime locale switching, translation or
+terminology administration, automatic inflection, configuration of ordinary
+German sentences or complete message templates, renaming user-entered records,
+changes to business rules or severity, API and database date representation,
+standards-based export formatting, notification centers, support workflows, or
+disclosure of internal diagnostics and secrets.
+
+Main workflow:
+The user opens any current application surface and sees German copy,
+customer-configured terminology, and European dates. When a known problem
+occurs, the German message states what happened, the affected item or field, the
+reason or relevant values, whether the action is blocked, and a direct safe
+action or precise direction to the existing correction, retry, refresh, or
+intentional-retain control.
+
+Business rules:
+`DD.MM.YYYY` is zero-padded and is always displayed and accepted by date fields;
+formatting must not shift calendar days; machine boundaries retain required
+formats; raw codes are never the primary explanation; messages do not invent
+causes or unavailable recovery actions; omitted overrides use German defaults;
+invalid overrides are caught before serving the interface; terminology changes
+apply on next startup without rebuilding or changing user data.
+
+Data inputs and outputs:
+German terminology defaults, optional customer overrides, machine dates,
+validation details, affected record/field context, attempted actions, and
+recovery information become consistent German terminology, display dates, and
+safe actionable German messages. No new business records are introduced.
+
+External systems and integrations:
+None. Existing APIs, persistence, and standards-based exports retain their
+contracts.
+
+UI references:
+Existing React/Vite planner and accountless lecturer surfaces are the full
+coverage baseline. The user-provided Courses overview screenshot from 2026-08-10
+is the motivating example.
+
+Dependencies and assumptions:
+Depends on FS-019 and existing domain validation details. German is the only
+application language. The terminology catalog and optional deployment override
+are deliberately small. Existing 24-hour time, duration, and timezone rules
+remain unchanged.
+
+Completion outcome:
+Current user-facing surfaces contain no ISO-formatted human calendar dates or
+selected configurable terms outside the effective German catalog, and tested
+known warnings/failures provide actionable German context. The motivating
+warning includes its scheduled date, recommended range, non-blocking status, and
+correction/retention guidance.
+
+Known clarification topics:
+None. File structure and key naming remain planning decisions within the
+confirmed deployment override and context-specific value rules.
+
+Keep the specification strictly limited to this slice and consistent with
+docs/planning/Feature_slices.md. Define independently testable scenarios,
+functional requirements, accessibility behavior, edge cases, assumptions, and
+measurable success criteria without implementation details or scope expansion.
+```
+
 ## Deferred scope
 
 - **Automated email delivery**: FS-015 and FS-021 deliberately use
@@ -2474,6 +2801,11 @@ Keep the specification strictly limited to this slice and consistent with docs/p
   Lecturer coordination. A cross-product, role-aware queue is deferred until
   authenticated roles demonstrate a need beyond existing calendar operational
   summaries.
+- **Full internationalization and runtime terminology administration**: FS-022
+  keeps the application German and allows only deployment-time overrides of
+  selected terminology. Additional languages, locale selection, translation
+  workflows, and administrator-edited wording remain deferred until there is a
+  confirmed user or operational need.
 - **Multiple campus or regional holiday calendars**: The planner-only MVP uses one institution-wide calendar.
 - **Provider-specific integration adapters**: Deferred until a provider-neutral contract and actual provider are known.
 - **Automatic lecturer-driven schedule changes**: Lecturers remain advisory reviewers; planner users alone change schedules.
@@ -2495,6 +2827,7 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-08-10 | New, specified, and clarified slice; product-level usability scope change; reordered slice | FS-022, FS-015, FS-020, FS-021, FS-016, FS-017 | Added and clarified German application wording with deployment-time customer terminology overrides, European date display and entry, and actionable German messages as the selected initiative, with detailed artifacts in `specs/I-002/`; shifted the remaining not-yet-specified slices later without changing their IDs or dependencies. | Resolve demonstrated cross-workflow comprehension problems before extending more workflows, while keeping runtime language switching, full translation management, machine contracts, and business rules outside the slice. |
 | 2026-07-31 | Product-level scope change, updated slice, new slices, scope reconciliation, reordered later slice | FS-015, FS-016, FS-019, FS-020, FS-021 | Added the missing implemented FS-019 workspace with its pending manual acceptance status; broadened FS-015 into the shared lecturer calendar/list and Lecturer coordination experience; added static iCalendar export and whole-day lecturer unavailability submissions; made FS-016 reuse the completed accountless workflows. | Complete the accountless lecturer collaboration loop through reused components before introducing authentication, while preserving planner authority and separating review, export, and pre-planning availability into coherent vertical outcomes. |
 | 2026-07-31 | Status correction | FS-009–FS-012, FS-014, FS-018 | Aligned detailed-section statuses with the existing implemented statuses in the slice map. | Remove pre-existing internal contradictions without changing the confirmed slice outcomes. |
 | 2026-07-23 | Status update | FS-013, FS-014 | Marked FS-013 implemented and advanced FS-014 to Ready for specification as the recommended next slice. | Reflect completion of the versioned publication lifecycle and open the calendar workspace for specification. |

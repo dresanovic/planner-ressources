@@ -12,8 +12,8 @@ it('identifies the revision, preserves publication, traps focus, handles Escape,
   opener.focus()
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   act(() => root.render(<AbandonRevisionDialog semesterName={overview.semesterName} revision={overview.activeWorkingRevision!} currentPublication={null} busy={false} onCancel={cancel} onConfirm={vi.fn()} />))
-  expect(document.body.textContent).toContain('Abandon revision 1?')
-  expect(document.body.textContent).toContain('no current publication')
+  expect(document.body.textContent).toContain('Revision 1 verwerfen?')
+  expect(document.body.textContent).toContain('keine aktuelle Veröffentlichung')
   const dialog = document.querySelector<HTMLElement>('[role="dialog"]')
   const buttons = [...(dialog?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
   expect(document.activeElement).toBe(buttons[0])

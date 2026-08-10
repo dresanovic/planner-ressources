@@ -25,17 +25,17 @@ describe('resource administration components', () => {
       { id: 2, name: 'Room Two', referenceCode: 'R-2', capacity: 20, isActive: false, revision: 2 },
     ]} onSelect={() => undefined} />)
     expect(document.body.textContent).toContain('Room One · R-1')
-    expect(document.body.textContent).toContain('Capacity 30')
-    expect(document.body.textContent).toContain('Inactive')
+    expect(document.body.textContent).toContain('Kapazität 30')
+    expect(document.body.textContent).toContain('Inaktiv')
   })
 
   it('retains controlled invalid input and exposes save feedback', async () => {
     const onSubmit = vi.fn().mockRejectedValue(new Error('Code already exists.'))
     await render(<ResourceEditor resourceType="lecturers" initial={{ id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 }} onSubmit={onSubmit} onCancel={() => undefined} />)
     const code = document.querySelector<HTMLInputElement>('input[name="referenceCode"]')!
-    await act(async () => { button('Save lecturer')?.click(); await Promise.resolve() })
+    await act(async () => { button('Lehrende Person speichern')?.click(); await Promise.resolve() })
     expect(code.value).toBe('A-1')
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain('Code already exists')
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain('Ihre Eingaben bleiben erhalten')
   })
 
   it('shows consequences and cancellation issues no removal request', async () => {
@@ -43,10 +43,10 @@ describe('resource administration components', () => {
     const onClose = vi.fn()
     await render(<ResourceRemovalDialog resourceName="Ada · A-1" assessment={{ resourceId: 1, revision: 1, disposition: 'inactivate', activeCourses: [{ id: 2, name: 'Scheduling' }], inactiveCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 }, examUsage: { examSessionCount: 3, currentConfigurationCount: 1 } }} onConfirm={onConfirm} onClose={onClose} />)
     expect(document.body.textContent).toContain('Scheduling')
-    expect(document.body.textContent).toContain('2 saved sessions')
-    expect(document.body.textContent).toContain('3 saved exams')
-    expect(document.body.textContent).toContain('1 enabled exam configuration')
-    await act(async () => { button('Cancel')?.click() })
+    expect(document.body.textContent).toContain('2 gespeicherte Termine')
+    expect(document.body.textContent).toContain('3 gespeicherte Prüfungen')
+    expect(document.body.textContent).toContain('1 aktivierte Prüfungskonfiguration')
+    await act(async () => { button('Abbrechen')?.click() })
     expect(onClose).toHaveBeenCalledOnce()
     expect(onConfirm).not.toHaveBeenCalled()
   })
@@ -62,8 +62,8 @@ describe('resource administration components', () => {
       root.render(<ResourceRemovalDialog resourceName="Ada · A-1" assessment={{ resourceId: 1, revision: 1, disposition: 'delete', activeCourses: [], inactiveCourses: [], sessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 }, examUsage: { examSessionCount: 0, currentConfigurationCount: 0 } }} onConfirm={vi.fn()} onClose={onClose} />)
       await Promise.resolve()
     })
-    const cancel = button('Cancel')!
-    const confirm = button('Delete permanently')!
+    const cancel = button('Abbrechen')!
+    const confirm = button('Dauerhaft löschen')!
     expect(document.activeElement).toBe(cancel)
 
     confirm.focus()

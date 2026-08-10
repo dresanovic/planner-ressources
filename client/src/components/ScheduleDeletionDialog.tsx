@@ -1,4 +1,7 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useRef, type KeyboardEvent } from 'react'
+import { formatCalendarDate } from '../utils/datePresentation'
+import type { UserProblem } from '../utils/userProblems'
+import { ActionableProblemList } from './ActionableProblemList'
 
 export type ScheduleDeletionScope =
   | {
@@ -24,12 +27,12 @@ export type ScheduleDeletionScope =
 type ScheduleDeletionDialogProps = {
   scope: ScheduleDeletionScope
   isBusy: boolean
-  error?: ReactNode
+  problems?: UserProblem[]
   onCancel: () => void
   onConfirm: () => void
 }
 
-export function ScheduleDeletionDialog({ scope, isBusy, error, onCancel, onConfirm }: ScheduleDeletionDialogProps) {
+export function ScheduleDeletionDialog({ scope, isBusy, problems = [], onCancel, onConfirm }: ScheduleDeletionDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const titleId = `schedule-deletion-${scope.kind}-title`
   const descriptionId = `schedule-deletion-${scope.kind}-description`
@@ -72,27 +75,27 @@ export function ScheduleDeletionDialog({ scope, isBusy, error, onCancel, onConfi
         className="replacement-dialog schedule-deletion-dialog"
         onKeyDown={handleKeyDown}
       >
-        <h2 id={titleId}>{isSession ? 'Delete this Draft Session?' : 'Clear this course Draft Schedule?'}</h2>
+        <h2 id={titleId}>{isSession ? 'Diesen Entwurfstermin löschen?' : 'Diesen Planungsentwurf leeren?'}</h2>
         <div id={descriptionId} className="deletion-consequence">
           <p><strong>{scope.courseName}</strong> · {scope.semesterName}</p>
           {isSession ? (
             <>
-              <p>{scope.date}, {scope.startTime}-{scope.endTime}</p>
-              <p>{scope.unitsRemoved} units will be removed from scheduled coverage; {scope.resultingRemainingUnits} units remaining.</p>
-              {scope.lastSession && <p>This is the last session, so the empty Draft Schedule will also be removed.</p>}
+              <p>{formatCalendarDate(scope.date)}, {scope.startTime}-{scope.endTime}</p>
+              <p>{scope.unitsRemoved} Lehreinheiten werden aus dem geplanten Umfang entfernt; {scope.resultingRemainingUnits} Lehreinheiten bleiben offen.</p>
+              {scope.lastSession && <p>Dies ist der letzte Termin; deshalb wird auch der leere Planungsentwurf entfernt.</p>}
             </>
           ) : (
             <>
-              <p>{scope.sessionCount} {scope.sessionCount === 1 ? 'session' : 'sessions'} will be deleted; {scope.unitsRemoved} scheduled units will be removed; {scope.resultingRemainingUnits} units remaining.</p>
-              <p>Course records, academic planning data, and saved generation constraints will be preserved.</p>
+              <p>{scope.sessionCount} {scope.sessionCount === 1 ? 'Termin wird' : 'Termine werden'} gelöscht; {scope.unitsRemoved} geplante Lehreinheiten werden entfernt; {scope.resultingRemainingUnits} Lehreinheiten bleiben offen.</p>
+              <p>Datensätze, akademische Planungsdaten und gespeicherte Erzeugungsregeln bleiben erhalten.</p>
             </>
           )}
         </div>
-        {error && <div className="alert-item" role="alert">{error}</div>}
+        <ActionableProblemList problems={problems} className="deletion-problems" />
         <div className="dialog-actions">
-          <button type="button" className="secondary-button" onClick={onCancel} disabled={isBusy}>Cancel</button>
+          <button type="button" className="secondary-button" onClick={onCancel} disabled={isBusy}>Abbrechen</button>
           <button type="button" onClick={onConfirm} disabled={isBusy}>
-            {isBusy ? 'Deleting…' : isSession ? 'Delete session' : 'Clear course draft'}
+            {isBusy ? 'Wird gelöscht…' : isSession ? 'Termin löschen' : 'Planungsentwurf leeren'}
           </button>
         </div>
       </div>

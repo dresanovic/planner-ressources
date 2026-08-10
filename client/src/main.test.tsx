@@ -10,6 +10,7 @@ import {
   getPublicLecturerReview,
   submitPublicLecturerFeedback,
 } from './api/lecturerReview'
+import { terminologyDefaults } from './test/terminologyDefaults'
 
 const probes = vi.hoisted(() => ({
   plannerModuleLoads: 0,
@@ -44,10 +45,14 @@ async function bootstrap(path: string) {
   vi.resetModules()
   window.history.replaceState({}, '', path)
   document.body.innerHTML = '<div id="root"></div>'
+  const terminologyFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    new Response(JSON.stringify({ labels: terminologyDefaults }), { status: 200 }),
+  )
   await act(async () => {
     await import('./main')
     await Promise.resolve()
   })
+  return terminologyFetch
 }
 
 describe('client bootstrap lecturer-review boundary', () => {
@@ -62,7 +67,7 @@ describe('client bootstrap lecturer-review boundary', () => {
     const replaceState = vi.spyOn(window.history, 'replaceState')
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    await bootstrap(
+    const terminologyFetch = await bootstrap(
       `/lecturer-review/?language=en#/${LECTURER_REVIEW_SECRET_CANARY}`,
     )
 
@@ -94,6 +99,10 @@ describe('client bootstrap lecturer-review boundary', () => {
     expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
       LECTURER_REVIEW_SECRET_CANARY,
     )
+    expect(terminologyFetch).toHaveBeenCalledOnce()
+    expect(terminologyFetch.mock.calls[0][0]).toBe('/api/public/ui-terminology')
+    expect(terminologyFetch.mock.calls[0][1]).toEqual(expect.objectContaining({ credentials: 'omit' }))
+    expect(replaceState.mock.invocationCallOrder[0]).toBeLessThan(terminologyFetch.mock.invocationCallOrder[0])
   })
 
   it('keeps malformed credentials on the isolated safe public surface', async () => {
@@ -120,6 +129,49 @@ describe('client bootstrap lecturer-review boundary', () => {
     expect(document.querySelector('[data-testid="public-review-probe"]')).toBeNull()
     expect(probes.plannerModuleLoads).toBe(1)
     expect(probes.publicModuleLoads).toBe(publicLoadsBefore)
+  })
+
+  it('renders fixed German bootstrap failure copy and retries only the safe catalog read', async () => {
+    vi.resetModules()
+    window.history.replaceState({}, '', '/')
+    document.body.innerHTML = '<div id="root"></div>'
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('unavailable', { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ labels: terminologyDefaults }), { status: 200 }))
+
+    await act(async () => {
+      await import('./main')
+      await Promise.resolve()
+    })
+    expect(document.body.textContent).toContain('Bezeichnungen konnten nicht geladen werden')
+    expect(document.querySelector('[data-testid="planner-probe"]')).toBeNull()
+    expect(fetchMock).toHaveBeenCalledOnce()
+
+    const retry = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Erneut versuchen')!
+    await act(async () => {
+      retry.click()
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(document.querySelector('[data-testid="planner-probe"]')).not.toBeNull()
+  })
+
+  it('retries a transient application chunk failure without reinitializing the catalog', async () => {
+    const { renderApplication } = await import('./main')
+    document.body.innerHTML = '<div id="recovery-root"></div>'
+    const root = (await import('react-dom/client')).createRoot(document.getElementById('recovery-root')!)
+    const loadPlanner = vi.fn()
+      .mockRejectedValueOnce(new Error('transient chunk failure'))
+      .mockResolvedValueOnce({ default: () => <div data-testid="recovered-planner">Recovered</div> })
+    await act(async () => { await renderApplication(root, false, null, { loadPlanner, loadLecturerReview: vi.fn() }) })
+    expect(document.getElementById('recovery-root')?.textContent).toContain('Anwendung konnte nicht geladen werden')
+    await act(async () => {
+      ;[...document.querySelectorAll('button')].find((button) => button.textContent === 'Anwendung erneut laden')?.click()
+      await Promise.resolve(); await Promise.resolve()
+    })
+    expect(loadPlanner).toHaveBeenCalledTimes(2)
+    expect(document.querySelector('[data-testid="recovered-planner"]')).not.toBeNull()
   })
 
   it('uses only the two fixed relative public APIs with omitted browser credentials', async () => {

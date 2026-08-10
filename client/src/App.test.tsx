@@ -85,7 +85,7 @@ describe('App unified navigation', () => {
   it('starts on Schedule with one primary navigation and no duplicate or dead destinations', async () => {
     await renderApp()
     expect(document.body.textContent).toContain('Schedule view')
-    expect(document.querySelectorAll('nav[aria-label="Primary navigation"]')).toHaveLength(1)
+    expect(document.querySelectorAll('nav[aria-label="Hauptnavigation"]')).toHaveLength(1)
     expect(document.querySelectorAll('.view-navigation')).toHaveLength(0)
     expect(document.querySelectorAll('a[href^="#"]')).toHaveLength(0)
     expect(document.body.textContent).not.toContain('Dashboard')
@@ -94,26 +94,26 @@ describe('App unified navigation', () => {
   it('defaults to Calendar and reaches all retained Schedule children', async () => {
     await renderApp()
     expect(document.body.textContent).toContain('Schedule view: calendar')
-    act(() => button('Versions').click())
+    act(() => button('Versionen').click())
     expect(document.body.textContent).toContain('Schedule view: versions')
-    expect(button('Versions').getAttribute('aria-current')).toBe('page')
-    act(() => button('Exams').click())
+    expect(button('Versionen').getAttribute('aria-current')).toBe('page')
+    act(() => button('Prüfungen').click())
     expect(document.body.textContent).toContain('Schedule view: exams')
-    act(() => button('Lecturer coordination').click())
+    act(() => button('Abstimmung mit Lehrenden').click())
     expect(document.body.textContent).toContain('Schedule view: reviews')
-    expect(button('Lecturer coordination').getAttribute('aria-current')).toBe('page')
-    act(() => button('Calendar').click())
+    expect(button('Abstimmung mit Lehrenden').getAttribute('aria-current')).toBe('page')
+    act(() => button('Kalender').click())
     expect(document.body.textContent).toContain('Schedule view: calendar')
     expect(mocks.scheduleMount).toHaveBeenCalledTimes(1)
   })
 
   it('reaches every Academic Data leaf through the ordered hierarchy', async () => {
     await renderApp()
-    act(() => button('Academic Data').click())
+    act(() => button('Stammdaten').click())
     const destinations: Array<[string, AcademicDataCategory]> = [
-      ['Semesters', 'semesters'], ['Cohorts', 'cohorts'], ['Courses', 'courses'],
-      ['Study types', 'study-types'], ['Time windows', 'time-windows'],
-      ['Lecturers', 'lecturers'], ['Rooms', 'rooms'],
+      ['Semester', 'semesters'], ['Kohorten', 'cohorts'], ['Lehrveranstaltungen', 'courses'],
+      ['Studienformen', 'study-types'], ['Zeitfenster', 'time-windows'],
+      ['Lehrende', 'lecturers'], ['Räume', 'rooms'],
     ]
     for (const [label, id] of destinations) {
       act(() => button(label).click())
@@ -124,47 +124,47 @@ describe('App unified navigation', () => {
 
   it('retains category and expansion state across Schedule round trips', async () => {
     await renderApp()
-    act(() => button('Academic Data').click())
-    act(() => button('Courses').click())
-    act(() => button('Calendar').click())
-    expect(button('Academic Data').getAttribute('aria-expanded')).toBe('true')
-    expect(button('Courses')).toBeDefined()
-    act(() => button('Courses').click())
+    act(() => button('Stammdaten').click())
+    act(() => button('Lehrveranstaltungen').click())
+    act(() => button('Kalender').click())
+    expect(button('Stammdaten').getAttribute('aria-expanded')).toBe('true')
+    expect(button('Lehrveranstaltungen')).toBeDefined()
+    act(() => button('Lehrveranstaltungen').click())
     expect(document.body.textContent).toContain('Academic category: courses')
   })
 
   it('keeps Schedule mounted and refreshes it after catalog mutations', async () => {
     await renderApp()
-    act(() => button('Academic Data').click())
-    act(() => button('Semesters').click())
+    act(() => button('Stammdaten').click())
+    act(() => button('Semester').click())
     act(() => button('Mutate catalog').click())
-    act(() => button('Calendar').click())
+    act(() => button('Kalender').click())
     expect(mocks.scheduleMount).toHaveBeenCalledTimes(1)
     expect(mocks.revisions).toHaveBeenCalledWith(1)
   })
 
   it('moves focus only after an actual destination change', async () => {
     await renderApp()
-    act(() => button('Academic Data').click())
-    act(() => button('Semesters').click())
+    act(() => button('Stammdaten').click())
+    act(() => button('Semester').click())
     expect(document.activeElement).toBe(document.querySelector('.application-content'))
-    act(() => button('Semesters').focus())
+    act(() => button('Semester').focus())
     const renderCount = mocks.academic.mock.calls.length
-    act(() => button('Semesters').click())
-    expect(document.activeElement).toBe(button('Semesters'))
+    act(() => button('Semester').click())
+    expect(document.activeElement).toBe(button('Semester'))
     expect(mocks.academic).toHaveBeenCalledTimes(renderCount)
   })
 
   it('does not change navigation or focus until the Schedule page approves a guarded request', async () => {
     mocks.guardNavigation = true
     await renderApp()
-    const rooms = button('Academic Data')
+    const rooms = button('Stammdaten')
     act(() => rooms.focus())
     act(() => rooms.click())
-    act(() => button('Rooms').click())
-    expect(mocks.navigationRequest).toHaveBeenLastCalledWith('Academic Data: rooms')
+    act(() => button('Räume').click())
+    expect(mocks.navigationRequest).toHaveBeenLastCalledWith('Stammdaten: rooms')
     expect(document.body.textContent).toContain('Schedule view')
-    expect(button('Calendar').getAttribute('aria-current')).toBe('page')
+    expect(button('Kalender').getAttribute('aria-current')).toBe('page')
     expect(document.activeElement).not.toBe(document.querySelector('.application-content'))
     act(() => mocks.pendingNavigation?.commit())
     expect(document.body.textContent).toContain('Academic category: rooms')
@@ -175,17 +175,17 @@ describe('App unified navigation', () => {
     mocks.guardNavigation = true
     await renderApp()
 
-    act(() => button('Lecturer coordination').click())
+    act(() => button('Abstimmung mit Lehrenden').click())
 
-    expect(mocks.navigationRequest).toHaveBeenLastCalledWith('Schedule reviews')
+    expect(mocks.navigationRequest).toHaveBeenLastCalledWith('Planung: reviews')
     expect(document.body.textContent).toContain('Schedule view: calendar')
-    expect(button('Calendar').getAttribute('aria-current')).toBe('page')
-    expect(button('Lecturer coordination').getAttribute('aria-current')).toBeNull()
+    expect(button('Kalender').getAttribute('aria-current')).toBe('page')
+    expect(button('Abstimmung mit Lehrenden').getAttribute('aria-current')).toBeNull()
 
     act(() => mocks.pendingNavigation?.commit())
 
     expect(document.body.textContent).toContain('Schedule view: reviews')
-    expect(button('Lecturer coordination').getAttribute('aria-current')).toBe('page')
+    expect(button('Abstimmung mit Lehrenden').getAttribute('aria-current')).toBe('page')
     expect(document.querySelectorAll('[aria-current="page"]')).toHaveLength(1)
     expect(document.activeElement).toBe(document.querySelector('.application-content'))
   })
@@ -193,27 +193,27 @@ describe('App unified navigation', () => {
   it('blocks background interaction and preserves state through narrow transitions', async () => {
     const media = installMatchMedia(true)
     await renderApp()
-    act(() => button('Menu').click())
+    act(() => button('Menü').click())
     const content = document.querySelector('.application-content') as HTMLElement
     expect(content.hasAttribute('inert')).toBe(true)
     expect(content.getAttribute('aria-hidden')).toBe('true')
-    act(() => button('Academic Data').click())
-    act(() => button('Rooms').click())
+    act(() => button('Stammdaten').click())
+    act(() => button('Räume').click())
     expect(document.activeElement).toBe(content)
     expect(content.hasAttribute('inert')).toBe(false)
     act(() => media.dispatch(false))
     act(() => media.dispatch(true))
-    act(() => button('Menu').click())
-    expect(button('Rooms').getAttribute('aria-current')).toBe('page')
-    expect(button('Academic Data').getAttribute('aria-expanded')).toBe('true')
+    act(() => button('Menü').click())
+    expect(button('Räume').getAttribute('aria-current')).toBe('page')
+    expect(button('Stammdaten').getAttribute('aria-expanded')).toBe('true')
   })
 
   it('restores and persists the independent wide navigation pin preference', async () => {
     localStorage.setItem(NAVIGATION_PINNED_STORAGE_KEY, 'false')
     await renderApp()
     expect(document.querySelector('.application-shell')?.getAttribute('data-navigation-pinned')).toBe('false')
-    act(() => button('Open navigation').click())
-    act(() => button('Pin navigation').click())
+    act(() => button('Navigation öffnen').click())
+    act(() => button('Navigation anheften').click())
     expect(localStorage.getItem(NAVIGATION_PINNED_STORAGE_KEY)).toBe('true')
     expect(document.querySelector('.application-shell')?.getAttribute('data-navigation-pinned')).toBe('true')
   })
@@ -221,8 +221,8 @@ describe('App unified navigation', () => {
   it('closes the wide temporary overlay and hands focus to a changed Schedule destination', async () => {
     localStorage.setItem(NAVIGATION_PINNED_STORAGE_KEY, 'false')
     await renderApp()
-    act(() => button('Open navigation').click())
-    act(() => button('Versions').click())
+    act(() => button('Navigation öffnen').click())
+    act(() => button('Versionen').click())
     expect(document.querySelector('.application-content')?.hasAttribute('inert')).toBe(false)
     expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(false)
     expect(document.activeElement).toBe(document.querySelector('.application-content'))

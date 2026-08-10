@@ -6,6 +6,10 @@ import {
   type ExamPlacementDraft,
   type ExamPlacementInput,
 } from './examPlacementModel'
+import { EuropeanDateField } from './EuropeanDateField'
+import { label } from '../config/terminology'
+import { ActionableProblemList } from './ActionableProblemList'
+import type { UserProblem } from '../utils/userProblems'
 
 type Option = { id: number; name: string; capacity?: number }
 
@@ -60,6 +64,20 @@ export function ExamManualSessionEditor({
   const draft = controlledDraft ?? internalDraft
   const baseline = controlledBaseline ?? internalBaseline
   const retainedDuration = mode === 'edit' && exam ? exam.durationMinutes : configuration?.durationMinutes
+  const problems: UserProblem[] = [
+    ...(error ? [{
+      key: 'exam-placement-fields',
+      tone: 'blocking' as const,
+      title: 'Prüfungstermin vervollständigen',
+      details: [error],
+    }] : []),
+    ...(serverError ? [{
+      key: 'exam-placement-save',
+      tone: 'blocking' as const,
+      title: 'Prüfungstermin konnte nicht gespeichert werden',
+      details: [serverError],
+    }] : []),
+  ]
 
   useEffect(() => {
     onDirtyChange?.(!examPlacementDraftsEqual(draft, baseline))
@@ -73,7 +91,7 @@ export function ExamManualSessionEditor({
 
   async function submit() {
     if (!draft.day || !draft.startTime || !draft.lecturerId || !draft.roomId || (mode === 'create' && !configuration)) {
-      setError('Complete every placement field.')
+      setError('Füllen Sie alle Felder für den Prüfungstermin aus. Ihre Eingaben bleiben erhalten.')
       return
     }
     setError('')
@@ -100,20 +118,20 @@ export function ExamManualSessionEditor({
   }
 
   return (
-    <section className="exam-manual-editor" aria-labelledby={headingId}>
-      {createElement(headingLevel, { id: headingId }, mode === 'create' ? 'Place exam manually' : `Correct ${exam?.lifecycleStatus} exam`)}
-      <p className="constraint-note">Duration is fixed at {retainedDuration} minutes. Any start time is allowed when all hard constraints pass; the recommended range remains optional.</p>
+    <form className="exam-manual-editor" aria-labelledby={headingId} onSubmit={(event) => { event.preventDefault(); void submit() }}>
+      {createElement(headingLevel, { id: headingId }, mode === 'create' ? 'Prüfung manuell einplanen' : 'Prüfungstermin korrigieren')}
+      <p className="constraint-note">Die Dauer beträgt fest {retainedDuration} Minuten. Der empfohlene Zeitraum ist eine nicht blockierende Orientierung.</p>
       <div className="exam-form-grid">
-        <label className="constraint-field"><span>Date</span><input type="date" value={draft.day} disabled={busy} onChange={(event) => change({ ...draft, day: event.target.value })} /></label>
-        <label className="constraint-field"><span>Start time</span><input type="time" value={draft.startTime} disabled={busy} onChange={(event) => change({ ...draft, startTime: event.target.value })} /></label>
-        <label className="constraint-field"><span>Lecturer</span><select value={draft.lecturerId} disabled={busy} onChange={(event) => change({ ...draft, lecturerId: Number(event.target.value) })}>{lecturers.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
-        <label className="constraint-field"><span>Room</span><select value={draft.roomId} disabled={busy} onChange={(event) => change({ ...draft, roomId: Number(event.target.value) })}>{rooms.map((option) => <option key={option.id} value={option.id}>{option.name}{option.capacity ? ` (${option.capacity})` : ''}</option>)}</select></label>
+        <EuropeanDateField id="exam-placement-date" label="Datum" value={draft.day} disabled={busy} onChange={(value) => change({ ...draft, day: value ?? '' })} required />
+        <label className="constraint-field"><span>Beginn</span><input type="time" value={draft.startTime} disabled={busy} onChange={(event) => change({ ...draft, startTime: event.target.value })} /></label>
+        <label className="constraint-field"><span>{label('lecturer.fieldLabel')}</span><select value={draft.lecturerId} disabled={busy} onChange={(event) => change({ ...draft, lecturerId: Number(event.target.value) })}>{lecturers.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>
+        <label className="constraint-field"><span>{label('room.fieldLabel')}</span><select value={draft.roomId} disabled={busy} onChange={(event) => change({ ...draft, roomId: Number(event.target.value) })}>{rooms.map((option) => <option key={option.id} value={option.id}>{option.name}{option.capacity ? ` (${option.capacity})` : ''}</option>)}</select></label>
       </div>
-      {(error || serverError) && <div role="alert" className="alert-item">{[error, serverError].filter(Boolean).join(' ')}</div>}
+      <ActionableProblemList problems={problems} className="exam-placement-problems" />
       <div className={actionsClassName}>
-        <button type="button" className="secondary-button" disabled={busy} onClick={onCancel}>Cancel</button>
-        <button type="button" disabled={busy} onClick={() => void submit()}>{busy ? 'Saving…' : 'Save exam placement'}</button>
+        <button type="button" className="secondary-button" disabled={busy} onClick={onCancel}>Abbrechen</button>
+        <button type="submit" disabled={busy}>{busy ? 'Speichern…' : 'Prüfungstermin speichern'}</button>
       </div>
-    </section>
+    </form>
   )
 }

@@ -1,4 +1,5 @@
 import type { CourseOption } from '../api/planningOptions'
+import { label } from '../config/terminology'
 
 type Props = {
   courses: CourseOption[]
@@ -6,6 +7,7 @@ type Props = {
   selectedCourseIds: number[]
   disabled?: boolean
   unavailableDatesInput?: string
+  unavailableDateErrors?: string[]
   onChange: (courseIds: number[]) => void
   onUnavailableDatesInputChange?: (value: string) => void
   onGenerate: () => void
@@ -17,6 +19,7 @@ export function MultiCourseGenerationPanel({
   selectedCourseIds,
   disabled = false,
   unavailableDatesInput = '',
+  unavailableDateErrors = [],
   onChange,
   onUnavailableDatesInputChange,
   onGenerate,
@@ -35,15 +38,15 @@ export function MultiCourseGenerationPanel({
   return (
     <section className="multi-course-panel" aria-labelledby="multi-course-title">
       <div className="section-heading">
-        <h3 id="multi-course-title">Conflict-aware semester optimization</h3>
+        <h3 id="multi-course-title">Konfliktfreie Semesteroptimierung</h3>
         <button type="button" className="secondary-button" onClick={() => onChange([])} disabled={disabled || count === 0}>
-          Clear selection
+          Auswahl aufheben
         </button>
       </div>
       <p className="constraint-note">
-        Maximize scheduled units across the selection without creating lecturer, room, or cohort overlaps.
+        Maximiert die geplanten Lehreinheiten der Auswahl, ohne Überschneidungen bei {label('lecturer.plural')}, {label('room.plural')} oder {label('cohort.plural')} zu erzeugen.
       </p>
-      <div className="course-picker" role="group" aria-label="Courses to optimize">
+      <div className="course-picker" role="group" aria-label={`${label('course.plural')} für die Optimierung`}>
         {courses.map((course) => {
           const draftStatus = courseDraftStatuses?.[course.id]
           return (
@@ -58,8 +61,8 @@ export function MultiCourseGenerationPanel({
               {draftStatus && (
                 <span className={`course-draft-status ${draftStatus.hasDraft ? 'has-draft' : 'no-draft'}`}>
                   {draftStatus.hasDraft
-                    ? `Draft · ${draftStatus.scheduledUnits}/${draftStatus.totalUnits} units`
-                    : 'No draft'}
+                    ? `Entwurf · ${draftStatus.scheduledUnits}/${draftStatus.totalUnits} Lehreinheiten`
+                    : 'Kein Entwurf'}
                 </span>
               )}
             </label>
@@ -67,22 +70,25 @@ export function MultiCourseGenerationPanel({
         })}
       </div>
       <p className={valid ? 'selection-count' : 'selection-count selection-invalid'}>
-        {count} selected {valid ? '' : '— select 1 to 20 courses'}
+        {count} ausgewählt {valid ? '' : `— wählen Sie 1 bis 20 ${label('course.plural')}`}
       </p>
       {onUnavailableDatesInputChange && (
         <label className="constraint-field">
-          <span>Future unavailable dates (optional, comma-separated)</span>
+          <span>Zukünftige Abwesenheitstage (optional, durch Kommas getrennt)</span>
           <input
             type="text"
             value={unavailableDatesInput}
-            placeholder="2026-10-26, 2026-11-02"
+            placeholder="26.10.2026, 02.11.2026"
+            aria-invalid={unavailableDateErrors.length > 0 || undefined}
+            aria-describedby={unavailableDateErrors.length > 0 ? 'unavailable-date-errors' : undefined}
             onChange={(event) => onUnavailableDatesInputChange(event.target.value)}
             disabled={disabled}
           />
         </label>
       )}
-      <button type="button" className="generate-button" onClick={onGenerate} disabled={disabled || !valid}>
-        {disabled ? 'Optimizing selected courses...' : 'Optimize selected courses'}
+      {unavailableDateErrors.length > 0 && <div id="unavailable-date-errors" className="field-error" role="alert">{unavailableDateErrors.map((value) => <p key={value}>„{value}“ ist ungültig. Verwenden Sie TT.MM.JJJJ.</p>)}</div>}
+      <button type="button" className="generate-button" onClick={onGenerate} disabled={disabled || !valid || unavailableDateErrors.length > 0}>
+        {disabled ? `Ausgewählte ${label('course.plural')} werden optimiert…` : `Ausgewählte ${label('course.plural')} optimieren`}
       </button>
     </section>
   )

@@ -12,11 +12,10 @@ describe('BatchResultSummary', () => {
     const retry = vi.fn()
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     act(() => root.render(<BatchResultSummary result={mixedOptimizationResultFixture} onRetryFailed={retry} />))
-    expect(document.body.textContent).toContain('1 complete · 1 improved partial · 1 unchanged · 1 failed · 1 stale')
-    expect(document.body.textContent).toContain('ROOM OCCUPIED')
-    expect(document.body.textContent).toContain('Eligible rooms are occupied.')
-    expect(document.body.textContent).toContain('Proven optimal for the prepared snapshot')
-    const button = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Retry failed or stale courses')
+    expect(document.body.textContent).toContain('1 vollständig · 1 teilweise verbessert · 1 unverändert · 1 fehlgeschlagen · 1 veraltet')
+    expect(document.body.textContent).toContain('Ressource ist bereits belegt')
+    expect(document.body.textContent).toContain('Für den vorbereiteten Datenstand als optimal nachgewiesen')
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen')
     act(() => button?.click())
     expect(retry).toHaveBeenCalledOnce()
   })
@@ -30,8 +29,8 @@ describe('BatchResultSummary', () => {
 
     act(() => root.render(<BatchResultSummary result={result} onRetryFailed={() => undefined} />))
 
-    expect(document.body.textContent).toContain('No optimality proof was produced')
-    expect(document.body.textContent).not.toContain('Proven optimal for the prepared snapshot')
+    expect(document.body.textContent).toContain('Es wurde kein Optimalitätsnachweis erzeugt')
+    expect(document.body.textContent).not.toContain('Für den vorbereiteten Datenstand als optimal nachgewiesen')
   })
 
   it('renders separate named evidence for holidays sharing the same reason code', () => {
@@ -49,7 +48,7 @@ describe('BatchResultSummary', () => {
 
     act(() => root.render(<BatchResultSummary result={result} onRetryFailed={() => undefined} />))
 
-    expect(document.body.textContent).toContain('Founders Day on 2026-09-07')
-    expect(document.body.textContent).toContain('Winter Holiday on 2026-12-25')
+    expect(document.body.textContent).toContain('Feiertag „Founders Day“, betroffenes Datum: 07.09.2026')
+    expect(document.body.textContent).toContain('Feiertag „Winter Holiday“, betroffenes Datum: 25.12.2026')
   })
 })

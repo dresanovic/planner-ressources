@@ -373,7 +373,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     const root = await renderPage()
 
     await act(async () => {
-      button('Published R2')?.click()
+      button('Veröffentlichung R2')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     await act(async () => {
@@ -392,7 +392,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(
       document.querySelector<HTMLElement>('.lecturer-reviews-region')?.hidden,
     ).toBe(false)
-    expect(document.body.textContent).toContain('Published R2')
+    expect(document.body.textContent).toContain('Veröffentlichung R2')
   })
 
   it('never renders coordination data from the previously selected revision', async () => {
@@ -424,7 +424,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     })
 
     expect(document.querySelector('.lecturer-review-management')).toBeNull()
-    expect(document.body.textContent).toContain('Loading lecturer coordination')
+    expect(document.body.textContent).toContain('Abstimmung mit Lehrende wird geladen')
 
     await act(async () => {
       publishedRequest.resolve(lecturerReviewOverviewForRevision(12))
@@ -486,7 +486,7 @@ describe('CourseSchedulePage multi-course mode', () => {
 
     expect(document.querySelector('.lecturer-review-management')?.textContent)
       .toContain('Published R2')
-    expect(document.body.textContent).not.toContain('Loading lecturer coordination')
+    expect(document.body.textContent).not.toContain('Abstimmung mit Lehrende wird geladen')
     expect(document.body.textContent).not.toContain(issued.secret)
     expect(document.body.textContent).not.toContain(
       'Review link issued. Copy it now',
@@ -498,28 +498,28 @@ describe('CourseSchedulePage multi-course mode', () => {
     await renderNavigationHarness()
     const calendarDate =
       document.querySelector<HTMLInputElement>(
-        'input[aria-label="Choose calendar date"]',
+        '#calendar-anchor-date',
       )!
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
-        ?.set?.call(calendarDate, '2026-10-05')
+        ?.set?.call(calendarDate, '05.10.2026')
       calendarDate.dispatchEvent(new Event('change', { bubbles: true }))
     })
     await act(async () => {
       [...document.querySelectorAll<HTMLButtonElement>(
         '.calendar-occurrence',
       )]
-        .find((item) => item.textContent?.includes('Teaching'))
+        .find((item) => item.textContent?.includes('Lehrtermin'))
         ?.click()
     })
-    await act(async () => button('Edit session')?.click())
+    await act(async () => button('Termin bearbeiten')?.click())
     const editorDate =
       document.querySelector<HTMLInputElement>(
-        '.session-pane input[type="date"]',
+        '.session-pane input[inputmode="numeric"]',
       )!
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
-        ?.set?.call(editorDate, '2026-10-06')
+        ?.set?.call(editorDate, '06.10.2026')
       editorDate.dispatchEvent(new Event('input', { bubbles: true }))
       editorDate.dispatchEvent(new Event('change', { bubbles: true }))
     })
@@ -528,20 +528,20 @@ describe('CourseSchedulePage multi-course mode', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    await act(async () => button('Open current session')?.click())
+    await act(async () => button('Aktuellen Termin öffnen')?.click())
 
-    expect(document.body.textContent).toContain('Discard unsaved changes?')
+    expect(document.body.textContent).toContain('Ungespeicherte Änderungen verwerfen?')
     expect(
       document.querySelector<HTMLElement>('.lecturer-reviews-region')?.hidden,
     ).toBe(false)
-    await act(async () => button('Keep editing')?.click())
+    await act(async () => button('Weiter bearbeiten')?.click())
     expect(
       document.querySelector<HTMLElement>('.lecturer-reviews-region')?.hidden,
     ).toBe(false)
 
-    await act(async () => button('Open current session')?.click())
+    await act(async () => button('Aktuellen Termin öffnen')?.click())
     await act(async () => {
-      button('Discard changes')?.click()
+      document.querySelector<HTMLButtonElement>('.discard-changes-dialog .destructive-button')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
@@ -554,7 +554,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       )][1].value,
     ).toBe('11')
     expect(document.querySelector('.session-pane')?.textContent)
-      .toContain('Exam')
+      .toContain('Prüfungstermin')
     expect(
       document.querySelector<HTMLButtonElement>(
         '[data-occurrence-ref="exam:1"]',
@@ -573,13 +573,13 @@ describe('CourseSchedulePage multi-course mode', () => {
     })
 
     await act(async () => {
-      button('Open current session')?.click()
+      button('Aktuellen Termin öffnen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
     expect(document.querySelector('.session-pane')).toBeNull()
     expect(document.querySelector('.calendar-navigation-status')?.textContent)
-      .toContain('The current session is no longer available in this revision.')
+      .toContain('Der aktuelle Termin ist in dieser Revision nicht mehr verfügbar.')
     expect(document.activeElement?.hasAttribute('data-workspace-results-heading'))
       .toBe(true)
   })
@@ -587,11 +587,11 @@ describe('CourseSchedulePage multi-course mode', () => {
   it('hides Planning inputs independently without hiding the compact context', async () => {
     await renderPage()
     expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(false)
-    await act(async () => button('Hide Planning inputs')?.click())
+    await act(async () => button('Planungseingaben ausblenden')?.click())
     expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(true)
-    expect(document.querySelector('[aria-label="Schedule context"]')).not.toBeNull()
+    expect(document.querySelector('[aria-label="Terminplanung – Kontext"]')).not.toBeNull()
     expect(document.querySelector('.planner-grid')?.getAttribute('data-planning-inputs-visible')).toBe('false')
-    await act(async () => button('Show Planning inputs')?.click())
+    await act(async () => button('Planungseingaben anzeigen')?.click())
     expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(false)
   })
 
@@ -608,7 +608,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       ],
     })
     await renderPage()
-    await act(async () => button('Hide Planning inputs')?.click())
+    await act(async () => button('Planungseingaben ausblenden')?.click())
     const contextSelects = document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')
     const semesterSelect = contextSelects[0]
     await act(async () => {
@@ -618,7 +618,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     })
 
     const courseSelect = document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')[2]
-    expect(courseSelect.selectedOptions[0]?.textContent).toContain('not assigned to selected semester')
+    expect(courseSelect.selectedOptions[0]?.textContent).toContain('dem ausgewählten Semester nicht zugeordnet')
     expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(true)
   })
 
@@ -626,8 +626,8 @@ describe('CourseSchedulePage multi-course mode', () => {
     await renderPage()
 
     expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 11)
-    expect(document.body.textContent).toContain('Active Working')
-    expect(document.body.textContent?.match(/Courses overview/g)).toHaveLength(1)
+    expect(document.body.textContent).toContain('Aktive Arbeitsrevision')
+    expect(document.body.textContent?.match(/Lehrveranstaltungen/g)).toBeTruthy()
   })
 
   it('falls back coherently to Current Published when no Working revision exists', async () => {
@@ -642,8 +642,8 @@ describe('CourseSchedulePage multi-course mode', () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
 
     expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 12)
-    expect(document.body.textContent).toContain('Current Published')
-    expect(document.body.textContent).toContain('Published content is read-only')
+    expect(document.body.textContent).toContain('Aktuelle Veröffentlichung')
+    expect(document.body.textContent).toContain('Veröffentlichte Inhalte sind schreibgeschützt')
   })
 
   it('renders the no-revision workspace without inventing revision-owned records', async () => {
@@ -661,14 +661,14 @@ describe('CourseSchedulePage multi-course mode', () => {
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
 
     expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, undefined)
-    expect(document.body.textContent).toContain('No schedule revision exists yet')
-    expect(button('Start Draft')).toBeTruthy()
+    expect(document.body.textContent).toContain('Es gibt noch keine Planungsrevision')
+    expect(button('Entwurf starten')).toBeTruthy()
     const requirement = [...document.querySelectorAll('label')]
-      .find((item) => item.textContent?.includes('This course requires an exam'))
+      .find((item) => item.textContent?.includes('ist eine Prüfung erforderlich'))
       ?.querySelector<HTMLInputElement>('input')
     expect(requirement?.disabled).toBe(false)
-    expect((button('Add Draft Session') as HTMLButtonElement).disabled).toBe(true)
-    expect(document.body.textContent).toContain('Start a Draft before adding sessions.')
+    expect((button('Entwurfstermin hinzufügen') as HTMLButtonElement).disabled).toBe(true)
+    expect(document.body.textContent).toContain('Starten Sie vor dem Hinzufügen von Terminen einen Entwurf.')
   })
 
   it('requires complete lifecycle identity before accepting a cached calendar workspace', () => {
@@ -752,7 +752,7 @@ describe('CourseSchedulePage multi-course mode', () => {
 
     await renderPage()
     await act(async () => {
-      button('Published R2')?.click()
+      button('Veröffentlichung R2')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.getCalendarWorkspace).toHaveBeenCalledWith(1, 12)
@@ -774,7 +774,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(document.body.textContent).toContain('Active Working')
+    expect(document.body.textContent).toContain('Aktive Arbeitsrevision')
     expect(document.body.textContent).toContain('Current Working course')
     expect(document.body.textContent).not.toContain('Stale Published course')
   })
@@ -823,9 +823,9 @@ describe('CourseSchedulePage multi-course mode', () => {
     ))
 
     await renderPage()
-    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    const dateInput = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '05.10.2026')
       dateInput.dispatchEvent(new Event('change', { bubbles: true }))
       await Promise.resolve()
     })
@@ -834,25 +834,25 @@ describe('CourseSchedulePage multi-course mode', () => {
       await Promise.resolve()
     })
     const sessionType = [...document.querySelectorAll<HTMLSelectElement>('select')]
-      .find((item) => item.previousElementSibling?.textContent === 'Session type')!
+      .find((item) => item.previousElementSibling?.textContent === 'Terminart')!
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(sessionType, 'teaching')
       sessionType.dispatchEvent(new Event('change', { bubbles: true }))
-      button('List')?.click()
+      button('Liste')?.click()
       await Promise.resolve()
     })
     expect(document.querySelector('.session-pane')).not.toBeNull()
     expect(document.querySelector('.active-filter-status')).not.toBeNull()
     await act(async () => {
-      button('Mark ready for review')?.click()
+      button('Als prüfbereit markieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
       await new Promise((resolve) => setTimeout(resolve, 0))
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(document.body.textContent).toContain('Ready for review (not approved)')
-    expect(document.body.textContent).toContain('Revision marked Ready for review.')
-    expect(button('List')?.getAttribute('aria-pressed')).toBe('true')
+    expect(document.body.textContent).toContain('Bereit zur Prüfung (nicht freigegeben)')
+    expect(document.body.textContent).toContain('Die Revision wurde als bereit zur Prüfung markiert.')
+    expect(button('Liste')?.getAttribute('aria-pressed')).toBe('true')
     expect(document.querySelector('.session-pane')).not.toBeNull()
     expect(document.querySelector('.active-filter-status')).not.toBeNull()
   })
@@ -860,63 +860,63 @@ describe('CourseSchedulePage multi-course mode', () => {
   it('edits teaching in the Calendar pane and retains the established deletion workflow', async () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     await renderPage()
-    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    const dateInput = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '05.10.2026')
       dateInput.dispatchEvent(new Event('change', { bubbles: true }))
     })
     await act(async () => {
       ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
-        .find((item) => item.textContent?.includes('Teaching'))?.click()
+        .find((item) => item.textContent?.includes('Lehrtermin'))?.click()
     })
-    await act(async () => button('Edit session')?.click())
-    expect(button('Save')).toBeTruthy()
-    await act(async () => button('Cancel')?.click())
-    expect(button('Week')?.getAttribute('aria-pressed')).toBe('true')
+    await act(async () => button('Termin bearbeiten')?.click())
+    expect(button('Speichern')).toBeTruthy()
+    await act(async () => button('Abbrechen')?.click())
+    expect(button('Woche')?.getAttribute('aria-pressed')).toBe('true')
 
-    await act(async () => button('Week')?.click())
+    await act(async () => button('Woche')?.click())
     await act(async () => {
       ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
-        .find((item) => item.textContent?.includes('Teaching'))?.click()
+        .find((item) => item.textContent?.includes('Lehrtermin'))?.click()
     })
-    await act(async () => button('Delete with confirmation')?.click())
-    expect(document.body.textContent).toContain('Delete this Draft Session?')
+    await act(async () => button('Mit Bestätigung löschen')?.click())
+    expect(document.body.textContent).toContain('Diesen Entwurfstermin löschen?')
     expect(mocks.deleteDraftSession).not.toHaveBeenCalled()
-    await act(async () => button('Cancel')?.click())
+    await act(async () => button('Abbrechen')?.click())
   })
 
   it('does not expose pane actions when editable schedule details failed to load', async () => {
     mocks.getDraftSchedules.mockRejectedValue(new Error('draft overview unavailable'))
     await renderPage()
-    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    const dateInput = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '05.10.2026')
       dateInput.dispatchEvent(new Event('change', { bubbles: true }))
     })
     await act(async () => {
       ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
-        .find((item) => item.textContent?.includes('Teaching'))?.click()
+        .find((item) => item.textContent?.includes('Lehrtermin'))?.click()
     })
 
-    expect(button('Edit session')).toBeUndefined()
-    expect(button('Delete with confirmation')).toBeUndefined()
+    expect(button('Termin bearbeiten')).toBeUndefined()
+    expect(button('Mit Bestätigung löschen')).toBeUndefined()
     expect(document.querySelector('.session-pane')?.textContent)
-      .toContain('Session actions are unavailable because the editable schedule details could not be loaded.')
+      .toContain('Terminaktionen sind nicht verfügbar, weil die bearbeitbaren Planungsdetails nicht geladen werden konnten.')
   })
 
   it('leaves edit mode with an explanation when refreshed backing details disappear', async () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     const root = await renderPage()
-    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    const dateInput = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '05.10.2026')
       dateInput.dispatchEvent(new Event('change', { bubbles: true }))
     })
     await act(async () => {
       ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
-        .find((item) => item.textContent?.includes('Teaching'))?.click()
+        .find((item) => item.textContent?.includes('Lehrtermin'))?.click()
     })
-    await act(async () => button('Edit session')?.click())
+    await act(async () => button('Termin bearbeiten')?.click())
     expect(document.querySelector('.session-pane-editing')).not.toBeNull()
 
     mocks.getDraftSchedules.mockResolvedValue([])
@@ -929,35 +929,35 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(document.querySelector('.session-pane-editing')).toBeNull()
     expect(document.querySelector('.session-pane-detail')).not.toBeNull()
     expect(document.querySelector('.session-pane')?.textContent)
-      .toContain('Editing ended because the current editable session details are no longer available.')
+      .toContain('Die Bearbeitung wurde beendet, weil die bearbeitbaren Termindetails nicht mehr verfügbar sind.')
   })
 
   it('keeps dirty pane work by default and discards only after explicit confirmation', async () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     await renderPage()
-    const calendarDate = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    const calendarDate = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(calendarDate, '2026-10-05')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(calendarDate, '05.10.2026')
       calendarDate.dispatchEvent(new Event('change', { bubbles: true }))
     })
     const occurrence = [...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
-      .find((item) => item.textContent?.includes('Teaching'))!
+      .find((item) => item.textContent?.includes('Lehrtermin'))!
     await act(async () => occurrence.click())
-    await act(async () => button('Edit session')?.click())
-    const editorDate = document.querySelector<HTMLInputElement>('.session-pane input[type="date"]')!
+    await act(async () => button('Termin bearbeiten')?.click())
+    const editorDate = document.querySelector<HTMLInputElement>('.session-pane input[inputmode="numeric"]')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(editorDate, '2026-10-06')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(editorDate, '06.10.2026')
       editorDate.dispatchEvent(new Event('input', { bubbles: true }))
       editorDate.dispatchEvent(new Event('change', { bubbles: true }))
     })
-    const close = document.querySelector<HTMLButtonElement>('[aria-label="Close session pane"]')!
+    const close = document.querySelector<HTMLButtonElement>('[aria-label="Termindetails schließen"]')!
     await act(async () => close.click())
-    expect(document.body.textContent).toContain('Discard unsaved changes?')
-    await act(async () => button('Keep editing')?.click())
+    expect(document.body.textContent).toContain('Ungespeicherte Änderungen verwerfen?')
+    await act(async () => button('Weiter bearbeiten')?.click())
     expect(document.querySelector('.session-pane-editing')).not.toBeNull()
     expect(document.querySelector('.session-pane')?.contains(document.activeElement)).toBe(true)
-    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Close session pane"]')?.click())
-    await act(async () => button('Discard changes')?.click())
+    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Termindetails schließen"]')?.click())
+    await act(async () => document.querySelector<HTMLButtonElement>('.discard-changes-dialog .destructive-button')?.click())
     expect(document.querySelector('.session-pane')).toBeNull()
     expect(document.activeElement).toBe(occurrence)
   })
@@ -1040,20 +1040,20 @@ describe('CourseSchedulePage multi-course mode', () => {
     mocks.getDraftSchedules.mockClear()
     mocks.getExamPlanningOverview.mockClear()
 
-    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    const dateInput = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-10-05')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '05.10.2026')
       dateInput.dispatchEvent(new Event('change', { bubbles: true }))
     })
     await act(async () => {
       ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
-        .find((item) => item.textContent?.includes('Teaching'))?.click()
+        .find((item) => item.textContent?.includes('Lehrtermin'))?.click()
     })
     await act(async () => {
-      button('Edit session')?.click()
+      button('Termin bearbeiten')?.click()
     })
     await act(async () => {
-      button('Save')?.click()
+      button('Speichern')?.click()
       await Promise.resolve()
     })
     expect(mocks.updateDraftSession).toHaveBeenCalled()
@@ -1100,7 +1100,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     await renderPage()
 
     await act(async () => {
-      button('Add Draft Session')?.click()
+      button('Entwurfstermin hinzufügen')?.click()
       await Promise.resolve()
     })
     const semesterSelect = document.querySelectorAll<HTMLSelectElement>('.schedule-context-field select')[0]
@@ -1131,24 +1131,24 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(mocks.getCalendarWorkspace).not.toHaveBeenCalled()
     expect(mocks.getDraftSchedules).not.toHaveBeenCalled()
     expect(mocks.getExamPlanningOverview).not.toHaveBeenCalled()
-    expect((button('Add Draft Session') as HTMLButtonElement).disabled).toBe(false)
+    expect((button('Entwurfstermin hinzufügen') as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('focuses the committed context after discarding a dirty course change', async () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     await renderPage()
-    const calendarDate = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    const calendarDate = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(calendarDate, '2026-10-05')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(calendarDate, '05.10.2026')
       calendarDate.dispatchEvent(new Event('change', { bubbles: true }))
     })
     const occurrence = [...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
-      .find((item) => item.textContent?.includes('Teaching'))!
+      .find((item) => item.textContent?.includes('Lehrtermin'))!
     await act(async () => occurrence.click())
-    await act(async () => button('Edit session')?.click())
-    const editorDate = document.querySelector<HTMLInputElement>('.session-pane input[type="date"]')!
+    await act(async () => button('Termin bearbeiten')?.click())
+    const editorDate = document.querySelector<HTMLInputElement>('.session-pane input[inputmode="numeric"]')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(editorDate, '2026-10-06')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(editorDate, '06.10.2026')
       editorDate.dispatchEvent(new Event('input', { bubbles: true }))
       editorDate.dispatchEvent(new Event('change', { bubbles: true }))
     })
@@ -1158,9 +1158,9 @@ describe('CourseSchedulePage multi-course mode', () => {
       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(courseSelect, '2')
       courseSelect.dispatchEvent(new Event('change', { bubbles: true }))
     })
-    expect(document.body.textContent).toContain('Discard unsaved changes?')
+    expect(document.body.textContent).toContain('Ungespeicherte Änderungen verwerfen?')
     await act(async () => {
-      button('Discard changes')?.click()
+      document.querySelector<HTMLButtonElement>('.discard-changes-dialog .destructive-button')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
@@ -1248,23 +1248,23 @@ describe('CourseSchedulePage multi-course mode', () => {
     })
 
     await renderPage()
-    const dateInput = document.querySelector<HTMLInputElement>('input[aria-label="Choose calendar date"]')!
+    const dateInput = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '2026-12-10')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, '10.12.2026')
       dateInput.dispatchEvent(new Event('change', { bubbles: true }))
     })
     await act(async () => {
       ;[...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
-        .find((item) => item.textContent?.includes('Exam'))?.click()
+        .find((item) => item.textContent?.includes('Prüfungstermin'))?.click()
     })
-    await act(async () => button('Edit session')?.click())
-    expect(document.body.textContent).toContain('Correct active exam')
-    await act(async () => button('Cancel')?.click())
+    await act(async () => button('Termin bearbeiten')?.click())
+    expect(document.body.textContent).toContain('Prüfungstermin korrigieren')
+    await act(async () => button('Abbrechen')?.click())
 
-    await act(async () => button('Delete with confirmation')?.click())
-    expect(document.body.textContent).toContain('Delete active exam?')
+    await act(async () => button('Mit Bestätigung löschen')?.click())
+    expect(document.body.textContent).toContain('Prüfung löschen?')
     expect(mocks.deleteExam).not.toHaveBeenCalled()
-    await act(async () => button('Cancel')?.click())
+    await act(async () => button('Abbrechen')?.click())
   })
 
   it('does not label live schedules as a publication while its snapshot is loading', async () => {
@@ -1289,7 +1289,7 @@ describe('CourseSchedulePage multi-course mode', () => {
 
     await renderPage()
 
-    expect(document.body.textContent).toContain('Loading selected revision')
+    expect(document.body.textContent).toContain('Ausgewählte Revision wird geladen')
     expect(document.body.textContent).not.toContain('Ada Lovelace')
   })
 
@@ -1315,9 +1315,9 @@ describe('CourseSchedulePage multi-course mode', () => {
 
     await renderPage()
 
-    expect(document.body.textContent).toContain('Captured publication is unavailable.')
+    expect(document.body.textContent).toContain('ausgewählte Revision konnte nicht geladen werden')
     expect(document.body.textContent).not.toContain('Ada Lovelace')
-    expect(document.body.textContent).not.toContain('Loading selected revision')
+    expect(document.body.textContent).not.toContain('Ausgewählte Revision wird geladen')
   })
 
   it('retries a failed publication snapshot without changing revisions', async () => {
@@ -1342,16 +1342,16 @@ describe('CourseSchedulePage multi-course mode', () => {
       .mockResolvedValueOnce({ revision: published, contentSource: 'captured_snapshot', snapshot: snapshotFixture() })
 
     await renderPage()
-    expect(document.body.textContent).toContain('Captured publication is unavailable.')
+    expect(document.body.textContent).toContain('ausgewählte Revision konnte nicht geladen werden')
 
     await act(async () => {
-      button('Retry selected revision')?.click()
+      button('Revision erneut laden')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
     expect(mocks.getScheduleRevision).toHaveBeenCalledTimes(2)
     expect(document.body.textContent).not.toContain('Captured publication is unavailable.')
-    expect(document.body.textContent).toContain('Current publication')
+    expect(document.body.textContent).toContain('Aktuelle Veröffentlichung')
   })
 
   it('blocks further exam writes when an authoritative post-save refresh fails', async () => {
@@ -1373,18 +1373,18 @@ describe('CourseSchedulePage multi-course mode', () => {
     mocks.saveExamConfiguration.mockResolvedValue(savedState)
     await renderPage()
     mocks.getExamPlanningOverview.mockRejectedValueOnce(new Error('refresh failed'))
-    const requirement = [...document.querySelectorAll('label')].find((item) => item.textContent?.includes('This course requires an exam'))?.querySelector<HTMLInputElement>('input')
+    const requirement = [...document.querySelectorAll('label')].find((item) => item.textContent?.includes('ist eine Prüfung erforderlich'))?.querySelector<HTMLInputElement>('input')
     await act(async () => requirement?.click())
-    await act(async () => { button('Save exam requirement')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
-    expect(document.body.textContent).toContain('saved, but the semester review could not be refreshed')
+    await act(async () => { button('Prüfungsanforderung speichern')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.body.textContent).toContain('gespeichert, aber die Semesterübersicht konnte nicht aktualisiert werden')
     expect(requirement?.disabled).toBe(true)
-    expect(button('Saving…')).toBeUndefined()
-    expect(button('Save exam requirement')?.disabled).toBe(true)
+    expect(button('Speichern…')).toBeUndefined()
+    expect(button('Prüfungsanforderung speichern')?.disabled).toBe(true)
   })
 
   it('does not warn for disabled courses and explains an enabled course without a final teaching anchor', async () => {
     const root = await renderPage()
-    expect(document.body.textContent).not.toContain('No final teaching session is saved yet.')
+    expect(document.body.textContent).not.toContain('Noch kein letzter Lehrtermin gespeichert.')
 
     await act(async () => root.unmount())
     document.body.innerHTML = ''
@@ -1405,8 +1405,8 @@ describe('CourseSchedulePage multi-course mode', () => {
       } : course),
     })
     await renderPage()
-    expect(document.body.textContent).toContain('No final teaching session is saved yet.')
-    expect(document.body.textContent).toContain('automatic and manual placement remain unavailable')
+    expect(document.body.textContent).toContain('Noch kein letzter Lehrtermin gespeichert.')
+    expect(document.body.textContent).toContain('automatische und manuelle Platzierung bleiben bis dahin blockiert')
   })
 
   it('renders scheduling content without page-owned or dead hash navigation', async () => {
@@ -1414,7 +1414,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(document.querySelector('nav')).toBeNull()
     expect(document.querySelectorAll('a[href^="#"]')).toHaveLength(0)
     expect(document.body.textContent).not.toContain('Dashboard')
-    expect(document.body.textContent).toContain('Resource Planner')
+    expect(document.body.textContent).toContain('Ressourcenplanung')
   })
 
   it('keeps focused single-course constraints isolated while selecting and generating several courses', async () => {
@@ -1427,22 +1427,22 @@ describe('CourseSchedulePage multi-course mode', () => {
       outcomes: [1, 2].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, status: 'complete', draftScheduleId: courseId, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] })),
     })
     await renderPage()
-    act(() => button('Several courses')?.click())
+    act(() => button('Mehrere Lehrveranstaltungen')?.click())
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click() })
     const unavailableDates = document.querySelector<HTMLInputElement>('input[type="text"]')
     act(() => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(unavailableDates, '2026-11-02, 2026-10-26, 2026-10-26')
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(unavailableDates, '02.11.2026, 26.10.2026, 26.10.2026')
       unavailableDates?.dispatchEvent(new Event('input', { bubbles: true }))
     })
-    expect(document.body.textContent).toContain('2 selected')
+    expect(document.body.textContent).toContain('2 ausgewählt')
     await act(async () => {
-      button('Optimize selected courses')?.click()
+      button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.prepare).toHaveBeenCalledWith(1, 11, [1, 2], ['2026-10-26', '2026-11-02'])
     expect(mocks.generateBatch).toHaveBeenCalledOnce()
-    expect(document.body.textContent).toContain('2 complete · 0 improved partial')
+    expect(document.body.textContent).toContain('2 vollständig · 0 teilweise verbessert')
     expect(mocks.getGenerationConstraints).toHaveBeenCalledTimes(1)
   })
 
@@ -1450,10 +1450,10 @@ describe('CourseSchedulePage multi-course mode', () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     await renderPage()
 
-    act(() => button('Several courses')?.click())
+    act(() => button('Mehrere Lehrveranstaltungen')?.click())
 
     const statuses = [...document.querySelectorAll('.course-draft-status')].map((status) => status.textContent)
-    expect(statuses).toEqual(['Draft · 8/8 units', 'No draft'])
+    expect(statuses).toEqual(['Entwurf · 8/8 Lehreinheiten', 'Kein Entwurf'])
   })
 
   it('clears the batch selection when the semester changes', async () => {
@@ -1466,9 +1466,9 @@ describe('CourseSchedulePage multi-course mode', () => {
       ],
     })
     await renderPage()
-    act(() => button('Several courses')?.click())
+    act(() => button('Mehrere Lehrveranstaltungen')?.click())
     act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click())
-    expect(document.body.textContent).toContain('1 selected')
+    expect(document.body.textContent).toContain('1 ausgewählt')
 
     const semesterSelect = document.querySelector<HTMLSelectElement>('.planning-selectors select')
     await act(async () => {
@@ -1477,7 +1477,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(document.body.textContent).toContain('0 selected')
+    expect(document.body.textContent).toContain('0 ausgewählt')
   })
 
   it('cancels replacement confirmation without execution', async () => {
@@ -1489,17 +1489,17 @@ describe('CourseSchedulePage multi-course mode', () => {
       ],
     })
     await renderPage()
-    act(() => button('Several courses')?.click())
+    act(() => button('Mehrere Lehrveranstaltungen')?.click())
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click() })
     await act(async () => {
-      button('Optimize selected courses')?.click()
+      button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(document.body.textContent).toContain('Optimize existing Draft Schedules?')
-    act(() => button('Cancel')?.click())
+    expect(document.body.textContent).toContain('Bestehende Planungsentwürfe optimieren?')
+    act(() => button('Abbrechen')?.click())
     expect(mocks.generateBatch).not.toHaveBeenCalled()
-    expect(document.body.textContent).not.toContain('Optimize existing Draft Schedules?')
+    expect(document.body.textContent).not.toContain('Bestehende Planungsentwürfe optimieren?')
   })
 
   it('re-prepares failed and stale courses before retrying and refreshes each result', async () => {
@@ -1520,16 +1520,16 @@ describe('CourseSchedulePage multi-course mode', () => {
         outcomes: [{ courseId: 1, courseName: 'Course 1', status: 'complete', draftScheduleId: 1, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] }],
       })
     await renderPage()
-    act(() => button('Several courses')?.click())
+    act(() => button('Mehrere Lehrveranstaltungen')?.click())
     act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click())
     await act(async () => {
-      button('Optimize selected courses')?.click()
+      button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(document.body.textContent).toContain('1 stale')
+    expect(document.body.textContent).toContain('1 veraltet')
 
     await act(async () => {
-      button('Retry failed or stale courses')?.click()
+      button('Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
@@ -1537,7 +1537,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(mocks.prepare).toHaveBeenLastCalledWith(1, 11, [1], [])
     expect(mocks.generateBatch).toHaveBeenCalledTimes(2)
     expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(3)
-    expect(document.body.textContent).toContain('1 complete')
+    expect(document.body.textContent).toContain('1 vollständig')
   })
 
   it('confirms replacement, shows mixed outcomes, and requires renewed confirmation for retry', async () => {
@@ -1575,34 +1575,34 @@ describe('CourseSchedulePage multi-course mode', () => {
         outcomes: [1, 3].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, status: 'complete', draftScheduleId: courseId + 10, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] })),
       })
     await renderPage()
-    act(() => button('Several courses')?.click())
+    act(() => button('Mehrere Lehrveranstaltungen')?.click())
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click(); boxes[2].click() })
     await act(async () => {
-      button('Optimize selected courses')?.click()
+      button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(document.body.textContent).toContain('Optimize existing Draft Schedules?')
+    expect(document.body.textContent).toContain('Bestehende Planungsentwürfe optimieren?')
 
     await act(async () => {
-      button('Confirm optimization')?.click()
+      button('Optimierung bestätigen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.generateBatch).toHaveBeenLastCalledWith(initialPreparation, true)
-    expect(document.body.textContent).toContain('1 complete')
-    expect(document.body.textContent).toContain('1 failed')
-    expect(document.body.textContent).toContain('1 stale')
+    expect(document.body.textContent).toContain('1 vollständig')
+    expect(document.body.textContent).toContain('1 fehlgeschlagen')
+    expect(document.body.textContent).toContain('1 veraltet')
 
     await act(async () => {
-      button('Retry failed or stale courses')?.click()
+      button('Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.prepare).toHaveBeenLastCalledWith(1, 11, [1, 3], [])
     expect(mocks.generateBatch).toHaveBeenCalledTimes(1)
-    expect(document.body.textContent).toContain('Optimize existing Draft Schedules?')
+    expect(document.body.textContent).toContain('Bestehende Planungsentwürfe optimieren?')
 
     await act(async () => {
-      button('Confirm optimization')?.click()
+      button('Optimierung bestätigen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.generateBatch).toHaveBeenLastCalledWith(retryPreparation, true)
@@ -1625,8 +1625,8 @@ describe('CourseSchedulePage academic option compatibility', () => {
     const selects = document.querySelectorAll<HTMLSelectElement>('.planning-selectors select')
     act(() => { selects[1].value = '2'; selects[1].dispatchEvent(new Event('change', { bubbles: true })) })
     expect(selects[0].value).toBe('1')
-    expect(document.body.textContent).toContain('not assigned to the selected Semester')
-    expect((button('Generate') as HTMLButtonElement).disabled).toBe(true)
+    expect(document.body.textContent).toContain('dem ausgewählten Semester nicht zugeordnet')
+    expect((button('Erzeugen') as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('refreshes options without replacing a still-valid selected Course', async () => {
@@ -1656,8 +1656,9 @@ describe('CourseSchedulePage academic option compatibility', () => {
     })
 
     expect(courseSelect.value).toBe('2')
-    expect(document.body.textContent).toContain('OPTION_NO_LONGER_AVAILABLE')
-    expect((button('Generate') as HTMLButtonElement).disabled).toBe(true)
+    expect(document.body.textContent).not.toContain('OPTION_NO_LONGER_AVAILABLE')
+    expect(document.body.textContent).toContain('genaue Ursache ist nicht verfügbar')
+    expect((button('Erzeugen') as HTMLButtonElement).disabled).toBe(true)
   })
 })
 
@@ -1669,18 +1670,18 @@ describe('CourseSchedulePage manual session creation', () => {
 
     await renderPage()
 
-    expect(summaryValue('Scheduled units')).toBe('Loading...')
-    expect(summaryValue('Remaining units')).toBe('Loading...')
-    expect((button('Add Draft Session') as HTMLButtonElement).disabled).toBe(true)
+    expect(summaryValue('Geplante Lehreinheiten')).toBe('Wird geladen…')
+    expect(summaryValue('Offene Lehreinheiten')).toBe('Wird geladen…')
+    expect((button('Entwurfstermin hinzufügen') as HTMLButtonElement).disabled).toBe(true)
 
     await act(async () => {
       resolveOverview([partialDraft])
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(summaryValue('Scheduled units')).toBe('4')
-    expect(summaryValue('Remaining units')).toBe('4')
-    expect((button('Add Draft Session') as HTMLButtonElement).disabled).toBe(false)
+    expect(summaryValue('Geplante Lehreinheiten')).toBe('4')
+    expect(summaryValue('Offene Lehreinheiten')).toBe('4')
+    expect((button('Entwurfstermin hinzufügen') as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('locks the selected planning context while a manual creation and refresh are pending', async () => {
@@ -1688,7 +1689,7 @@ describe('CourseSchedulePage manual session creation', () => {
     mocks.createManualDraftSession.mockReturnValue(new Promise((resolve) => { resolveCreation = resolve }))
     await renderPage()
 
-    act(() => button('Add Draft Session')?.click())
+    act(() => button('Entwurfstermin hinzufügen')?.click())
 
     const selectors = document.querySelectorAll<HTMLSelectElement>('.planning-selectors select')
     expect([...selectors].every((select) => select.disabled)).toBe(true)
@@ -1705,8 +1706,8 @@ describe('CourseSchedulePage manual session creation', () => {
     mocks.createManualDraftSession.mockResolvedValue({ courseId: 1, semesterId: 1, scheduledUnits: 2, remainingUnits: 6, draftSchedule: null })
     await renderPage()
 
-    expect(document.body.textContent).toContain('Scheduled units')
-    expect(document.body.textContent).toContain('Remaining units')
+    expect(document.body.textContent).toContain('Geplante Lehreinheiten')
+    expect(document.body.textContent).toContain('Offene Lehreinheiten')
     const start = document.querySelector<HTMLInputElement>('input[name="manual-start-time"]')!
     const end = document.querySelector<HTMLInputElement>('input[name="manual-end-time"]')!
     const units = document.querySelector<HTMLInputElement>('input[name="manual-units"]')!
@@ -1719,7 +1720,7 @@ describe('CourseSchedulePage manual session creation', () => {
       end.dispatchEvent(new Event('input', { bubbles: true }))
     })
     await act(async () => {
-      button('Add Draft Session')?.click()
+      button('Entwurfstermin hinzufügen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.createManualDraftSession).toHaveBeenCalledWith(1, expect.objectContaining({ endTime: '10:15', units: 2, roomId: 3 }))
@@ -1758,7 +1759,7 @@ describe('CourseSchedulePage manual session creation', () => {
     expect(lecturer.value).toBe('1')
     expect(cohort.value).toBe('1')
     expect(room.value).toBe('3')
-    expect([...room.options].map((item) => item.text)).not.toContain('Small room (25 seats)')
+    expect([...room.options].map((item) => item.text)).not.toContain('Small room (25 Plätze)')
 
     act(() => {
       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(lecturer, '2')
@@ -1766,13 +1767,13 @@ describe('CourseSchedulePage manual session creation', () => {
       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(cohort, '2')
       cohort.dispatchEvent(new Event('change', { bubbles: true }))
     })
-    expect([...room.options].map((item) => item.text)).toContain('Small room (25 seats)')
+    expect([...room.options].map((item) => item.text)).toContain('Small room (25 Plätze)')
     act(() => {
       Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set?.call(room, '4')
       room.dispatchEvent(new Event('change', { bubbles: true }))
     })
     await act(async () => {
-      button('Add Draft Session')?.click()
+      button('Entwurfstermin hinzufügen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
@@ -1814,19 +1815,19 @@ describe('CourseSchedulePage manual session creation', () => {
     await renderPage()
 
     await act(async () => {
-      button('Add Draft Session')?.click()
+      button('Entwurfstermin hinzufügen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(document.body.textContent).toContain('saved, but the overview could not be refreshed')
-    expect(document.body.textContent).toContain('Could not refresh the Courses overview')
+    expect(document.body.textContent).toContain('wurde gespeichert, aber die Übersicht konnte nicht aktualisiert werden')
+    expect(document.body.textContent).toContain('Die Übersicht der Lehrveranstaltungen konnte nicht aktualisiert werden')
     const visibleMutationNotice = document.querySelector('.mutation-feedback')
-    expect(visibleMutationNotice?.textContent).toContain('saved, but the overview could not be refreshed')
+    expect(visibleMutationNotice?.textContent).toContain('wurde gespeichert, aber die Übersicht konnte nicht aktualisiert werden')
     expect(visibleMutationNotice?.classList.contains('sr-only')).toBe(false)
-    expect((button('Add Draft Session') as HTMLButtonElement).disabled).toBe(true)
+    expect((button('Entwurfstermin hinzufügen') as HTMLButtonElement).disabled).toBe(true)
 
     await act(async () => {
-      button('Retry refresh')?.click()
+      button('Übersicht erneut laden')?.click()
       await Promise.resolve()
     })
     const selectors = document.querySelectorAll<HTMLSelectElement>('.planning-selectors select')
@@ -1836,7 +1837,7 @@ describe('CourseSchedulePage manual session creation', () => {
       resolveRetry([partialDraft])
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect((button('Add Draft Session') as HTMLButtonElement).disabled).toBe(false)
+    expect((button('Entwurfstermin hinzufügen') as HTMLButtonElement).disabled).toBe(false)
     expect([...selectors].every((select) => !select.disabled)).toBe(true)
   })
 })
@@ -1846,15 +1847,15 @@ describe('CourseSchedulePage single-session deletion', () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     mocks.deleteDraftSession.mockResolvedValue({ courseId: 1, semesterId: 1, scheduledUnits: 4, remainingUnits: 4, draftSchedule: null })
     await renderPage()
-    const firstDelete = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Delete')!
+    const firstDelete = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Löschen')!
     act(() => firstDelete.click())
-    expect(document.body.textContent).toContain('Delete this Draft Session?')
-    act(() => button('Cancel')?.click())
+    expect(document.body.textContent).toContain('Diesen Entwurfstermin löschen?')
+    act(() => button('Abbrechen')?.click())
     expect(mocks.deleteDraftSession).not.toHaveBeenCalled()
 
     act(() => firstDelete.click())
     await act(async () => {
-      button('Delete session')?.click()
+      button('Termin löschen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.deleteDraftSession).toHaveBeenCalledWith(1, 1, 1, 11)
@@ -1865,13 +1866,13 @@ describe('CourseSchedulePage single-session deletion', () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     mocks.deleteDraftSession.mockRejectedValue([{ code: 'STALE_DRAFT', message: 'Draft changed.', currentRevision: 2 }])
     await renderPage()
-    act(() => [...document.querySelectorAll('button')].find((item) => item.textContent === 'Delete')?.click())
+    act(() => [...document.querySelectorAll('button')].find((item) => item.textContent === 'Löschen')?.click())
     await act(async () => {
-      button('Delete session')?.click()
+      button('Termin löschen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
-    expect(document.body.textContent).not.toContain('Delete this Draft Session?')
-    expect(document.body.textContent).toContain('changed')
+    expect(document.body.textContent).not.toContain('Diesen Entwurfstermin löschen?')
+    expect(document.body.textContent).toContain('zwischenzeitlich geändert')
     expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(2)
   })
 
@@ -1882,18 +1883,18 @@ describe('CourseSchedulePage single-session deletion', () => {
       .mockResolvedValue([draftScheduleFixture])
     mocks.deleteDraftSession.mockRejectedValue([{ code: 'STALE_DRAFT', message: 'Draft changed.', currentRevision: 2 }])
     await renderPage()
-    act(() => [...document.querySelectorAll('button')].find((item) => item.textContent === 'Delete')?.click())
+    act(() => [...document.querySelectorAll('button')].find((item) => item.textContent === 'Löschen')?.click())
     await act(async () => {
-      button('Delete session')?.click()
+      button('Termin löschen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(document.body.textContent).toContain('current state could not be refreshed')
-    const deleteActions = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.textContent === 'Delete')
+    expect(document.body.textContent).toContain('aktuelle Stand konnte nicht geladen werden')
+    const deleteActions = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.textContent === 'Löschen')
     expect(deleteActions.every((item) => item.disabled)).toBe(true)
 
     await act(async () => {
-      button('Retry refresh')?.click()
+      button('Übersicht erneut laden')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(deleteActions.every((item) => item.disabled)).toBe(false)
@@ -1904,18 +1905,18 @@ describe('CourseSchedulePage single-session deletion', () => {
 describe('CourseSchedulePage complete draft clearing', () => {
   it('disables clearing without a selected draft, then supports cancel and exact-scope confirm', async () => {
     await renderPage()
-    expect((button('Clear course draft') as HTMLButtonElement).disabled).toBe(true)
+    expect((button('Lehrveranstaltung-Entwurf leeren') as HTMLButtonElement).disabled).toBe(true)
     document.body.innerHTML = ''
 
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     mocks.clearCourseDraft.mockResolvedValue({ courseId: 1, semesterId: 1, scheduledUnits: 0, remainingUnits: 8, draftSchedule: null })
     await renderPage()
-    act(() => button('Clear course draft')?.click())
-    expect(document.body.textContent).toContain('2 sessions')
-    act(() => button('Cancel')?.click())
+    act(() => button('Lehrveranstaltung-Entwurf leeren')?.click())
+    expect(document.body.textContent).toContain('2 Termine werden gelöscht')
+    act(() => button('Abbrechen')?.click())
     expect(mocks.clearCourseDraft).not.toHaveBeenCalled()
 
-    act(() => button('Clear course draft')?.click())
+    act(() => button('Lehrveranstaltung-Entwurf leeren')?.click())
     const confirm = [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].at(-1)
     await act(async () => {
       confirm?.click()
@@ -1929,13 +1930,13 @@ describe('CourseSchedulePage complete draft clearing', () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     mocks.clearCourseDraft.mockRejectedValue([{ code: 'STALE_DRAFT', message: 'Draft changed.', currentRevision: 2 }])
     await renderPage()
-    act(() => button('Clear course draft')?.click())
+    act(() => button('Lehrveranstaltung-Entwurf leeren')?.click())
     const dialogButtons = [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')]
     await act(async () => {
       dialogButtons.at(-1)?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(document.querySelector('[role="dialog"]')).toBeNull()
-    expect(document.body.textContent).toContain('open deletion again')
+    expect(document.body.textContent).toContain('Löschdialog erneut')
   })
 })

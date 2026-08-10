@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { label } from '../config/terminology'
 
 // Shared with the controlled Academic Data page and contract tests.
 // eslint-disable-next-line react-refresh/only-export-components
 export const ACADEMIC_DATA_CATEGORIES = [
-  { id: 'semesters', label: 'Semesters', singular: 'semester' },
-  { id: 'holidays', label: 'Holidays', singular: 'holiday' },
-  { id: 'cohorts', label: 'Cohorts', singular: 'cohort' },
-  { id: 'courses', label: 'Courses', singular: 'course' },
-  { id: 'study-types', label: 'Study types', singular: 'study type' },
-  { id: 'time-windows', label: 'Time windows', singular: 'time window' },
-  { id: 'lecturers', label: 'Lecturers', singular: 'lecturer' },
-  { id: 'rooms', label: 'Rooms', singular: 'room' },
+  { id: 'semesters', label: 'Semester', singular: 'Semester' },
+  { id: 'holidays', label: 'Feiertage', singular: 'Feiertag' },
+  { id: 'cohorts', label: label('cohort.navigation'), singular: label('cohort.singular') },
+  { id: 'courses', label: label('course.navigation'), singular: label('course.singular') },
+  { id: 'study-types', label: 'Studienformen', singular: 'Studienform' },
+  { id: 'time-windows', label: 'Zeitfenster', singular: 'Zeitfenster' },
+  { id: 'lecturers', label: label('lecturer.navigation'), singular: label('lecturer.singular') },
+  { id: 'rooms', label: label('room.navigation'), singular: label('room.singular') },
 ] as const
 
 export type AcademicDataCategory = (typeof ACADEMIC_DATA_CATEGORIES)[number]['id']
@@ -20,10 +21,10 @@ export type ScheduleDestination = 'calendar' | 'versions' | 'exams' | 'reviews'
 // Shared with the application shell and navigation contract tests.
 // eslint-disable-next-line react-refresh/only-export-components
 export const SCHEDULE_DESTINATIONS: { id: ScheduleDestination; label: string }[] = [
-  { id: 'calendar', label: 'Calendar' },
-  { id: 'versions', label: 'Versions' },
-  { id: 'exams', label: 'Exams' },
-  { id: 'reviews', label: 'Lecturer coordination' },
+  { id: 'calendar', label: 'Kalender' },
+  { id: 'versions', label: 'Versionen' },
+  { id: 'exams', label: 'Prüfungen' },
+  { id: 'reviews', label: 'Abstimmung mit Lehrenden' },
 ]
 
 type ApplicationNavigationProps = {
@@ -163,7 +164,7 @@ export function ApplicationNavigation({
         inert={temporaryPanel && navigationOpen ? true : undefined}
         onClick={() => onNavigationOpenChange(true)}
       >
-        {isNarrow ? 'Menu' : 'Open navigation'}
+        {isNarrow ? 'Menü' : 'Navigation öffnen'}
       </button>
       {temporaryPanel && navigationOpen && <div className="navigation-backdrop" aria-hidden="true" onClick={() => closePanel()} />}
       <aside
@@ -177,11 +178,20 @@ export function ApplicationNavigation({
       >
         <div className="navigation-heading">
           <div className="brand-mark" aria-hidden="true">RP</div>
-          <span id="navigation-title">Resource Planner</span>
-          <button ref={closeRef} className="navigation-close" type="button" onClick={() => closePanel()}>Close menu</button>
-          {!isNarrow && <button type="button" className="navigation-pin" onClick={() => setPinned(!navigationPinned)}>{navigationPinned ? 'Unpin navigation' : 'Pin navigation'}</button>}
+          <span id="navigation-title">Ressourcenplanung</span>
+          <button ref={closeRef} className="navigation-close" type="button" aria-label="Menü schließen" title="Menü schließen" onClick={() => closePanel()}>
+            <span className="sr-only">Menü schließen</span>
+            <span className="navigation-close-symbol" aria-hidden="true">×</span>
+          </button>
+          {!isNarrow && <button type="button" className={`navigation-pin${navigationPinned ? ' is-pinned' : ''}`} aria-label={navigationPinned ? 'Navigation lösen' : 'Navigation anheften'} title={navigationPinned ? 'Navigation lösen' : 'Navigation anheften'} onClick={() => setPinned(!navigationPinned)}>
+            <svg className="navigation-pin-symbol" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 3h10l-2.5 7v3l2.5 3H7l2.5-3v-3L7 3Z" />
+              <path d="M12 16v5" />
+            </svg>
+            <span className="sr-only">{navigationPinned ? 'Navigation lösen' : 'Navigation anheften'}</span>
+          </button>}
         </div>
-        <nav aria-label="Primary navigation">
+        <nav aria-label="Hauptnavigation">
           <button
             ref={scheduleRef}
             type="button"
@@ -190,7 +200,7 @@ export function ApplicationNavigation({
             aria-controls="schedule-navigation-children"
             onClick={toggleSchedule}
           >
-            <span>Schedule</span><span aria-hidden="true">{scheduleExpanded ? '−' : '+'}</span>
+            <span>{label('schedule.navigation')}</span><span aria-hidden="true">{scheduleExpanded ? '−' : '+'}</span>
           </button>
           {scheduleExpanded && (
             <div id="schedule-navigation-children" className="navigation-children">
@@ -215,7 +225,7 @@ export function ApplicationNavigation({
             aria-controls="academic-navigation-children"
             onClick={toggleAcademic}
           >
-            <span>Academic Data</span><span aria-hidden="true">{academicExpanded ? '−' : '+'}</span>
+            <span>{label('academicData.navigation')}</span><span aria-hidden="true">{academicExpanded ? '−' : '+'}</span>
           </button>
           {academicExpanded && (
             <div id="academic-navigation-children" className="navigation-children">

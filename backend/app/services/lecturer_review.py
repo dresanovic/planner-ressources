@@ -789,8 +789,8 @@ def _public_projection(db: Session, link: LecturerReviewLink) -> dict[str, Any]:
     return {
         "intendedLecturer": link.intended_lecturer_name,
         "identityDisclaimer": (
-            f"This link is intended for {link.intended_lecturer_name}; "
-            "it does not authenticate the person using it."
+            f"Dieser Link ist für {link.intended_lecturer_name} bestimmt; "
+            "die Identität der verwendenden Person wird nicht authentifiziert."
         ),
         "revision": _revision_summary(revision),
         "accessExpiresAt": _iso(link.expires_at),
@@ -1050,13 +1050,13 @@ _PUBLIC_FINDING_CATEGORIES = {
 }
 
 _PUBLIC_FINDING_MESSAGES = {
-    "lecturer_conflict": "This session overlaps another lecturer assignment.",
-    "room_conflict": "This session overlaps another use of the assigned room.",
-    "cohort_conflict": "This session overlaps another assignment for the cohort.",
-    "room_capacity": "The assigned room may not have enough capacity.",
-    "holiday": "This session falls on an institution holiday.",
-    "exam_validity": "This exam needs review against the current exam rules.",
-    "other": "This session has a current validation item to review.",
+    "lecturer_conflict": "Die Lehrperson ist gleichzeitig einem weiteren Termin zugeordnet.",
+    "room_conflict": "Der Raum ist gleichzeitig einem weiteren Termin zugeordnet.",
+    "cohort_conflict": "Die Kohorte ist gleichzeitig einem weiteren Termin zugeordnet.",
+    "room_capacity": "Die Raumkapazität reicht möglicherweise nicht aus.",
+    "holiday": "Der Termin liegt auf einem Feiertag der Institution.",
+    "exam_validity": "Die Prüfung muss anhand der aktuellen Prüfungsregeln geprüft werden.",
+    "other": "Für diesen Termin liegt ein prüfbarer Hinweis vor.",
 }
 
 
@@ -1067,6 +1067,8 @@ def _safe_validation_projection(
     sessions = [
         session for course in courses for session in course["sessions"]
     ]
+    courses_by_ref = {course["courseRef"]: course for course in courses}
+    sessions_by_ref = {session["sessionRef"]: session for session in sessions}
     scoped_refs = {session["sessionRef"] for session in sessions}
     finding_refs_by_session: dict[str, list[str]] = {
         ref: [] for ref in scoped_refs
@@ -1088,11 +1090,25 @@ def _safe_validation_projection(
             f"{source_ref}|{'|'.join(affected)}".encode("utf-8")
         ).hexdigest()[:20]
         safe_ref = f"public-finding:{digest}"
+        first_session = sessions_by_ref[affected[0]]
+        course = courses_by_ref.get(first_session["courseRef"], {})
+        course_label = course.get("name") or course.get("code") or "betroffene Lehrveranstaltung"
+        iso_date = first_session["date"]
+        display_date = f"{iso_date[8:10]}.{iso_date[5:7]}.{iso_date[0:4]}"
+        session_context = (
+            f"Betroffen: {course_label}, Termin am {display_date} "
+            f"von {first_session['startTime']} bis {first_session['endTime']}."
+        )
+        guidance = (
+            "Dieser Hinweis blockiert die Rückmeldung nicht. Prüfen Sie den Termin "
+            "und teilen Sie der planenden Person über die vorhandene Rückmeldung mit, "
+            "wenn die Zuordnung geändert werden soll."
+        )
         safe_findings.append(
             {
                 "findingRef": safe_ref,
                 "category": category,
-                "message": _PUBLIC_FINDING_MESSAGES[category],
+                "message": f"{session_context} {_PUBLIC_FINDING_MESSAGES[category]} {guidance}",
                 "affectedSessionRefs": affected,
             }
         )
@@ -1138,7 +1154,15 @@ def _public_filter_facets(
     validation_values = [
         (
             finding["category"],
-            finding["category"].replace("_", " ").title(),
+            {
+                "lecturer_conflict": "Konflikt der Lehrperson",
+                "room_conflict": "Raumkonflikt",
+                "cohort_conflict": "Kohortenkonflikt",
+                "room_capacity": "Raumkapazität",
+                "holiday": "Feiertag",
+                "exam_validity": "Prüfungsgültigkeit",
+                "other": "Prüfhinweis",
+            }.get(finding["category"], "Prüfhinweis"),
         )
         for finding in findings
     ]
@@ -1146,7 +1170,7 @@ def _public_filter_facets(
         validation_availability == "complete"
         and any(not session["validationFindingRefs"] for session in sessions)
     ):
-        validation_values.append(("none", "No current issue"))
+        validation_values.append(("none", "Kein aktueller Hinweis"))
     return {
         "courses": facets(
             [
@@ -1175,19 +1199,18 @@ def _public_filter_facets(
                 for course in courses
             ]
         ),
-        "sessionTypes": facets(
-            [
-                (
-                    session["sessionKind"],
-                    session["sessionKind"].title(),
-                )
-                for session in sessions
-            ]
-        ),
+        "sessionTypes": facets([
+            (session["sessionKind"], {"teaching": "Lehrtermin", "exam": "Prüfungstermin"}.get(session["sessionKind"], "Termin"))
+            for session in sessions
+        ]),
         "lifecycleContexts": [
             {
                 "value": revision.state,
-                "label": revision.state.replace("_", " ").title(),
+                "label": {
+                    "draft": "Entwurf",
+                    "ready_for_review": "Bereit zur Prüfung",
+                    "published": "Veröffentlicht",
+                }.get(revision.state, "Unbekannter Status"),
             }
         ],
         "validationCategories": facets(validation_values),

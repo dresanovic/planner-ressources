@@ -1,11 +1,11 @@
 export const WEEKDAY_NAMES = [
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-  'Sunday',
+  'Montag',
+  'Dienstag',
+  'Mittwoch',
+  'Donnerstag',
+  'Freitag',
+  'Samstag',
+  'Sonntag',
 ] as const
 
 export function weeklySortOrder(weekday: number, startTime: string): number {

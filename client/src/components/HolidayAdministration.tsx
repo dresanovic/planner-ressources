@@ -8,6 +8,9 @@ import {
   updateHoliday,
   type HolidayRecord,
 } from '../api/holidayCalendar'
+import { EuropeanDateField } from './EuropeanDateField'
+import { label } from '../config/terminology'
+import { formatCalendarDate } from '../utils/datePresentation'
 
 export function HolidayAdministration({ onChanged }: { onChanged: () => void }) {
   const [holidays, setHolidays] = useState<HolidayRecord[]>([])
@@ -27,8 +30,8 @@ export function HolidayAdministration({ onChanged }: { onChanged: () => void }) 
       setHolidays(items)
       if (clearError) setError('')
       return items
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Could not load holidays.')
+    } catch {
+      setError('Die Feiertage konnten nicht geladen werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.')
       return null
     } finally {
       setLoading(false)
@@ -43,8 +46,8 @@ export function HolidayAdministration({ onChanged }: { onChanged: () => void }) 
         setHolidays(items)
         setError('')
       })
-      .catch((reason) => {
-        if (current) setError(reason instanceof Error ? reason.message : 'Could not load holidays.')
+      .catch(() => {
+        if (current) setError('Die Feiertage konnten nicht geladen werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.')
       })
       .finally(() => {
         if (current) setLoading(false)
@@ -67,7 +70,7 @@ export function HolidayAdministration({ onChanged }: { onChanged: () => void }) 
 
   async function save() {
     if (!date || !name.trim()) {
-      setError('Enter a date and holiday name.')
+      setError('Geben Sie ein Datum im Format TT.MM.JJJJ und einen Namen für den Feiertag ein.')
       return
     }
     setBusy(true)
@@ -77,11 +80,12 @@ export function HolidayAdministration({ onChanged }: { onChanged: () => void }) 
       else await createHoliday({ date, name })
       onChanged()
       await load()
-      setMessage(selected ? 'Holiday updated.' : 'Holiday created.')
+      setMessage(selected ? 'Feiertag aktualisiert.' : 'Feiertag erstellt.')
       resetForm()
     } catch (reason) {
-      const apiError = reason instanceof HolidayCalendarApiError ? reason.errors[0]?.message : undefined
-      setError(apiError ?? (reason instanceof Error ? reason.message : 'Could not save the holiday.'))
+      setError(reason instanceof HolidayCalendarApiError
+        ? 'Der Feiertag konnte wegen ungültiger Angaben nicht gespeichert werden. Prüfen Sie Datum und Name; Ihre Eingaben bleiben erhalten.'
+        : 'Der Feiertag konnte nicht gespeichert werden. Die genaue Ursache ist nicht verfügbar; Ihre Eingaben bleiben erhalten.')
       if (reason instanceof HolidayCalendarApiError && reason.status === 409 && selected) {
         const items = await load(false)
         const current = items?.find((holiday) => holiday.id === selected.id)
@@ -103,9 +107,9 @@ export function HolidayAdministration({ onChanged }: { onChanged: () => void }) 
       await load()
       setRemoving(null)
       if (selected?.id === removing.id) resetForm()
-      setMessage('Holiday removed.')
+      setMessage('Feiertag entfernt.')
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Could not remove the holiday.')
+      setError('Der Feiertag konnte nicht entfernt werden. Laden Sie den aktuellen Stand neu und prüfen Sie den Eintrag vor einem weiteren Versuch.')
       setRemoving(null)
       if (reason instanceof HolidayCalendarApiError && reason.status === 409) await load(false)
     } finally {
@@ -115,35 +119,35 @@ export function HolidayAdministration({ onChanged }: { onChanged: () => void }) 
 
   return <>
     <section className="workbench">
-      <header className="page-header"><div><p className="eyebrow">Planner administration</p><h1>Academic Data</h1></div></header>
+      <header className="page-header"><div><p className="eyebrow">Planungsverwaltung</p><h1>{label('academicData.heading')}</h1></div></header>
       {message && <p role="status">{message}</p>}
-      {error && <div><p role="alert">{error}</p><button type="button" className="secondary-button" disabled={busy || loading} onClick={() => void load()}>Retry holidays</button></div>}
+      {error && <div><p role="alert">{error}</p><button type="button" className="secondary-button" disabled={busy || loading} onClick={() => void load()}>Feiertage erneut laden</button></div>}
       <div className="catalog-grid">
         <section className="planner-panel" aria-labelledby="holiday-list-title">
-          <h2 id="holiday-list-title">Holidays</h2>
-          {loading ? <p>Loading…</p> : holidays.length === 0 ? <p>No holidays yet</p> : (
+          <h2 id="holiday-list-title">Feiertage</h2>
+          {loading ? <p>Wird geladen…</p> : holidays.length === 0 ? <p>Noch keine Feiertage vorhanden.</p> : (
             <ul className="catalog-list">
               {holidays.map((holiday) => <li key={holiday.id} className="catalog-list-item">
-                <div><strong>{holiday.name}</strong><div>{holiday.date}</div></div>
-                <div><button type="button" className="secondary-button" onClick={() => beginEdit(holiday)}>Edit</button><button type="button" className="destructive-button" onClick={() => setRemoving(holiday)}>Delete</button></div>
+                <div><strong>{holiday.name}</strong><div>{formatCalendarDate(holiday.date)}</div></div>
+                <div><button type="button" className="secondary-button" onClick={() => beginEdit(holiday)}>Bearbeiten</button><button type="button" className="destructive-button" onClick={() => setRemoving(holiday)}>Löschen</button></div>
               </li>)}
             </ul>
           )}
         </section>
-        <section className="planner-panel" aria-labelledby="holiday-editor-title">
-          <h2 id="holiday-editor-title">{selected ? 'Edit holiday' : 'Create holiday'}</h2>
-          <label className="catalog-field"><span>Date</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+        <form className="planner-panel" aria-labelledby="holiday-editor-title" onSubmit={(event) => { event.preventDefault(); void save() }}>
+          <h2 id="holiday-editor-title">{selected ? 'Feiertag bearbeiten' : 'Feiertag erstellen'}</h2>
+          <EuropeanDateField id="holiday-date" className="catalog-field" label="Datum" value={date} onChange={(value) => setDate(value ?? '')} required />
           <label className="catalog-field"><span>Name</span><input name="holiday-name" maxLength={200} value={name} onChange={(event) => setName(event.target.value)} /></label>
-          <button type="button" className="generate-button" disabled={busy} onClick={() => void save()}>{selected ? 'Save changes' : 'Create holiday'}</button>
-          {selected && <button type="button" className="secondary-button" disabled={busy} onClick={resetForm}>Cancel edit</button>}
-        </section>
+          <button type="submit" className="generate-button" disabled={busy}>{selected ? 'Änderungen speichern' : 'Feiertag erstellen'}</button>
+          {selected && <button type="button" className="secondary-button" disabled={busy} onClick={resetForm}>Bearbeitung abbrechen</button>}
+        </form>
       </div>
     </section>
     {removing && <div className="dialog-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="remove-holiday-title" className="confirmation-dialog">
-      <h2 id="remove-holiday-title">Remove holiday?</h2>
-      <p>{removing.name} on {removing.date} will stop constraining future generation. Saved sessions will not be changed.</p>
-      <button type="button" className="destructive-button" disabled={busy} onClick={() => void confirmRemove()}>Remove holiday</button>
-      <button type="button" className="secondary-button" disabled={busy} onClick={() => setRemoving(null)}>Cancel</button>
+      <h2 id="remove-holiday-title">Feiertag entfernen?</h2>
+      <p>Der Feiertag „{removing.name}“ am {formatCalendarDate(removing.date)} wird bei zukünftigen Planungen nicht mehr berücksichtigt. Bereits gespeicherte Termine bleiben unverändert.</p>
+      <button type="button" className="destructive-button" disabled={busy} onClick={() => void confirmRemove()}>Feiertag entfernen</button>
+      <button type="button" className="secondary-button" disabled={busy} onClick={() => setRemoving(null)}>Abbrechen</button>
     </section></div>}
   </>
 }

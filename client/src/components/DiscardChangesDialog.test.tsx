@@ -13,7 +13,7 @@ it('keeps editing by default, treats Escape as keep, and restores deterministic 
   const root = createRoot(host)
   const onKeepEditing = vi.fn()
   act(() => root.render(<DiscardChangesDialog destinationLabel="Academic Data" restoreFocusTo={origin} onKeepEditing={onKeepEditing} onDiscard={vi.fn()} />))
-  expect((document.activeElement as HTMLElement)?.textContent).toBe('Keep editing')
+  expect((document.activeElement as HTMLElement)?.textContent).toBe('Weiter bearbeiten')
   act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
   expect(onKeepEditing).toHaveBeenCalledOnce()
   expect(document.activeElement).not.toBe(origin)
@@ -26,7 +26,7 @@ it('requires an explicit destructive discard action', () => {
   const root = createRoot(host)
   const onDiscard = vi.fn()
   act(() => root.render(<DiscardChangesDialog destinationLabel="another session" onKeepEditing={vi.fn()} onDiscard={onDiscard} />))
-  const discard = [...host.querySelectorAll('button')].find((button) => button.textContent === 'Discard changes')!
+  const discard = [...host.querySelectorAll('button')].find((button) => button.textContent === 'Änderungen verwerfen')!
   act(() => discard.click())
   expect(onDiscard).toHaveBeenCalledOnce()
 })
@@ -54,7 +54,7 @@ it('accepts neutral feedback copy without changing the default planner copy', ()
   expect(host.textContent).toContain('Discard feedback')
 })
 
-it('restores Keep editing focus only after the pane is no longer inert', () => {
+it('restores keep-editing focus only after the pane is no longer inert', () => {
   vi.useFakeTimers()
   function Harness() {
     const [decisionOpen, setDecisionOpen] = useState(true)
@@ -79,7 +79,7 @@ it('restores Keep editing focus only after the pane is no longer inert', () => {
   const paneField = host.querySelector<HTMLButtonElement>('[data-pane-focus]')!
 
   act(() => [...host.querySelectorAll<HTMLButtonElement>('button')]
-    .find((button) => button.textContent === 'Keep editing')?.click())
+    .find((button) => button.textContent === 'Weiter bearbeiten')?.click())
 
   expect(paneField.hasAttribute('inert')).toBe(false)
   expect(document.activeElement).not.toBe(paneField)

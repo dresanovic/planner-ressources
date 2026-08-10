@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 import pytest
 
 from app.db.schema import initialize_database
-from app.models.planning import Course, DraftSchedule, DraftSession, ExamSession, Lecturer, LecturerReviewActivityEvent, LecturerReviewFeedback, LecturerReviewLink, Room, ScheduleRevision, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Course, CourseExamConfiguration, DraftSchedule, DraftSession, ExamSession, Lecturer, LecturerReviewActivityEvent, LecturerReviewFeedback, LecturerReviewLink, Room, ScheduleRevision, Semester, StudyType, StudyTypeTimeWindow
 from app.schemas.lecturer_review import FeedbackInput
 from app.services.academic_catalog import usage_for
 from app.services.lecturer_review import (
@@ -66,6 +66,8 @@ def test_explicit_initial_draft_establishment_accepts_empty_and_populated_semest
 def test_direct_first_publication_captures_stable_snapshot_and_nonblocking_conditions(db):
     seed_lifecycle_semester(db, with_schedule=True)
     db.get(Room, 1).capacity = 1
+    exam = db.scalar(select(ExamSession))
+    exam.exam_date = exam.recommended_start_date - timedelta(days=1)
     db.commit()
     initial = get_lifecycle_overview(db, 1)
     created = create_working_revision(db, 1, initial["stateToken"])
@@ -84,6 +86,21 @@ def test_direct_first_publication_captures_stable_snapshot_and_nonblocking_condi
         "course_units_remaining",
         "teaching_validation_alert",
         "exam_validity_issue",
+    }
+    remaining = next(item for item in preparation["conditions"] if item["code"] == "course_units_remaining")
+    assert remaining["details"]["courseName"] == "Course 1"
+    teaching = next(item for item in preparation["conditions"] if item["code"] == "teaching_validation_alert")
+    assert teaching["details"]["courseName"] == "Course 1"
+    assert teaching["details"]["sessionDate"] == "2026-10-05"
+    validity = next(item for item in preparation["conditions"] if item["code"] == "exam_validity_issue")
+    assert validity["details"]["courseName"] == "Course 1"
+    assert validity["details"]["examDate"] == exam.exam_date.isoformat()
+    outside = next(item for item in preparation["conditions"] if item["code"] == "exam_outside_recommendation")
+    assert outside["details"] == {
+        "courseName": "Course 1",
+        "examDate": exam.exam_date.isoformat(),
+        "recommendedStartDate": exam.recommended_start_date.isoformat(),
+        "recommendedEndDate": exam.recommended_end_date.isoformat(),
     }
 
     published = transition_revision(
@@ -136,6 +153,37 @@ def test_direct_first_publication_captures_stable_snapshot_and_nonblocking_condi
     with pytest.raises(LifecycleConflict) as exc_info:
         require_active_working_revision(db, 1, revision["revisionId"])
     assert exc_info.value.code == "revision_not_editable"
+
+
+def test_publication_condition_for_enabled_unscheduled_exam_contains_course_context(db):
+    seed_lifecycle_semester(db, with_schedule=False)
+    db.add(
+        CourseExamConfiguration(
+            course_id=1,
+            semester_id=1,
+            enabled=True,
+            identifier="FINAL",
+            duration_minutes=90,
+            required_capacity=30,
+            exam_type="Written",
+            responsible_lecturer_id=1,
+        )
+    )
+    db.commit()
+    initial = get_lifecycle_overview(db, 1)
+    created = create_working_revision(db, 1, initial["stateToken"])
+    db.commit()
+    revision = created["activeWorkingRevision"]
+
+    preparation = prepare_publication(
+        db,
+        revision["revisionId"],
+        revision["revisionVersion"],
+        created["stateToken"],
+    )
+
+    condition = next(item for item in preparation["conditions"] if item["code"] == "enabled_exam_unscheduled")
+    assert condition["details"]["courseName"] == "Course 1"
 
 
 def test_publication_uses_current_study_type_for_default_generation_constraints(db):

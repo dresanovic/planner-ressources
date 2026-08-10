@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ResourceUsageAssessment } from '../api/resourceCatalog'
+import { label } from '../config/terminology'
 
 export function ResourceRemovalDialog({ resourceName, assessment, onConfirm, onClose }: {
   resourceName: string
@@ -47,12 +48,12 @@ export function ResourceRemovalDialog({ resourceName, assessment, onConfirm, onC
   }, [])
   const willInactivate = assessment.disposition === 'inactivate'
   return <div className="dialog-backdrop" role="presentation"><section ref={dialogRef} className="replacement-dialog resource-removal-dialog" role="dialog" aria-modal="true" aria-labelledby="resource-removal-title">
-    <h2 id="resource-removal-title">Remove {resourceName}?</h2>
-    <p>{willInactivate ? 'This resource is protected and will be placed inactive.' : 'This unused resource will be permanently deleted.'}</p>
-    {assessment.activeCourses.length > 0 && <section><h3>Active courses</h3><ul>{assessment.activeCourses.map((course) => <li key={course.id}>{course.name}</li>)}</ul></section>}
-    {assessment.inactiveCourses.length > 0 && <p>{assessment.inactiveCourses.length} inactive course link{assessment.inactiveCourses.length === 1 ? '' : 's'} will be removed on deletion.</p>}
-    <p>{assessment.sessionUsage.draftSessionCount} saved sessions across {assessment.sessionUsage.draftScheduleCount} schedules.</p>
-    <p>{assessment.examUsage.examSessionCount} saved exams and {assessment.examUsage.currentConfigurationCount} enabled exam configuration{assessment.examUsage.currentConfigurationCount === 1 ? '' : 's'}.</p>
-    <div className="dialog-actions"><button ref={cancelRef} type="button" className="secondary-button" onClick={onClose}>Cancel</button><button type="button" onClick={onConfirm}>{willInactivate ? 'Place inactive' : 'Delete permanently'}</button></div>
+    <h2 id="resource-removal-title">„{resourceName}“ entfernen?</h2>
+    <p>{willInactivate ? 'Diese Ressource wird noch verwendet und deshalb inaktiv gesetzt.' : 'Diese ungenutzte Ressource wird dauerhaft gelöscht.'}</p>
+    {assessment.activeCourses.length > 0 && <section><h3>Aktive {label('course.plural')}</h3><ul>{assessment.activeCourses.map((course) => <li key={course.id}>{course.name}</li>)}</ul></section>}
+    {assessment.inactiveCourses.length > 0 && <p>{assessment.inactiveCourses.length} {assessment.inactiveCourses.length === 1 ? `inaktive Zuordnung zu einer ${label('course.singular')} wird` : `inaktive Zuordnungen zu ${label('course.plural')} werden`} beim Löschen entfernt.</p>}
+    <p>{assessment.sessionUsage.draftSessionCount} gespeicherte Termine in {assessment.sessionUsage.draftScheduleCount} {assessment.sessionUsage.draftScheduleCount === 1 ? 'Planung' : 'Planungen'}.</p>
+    <p>{assessment.examUsage.examSessionCount} {assessment.examUsage.examSessionCount === 1 ? 'gespeicherte Prüfung' : 'gespeicherte Prüfungen'} und {assessment.examUsage.currentConfigurationCount} {assessment.examUsage.currentConfigurationCount === 1 ? 'aktivierte Prüfungskonfiguration' : 'aktivierte Prüfungskonfigurationen'}.</p>
+    <div className="dialog-actions"><button ref={cancelRef} type="button" className="secondary-button" onClick={onClose}>Abbrechen</button><button type="button" onClick={onConfirm}>{willInactivate ? 'Inaktiv setzen' : 'Dauerhaft löschen'}</button></div>
   </section></div>
 }

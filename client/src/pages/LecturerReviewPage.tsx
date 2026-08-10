@@ -13,10 +13,12 @@ import { ScheduleOccurrenceList } from '../components/ScheduleOccurrenceList'
 import { SessionPane } from '../components/SessionPane'
 import { adaptLecturerReviewToWorkspace } from '../components/calendarWorkspaceUtils'
 import '../App.css'
+import { formatCalendarDate, formatViennaDateTime } from '../utils/datePresentation'
+import { label } from '../config/terminology'
 
 
 const UNAVAILABLE_MESSAGE =
-  'This review is unavailable. Contact the planner for a new link.'
+  'Diese Prüfung ist nicht verfügbar. Fordern Sie bei der planenden Person einen neuen Link an.'
 
 type LecturerReviewPageProps = {
   secret: string | null
@@ -117,7 +119,7 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
       if (removedSelected) {
         setFeedbackStatus('')
         setFeedbackError(
-          'The selected assignment is no longer in this review. Its unsent feedback was discarded.',
+          'Der ausgewählte Termin ist in dieser Prüfung nicht mehr enthalten. Die noch nicht gesendete Rückmeldung zu diesem Termin wurde verworfen.',
         )
         focusWorkspaceResults()
       }
@@ -137,8 +139,8 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
         setUnavailable(false)
         setTemporaryError(
           reason instanceof LecturerReviewApiError && reason.status === 429
-            ? 'The review is temporarily unavailable. Please retry shortly.'
-            : 'The review could not be reached. Check your connection and retry.',
+            ? 'Die Terminprüfung ist vorübergehend nicht verfügbar. Warten Sie kurz und laden Sie sie erneut.'
+            : 'Die Terminprüfung konnte nicht erreicht werden. Prüfen Sie die Verbindung und laden Sie sie erneut.',
         )
       }
     } finally {
@@ -227,7 +229,7 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
       setSubmissionIds((current) => ({ ...current, [key]: clientSubmissionId }))
     }
     setPendingKey(key)
-    setFeedbackStatus('Feedback submission pending.')
+    setFeedbackStatus('Die Rückmeldung wird gesendet.')
     setFeedbackError('')
     try {
       const result = await submitPublicLecturerFeedback(secret, {
@@ -251,8 +253,8 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
       )
       setFeedbackStatus(
         result.outcome === 'already_accepted'
-          ? 'Feedback was already accepted.'
-          : 'Feedback accepted.',
+          ? 'Diese Rückmeldung wurde bereits angenommen.'
+          : 'Die Rückmeldung wurde angenommen.',
       )
     } catch (reason) {
       if (reason instanceof LecturerReviewApiError && reason.status === 409) {
@@ -261,16 +263,6 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
           setSelectedRef((current) =>
             current === staleSessionRef ? null : current,
           )
-          setSessionComments((current) => {
-            const next = { ...current }
-            delete next[staleSessionRef]
-            return next
-          })
-          setFlagComments((current) => {
-            const next = { ...current }
-            delete next[staleSessionRef]
-            return next
-          })
           setSubmissionIds((current) =>
             Object.fromEntries(
               Object.entries(current).filter(
@@ -287,9 +279,9 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
           })
         }
         setFeedbackStatus('')
-        setFeedbackError(
-          'The assignment changed. Reload the browser page or reopen the link before submitting feedback.',
-        )
+        setFeedbackError(staleSessionRef !== undefined
+          ? 'Die Terminzuordnung wurde zwischenzeitlich geändert. Ihre noch nicht gesendete Rückmeldung bleibt auf dieser Seite erhalten. Öffnen Sie den Termin erneut, um den Text bei Bedarf zu kopieren, bevor Sie die Browserseite neu laden oder den Link erneut öffnen. Prüfen Sie anschließend den aktuellen Stand.'
+          : 'Der Revisionsstand wurde zwischenzeitlich geändert. Ihr noch nicht gesendeter Revisionskommentar bleibt im Eingabefeld erhalten. Kopieren Sie den Text bei Bedarf, bevor Sie die Browserseite neu laden oder den Link erneut öffnen, und prüfen Sie anschließend den aktuellen Stand.')
         focusWorkspaceResults()
         return
       }
@@ -310,11 +302,9 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
           return next
         })
       }
-      setFeedbackError(
-        reason instanceof Error
-          ? reason.message
-          : 'Feedback was not accepted. Retry this same submission.',
-      )
+      setFeedbackError(retryable
+        ? 'Die Rückmeldung konnte wegen einer Verbindungsstörung nicht bestätigt werden. Verwenden Sie „Erneut versuchen“ für dieselbe Rückmeldung; sie wird nicht absichtlich doppelt angelegt.'
+        : 'Die Rückmeldung wurde nicht angenommen. Prüfen Sie den aktuellen Termin und Ihre Eingabe; die genaue technische Ursache wird nicht angezeigt.')
     } finally {
       setPendingKey(null)
     }
@@ -324,7 +314,7 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
     return (
       <main className="lecturer-review-public lecturer-review-safe-state">
         <section className="review-card" role="alert">
-          <h1>Schedule review unavailable</h1>
+          <h1>Terminprüfung nicht verfügbar</h1>
           <p>{UNAVAILABLE_MESSAGE}</p>
         </section>
       </main>
@@ -335,10 +325,10 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
     return (
       <main className="lecturer-review-public lecturer-review-safe-state">
         <section className="review-card" role="alert">
-          <h1>Schedule review temporarily unavailable</h1>
+          <h1>Terminprüfung vorübergehend nicht verfügbar</h1>
           <p>{temporaryError}</p>
           <button type="button" onClick={() => void load()}>
-            Retry review
+            Erneut laden
           </button>
         </section>
       </main>
@@ -349,8 +339,8 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
     return (
       <main className="lecturer-review-public" aria-busy="true">
         <section className="review-card" role="status">
-          <h1>Loading schedule review</h1>
-          <p>Please wait while the current schedule is checked.</p>
+          <h1>Terminprüfung wird geladen</h1>
+          <p>Bitte warten Sie, während die aktuelle Planung geladen wird.</p>
         </section>
       </main>
     )
@@ -370,12 +360,11 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
   return (
     <main className="lecturer-review-public restricted-calendar-workspace">
       <header className="review-card review-header">
-        <p className="eyebrow">Read-only schedule review</p>
-        <h1>Review your teaching and exam assignments</h1>
+        <p className="eyebrow">Schreibgeschützte Terminprüfung</p>
+        <h1>Lehr- und Prüfungszuordnungen prüfen</h1>
         <p>{review.identityDisclaimer}</p>
         <p>
-          Your comments are advisory. They do not approve, edit, or block
-          publication of this schedule.
+          Ihre Rückmeldungen sind Hinweise. Sie genehmigen, bearbeiten oder blockieren die Veröffentlichung dieser Planung nicht.
         </p>
         <dl className="review-metadata">
           <div>
@@ -383,11 +372,11 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
             <dd>{review.revision.semesterName} · {review.revision.label}</dd>
           </div>
           <div>
-            <dt>State</dt>
+            <dt>Status</dt>
             <dd>{humanize(review.revision.state)}</dd>
           </div>
           <div>
-            <dt>Access expires</dt>
+            <dt>Zugriff gültig bis</dt>
             <dd>
               {formatTimestamp(review.accessExpiresAt, review.timeZone)} ({review.timeZone})
             </dd>
@@ -401,10 +390,10 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
         onRetry={() => undefined}
         accessProfile="lecturer-review"
         fixedContext={(
-          <div className="lecturer-fixed-context" aria-label="Lecturer context">
-            <strong>Lecturer</strong>
+          <div className="lecturer-fixed-context" aria-label={`${label('lecturer.singular')}-Kontext`}>
+            <strong>{label('lecturer.singular')}</strong>
             <span>{review.intendedLecturer}</span>
-            <small>Fixed by this review link</small>
+            <small>Durch diesen Prüfungslink festgelegt</small>
           </div>
         )}
         intendedContext={`${review.revision.semesterName} · ${review.revision.label}`}
@@ -431,8 +420,8 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
               onSelectOccurrence={requestSelection}
               emptyMessage={
                 workspace.occurrences.length === 0
-                  ? 'There are currently no teaching or exam assignments for this lecturer in this revision.'
-                  : 'No sessions match the active filters.'
+                  ? `In dieser Revision gibt es derzeit keine Lehr- oder Prüfungstermine für diese ${label('lecturer.singular')}.`
+                  : 'Kein Termin entspricht den aktiven Filtern.'
               }
             />
           )
@@ -456,7 +445,7 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
                 lecturerName: review.intendedLecturer,
                 revisionLabel: review.revision.label,
                 lifecycleState: review.revision.state,
-                roomName: session?.roomName ?? 'Unavailable',
+                roomName: session?.roomName ?? 'Nicht verfügbar',
                 validationAvailability: review.validationAvailability,
                 validationMessages,
                 feedbackActions: (
@@ -522,8 +511,8 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
       />
 
       <section className="review-card revision-feedback" aria-labelledby="revision-comment">
-        <h2 id="revision-comment">Comment on the revision</h2>
-        <label htmlFor="lecturer-review-revision-comment">Revision comment</label>
+        <h2 id="revision-comment">Rückmeldung zur Revision</h2>
+        <label htmlFor="lecturer-review-revision-comment">Revisionskommentar</label>
         <textarea
           id="lecturer-review-revision-comment"
           maxLength={2000}
@@ -549,11 +538,11 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
             )
           }
         >
-          Submit revision comment
+          Revisionskommentar senden
         </button>
-        <h3>Feedback sent through this link</h3>
+        <h3>Über diesen Link gesendete Rückmeldungen</h3>
         {review.submittedFeedback.length === 0 ? (
-          <p>No feedback has been sent through this link yet.</p>
+          <p>Über diesen Link wurde noch keine Rückmeldung gesendet.</p>
         ) : (
           <ul className="review-feedback-list">
             {review.submittedFeedback.map((item) => (
@@ -580,11 +569,11 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
       )}
       {pendingSelection !== null && (
         <DiscardChangesDialog
-          destinationLabel="the selected schedule context"
-          title="Discard unsent feedback?"
-          description="Your feedback has not been sent. Discard it to continue to the selected schedule context."
-          keepLabel="Keep writing"
-          discardLabel="Discard feedback"
+          destinationLabel="dem ausgewählten Planungskontext"
+          title="Nicht gesendete Rückmeldung verwerfen?"
+          description="Ihre Rückmeldung wurde noch nicht gesendet. Verwerfen Sie sie, um mit dem ausgewählten Planungskontext fortzufahren."
+          keepLabel="Weiter schreiben"
+          discardLabel="Rückmeldung verwerfen"
           restoreFocusTo={pendingSelection.restoreFocusTo}
           onKeepEditing={() => setPendingSelection(null)}
           onDiscard={discardAndContinue}
@@ -627,7 +616,7 @@ function SessionFeedbackActions({
   const id = occurrenceRef.replace(':', '-')
   return (
     <>
-      <label htmlFor={`session-comment-${id}`}>Session comment</label>
+      <label htmlFor={`session-comment-${id}`}>Terminkommentar</label>
       <textarea
         id={`session-comment-${id}`}
         maxLength={2000}
@@ -640,10 +629,10 @@ function SessionFeedbackActions({
         disabled={pending || !sessionComment.trim()}
         onClick={onSubmitComment}
       >
-        Submit session comment
+        Terminkommentar senden
       </button>
       <label htmlFor={`flag-comment-${id}`}>
-        Not possible explanation (optional)
+        Begründung für „Nicht möglich“ (optional)
       </label>
       <textarea
         id={`flag-comment-${id}`}
@@ -653,15 +642,18 @@ function SessionFeedbackActions({
       />
       <span>{flagComment.trim().length} / 2000</span>
       <button type="button" disabled={pending} onClick={onSubmitFlag}>
-        Flag as not possible
+        Als nicht möglich kennzeichnen
       </button>
     </>
   )
 }
 
 function humanize(value: string) {
-  const words = value.replaceAll('_', ' ')
-  return words.charAt(0).toUpperCase() + words.slice(1)
+  return ({
+    draft: 'Entwurf', ready_for_review: 'Bereit zur Prüfung', published: 'Veröffentlicht',
+    revision_comment: 'Revisionskommentar', session_comment: 'Terminkommentar', impossible_session: 'Nicht möglich',
+    teaching: 'Lehrtermin', exam: 'Prüfungstermin',
+  } as Record<string, string>)[value] ?? 'Unbekannter Status'
 }
 
 function publicSessionLabel(review: PublicLecturerReview, sessionRef: string) {
@@ -670,17 +662,14 @@ function publicSessionLabel(review: PublicLecturerReview, sessionRef: string) {
       (candidate) => candidate.sessionRef === sessionRef,
     )
     if (session) {
-      return `Session: ${humanize(session.sessionKind)} · ${course.code} · ${course.title} · ${session.date}, ${session.startTime}–${session.endTime}`
+      return `Termin: ${humanize(session.sessionKind)} · ${course.code} · ${course.title} · ${formatCalendarDate(session.date)}, ${session.startTime}–${session.endTime}`
     }
   }
   const [kind, sourceId] = sessionRef.split(':', 2)
-  return `Session: ${humanize(kind)} session ${sourceId} · No longer in the current assignment projection`
+  return `Termin: ${humanize(kind)} ${sourceId} · Nicht mehr in der aktuellen Zuordnung enthalten`
 }
 
-function formatTimestamp(value: string, timeZone: string) {
-  return new Date(value).toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone,
-  })
+function formatTimestamp(value: string, _timeZone: string) {
+  void _timeZone
+  return formatViennaDateTime(value)
 }

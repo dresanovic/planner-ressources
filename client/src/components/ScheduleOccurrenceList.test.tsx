@@ -39,7 +39,7 @@ it('renders selectable teaching and exam rows in chronological order', () => {
   ])
   act(() => rows[1].click())
   expect(select).toHaveBeenCalledWith('exam:202')
-  expect(rows[1].textContent).toContain('Exam')
+  expect(rows[1].textContent).toContain('Prüfungstermin')
   const list = host.querySelector('[role="list"]')!
   const listItems = list.querySelectorAll(':scope > [role="listitem"]')
   expect(listItems).toHaveLength(2)
@@ -76,11 +76,11 @@ it('keeps keyboard-native button semantics and filtered empty messaging', () => 
         workspace={workspace}
         occurrences={[]}
         onSelectOccurrence={vi.fn()}
-        emptyMessage="No sessions match these filters."
+        emptyMessage="Keine Termine entsprechen diesen Filtern."
       />,
     ),
   )
 
-  expect(host.textContent).toContain('No sessions match these filters.')
+  expect(host.textContent).toContain('Keine Termine entsprechen diesen Filtern.')
   expect(host.querySelector('[data-occurrence-ref]')).toBeNull()
 })

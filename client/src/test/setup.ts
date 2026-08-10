@@ -1,4 +1,12 @@
 import { afterEach } from 'vitest'
+import { initializeTerminology } from '../config/terminology'
+import { terminologyDefaults } from './terminologyDefaults'
+
+try {
+  initializeTerminology({ labels: terminologyDefaults })
+} catch {
+  // Vitest may keep the setup module while reusing an already initialized module.
+}
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean })
   .IS_REACT_ACT_ENVIRONMENT = true

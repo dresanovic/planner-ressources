@@ -9,11 +9,14 @@ services:
       APP_ENV: production
       DATABASE_URL: sqlite:////data/planner.db
       INSTITUTION_TIMEZONE: ${INSTITUTION_TIMEZONE:-Europe/Vienna}
+      CUSTOMER_TERMINOLOGY_FILE: ${CUSTOMER_TERMINOLOGY_FILE:-}
       LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY: ${LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY:?Set LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY in .env}
     ports:
       - "${PLANNER_PORT:-8080}:8080"
     volumes:
       - planner_data:/data
+      # Optional customer terminology (create the host file before uncommenting):
+      # - ./config/terminology-overrides.json:/config/terminology-overrides.json:ro
     security_opt:
       - no-new-privileges:true
     stop_grace_period: 30s

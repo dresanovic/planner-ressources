@@ -80,9 +80,9 @@ describe('AcademicDataPage', () => {
 
   it('renders its controlled category without page-local navigation', async () => {
     await renderPage()
-    expect(document.body.textContent).toContain('Semesters')
-    expect(document.body.textContent).toContain('No semesters yet')
-    expect(document.body.textContent).toContain('Create semester')
+    expect(document.body.textContent).toContain('Semester')
+    expect(document.body.textContent).toContain('Noch keine Semester')
+    expect(document.body.textContent).toContain('Erstellen: Semester')
     expect(document.querySelector('nav')).toBeNull()
   })
 
@@ -92,12 +92,12 @@ describe('AcademicDataPage', () => {
       isActive: true, revision: 1, nameRepairRequired: false, usage,
     }]))
     const root = await renderPage('semesters')
-    act(() => button('Edit')?.click())
-    expect(button('Cancel edit')).toBeDefined()
+    act(() => button('Bearbeiten')?.click())
+    expect(button('Bearbeitung abbrechen')).toBeDefined()
     act(() => root.render(<AcademicDataPage category="cohorts" onCatalogChanged={() => undefined} />))
-    expect(button('Cancel edit')).toBeUndefined()
-    expect(document.body.textContent).toContain('Create cohort')
-    expect(document.body.textContent).not.toContain('Edit cohort')
+    expect(button('Bearbeitung abbrechen')).toBeUndefined()
+    expect(document.body.textContent).toContain('Erstellen: Kohorte')
+    expect(document.body.textContent).not.toContain('Bearbeiten: Kohorte')
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)) })
     expect(mocks.listCohorts).toHaveBeenCalled()
     expect(document.querySelector('nav')).toBeNull()
@@ -132,8 +132,8 @@ describe('AcademicDataPage', () => {
     expect(mocks.listTimeWindows).toHaveBeenCalledWith(1)
     expect(mocks.listTimeWindows).toHaveBeenCalledWith(2)
     expect(document.querySelectorAll('.catalog-list li')).toHaveLength(2)
-    expect(document.body.textContent).toContain('Type 1 · Monday, 08:00–10:00')
-    expect(document.body.textContent).toContain('Type 2 · Tuesday, 08:00–10:00')
+    expect(document.body.textContent).toContain('Type 1 · Montag, 08:00–10:00')
+    expect(document.body.textContent).toContain('Type 2 · Dienstag, 08:00–10:00')
     expect(document.body.textContent).not.toContain('Day 1')
 
     const status = document.querySelector<HTMLSelectElement>('.page-header select')!
@@ -155,9 +155,9 @@ describe('AcademicDataPage', () => {
     mocks.getPlanningOptions.mockResolvedValue({ courses: [], semesters: [], timeWindows: [], lecturers: [{ id: 4, name: 'Ada' }], rooms: [{ id: 5, name: 'R1' }] })
 
     await renderPage('courses')
-    act(() => button('Edit')?.click())
+    act(() => button('Bearbeiten')?.click())
 
-    expect(document.body.textContent).toContain('Assign a Semester to complete repair')
+    expect(document.body.textContent).toContain('Ordnen Sie vor dem Speichern')
     expect(document.querySelector<HTMLSelectElement>('select[name="semesterId"]')?.value).toBe('')
   })
 
@@ -168,9 +168,9 @@ describe('AcademicDataPage', () => {
     mocks.setAcademicLifecycle.mockRejectedValue(new Error('Refresh and review the current record.'))
 
     await renderPage('cohorts')
-    await act(async () => { button('Archive')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Archivieren')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
 
-    expect(document.body.textContent).toContain('Refresh and review the current record.')
+    expect(document.body.textContent).toContain('aktuellen Stand neu')
   })
 
   it('navigates coded Lecturer and Room administration with active-default loading', async () => {
@@ -186,10 +186,10 @@ describe('AcademicDataPage', () => {
   it('retains the selected resource and last-known content when refresh fails', async () => {
     mocks.listLecturers.mockResolvedValueOnce(page([{ id: 1, name: 'Ada', referenceCode: 'A-1', isActive: true, revision: 1 }])).mockRejectedValueOnce(new Error('offline'))
     await renderPage('lecturers')
-    await act(async () => { button('Edit')?.click() })
-    const refresh = button('Refresh')
+    await act(async () => { button('Bearbeiten')?.click() })
+    const refresh = button('Aktualisieren')
     await act(async () => { refresh?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
-    expect(document.body.textContent).toContain('Could not refresh resources')
+    expect(document.body.textContent).toContain('Ressourcen konnten nicht aktualisiert werden')
     expect(document.querySelector<HTMLInputElement>('input[name="name"]')?.value).toBe('Ada')
   })
 
@@ -205,15 +205,15 @@ describe('AcademicDataPage', () => {
     mocks.listUnavailability.mockReturnValueOnce(delayedFirst).mockResolvedValueOnce([secondPeriod])
 
     await renderPage('lecturers')
-    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Bearbeiten')
     await act(async () => { editButtons()[0]?.click() })
     await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
-    expect(document.body.textContent).toContain('Tuesday · 10:00–11:00')
+    expect(document.body.textContent).toContain('Dienstag · 10:00–11:00')
 
     await act(async () => { resolveFirst([firstPeriod]); await delayedFirst })
 
-    expect(document.body.textContent).toContain('Tuesday · 10:00–11:00')
-    expect(document.body.textContent).not.toContain('Monday · 08:00–09:00')
+    expect(document.body.textContent).toContain('Dienstag · 10:00–11:00')
+    expect(document.body.textContent).not.toContain('Montag · 08:00–09:00')
   })
 
   it('ignores an older availability response after returning to the same resource', async () => {
@@ -232,16 +232,16 @@ describe('AcademicDataPage', () => {
       .mockResolvedValueOnce([currentPeriod])
 
     await renderPage('lecturers')
-    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Bearbeiten')
     await act(async () => { editButtons()[0]?.click() })
     await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
     await act(async () => { editButtons()[0]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
-    expect(document.body.textContent).toContain('Wednesday · 12:00–13:00')
+    expect(document.body.textContent).toContain('Mittwoch · 12:00–13:00')
 
     await act(async () => { resolveStale([stalePeriod]); await delayedStale })
 
-    expect(document.body.textContent).toContain('Wednesday · 12:00–13:00')
-    expect(document.body.textContent).not.toContain('Monday · 08:00–09:00')
+    expect(document.body.textContent).toContain('Mittwoch · 12:00–13:00')
+    expect(document.body.textContent).not.toContain('Montag · 08:00–09:00')
   })
 
   it('clears another resource availability when the new selection cannot be loaded', async () => {
@@ -253,14 +253,14 @@ describe('AcademicDataPage', () => {
     mocks.listUnavailability.mockResolvedValueOnce([firstPeriod]).mockRejectedValueOnce(new Error('offline'))
 
     await renderPage('lecturers')
-    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Bearbeiten')
     await act(async () => { editButtons()[0]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
-    expect(document.body.textContent).toContain('Monday · 08:00–09:00')
+    expect(document.body.textContent).toContain('Montag · 08:00–09:00')
 
     await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
 
-    expect(document.body.textContent).toContain('Could not refresh resource availability')
-    expect(document.body.textContent).not.toContain('Monday · 08:00–09:00')
+    expect(document.body.textContent).toContain('Ressourcenverfügbarkeit konnte nicht aktualisiert werden')
+    expect(document.body.textContent).not.toContain('Montag · 08:00–09:00')
   })
 
   it('loads and preserves Course eligibility beside Course administration', async () => {
@@ -268,9 +268,9 @@ describe('AcademicDataPage', () => {
     mocks.listCourses.mockResolvedValue(page([course]))
     mocks.getCourseResourceConfiguration.mockResolvedValue({ courseId: 1, courseRevision: 1, cohortSize: 20, eligibleLecturerIds: [4], eligibleRoomIds: [5], lecturerCandidates: [{ id: 4, name: 'Ada', referenceCode: 'A', kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], roomCandidates: [{ id: 5, name: 'R', referenceCode: 'R', kind: 'room', capacity: 30, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } })
     await renderPage('courses')
-    await act(async () => { button('Edit')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Bearbeiten')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
     expect(mocks.getCourseResourceConfiguration).toHaveBeenCalledWith(1)
-    expect(document.body.textContent).toContain('Eligible lecturers and rooms')
+    expect(document.body.textContent).toContain('Geeignete Lehrende und Räume')
     expect(document.body.textContent).toContain('Ada · A')
   })
 
@@ -283,15 +283,15 @@ describe('AcademicDataPage', () => {
       .mockRejectedValueOnce(new Error('offline'))
 
     await renderPage('courses')
-    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Bearbeiten')
     await act(async () => { editButtons()[0]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
     expect(document.body.textContent).toContain('First Course Lecturer')
 
     await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
 
-    expect(document.body.textContent).toContain('Could not refresh Course eligibility')
+    expect(document.body.textContent).toContain('Ressourceneignung für die ausgewählte Lehrveranstaltung konnte nicht aktualisiert werden')
     expect(document.body.textContent).not.toContain('First Course Lecturer')
-    expect(button('Save eligibility')).toBeUndefined()
+    expect(button('Eignung speichern')).toBeUndefined()
     expect(mocks.updateCourseResourceEligibility).not.toHaveBeenCalled()
   })
 
@@ -307,9 +307,9 @@ describe('AcademicDataPage', () => {
     mocks.updateCourseResourceEligibility.mockReturnValueOnce(firstSave)
 
     await renderPage('courses')
-    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Edit')
+    const editButtons = () => Array.from(document.querySelectorAll('button')).filter((item) => item.textContent === 'Bearbeiten')
     await act(async () => { editButtons()[0]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
-    await act(async () => { button('Save eligibility')?.click() })
+    await act(async () => { button('Eignung speichern')?.click() })
     await act(async () => { editButtons()[1]?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
     expect(document.body.textContent).toContain('Second Lecturer')
 
@@ -317,7 +317,7 @@ describe('AcademicDataPage', () => {
 
     expect(document.body.textContent).toContain('Second Lecturer')
     expect(document.body.textContent).not.toContain('First Lecturer')
-    expect(button('Save eligibility')).toBeDefined()
+    expect(button('Eignung speichern')).toBeDefined()
   })
 
   it('explains Cohort growth room cleanup and Courses left without a Room', async () => {
@@ -333,10 +333,10 @@ describe('AcademicDataPage', () => {
       },
     })
     await renderPage('cohorts')
-    await act(async () => { button('Edit')?.click() })
-    await act(async () => { button('Save changes')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Bearbeiten')?.click() })
+    await act(async () => { button('Änderungen speichern')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
 
-    expect(document.body.textContent).toContain('Removed 1 newly insufficient room relationship')
+    expect(document.body.textContent).toContain('1 wegen zu geringer Kapazität ungültige Raumzuordnung entfernt')
     expect(document.body.textContent).toContain('Advanced Planning')
   })
 
@@ -371,10 +371,10 @@ describe('AcademicDataPage', () => {
     mocks.removeResource.mockResolvedValue({ outcome: 'inactivated', resource: { ...lecturer, isActive: false, revision: 2 }, activeCourses: [], sessionUsage: { draftSessionCount: 2, draftScheduleCount: 1 }, examUsage: { examSessionCount: 0, currentConfigurationCount: 0 } })
 
     await renderPage('lecturers')
-    await act(async () => { button('Remove')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
-    await act(async () => { button('Place inactive')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Entfernen')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Inaktiv setzen')?.click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
 
-    expect(document.querySelector('[role="status"]')?.textContent).toContain('2 saved sessions across 1 schedule')
-    expect(document.querySelector('[role="status"]')?.textContent).not.toContain('active course')
+    expect(document.querySelector('[role="status"]')?.textContent).toContain('2 gespeicherte Termine in 1 Planung')
+    expect(document.querySelector('[role="status"]')?.textContent).not.toContain('aktive Lehrveranstaltung')
   })
 })

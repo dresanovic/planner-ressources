@@ -9,7 +9,7 @@ export function AcademicCatalogList({ records, emptyLabel, onEdit, onDelete, onL
       {records.map((record) => (
         <li key={record.id}>
           <span>{record.name}</span>
-          <span className="catalog-record-actions"><span className="metadata-pill">{record.isActive ? 'Active' : 'Inactive'}</span>{onEdit && <button type="button" className="secondary-button compact-button" onClick={() => onEdit(record)}>Edit</button>}{onLifecycle && <button type="button" className="secondary-button compact-button" onClick={() => onLifecycle(record)}>{record.isActive ? 'Archive' : 'Reactivate'}</button>}{onDelete && <button type="button" className="secondary-button compact-button" onClick={() => onDelete(record)}>Delete</button>}</span>
+          <span className="catalog-record-actions"><span className="metadata-pill">{record.isActive ? 'Aktiv' : 'Inaktiv'}</span>{onEdit && <button type="button" className="secondary-button compact-button" onClick={() => onEdit(record)}>Bearbeiten</button>}{onLifecycle && <button type="button" className="secondary-button compact-button" onClick={() => onLifecycle(record)}>{record.isActive ? 'Archivieren' : 'Reaktivieren'}</button>}{onDelete && <button type="button" className="secondary-button compact-button" onClick={() => onDelete(record)}>Löschen</button>}</span>
         </li>
       ))}
     </ul>

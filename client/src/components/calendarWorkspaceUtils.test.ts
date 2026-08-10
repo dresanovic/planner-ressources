@@ -29,7 +29,8 @@ describe('calendarWorkspaceUtils', () => {
       affectedOccurrenceRefs: ['exam:202'],
       details: {
         kind: 'other',
-        issueCode: 'The assigned room may not have enough capacity.',
+        issueCode:
+          'Betroffen: Data Structures, Termin am 14.12.2026 von 13:00 bis 15:00. Die Raumkapazität reicht möglicherweise nicht aus. Dieser Hinweis blockiert die Rückmeldung nicht.',
       },
     })
     expect(workspace.selectedRevision).toMatchObject({
@@ -59,7 +60,7 @@ describe('calendarWorkspaceUtils', () => {
 
     expect(workspace.filterFacets.validationCategories).not.toContainEqual({
       value: 'none',
-      label: 'No current issue',
+      label: 'Kein aktueller Hinweis',
     })
   })
 
