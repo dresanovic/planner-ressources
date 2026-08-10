@@ -211,6 +211,7 @@ export class LecturerReviewApiError extends Error {
 const SECRET_SHAPE = /^[A-Za-z0-9_-]{43}$/
 const SESSION_REF = /^(teaching|exam):[1-9][0-9]*$/
 const OFFSET_TIMESTAMP = /(?:Z|[+-]\d{2}:\d{2})$/
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 const REVIEW_STATES = new Set([
   'draft',
   'ready_for_review',
@@ -312,7 +313,7 @@ export async function getPublicLecturerReview(
   }
   let response: Response
   try {
-    response = await fetch('/api/public/lecturer-review', {
+    response = await fetch(`${API_BASE}/api/public/lecturer-review`, {
       method: 'GET',
       credentials: 'omit',
       headers: { Authorization: `Bearer ${secret}` },
@@ -352,7 +353,7 @@ export async function submitPublicLecturerFeedback(
   }
   let response: Response
   try {
-    response = await fetch('/api/public/lecturer-review/feedback', {
+    response = await fetch(`${API_BASE}/api/public/lecturer-review/feedback`, {
       method: 'POST',
       credentials: 'omit',
       headers: {
@@ -389,7 +390,7 @@ export async function submitPublicLecturerFeedback(
 async function plannerRequest(path: string, init?: RequestInit): Promise<unknown> {
   let response: Response
   try {
-    response = await fetch(path, init)
+    response = await fetch(`${API_BASE}${path}`, init)
   } catch {
     throw new LecturerReviewApiError(
       0,
