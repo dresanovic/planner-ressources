@@ -467,7 +467,10 @@ def _build_snapshot(
                     "courseId": course.id,
                     "sessionKind": "teaching",
                     "sourceSessionId": None,
-                    "details": {"remainingUnits": remaining},
+                    "details": {
+                        "courseName": course.name,
+                        "remainingUnits": remaining,
+                    },
                 }
             )
         captured_sessions = []
@@ -503,6 +506,8 @@ def _build_snapshot(
                         "sessionKind": "teaching",
                         "sourceSessionId": session.id,
                         "details": {
+                            "courseName": course.name,
+                            "sessionDate": session.date.isoformat(),
                             "alertCode": alert["code"],
                             **alert["details"],
                         },
@@ -599,6 +604,8 @@ def _build_snapshot(
                     "sessionKind": "exam",
                     "sourceSessionId": exam.id,
                     "details": {
+                        "courseName": exam.course.name,
+                        "examDate": exam.exam_date.isoformat(),
                         "issueCode": issue["code"],
                         **issue["details"],
                     },
@@ -616,6 +623,8 @@ def _build_snapshot(
                     "sessionKind": "exam",
                     "sourceSessionId": exam.id,
                     "details": {
+                        "courseName": exam.course.name,
+                        "examDate": exam.exam_date.isoformat(),
                         "recommendedStartDate": exam.recommended_start_date.isoformat(),
                         "recommendedEndDate": exam.recommended_end_date.isoformat(),
                     },
@@ -677,7 +686,12 @@ def _build_snapshot(
                     "courseId": configuration.course_id,
                     "sessionKind": "exam",
                     "sourceSessionId": None,
-                    "details": {"configurationId": configuration.id},
+                    "details": {
+                        "configurationId": configuration.id,
+                        "courseName": course_names.get(
+                            configuration.course_id, "Unbekannte Lehrveranstaltung"
+                        ),
+                    },
                 }
             )
 

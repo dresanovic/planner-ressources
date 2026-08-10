@@ -115,11 +115,11 @@ describe('LecturerReviewPage shared restricted workspace', () => {
     expect(api.getPublicLecturerReview).toHaveBeenCalledWith(
       LECTURER_REVIEW_SECRET_CANARY,
     )
-    expect(document.body.textContent).toContain('Fixed by this review link')
+    expect(document.body.textContent).toContain('Durch diesen Prüfungslink festgelegt')
     expect(document.body.textContent).toContain('Dr Ada Lecturer')
     expect(document.body.textContent).toContain('Algorithms')
     expect(document.body.textContent).toContain('Data Structures')
-    for (const mode of ['Week', 'Day', 'Month', 'List']) {
+    for (const mode of ['Woche', 'Tag', 'Monat', 'Liste']) {
       expect(button(mode)).toBeDefined()
     }
     expect(
@@ -149,7 +149,7 @@ describe('LecturerReviewPage shared restricted workspace', () => {
     await renderPage()
 
     expect(document.body.textContent).toContain(
-      'There are currently no teaching or exam assignments',
+      'derzeit keine Lehr- oder Prüfungstermine',
     )
   })
 
@@ -171,13 +171,13 @@ describe('LecturerReviewPage shared restricted workspace', () => {
 
     await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
     expect(document.querySelector('.session-pane')?.textContent).toContain(
-      'Teaching units',
+      'Lehreinheiten',
     )
     expect(document.querySelector('.session-pane')?.textContent).toContain(
-      'Submit session comment',
+      'Terminkommentar senden',
     )
     expect(document.querySelector('.session-pane')?.textContent).not.toContain(
-      'Edit session',
+      'Termin bearbeiten',
     )
 
     await click(document.querySelector('[data-occurrence-ref="exam:202"]'))
@@ -185,7 +185,7 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       'Written exam',
     )
     expect(document.querySelector('.session-pane')?.textContent).toContain(
-      '120 minutes',
+      '120 Minuten',
     )
   })
 
@@ -200,12 +200,12 @@ describe('LecturerReviewPage shared restricted workspace', () => {
     await click(document.querySelector('[data-occurrence-ref="exam:202"]'))
 
     expect(document.querySelector('[role="dialog"]')?.textContent).toContain(
-      'Discard unsent feedback?',
+      'Nicht gesendete Rückmeldung verwerfen?',
     )
     expect(document.querySelector('.session-pane')?.textContent).toContain(
       'Algorithms',
     )
-    await click(button('Keep writing'))
+    await click(button('Weiter schreiben'))
     expect(draft.value).toBe('Please move this.')
   })
 
@@ -216,27 +216,27 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       '#session-comment-teaching-101',
     )!
     await typeIn(draft, 'Keep this until I decide.')
-    const sessionType = labelledControl<HTMLSelectElement>('Session type')!
+    const sessionType = labelledControl<HTMLSelectElement>('Terminart')!
 
     await change(sessionType, 'exam')
 
     expect(document.querySelector('[role="dialog"]')?.textContent).toContain(
-      'Discard unsent feedback?',
+      'Nicht gesendete Rückmeldung verwerfen?',
     )
     expect(sessionType.value).toBe('')
     expect(document.querySelector('.session-pane')?.textContent).toContain(
       'Algorithms',
     )
-    await click(button('Keep writing'))
+    await click(button('Weiter schreiben'))
     expect(draft.value).toBe('Keep this until I decide.')
     expect(sessionType.value).toBe('')
 
     await change(sessionType, 'exam')
-    await click(button('Discard feedback'))
+    await click(button('Rückmeldung verwerfen'))
 
     expect(sessionType.value).toBe('exam')
     expect(document.querySelector('.session-pane')).toBeNull()
-    expect(document.body.textContent).toContain('1 active filter')
+    expect(document.body.textContent).toContain('1 aktive Filterbedingung')
   })
 
   it('appends accepted feedback locally and performs no projection GET', async () => {
@@ -250,7 +250,7 @@ describe('LecturerReviewPage shared restricted workspace', () => {
     )!
     await typeIn(draft, 'Could this start later?')
 
-    await click(button('Submit session comment'))
+    await click(button('Terminkommentar senden'))
 
     expect(api.submitPublicLecturerFeedback).toHaveBeenCalledOnce()
     expect(api.getPublicLecturerReview).toHaveBeenCalledTimes(1)
@@ -270,9 +270,9 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       '#session-comment-teaching-101',
     )!
     await typeIn(draft, 'Retry me.')
-    await click(button('Submit session comment'))
+    await click(button('Terminkommentar senden'))
     expect(draft.value).toBe('Retry me.')
-    await click(button('Submit session comment'))
+    await click(button('Terminkommentar senden'))
 
     const first = api.submitPublicLecturerFeedback.mock.calls[0][1]
     const second = api.submitPublicLecturerFeedback.mock.calls[1][1]
@@ -297,7 +297,7 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       '#lecturer-review-revision-comment',
     )!
     await typeIn(revisionDraft, 'Keep this revision retry stable.')
-    await click(button('Submit revision comment'))
+    await click(button('Revisionskommentar senden'))
     const firstRevisionSubmission =
       api.submitPublicLecturerFeedback.mock.calls[0][1]
 
@@ -308,10 +308,10 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       )!,
       'This assignment is stale.',
     )
-    await click(button('Submit session comment'))
+    await click(button('Terminkommentar senden'))
     expect(revisionDraft.value).toBe('Keep this revision retry stable.')
 
-    await click(button('Submit revision comment'))
+    await click(button('Revisionskommentar senden'))
     const retriedRevisionSubmission =
       api.submitPublicLecturerFeedback.mock.calls[2][1]
     expect(retriedRevisionSubmission.clientSubmissionId).toBe(
@@ -336,12 +336,38 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       )!,
       'Stale draft.',
     )
-    await click(button('Submit session comment'))
+    await typeIn(
+      document.querySelector<HTMLTextAreaElement>(
+        '#flag-comment-teaching-101',
+      )!,
+      'Stale flag draft.',
+    )
+    await click(button('Terminkommentar senden'))
 
     expect(document.querySelector('.session-pane')).toBeNull()
-    expect(document.body.textContent).toMatch(/reload the browser page|reopen the link/i)
+    expect(document.body.textContent).toContain('noch nicht gesendete Rückmeldung bleibt')
+    expect(document.body.textContent).toContain('Öffnen Sie den Termin erneut')
     expect(api.getPublicLecturerReview).toHaveBeenCalledTimes(1)
     expect(document.activeElement?.hasAttribute('data-workspace-results-heading')).toBe(true)
+
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    expect(document.querySelector<HTMLTextAreaElement>('#session-comment-teaching-101')?.value).toBe('Stale draft.')
+    expect(document.querySelector<HTMLTextAreaElement>('#flag-comment-teaching-101')?.value).toBe('Stale flag draft.')
+  })
+
+  it('preserves a revision draft when its submission becomes stale', async () => {
+    api.submitPublicLecturerFeedback.mockRejectedValueOnce(
+      new LecturerReviewApiError(409, 'The schedule changed.', false, 'REVIEW_REFRESH_REQUIRED'),
+    )
+    await renderPage()
+    const revisionDraft = document.querySelector<HTMLTextAreaElement>('#lecturer-review-revision-comment')!
+    await typeIn(revisionDraft, 'Stale revision draft.')
+
+    await click(button('Revisionskommentar senden'))
+
+    expect(revisionDraft.value).toBe('Stale revision draft.')
+    expect(document.body.textContent).toContain('Revisionskommentar bleibt im Eingabefeld erhalten')
+    expect(document.body.textContent).not.toContain('Öffnen Sie den Termin erneut')
   })
 
   it('announces and focuses results when a newly loaded projection removes the selected assignment', async () => {
@@ -372,7 +398,7 @@ describe('LecturerReviewPage shared restricted workspace', () => {
     })
 
     expect(document.querySelector('.session-pane')).toBeNull()
-    expect(document.body.textContent).toMatch(/selected assignment.*no longer/i)
+    expect(document.body.textContent).toMatch(/ausgewählte Termin.*nicht mehr enthalten/i)
     expect(document.body.textContent).not.toContain(
       'This draft loses its assignment.',
     )
@@ -393,11 +419,11 @@ describe('LecturerReviewPage shared restricted workspace', () => {
     await renderPage()
 
     const current = feedbackItem('Could this session start at 10:00?')!
-    expect(current.textContent).toMatch(/Teaching.*COURSE-42.*Algorithms/i)
-    expect(current.textContent).toContain('2026-10-05')
+    expect(current.textContent).toMatch(/Lehrtermin.*COURSE-42.*Algorithms/i)
+    expect(current.textContent).toContain('05.10.2026')
     const historical = feedbackItem('Historical assignment comment.')!
-    expect(historical.textContent).toContain('Teaching session 999')
-    expect(historical.textContent).toMatch(/no longer.*current assignment projection/i)
+    expect(historical.textContent).toContain('Lehrtermin 999')
+    expect(historical.textContent).toMatch(/nicht mehr.*aktuellen Zuordnung/i)
     expect(historical.textContent).not.toMatch(/planner|capacity|configuration/i)
   })
 
@@ -413,9 +439,9 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       )!,
       'Protected draft.',
     )
-    await click(button('Submit session comment'))
+    await click(button('Terminkommentar senden'))
 
-    expect(document.body.textContent).toContain('Schedule review unavailable')
+    expect(document.body.textContent).toContain('Terminprüfung nicht verfügbar')
     expect(document.body.textContent).not.toContain('Algorithms')
     expect(document.body.textContent).not.toContain('Protected draft.')
   })
@@ -433,7 +459,7 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       await Promise.resolve()
     })
 
-    expect(document.body.textContent).toContain('Schedule review unavailable')
+    expect(document.body.textContent).toContain('Terminprüfung nicht verfügbar')
     expect(document.body.textContent).not.toContain('Algorithms')
   })
 
@@ -456,7 +482,7 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       'Building North, fourth floor, seminar room with a deliberately long name',
     )
     expect(pane?.textContent).toContain('Working R2')
-    expect(pane?.textContent).toContain('Ready for review')
+    expect(pane?.textContent).toContain('Bereit zur Prüfung')
     expect(pane?.textContent).toContain('COURSE-42')
   })
 })

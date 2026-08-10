@@ -1,4 +1,5 @@
 import type { ScheduleLifecycleOverview, ScheduleRevisionSummary, TransitionAction } from '../api/scheduleLifecycle'
+import { formatViennaDateTime } from '../utils/datePresentation'
 
 
 type Props = {
@@ -16,35 +17,35 @@ type Props = {
 export function ScheduleLifecyclePanel({ overview, selectedRevisionId, busy, onStartDraft, onSelectRevision, onPreparePublication, onTransition, onAbandon }: Props) {
   const selected = overview.revisions.find((item) => item.revisionId === selectedRevisionId) ?? overview.activeWorkingRevision ?? overview.currentPublication
   return (
-    <section className="lifecycle-panel" aria-label="Schedule publication lifecycle">
+    <section className="lifecycle-panel" aria-label="Veröffentlichungsstatus der Planung">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Versioned schedule</p>
+          <p className="eyebrow">Versionierte Planung</p>
           <h2>{overview.semesterName}</h2>
         </div>
         {overview.allowedActions.createWorkingRevision && (
-          <button type="button" disabled={busy} onClick={onStartDraft}>{overview.currentPublication ? 'Start new revision' : 'Start Draft'}</button>
+          <button type="button" disabled={busy} onClick={onStartDraft}>{overview.currentPublication ? 'Neue Revision starten' : 'Entwurf starten'}</button>
         )}
       </div>
       <div className="lifecycle-designations">
-        <Designation label="Active working revision" revision={overview.activeWorkingRevision} />
-        <Designation label="Current publication" revision={overview.currentPublication} />
+        <Designation label="Aktive Arbeitsrevision" revision={overview.activeWorkingRevision} />
+        <Designation label="Aktuelle Veröffentlichung" revision={overview.currentPublication} />
       </div>
       {selected && (
         <div className="lifecycle-selected" aria-live="polite">
           <strong>Revision {selected.revisionNumber}</strong>
           <span className={`lifecycle-state state-${selected.state}`}>{stateLabel(selected.state)}</span>
           {selected.allowedActions.preparePublication && (
-            <button type="button" disabled={busy} onClick={() => onPreparePublication(selected)}>Publish revision</button>
+            <button type="button" disabled={busy} onClick={() => onPreparePublication(selected)}>Revision veröffentlichen</button>
           )}
-          {selected.allowedActions.markReady && <button type="button" className="secondary-button" disabled={busy} onClick={() => onTransition(selected, 'mark_ready')}>Mark ready for review</button>}
-          {selected.allowedActions.returnToDraft && <button type="button" className="secondary-button" disabled={busy} onClick={() => onTransition(selected, 'return_to_draft')}>Return to Draft</button>}
-          {selected.allowedActions.abandon && <button type="button" className="destructive-button" disabled={busy} onClick={() => onAbandon(selected)}>Abandon revision</button>}
-          {selected.allowedActions.restore && <button type="button" className="secondary-button" disabled={busy} onClick={() => onTransition(selected, 'restore')}>Restore revision</button>}
+          {selected.allowedActions.markReady && <button type="button" className="secondary-button" disabled={busy} onClick={() => onTransition(selected, 'mark_ready')}>Als prüfbereit markieren</button>}
+          {selected.allowedActions.returnToDraft && <button type="button" className="secondary-button" disabled={busy} onClick={() => onTransition(selected, 'return_to_draft')}>In Entwurf zurücksetzen</button>}
+          {selected.allowedActions.abandon && <button type="button" className="destructive-button" disabled={busy} onClick={() => onAbandon(selected)}>Revision verwerfen</button>}
+          {selected.allowedActions.restore && <button type="button" className="secondary-button" disabled={busy} onClick={() => onTransition(selected, 'restore')}>Revision wiederherstellen</button>}
         </div>
       )}
       {overview.revisions.length > 0 && (
-        <ol className="lifecycle-history" aria-label="Revision history">
+        <ol className="lifecycle-history" aria-label="Revisionsverlauf">
           {overview.revisions.map((revision) => (
             <li key={revision.revisionId} data-revision-id={revision.revisionId}>
               <details>
@@ -54,9 +55,9 @@ export function ScheduleLifecyclePanel({ overview, selectedRevisionId, busy, onS
                 </summary>
                 <div className="lifecycle-event-history">
                   <button type="button" className={revision.revisionId === selected?.revisionId ? 'selected-revision' : 'secondary-button'} disabled={busy || revision.revisionId === selected?.revisionId} onClick={() => onSelectRevision(revision.revisionId)}>
-                    {revision.revisionId === selected?.revisionId ? 'Current selection' : `Open Revision ${revision.revisionNumber}`}
+                    {revision.revisionId === selected?.revisionId ? 'Aktuelle Auswahl' : `Revision ${revision.revisionNumber} öffnen`}
                   </button>
-                  {revision.originRevisionId && <small>Origin revision ID {revision.originRevisionId}</small>}
+                  {revision.originRevisionId && <small>Ursprungsrevision {revision.originRevisionId}</small>}
                   {revision.events.map((event) => <small key={event.eventSequence}>{eventLabel(event.eventType)} <time dateTime={event.occurredAt}>{formatVienna(event.occurredAt)}</time></small>)}
                 </div>
               </details>
@@ -70,17 +71,17 @@ export function ScheduleLifecyclePanel({ overview, selectedRevisionId, busy, onS
 
 
 function Designation({ label, revision }: { label: string; revision: ScheduleRevisionSummary | null }) {
-  return <div className="lifecycle-designation"><span>{label}</span><strong>{revision ? `Revision ${revision.revisionNumber} · ${stateLabel(revision.state)}` : 'None'}</strong></div>
+  return <div className="lifecycle-designation"><span>{label}</span><strong>{revision ? `Revision ${revision.revisionNumber} · ${stateLabel(revision.state)}` : 'Keine'}</strong></div>
 }
 
 function stateLabel(state: ScheduleRevisionSummary['state']) {
-  return ({ draft: 'Draft', ready_for_review: 'Ready for review', published: 'Published', superseded: 'Superseded', abandoned: 'Abandoned' })[state]
+  return ({ draft: 'Entwurf', ready_for_review: 'Bereit zur Prüfung', published: 'Veröffentlicht', superseded: 'Ersetzt', abandoned: 'Verworfen' })[state]
 }
 
 function eventLabel(event: ScheduleRevisionSummary['events'][number]['eventType']) {
-  return ({ created: 'Created', marked_ready: 'Marked ready', returned_to_draft: 'Returned to Draft', published: 'Published', superseded: 'Superseded', abandoned: 'Abandoned', restored: 'Restored' })[event]
+  return ({ created: 'Erstellt', marked_ready: 'Als prüfbereit markiert', returned_to_draft: 'In Entwurf zurückgesetzt', published: 'Veröffentlicht', superseded: 'Ersetzt', abandoned: 'Verworfen', restored: 'Wiederhergestellt' })[event]
 }
 
 function formatVienna(value: string) {
-  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Vienna' }).format(new Date(value)) + ' Europe/Vienna'
+  return `${formatViennaDateTime(value)} Europe/Vienna`
 }

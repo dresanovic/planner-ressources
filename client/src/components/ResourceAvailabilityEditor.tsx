@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import type { UnavailabilityInput, UnavailabilityPeriod } from '../api/resourceCatalog'
 import { formatUnavailabilityPeriod } from '../utils/resourceAvailability'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
+import { EuropeanDateField } from './EuropeanDateField'
 
 function ordered(periods: UnavailabilityPeriod[]) {
   return [...periods].sort((left, right) => {
@@ -36,7 +37,7 @@ export function ResourceAvailabilityEditor({ periods, onCreate, onUpdate, onDele
       if (editing) await onUpdate(editing.id, { ...input(), expectedRevision: editing.revision })
       else await onCreate(input())
       setEditing(null); setWeekdays([]); setStartDate(''); setEndDate(''); setStartTime(''); setEndTime('')
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not save unavailable period.') }
+    } catch { setError('Der Abwesenheitszeitraum konnte nicht gespeichert werden. Ihre Eingaben bleiben erhalten; prüfen Sie die Werte und versuchen Sie es erneut.') }
   }
 
   function edit(period: UnavailabilityPeriod) {
@@ -49,19 +50,19 @@ export function ResourceAvailabilityEditor({ periods, onCreate, onUpdate, onDele
     setError('')
     try {
       await onDelete(period)
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Could not delete unavailable period.')
+    } catch {
+      setError('Der Abwesenheitszeitraum konnte nicht gelöscht werden. Laden Sie den aktuellen Stand neu und prüfen Sie den Eintrag vor einem weiteren Versuch.')
     }
   }
 
-  return <section className="resource-availability"><h3>Unavailable periods</h3>
-    {periods.length === 0 ? <p>No unavailable periods.</p> : <ul className="availability-list">{ordered(periods).map((period) => <li key={period.id}><span>{formatUnavailabilityPeriod(period)}</span><span className="catalog-record-actions"><button type="button" className="secondary-button compact-button" onClick={() => edit(period)}>Edit</button><button type="button" className="secondary-button compact-button" onClick={() => { if (window.confirm('Delete this unavailable period?')) void remove(period) }}>Delete</button></span></li>)}</ul>}
+  return <section className="resource-availability"><h3>Nichtverfügbarkeitszeiträume</h3>
+    {periods.length === 0 ? <p>Keine Nichtverfügbarkeitszeiträume vorhanden.</p> : <ul className="availability-list">{ordered(periods).map((period) => <li key={period.id}><span>{formatUnavailabilityPeriod(period)}</span><span className="catalog-record-actions"><button type="button" className="secondary-button compact-button" onClick={() => edit(period)}>Bearbeiten</button><button type="button" className="secondary-button compact-button" onClick={() => { if (window.confirm('Diesen Nichtverfügbarkeitszeitraum löschen?')) void remove(period) }}>Löschen</button></span></li>)}</ul>}
     <form className="catalog-editor" onSubmit={(event) => void submit(event)}>
-      <label className="catalog-field">Type<select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}><option value="recurring">Recurring weekly</option><option value="dated">Dated</option></select></label>
-      {kind === 'recurring' ? <fieldset><legend>Weekdays</legend><div className="weekday-options">{WEEKDAY_NAMES.map((name, day) => <label key={name}><input type="checkbox" checked={weekdays.includes(day)} onChange={() => setWeekdays((current) => current.includes(day) ? current.filter((value) => value !== day) : [...current, day].sort())} />{name}</label>)}</div></fieldset> : <div className="availability-dates"><label className="catalog-field">Start date<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label className="catalog-field">End date<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div>}
-      <div className="availability-times"><label className="catalog-field">Start time<input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label><label className="catalog-field">End time<input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label></div>
+      <label className="catalog-field">Art<select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}><option value="recurring">Wöchentlich wiederkehrend</option><option value="dated">Datumsbezogen</option></select></label>
+      {kind === 'recurring' ? <fieldset><legend>Wochentage</legend><div className="weekday-options">{WEEKDAY_NAMES.map((name, day) => <label key={name}><input type="checkbox" checked={weekdays.includes(day)} onChange={() => setWeekdays((current) => current.includes(day) ? current.filter((value) => value !== day) : [...current, day].sort())} />{name}</label>)}</div></fieldset> : <div className="availability-dates"><EuropeanDateField id="availability-start" className="catalog-field" label="Beginn" value={startDate} onChange={(value) => setStartDate(value ?? '')} required /><EuropeanDateField id="availability-end" className="catalog-field" label="Ende" value={endDate} onChange={(value) => setEndDate(value ?? '')} min={startDate || undefined} required /></div>}
+      <div className="availability-times"><label className="catalog-field">Beginn<input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label><label className="catalog-field">Ende<input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label></div>
       {error && <p role="alert">{error}</p>}
-      <button type="submit">{editing ? 'Save unavailable period' : 'Add unavailable period'}</button>
+      <button type="submit">{editing ? 'Nichtverfügbarkeitszeitraum speichern' : 'Nichtverfügbarkeitszeitraum hinzufügen'}</button>
     </form>
   </section>
 }

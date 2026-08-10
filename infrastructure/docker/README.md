@@ -90,6 +90,35 @@ $rng.Dispose()
 Keep the resulting value private and unchanged across upgrades. No other
 environment variable is required for the default Europe/Vienna deployment.
 
+## Optional customer terminology
+
+The shipped German terminology is used when `CUSTOMER_TERMINOLOGY_FILE` is
+blank. To select customer-specific terms once for an installation, create
+`config/terminology-overrides.json` beside `compose.yaml`, uncomment the
+read-only `/config/terminology-overrides.json` volume mapping in
+`compose.yaml`, and set:
+
+```text
+CUSTOMER_TERMINOLOGY_FILE=/config/terminology-overrides.json
+```
+
+The JSON object may contain a subset of the stable keys from the shipped
+catalog, for example:
+
+```json
+{
+  "course.singular": "Modul",
+  "course.plural": "Module",
+  "course.navigation": "Module"
+}
+```
+
+Restart the container after changing the file. No image rebuild or database
+change is required. The application refuses to start when the configured file
+is missing, unreadable, malformed, contains unknown keys, or provides blank or
+non-string values. Keep the file source controlled with deployment
+configuration, but do not place secrets in it.
+
 After selecting **Run**, open <http://localhost:8080>. If port `8080` is
 already occupied, use host port `8081` and open
 <http://localhost:8081>.

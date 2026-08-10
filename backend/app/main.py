@@ -28,6 +28,7 @@ from app.api.calendar_workspace import router as calendar_workspace_router
 from app.api.lecturer_review import (
     router as lecturer_review_router,
 )
+from app.api.ui_terminology import router as ui_terminology_router
 from app.db.schema import initialize_database
 from app.db.session import SessionLocal, engine, get_db
 from app.frontend import mount_frontend
@@ -36,10 +37,12 @@ from app.services.lecturer_review import (
     is_stored_lecturer_review_secret,
     source_fingerprint_key_from_environment,
 )
+from app.terminology import load_terminology_from_environment
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    _app.state.ui_terminology = load_terminology_from_environment()
     production = os.getenv("APP_ENV", "").casefold() == "production"
     source_fingerprint_key_from_environment(production=production)
     uses_default_database = get_db not in _app.dependency_overrides
@@ -92,6 +95,7 @@ app.add_middleware(
 _LECTURER_PUBLIC_OPERATIONS = {
     ("GET", "/api/public/lecturer-review"),
     ("POST", "/api/public/lecturer-review/feedback"),
+    ("GET", "/api/public/ui-terminology"),
 }
 
 
@@ -138,6 +142,7 @@ app.include_router(exam_scheduling_router)
 app.include_router(schedule_lifecycle_router)
 app.include_router(calendar_workspace_router)
 app.include_router(lecturer_review_router)
+app.include_router(ui_terminology_router)
 
 
 @app.exception_handler(RequestValidationError)

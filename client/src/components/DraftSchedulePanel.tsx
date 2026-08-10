@@ -12,7 +12,7 @@ import type {
 } from '../api/draftSchedule'
 import type { PlanningOptions, RoomOption } from '../api/planningOptions'
 import type { LecturerRecord } from '../api/resourceCatalog'
-import type { ExamSession } from '../api/examScheduling'
+import type { ExamIssue, ExamSession } from '../api/examScheduling'
 import type { WorkspaceListContext } from './CalendarPlanningWorkspace'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
 import {
@@ -29,11 +29,66 @@ import {
   type EditableDraftSessionRequest,
   type TeachingSessionEditModel,
 } from './sessionEditModel'
+import { formatCalendarDate, formatCalendarDateRange, isIsoCalendarDate } from '../utils/datePresentation'
+import { ActionableProblemList } from './ActionableProblemList'
+import { outsideRecommendedWindowProblem } from './calendarFindingLabel'
+import { EuropeanDateField } from './EuropeanDateField'
+import { safeReasonText, type UserProblem } from '../utils/userProblems'
+import { label } from '../config/terminology'
 
 const EMPTY_ROOMS: RoomOption[] = []
 const EMPTY_LECTURERS: LecturerRecord[] = []
 const EMPTY_COURSE_RESOURCES: PlanningOptions['courseResources'] = []
 const EMPTY_EXAMS: ExamSession[] = []
+
+function examValidityProblem(exam: ExamSession, issue: ExamIssue, courseName: string, index: number): UserProblem {
+  const relatedDate = issue.relatedDate && isIsoCalendarDate(issue.relatedDate)
+    ? formatCalendarDate(issue.relatedDate)
+    : formatCalendarDate(exam.date)
+  const relatedResource = issue.relatedResource?.name
+  const finalTeaching = `${formatCalendarDate(exam.finalTeachingAnchor.date)} um ${exam.finalTeachingAnchor.endTime}`
+  const explanations: Record<string, string> = {
+    FINAL_TEACHING_SESSION_MISSING: 'Der für die Prüfung verwendete letzte Lehrtermin ist nicht mehr vorhanden.',
+    INVALID_EXAM_INTERVAL: 'Der Prüfungszeitraum endet nicht gültig am selben Kalendertag.',
+    OUTSIDE_SEMESTER: `Der Prüfungstermin am ${relatedDate} liegt außerhalb des Semesters.`,
+    BEFORE_FINAL_TEACHING: `Die Prüfung beginnt vor dem Ende des letzten Lehrtermins am ${finalTeaching}.`,
+    RESPONSIBLE_LECTURER_INELIGIBLE: `Die zugeordnete Lehrperson${relatedResource ? ` „${relatedResource}“` : ''} ist nicht aktiv oder für diese Lehrveranstaltung nicht freigegeben.`,
+    ROOM_INELIGIBLE: `Der zugeordnete Raum${relatedResource ? ` „${relatedResource}“` : ''} ist nicht aktiv oder für diese Lehrveranstaltung nicht freigegeben.`,
+    INSUFFICIENT_ROOM_CAPACITY: `Der Raum „${exam.room.name}“ hat ${exam.room.capacity} Plätze; benötigt werden ${exam.requiredCapacity}.`,
+    LECTURER_UNAVAILABLE: `Die zugeordnete Lehrperson${relatedResource ? ` „${relatedResource}“` : ''} ist am ${relatedDate} während des Prüfungszeitraums nicht verfügbar.`,
+    ROOM_UNAVAILABLE: `Der zugeordnete Raum${relatedResource ? ` „${relatedResource}“` : ''} ist am ${relatedDate} während des Prüfungszeitraums nicht verfügbar.`,
+    INSTITUTION_HOLIDAY: `Der Prüfungstermin liegt am ${relatedDate}${issue.holidayName ? ` auf dem Hochschulfeiertag „${issue.holidayName}“` : ' auf einem Hochschulfeiertag'}.`,
+    LECTURER_OCCUPIED: `Die zugeordnete Lehrperson${relatedResource ? ` „${relatedResource}“` : ''} ist am ${relatedDate} zeitgleich einem anderen Termin zugeordnet.`,
+    ROOM_OCCUPIED: `Der zugeordnete Raum${relatedResource ? ` „${relatedResource}“` : ''} ist am ${relatedDate} zeitgleich einem anderen Termin zugeordnet.`,
+    COHORT_OCCUPIED: `Die Kohorte ist am ${relatedDate} zeitgleich einem anderen Termin zugeordnet.`,
+  }
+  const guidance: Record<string, string> = {
+    FINAL_TEACHING_SESSION_MISSING: 'Speichern Sie zuerst den vollständigen Lehrplan und planen Sie die Prüfung anschließend erneut.',
+    INVALID_EXAM_INTERVAL: 'Bearbeiten Sie Startzeit oder Prüfungsanforderung so, dass die Prüfung am selben Kalendertag endet.',
+    OUTSIDE_SEMESTER: 'Bearbeiten Sie die Prüfung und wählen Sie ein Datum innerhalb des Semesters.',
+    BEFORE_FINAL_TEACHING: 'Bearbeiten Sie die Prüfung und wählen Sie einen Zeitpunkt nach dem letzten Lehrtermin.',
+    RESPONSIBLE_LECTURER_INELIGIBLE: 'Wählen Sie beim Bearbeiten eine aktive, für die Lehrveranstaltung freigegebene Lehrperson.',
+    ROOM_INELIGIBLE: 'Wählen Sie beim Bearbeiten einen aktiven, für die Lehrveranstaltung freigegebenen Raum.',
+    INSUFFICIENT_ROOM_CAPACITY: 'Wählen Sie beim Bearbeiten einen Raum mit ausreichender Kapazität.',
+    LECTURER_UNAVAILABLE: 'Ändern Sie beim Bearbeiten die Lehrperson oder den Prüfungszeitpunkt.',
+    ROOM_UNAVAILABLE: 'Ändern Sie beim Bearbeiten den Raum oder den Prüfungszeitpunkt.',
+    INSTITUTION_HOLIDAY: 'Prüfen Sie das Datum und ändern Sie den Termin, wenn die Prüfung nicht am Feiertag stattfinden soll.',
+    LECTURER_OCCUPIED: 'Ändern Sie beim Bearbeiten die Lehrperson oder den Prüfungszeitpunkt.',
+    ROOM_OCCUPIED: 'Ändern Sie beim Bearbeiten den Raum oder den Prüfungszeitpunkt.',
+    COHORT_OCCUPIED: 'Ändern Sie beim Bearbeiten den Prüfungszeitpunkt.',
+  }
+  return {
+    key: `exam-validity-${exam.id}-${issue.code}-${issue.relatedSessionId ?? index}`,
+    tone: 'blocking',
+    title: `Prüfung für „${courseName}“ kann nicht verwendet werden`,
+    details: [
+      `Betroffen ist der Prüfungstermin am ${formatCalendarDate(exam.date)} von ${exam.startTime} bis ${exam.endTime}.`,
+      explanations[issue.code] ?? 'Eine bekannte Prüfungsregel ist nicht erfüllt; die genaue Ursache ist für diese Regel nicht verfügbar.',
+      'Der Fehler blockiert die Verwendung dieses Prüfungstermins. Die gespeicherte Platzierung bleibt erhalten.',
+      guidance[issue.code] ?? 'Öffnen Sie „Bearbeiten“, prüfen Sie die Prüfungsangaben und korrigieren Sie die markierten Werte.',
+    ],
+  }
+}
 
 type DraftSchedulePanelProps = {
   schedules: DraftSchedule[]
@@ -150,8 +205,8 @@ function DraftSchedulePanelStateful({
     <section className={`planner-panel ${isBusy ? 'overview-busy' : ''}`} aria-labelledby="courses-overview-title" aria-busy={isBusy}>
       <div className="panel-toolbar">
         <div>
-          <p className="eyebrow">{contextLabel ?? 'Draft plans'}</p>
-          <h2 id="courses-overview-title">Courses overview</h2>
+          <p className="eyebrow">{contextLabel ?? 'Planungsentwürfe'}</p>
+          <h2 id="courses-overview-title">{label('course.heading')}</h2>
         </div>
       </div>
       {workspaceListContext?.traceTarget && (
@@ -162,88 +217,88 @@ function DraftSchedulePanelStateful({
           ref={listTraceTargetRef}
           data-trace-reference={workspaceListContext.traceTarget.reference}
         >
-          <strong>Affected record</strong>
+          <strong>Betroffener Datensatz</strong>
           <span>{workspaceListContext.traceTarget.label}</span>
           {workspaceListContext.traceTarget.teachingSessionIds.length === 0
             && workspaceListContext.traceTarget.examIds.length === 0
-            && <span>No scheduled session matches the active filters; use the existing course planning controls for this course.</span>}
+            && <span>Kein geplanter Termin entspricht den aktiven Filtern. Verwenden Sie die vorhandenen Planungsfelder für diese {label('course.singular')}.</span>}
         </div>
       )}
 
       {overviewSessions.length > 0 || exams.length > 0 ? (
         <>
-          {workspaceListContext == null && <div className="filter-bar" aria-label="Draft session filters">
+          {workspaceListContext == null && <div className="filter-bar" aria-label="Filter für Entwurfstermine">
             <FilterSelect
-              label="Course"
+              label={label('course.fieldLabel')}
               name="courseId"
               value={filters.courseId}
               options={filterOptions.courses}
               onChange={setFilter}
             />
             <FilterSelect
-              label="Cohort"
+              label={label('cohort.fieldLabel')}
               name="cohortId"
               value={filters.cohortId}
               options={filterOptions.cohorts}
               onChange={setFilter}
             />
             <FilterSelect
-              label="Lecturer"
+              label={label('lecturer.fieldLabel')}
               name="lecturerId"
               value={filters.lecturerId}
               options={filterOptions.lecturers}
               onChange={setFilter}
             />
             <FilterSelect
-              label="Room"
+              label={label('room.fieldLabel')}
               name="roomId"
               value={filters.roomId}
               options={filterOptions.rooms}
               onChange={setFilter}
             />
             <FilterSelect
-              label="Study type"
+              label="Studienart"
               name="studyTypeId"
               value={filters.studyTypeId}
               options={filterOptions.studyTypes}
               onChange={setFilter}
             />
             <button type="button" onClick={() => setFilters({})} disabled={!hasActiveFilters}>
-              Clear filters
+              Filter zurücksetzen
             </button>
           </div>}
 
-          <div className="review-controls" aria-label="Review view mode">
+          <div className="review-controls" aria-label="Ansichtsmodus">
             <button
               type="button"
               className={viewMode === 'list' ? 'active' : ''}
               onClick={() => setViewMode('list')}
             >
-              List
+              Liste
             </button>
             <button
               type="button"
               className={viewMode === 'weekly' ? 'active' : ''}
               onClick={() => setViewMode('weekly')}
             >
-              Weekly
+              Woche
             </button>
           </div>
 
           {visibleSessions.length === 0 ? (
-            visibleExams.length === 0 && <p className="empty-state">No sessions match the active filters.</p>
+            visibleExams.length === 0 && <p className="empty-state">Keine Termine entsprechen den aktiven Filtern.</p>
           ) : viewMode === 'list' ? (
-            <div className="session-table" aria-label="Draft sessions">
+            <div className="session-table" aria-label="Entwurfstermine">
               <div className="session-row session-header">
-                <span>Date</span>
-                <span>Time</span>
-                <span>Length</span>
-                <span>Course</span>
-                <span>Cohort</span>
-                <span>Lecturer</span>
-                <span>Room</span>
-                <span>Study type</span>
-                 {!readOnly && <span>Actions</span>}
+                <span>Datum</span>
+                <span>Zeit</span>
+                <span>Dauer</span>
+                <span>{label('course.tableHeading')}</span>
+                <span>{label('cohort.tableHeading')}</span>
+                <span>{label('lecturer.tableHeading')}</span>
+                <span>{label('room.tableHeading')}</span>
+                <span>Studienart</span>
+                 {!readOnly && <span>Aktionen</span>}
               </div>
               {visibleSessions.map((session) => (
                 editingSessionId === session.id && editDraft ? (
@@ -267,7 +322,7 @@ function DraftSchedulePanelStateful({
                     key={`${session.draftScheduleId}-${session.id}`}
                   >
                     <span>
-                      {session.date}
+                      {formatCalendarDate(session.date)}
                       <SessionAlerts alerts={session.validationAlerts} />
                     </span>
                     <span>{session.startTime}-{session.endTime}</span>
@@ -278,22 +333,22 @@ function DraftSchedulePanelStateful({
                     <span>{resourceLabel(session.room)}</span>
                     <span>{session.context.studyType.name}</span>
                     {!readOnly && <span className="session-actions">
-                      <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>Edit</button>
-                      <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>Delete</button>
+                      <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>Bearbeiten</button>
+                      <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>Löschen</button>
                     </span>}
                   </ScheduleOccurrenceRow>
                 )
               ))}
             </div>
           ) : (
-            <div className="weekly-review" aria-label="Draft sessions by week">
+            <div className="weekly-review" aria-label="Entwurfstermine nach Woche">
               {groupSessionsByWeek(visibleSessions).map((week) => (
                 <section className="week-group" key={week.weekStart}>
-                  <h3>Week of {week.weekStart}</h3>
+                  <h3>Woche ab {formatCalendarDate(week.weekStart)}</h3>
                   <div className="week-days">
                     {week.days.map((day) => (
                       <div className="week-day" key={day.date}>
-                        <h4>{day.date}</h4>
+                        <h4>{formatCalendarDate(day.date)}</h4>
                         {day.sessions.map((session) => (
                           <article className="week-session" key={`${session.draftScheduleId}-${session.id}`}>
                             <strong>
@@ -307,10 +362,10 @@ function DraftSchedulePanelStateful({
                             <span>{session.context.studyType.name}</span>
                             <SessionAlerts alerts={session.validationAlerts} />
                             {!readOnly && <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
-                              Edit
+                              Bearbeiten
                             </button>}
                             {!readOnly && <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>
-                              Delete
+                              Löschen
                             </button>}
                           </article>
                         ))}
@@ -322,21 +377,24 @@ function DraftSchedulePanelStateful({
             </div>
           )}
           {visibleExams.length > 0 && (
-            <div className="session-table exam-session-table" aria-label="Exam sessions">
-              <div className="session-row exam-session-row session-header"><span>Kind</span><span>Date and time</span><span>Lifecycle</span><span>Exam</span><span>Course</span><span>Cohort</span><span>Lecturer</span><span>Room</span>{!readOnly && <span>Actions</span>}</div>
+            <div className="session-table exam-session-table" aria-label="Prüfungstermine">
+              <div className="session-row exam-session-row session-header"><span>Art</span><span>Datum und Uhrzeit</span><span>Status</span><span>Prüfung</span><span>{label('course.tableHeading')}</span><span>{label('cohort.tableHeading')}</span><span>{label('lecturer.tableHeading')}</span><span>{label('room.tableHeading')}</span>{!readOnly && <span>Aktionen</span>}</div>
               {visibleExams.map((exam) => <ScheduleOccurrenceRow className="session-row exam-session-row" occurrenceRef={`exam:${exam.id}`} kind="exam" key={`exam-${exam.id}`}>
-                <span><strong>Exam</strong>{exam.source === 'generated' ? ' · Generated' : ' · Manual'}</span>
-                <span>{exam.date}<br/>{exam.startTime}-{exam.endTime} ({exam.durationMinutes} min)</span>
-                <span className={`exam-lifecycle ${exam.lifecycleStatus}`}>{exam.lifecycleStatus === 'active' ? 'Active' : 'Past'}</span>
-                <span>{exam.configurationIdentifier}<br/>{exam.examType}<small>Recommended {exam.recommendedStartDate}–{exam.recommendedEndDate}{exam.recommendationWasOverridden ? ' (planner override)' : ''}</small><small>Final teaching {exam.finalTeachingAnchor.date} at {exam.finalTeachingAnchor.endTime}</small>{exam.outsideRecommendedWindow && <small className="soft-notice"> Outside recommended window</small>}{exam.validityIssues.map((issue, index) => <small className="validation-alert" key={`${issue.code}-${index}`}>{issue.code.replaceAll('_', ' ')}: {issue.message}</small>)}</span>
-                <span>{examCourseNames[exam.courseId] ?? `Course #${exam.courseId}`}</span><span>{exam.cohort.name}</span><span>{resourceLabel(exam.lecturer)}</span><span>{resourceLabel(exam.room)} · capacity {exam.room.capacity}/{exam.requiredCapacity} required</span>
-                {!readOnly && <span className="session-actions"><button type="button" className="secondary-button compact-button" disabled={isBusy} onClick={()=>onEditExam?.(exam)}>Edit</button><button type="button" className="destructive-button compact-button" disabled={isBusy} onClick={()=>onDeleteExam?.(exam)}>Delete</button></span>}
+                <span><strong>Prüfung</strong>{exam.source === 'generated' ? ' · Erzeugt' : ' · Manuell'}</span>
+                <span>{formatCalendarDate(exam.date)}<br/>{exam.startTime}-{exam.endTime} ({exam.durationMinutes} min)</span>
+                <span className={`exam-lifecycle ${exam.lifecycleStatus}`}>{exam.lifecycleStatus === 'active' ? 'Aktiv' : 'Vergangen'}</span>
+                <span>{exam.configurationIdentifier}<br/>{exam.examType}<small>Empfohlener Zeitraum {formatCalendarDateRange(exam.recommendedStartDate, exam.recommendedEndDate)}{exam.recommendationWasOverridden ? ' (manuell festgelegt)' : ''}</small><small>Letzte Lehrveranstaltung {formatCalendarDate(exam.finalTeachingAnchor.date)} um {exam.finalTeachingAnchor.endTime}</small><ActionableProblemList problems={[
+                  ...(exam.outsideRecommendedWindow ? [outsideRecommendedWindowProblem({ exam, courseName: examCourseNames[exam.courseId] ?? `${label('course.singular')} ${exam.courseId}`, saved: true, editable: !readOnly })] : []),
+                  ...exam.validityIssues.map((issue, index) => examValidityProblem(exam, issue, examCourseNames[exam.courseId] ?? `${label('course.singular')} ${exam.courseId}`, index)),
+                ]} /></span>
+                <span>{examCourseNames[exam.courseId] ?? `${label('course.singular')} #${exam.courseId}`}</span><span>{exam.cohort.name}</span><span>{resourceLabel(exam.lecturer)}</span><span>{resourceLabel(exam.room)} · Kapazität {exam.room.capacity}/{exam.requiredCapacity} erforderlich</span>
+                {!readOnly && <span className="session-actions"><button type="button" className="secondary-button compact-button" disabled={isBusy} onClick={()=>onEditExam?.(exam)}>Bearbeiten</button><button type="button" className="destructive-button compact-button" disabled={isBusy} onClick={()=>onDeleteExam?.(exam)}>Löschen</button></span>}
               </ScheduleOccurrenceRow>)}
             </div>
           )}
         </>
       ) : (
-        <p className="empty-state">No Draft Schedules for this semester yet.</p>
+        <p className="empty-state">Für dieses Semester gibt es noch keine Planungsentwürfe.</p>
       )}
     </section>
   )
@@ -378,7 +436,7 @@ function DraftSchedulePanelStateful({
       await onUpdateSession(editingSessionId, editDraft)
       closeEdit()
     } catch (error) {
-      setEditErrors(Array.isArray(error) ? error : [{ code: 'REQUEST_FAILED', message: 'Could not save edit.' }])
+      setEditErrors(Array.isArray(error) ? error : [{ code: 'REQUEST_FAILED', message: 'Der Termin konnte nicht gespeichert werden. Prüfen Sie die Eingaben und versuchen Sie es erneut.' }])
       setIsSavingEdit(false)
     }
   }
@@ -393,14 +451,14 @@ function SessionAlerts({ alerts }: { alerts: DraftSession['validationAlerts'] })
       {alerts.map((alert) => (
         <details className="validation-alert" key={`${alert.code}-${alert.message}`}>
           <summary>
-            <span className="validation-alert-code">{alert.code.replaceAll('_', ' ')}</span>
-            <span>{alert.message}</span>
+            <span className="validation-alert-code">Hinweis</span>
+            <span>{safeReasonText(alert.code, 'Termin')}{alert.holidayDate ? ` Feiertag „${alert.holidayName ?? 'unbekannt'}“ am ${formatCalendarDate(alert.holidayDate)}.` : ''}</span>
           </summary>
           {alert.relatedSessions.length > 0 && (
             <ul>
               {alert.relatedSessions.map((related) => (
                 <li key={related.sessionId}>
-                  {related.courseName} | {related.date} {related.startTime}-{related.endTime} | {related.cohortName} | {related.lecturerName} | {related.roomName}
+                  {related.courseName} | {formatCalendarDate(related.date)} {related.startTime}-{related.endTime} | {related.cohortName} | {related.lecturerName} | {related.roomName}
                 </li>
               ))}
             </ul>
@@ -430,7 +488,7 @@ function FilterSelect({ label, name, value, options, onChange }: FilterSelectPro
           onChange(name, event.target.value ? Number(event.target.value) : undefined)
         }
       >
-        <option value="">All</option>
+        <option value="">Alle</option>
         {options.map((option) => (
           <option value={option.id} key={option.id}>
             {option.name}
@@ -458,8 +516,8 @@ export function GenerationConstraintEditor({
     <section className="generation-constraints" aria-labelledby="generation-constraints-title">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Generation constraints</p>
-          <h3 id="generation-constraints-title">Inputs for the next draft</h3>
+          <p className="eyebrow">Erzeugungsregeln</p>
+          <h3 id="generation-constraints-title">Eingaben für den nächsten Entwurf</h3>
         </div>
         <button
           type="button"
@@ -467,50 +525,20 @@ export function GenerationConstraintEditor({
           onClick={onClear}
           disabled={isLoading || !constraints.isCustom}
         >
-          Clear custom constraints
+          Benutzerdefinierte Regeln zurücksetzen
         </button>
       </div>
 
       <div className="constraint-grid">
-        <label className="constraint-field">
-          <span>Start date</span>
-          <input
-            type="date"
-            value={constraints.planningPeriod.startDate}
-            onChange={(event) =>
-              onChange({
-                ...constraints,
-                planningPeriod: {
-                  ...constraints.planningPeriod,
-                  startDate: event.target.value,
-                },
-              })
-            }
-          />
-        </label>
-        <label className="constraint-field">
-          <span>End date</span>
-          <input
-            type="date"
-            value={constraints.planningPeriod.endDate}
-            onChange={(event) =>
-              onChange({
-                ...constraints,
-                planningPeriod: {
-                  ...constraints.planningPeriod,
-                  endDate: event.target.value,
-                },
-              })
-            }
-          />
-        </label>
+        <EuropeanDateField id="generation-start-date" label="Beginn" value={constraints.planningPeriod.startDate} onChange={(value) => onChange({ ...constraints, planningPeriod: { ...constraints.planningPeriod, startDate: value ?? '' } })} required />
+        <EuropeanDateField id="generation-end-date" label="Ende" value={constraints.planningPeriod.endDate} min={constraints.planningPeriod.startDate} onChange={(value) => onChange({ ...constraints, planningPeriod: { ...constraints.planningPeriod, endDate: value ?? '' } })} required />
       </div>
 
-      <div className="constraint-window-list" aria-label="Allowed weekly teaching windows">
+      <div className="constraint-window-list" aria-label="Erlaubte wöchentliche Lehrzeitfenster">
         {constraints.allowedTeachingWindows.map((window, index) => (
           <div className="constraint-window-row" key={`${window.weekday}-${index}`}>
             <label className="constraint-field">
-              <span>Weekday</span>
+              <span>Wochentag</span>
               <select
                 value={window.weekday}
                 onChange={(event) =>
@@ -525,7 +553,7 @@ export function GenerationConstraintEditor({
               </select>
             </label>
             <label className="constraint-field">
-              <span>Start</span>
+              <span>Beginn</span>
               <input
                 type="time"
                 value={window.startTime}
@@ -535,7 +563,7 @@ export function GenerationConstraintEditor({
               />
             </label>
             <label className="constraint-field">
-              <span>End</span>
+              <span>Ende</span>
               <input
                 type="time"
                 value={window.endTime}
@@ -550,7 +578,7 @@ export function GenerationConstraintEditor({
               onClick={() => onChange(removeWindow(constraints, index))}
               disabled={constraints.allowedTeachingWindows.length <= 1}
             >
-              Remove
+              Entfernen
             </button>
           </div>
         ))}
@@ -569,7 +597,7 @@ export function GenerationConstraintEditor({
           })
         }
       >
-        Add window
+        Zeitfenster hinzufügen
       </button>
     </section>
   )
@@ -611,7 +639,7 @@ type FilterOptions = {
 
 function buildFilterOptions(sessions: TeachingSessionEditModel[], schedules: DraftSchedule[], exams: ExamSession[] = [], examCourseNames: Record<number, string> = {}): FilterOptions {
   return {
-    courses: uniqueEntities([...schedules.map((schedule) => schedule.context.course), ...exams.map((exam) => ({ id: exam.courseId, name: examCourseNames[exam.courseId] ?? `Course #${exam.courseId}` }))]),
+    courses: uniqueEntities([...schedules.map((schedule) => schedule.context.course), ...exams.map((exam) => ({ id: exam.courseId, name: examCourseNames[exam.courseId] ?? `${label('course.singular')} #${exam.courseId}` }))]),
     cohorts: uniqueEntities([...schedules.map((schedule) => schedule.context.cohort), ...exams.map((exam) => ({ id: exam.cohort.id, name: exam.cohort.name }))]),
     lecturers: uniqueEntities([...sessions.map((session) => ({ id: session.lecturerId, name: resourceLabel(session.lecturer) })), ...exams.map((exam) => ({ id: exam.lecturer.id, name: resourceLabel(exam.lecturer) }))]),
     rooms: uniqueEntities([...sessions.map((session) => ({ id: session.roomId, name: resourceLabel(session.room) })), ...exams.map((exam) => ({ id: exam.room.id, name: resourceLabel(exam.room) }))]),

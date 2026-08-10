@@ -8,6 +8,7 @@ import {
   type ExamSchedulingApiError,
 } from '../api/examScheduling'
 import { ExamGenerationResultSummary } from './ExamGenerationResultSummary'
+import { label } from '../config/terminology'
 
 export function ExamGenerationPanel({
   semesterId,
@@ -46,7 +47,7 @@ export function ExamGenerationPanel({
     if (effectiveSelection.length === selected.length) return
     queueMicrotask(() => {
       setSelected(effectiveSelection)
-      setAnnouncement('Selection updated because one or more courses are no longer eligible.')
+      setAnnouncement(`Die Auswahl wurde aktualisiert, weil mindestens eine ${label('course.singular')} nicht mehr geeignet ist.`)
     })
   }, [effectiveSelection, selected])
 
@@ -56,7 +57,8 @@ export function ExamGenerationPanel({
     try {
       setPreparation(await prepareExamGeneration(semesterId, scheduleRevisionId, effectiveSelection))
     } catch (reason) {
-      setError((reason as ExamSchedulingApiError).errors?.map((item) => item.message).join(' ') || 'Could not prepare exams.')
+      const failure = reason as ExamSchedulingApiError
+      setError(failure.status === 409 ? 'Die Prüfungsdaten wurden zwischenzeitlich geändert. Laden Sie den aktuellen Stand und bereiten Sie die Prüfungen erneut vor.' : 'Die Prüfungen konnten nicht vorbereitet werden. Ihre Auswahl bleibt erhalten; prüfen Sie die verfügbaren Lehrveranstaltungen und versuchen Sie es erneut.')
     } finally {
       setBusy(false)
     }
@@ -84,7 +86,8 @@ export function ExamGenerationPanel({
       setSelected([])
       await onChanged(value)
     } catch (reason) {
-      setError((reason as ExamSchedulingApiError).errors?.map((item) => item.message).join(' ') || 'Could not generate exams. Prepare again.')
+      const failure = reason as ExamSchedulingApiError
+      setError(failure.status === 409 ? 'Die vorbereiteten Prüfungsdaten sind nicht mehr aktuell. Laden Sie den aktuellen Stand und bereiten Sie die Prüfungen erneut vor.' : 'Die Prüfungen konnten nicht erzeugt werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand, bevor Sie die Vorbereitung wiederholen.')
       setPreparation(null)
     } finally {
       setBusy(false)
@@ -105,33 +108,33 @@ export function ExamGenerationPanel({
           />
           <span>{course.courseName}</span>
         </label>
-        {!selectable && <small>{course.generationEligibility.message ?? course.generationEligibility.code ?? 'Exam generation is unavailable.'}</small>}
+        {!selectable && <small>Für diese Lehrveranstaltung ist die Prüfungserzeugung derzeit nicht verfügbar. Prüfen und speichern Sie zuerst die Prüfungsanforderung und den letzten Lehrtermin.</small>}
       </div>
     )
   }
 
   return (
     <section className="exam-card" aria-labelledby="exam-generation-title">
-      <h3 id="exam-generation-title">Prepare exams</h3>
-      <p className="constraint-note">Select 1–100 eligible courses. Unavailable courses remain visible with their current reason.</p>
+      <h3 id="exam-generation-title">Prüfungen vorbereiten</h3>
+      <p className="constraint-note">Wählen Sie 1–100 geeignete {label('course.plural')}. Nicht verfügbare {label('course.plural')} bleiben mit dem aktuellen Grund sichtbar.</p>
       <div className="course-picker exam-generation-courses">
-        <section aria-labelledby="eligible-exam-courses"><h4 id="eligible-exam-courses">Eligible courses</h4>{eligibleCourses.length ? eligibleCourses.map((course) => courseChoice(course, true)) : <p>No courses are currently eligible. Configure a requirement and save final teaching first.</p>}</section>
-        <section aria-labelledby="unavailable-exam-courses"><h4 id="unavailable-exam-courses">Unavailable courses</h4>{unavailableCourses.length ? unavailableCourses.map((course) => courseChoice(course, false)) : <p>All configured courses are eligible.</p>}</section>
+        <section aria-labelledby="eligible-exam-courses"><h4 id="eligible-exam-courses">Geeignete {label('course.plural')}</h4>{eligibleCourses.length ? eligibleCourses.map((course) => courseChoice(course, true)) : <p>Derzeit ist keine {label('course.singular')} geeignet. Konfigurieren Sie zuerst eine Prüfungsanforderung und speichern Sie den letzten Lehrtermin.</p>}</section>
+        <section aria-labelledby="unavailable-exam-courses"><h4 id="unavailable-exam-courses">Nicht verfügbare {label('course.plural')}</h4>{unavailableCourses.length ? unavailableCourses.map((course) => courseChoice(course, false)) : <p>Alle konfigurierten {label('course.plural')} sind geeignet.</p>}</section>
       </div>
       <div className="exam-generation-action-context">
-        <p className="selection-count">{effectiveSelection.length} selected</p>
-        {effectiveSelection.length === 0 && <p className="constraint-note">Select at least one eligible course to prepare exams.</p>}
+        <p className="selection-count">{effectiveSelection.length} ausgewählt</p>
+        {effectiveSelection.length === 0 && <p className="constraint-note">Wählen Sie mindestens eine geeignete {label('course.singular')}, um Prüfungen vorzubereiten.</p>}
         {error && <div role="alert" className="alert-item">{error}</div>}
         {preparation ? (
           <div className="replacement-warning">
-            <p>Review {preparation.courses.length} prepared outcomes. Inputs are protected by snapshot tokens.</p>
-            <ul>{preparation.courses.map((course) => <li key={course.courseId}><strong>{course.courseName}</strong>: {course.eligibility.eligible ? 'Ready to generate' : course.eligibility.message ?? course.eligibility.code}</li>)}</ul>
+            <p>Prüfen Sie {preparation.courses.length} vorbereitete Ergebnisse. Die Eingaben sind gegen zwischenzeitliche Änderungen geschützt.</p>
+            <ul>{preparation.courses.map((course) => <li key={course.courseId}><strong>{course.courseName}</strong>: {course.eligibility.eligible ? 'Bereit zur Erzeugung' : 'Derzeit nicht zur Erzeugung geeignet; prüfen Sie die Prüfungsanforderung und den letzten Lehrtermin.'}</li>)}</ul>
             <div className="dialog-actions">
-              <button type="button" className="secondary-button" disabled={busy} onClick={() => setPreparation(null)}>Cancel</button>
-              <button type="button" disabled={busy} onClick={() => void generate()}>{busy ? 'Generating…' : 'Generate confirmed exams'}</button>
+              <button type="button" className="secondary-button" disabled={busy} onClick={() => setPreparation(null)}>Abbrechen</button>
+              <button type="button" disabled={busy} onClick={() => void generate()}>{busy ? 'Wird erzeugt…' : 'Bestätigte Prüfungen erzeugen'}</button>
             </div>
           </div>
-        ) : <button type="button" disabled={disabled || busy || effectiveSelection.length < 1 || effectiveSelection.length > 100} onClick={() => void prepare()}>{busy ? 'Preparing…' : 'Prepare exams'}</button>}
+        ) : <button type="button" disabled={disabled || busy || effectiveSelection.length < 1 || effectiveSelection.length > 100} onClick={() => void prepare()}>{busy ? 'Wird vorbereitet…' : 'Prüfungen vorbereiten'}</button>}
         {result && <ExamGenerationResultSummary result={result} />}
       </div>
       <p className="sr-only" role="status" aria-live="polite">{announcement}</p>

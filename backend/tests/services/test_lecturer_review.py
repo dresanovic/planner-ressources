@@ -388,6 +388,21 @@ def test_public_projection_is_exactly_minimum_scope(db):
     assert public["revision"]["id"] == fixture.working_revision_id
     assert public["revision"]["state"] == "draft"
     assert public["intendedLecturer"] == "Ada Lovelace"
+    assert public["identityDisclaimer"] == (
+        "Dieser Link ist für Ada Lovelace bestimmt; die Identität der "
+        "verwendenden Person wird nicht authentifiziert."
+    )
+    assert {
+        item["value"]: item["label"]
+        for item in public["filterFacets"]["sessionTypes"]
+    } == {"exam": "Prüfungstermin", "teaching": "Lehrtermin"}
+    assert public["filterFacets"]["lifecycleContexts"] == [
+        {"value": "draft", "label": "Entwurf"}
+    ]
+    assert all(
+        "_" not in item["label"]
+        for item in public["filterFacets"]["validationCategories"]
+    )
     assert public["submittedFeedback"] == []
     assert {course["code"] for course in public["courses"]} == {
         "COURSE-1",
@@ -745,6 +760,8 @@ def test_public_validation_sanitizes_cross_scope_counterparts(db):
         if finding["category"] == "room_conflict"
     )
     assert room_conflict["affectedSessionRefs"] == ["teaching:101"]
+    assert "Betroffen:" in room_conflict["message"]
+    assert "Dieser Hinweis blockiert die Rückmeldung nicht" in room_conflict["message"]
     serialized = repr(room_conflict)
     assert "teaching:301" not in serialized
     assert "Grace Hopper" not in serialized

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { LoadedCalendarWorkspace, WorkspaceOccurrence } from '../api/calendarWorkspace'
 import { calendarFindingLabel } from './calendarFindingLabel'
+import { formatCalendarDate, formatCalendarDateRange } from '../utils/datePresentation'
+import { label } from '../config/terminology'
 
 type Props = {
   occurrence: WorkspaceOccurrence
@@ -125,12 +127,12 @@ export function SessionPane({
     >
       <div className="session-pane-heading">
         <div>
-          <p className="eyebrow">{mode === 'editing' ? 'Editing session' : 'Session detail'}</p>
+          <p className="eyebrow">{mode === 'editing' ? 'Termin bearbeiten' : 'Termindetails'}</p>
           <h2 id="session-pane-title" ref={headingRef} tabIndex={-1}>
-            {occurrence.kind === 'teaching' ? 'Teaching session' : 'Exam session'} · {course?.name ?? occurrence.courseRef}
+            {occurrence.kind === 'teaching' ? 'Lehrtermin' : 'Prüfungstermin'} · {course?.name ?? occurrence.courseRef}
           </h2>
         </div>
-        <button type="button" className="session-pane-close" onClick={onRequestClose} disabled={busy} aria-label="Close session pane">×</button>
+        <button type="button" className="session-pane-close" onClick={onRequestClose} disabled={busy} aria-label="Termindetails schließen">×</button>
       </div>
 
       {status && <p className="mutation-feedback" role="status" aria-live="polite">{status}</p>}
@@ -140,24 +142,24 @@ export function SessionPane({
         <>
           <dl className="session-pane-details restricted-session-details">
             <div><dt>Revision</dt><dd>{restrictedReview.revisionLabel}</dd></div>
-            <div><dt>Lifecycle</dt><dd>{stateLabel(restrictedReview.lifecycleState)}</dd></div>
-            <div><dt>Course</dt><dd>{course ? `${course.code} · ${course.name}` : occurrence.courseRef}</dd></div>
-            <div><dt>Study type</dt><dd>{course?.studyType ?? 'Unavailable'}</dd></div>
-            <div><dt>Date and time</dt><dd>{occurrence.date}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
-            <div><dt>Cohort</dt><dd>{occurrence.cohort}</dd></div>
-            <div><dt>Lecturer</dt><dd>{restrictedReview.lecturerName}</dd></div>
-            <div><dt>Room</dt><dd>{restrictedReview.roomName}</dd></div>
+            <div><dt>Status</dt><dd>{stateLabel(restrictedReview.lifecycleState)}</dd></div>
+            <div><dt>{label('course.singular')}</dt><dd>{course ? `${course.code} · ${course.name}` : occurrence.courseRef}</dd></div>
+            <div><dt>Studienart</dt><dd>{course?.studyType ?? 'Nicht verfügbar'}</dd></div>
+            <div><dt>Datum und Uhrzeit</dt><dd>{formatCalendarDate(occurrence.date)}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
+            <div><dt>{label('cohort.singular')}</dt><dd>{occurrence.cohort}</dd></div>
+            <div><dt>{label('lecturer.singular')}</dt><dd>{restrictedReview.lecturerName}</dd></div>
+            <div><dt>{label('room.singular')}</dt><dd>{restrictedReview.roomName}</dd></div>
             {occurrence.kind === 'teaching' ? (
-              <div><dt>Teaching units</dt><dd>{occurrence.teachingUnits}</dd></div>
+              <div><dt>Lehreinheiten</dt><dd>{occurrence.teachingUnits}</dd></div>
             ) : (
               <>
-                <div><dt>Exam type</dt><dd>{occurrence.examType}</dd></div>
-                <div><dt>Duration</dt><dd>{occurrence.durationMinutes} minutes</dd></div>
+                <div><dt>Prüfungsart</dt><dd>{occurrence.examType}</dd></div>
+                <div><dt>Dauer</dt><dd>{occurrence.durationMinutes} Minuten</dd></div>
               </>
             )}
           </dl>
           <section aria-labelledby="session-pane-warnings">
-            <h3 id="session-pane-warnings">Current warnings</h3>
+            <h3 id="session-pane-warnings">Aktuelle Hinweise</h3>
             {restrictedReview.validationMessages.length > 0 ? (
               <ul>
                 {restrictedReview.validationMessages.map((message) => (
@@ -167,10 +169,10 @@ export function SessionPane({
             ) : (
               <p>
                 {restrictedReview.validationAvailability === 'complete'
-                  ? 'No current warnings.'
+                  ? 'Keine aktuellen Hinweise.'
                   : restrictedReview.validationAvailability === 'partial'
-                    ? 'Validation is incomplete; a complete no-issue result is not available.'
-                    : 'Current validation is unavailable.'}
+                    ? 'Die Prüfung ist unvollständig; ein vollständiges Ergebnis ohne Probleme liegt nicht vor.'
+                    : 'Die aktuelle Prüfung ist nicht verfügbar.'}
               </p>
             )}
           </section>
@@ -181,42 +183,42 @@ export function SessionPane({
       ) : mode === 'editing' ? editor : (
         <>
           <dl className="session-pane-details">
-            <div><dt>Lifecycle</dt><dd>{stateLabel(workspace.selectedRevision.lifecycleState)}</dd></div>
-            <div><dt>Revision</dt><dd>R{workspace.selectedRevision.revisionNumber} · {workspace.selectedRevision.designation === 'active_working' ? 'Working' : 'Current Published'}</dd></div>
-            <div><dt>Course</dt><dd>{course?.name ?? occurrence.courseRef}</dd></div>
-            <div><dt>Study type</dt><dd>{course?.studyType ?? 'Unavailable'}</dd></div>
-            <div><dt>Date and time</dt><dd>{occurrence.date}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
-            <div><dt>Cohort</dt><dd>{occurrence.cohort}</dd></div>
-            <div><dt>Lecturer</dt><dd>{occurrence.lecturerRefs.join(', ')}</dd></div>
-            <div><dt>Room</dt><dd>{occurrence.kind === 'exam' ? `${occurrence.assignedRoomName} (${occurrence.roomRef})` : occurrence.roomRef}</dd></div>
+            <div><dt>Status</dt><dd>{stateLabel(workspace.selectedRevision.lifecycleState)}</dd></div>
+            <div><dt>Revision</dt><dd>R{workspace.selectedRevision.revisionNumber} · {workspace.selectedRevision.designation === 'active_working' ? 'Arbeitsrevision' : 'Aktuelle Veröffentlichung'}</dd></div>
+            <div><dt>{label('course.singular')}</dt><dd>{course?.name ?? occurrence.courseRef}</dd></div>
+            <div><dt>Studienart</dt><dd>{course?.studyType ?? 'Nicht verfügbar'}</dd></div>
+            <div><dt>Datum und Uhrzeit</dt><dd>{formatCalendarDate(occurrence.date)}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
+            <div><dt>{label('cohort.singular')}</dt><dd>{occurrence.cohort}</dd></div>
+            <div><dt>{label('lecturer.singular')}</dt><dd>{occurrence.lecturerRefs.join(', ')}</dd></div>
+            <div><dt>{label('room.singular')}</dt><dd>{occurrence.kind === 'exam' ? `${occurrence.assignedRoomName} (${occurrence.roomRef})` : occurrence.roomRef}</dd></div>
             {occurrence.kind === 'teaching' ? (
               <>
-                <div><dt>Teaching units</dt><dd>{occurrence.teachingUnits}</dd></div>
-                {occurrence.source !== undefined && <div><dt>Source</dt><dd>{occurrence.source}</dd></div>}
+                <div><dt>Lehreinheiten</dt><dd>{occurrence.teachingUnits}</dd></div>
+                {occurrence.source !== undefined && <div><dt>Quelle</dt><dd>{sourceLabel(occurrence.source)}</dd></div>}
               </>
             ) : (
               <>
-                <div><dt>Exam type</dt><dd>{occurrence.examType}</dd></div>
-                <div><dt>Duration</dt><dd>{occurrence.durationMinutes} minutes</dd></div>
-                {occurrence.requiredCapacity !== undefined && <div><dt>Capacity</dt><dd>{occurrence.requiredCapacity} required; {occurrence.currentRoomCapacity == null ? 'current room capacity unavailable' : `${occurrence.currentRoomCapacity} current`}</dd></div>}
+                <div><dt>Prüfungsart</dt><dd>{occurrence.examType}</dd></div>
+                <div><dt>Dauer</dt><dd>{occurrence.durationMinutes} Minuten</dd></div>
+                {occurrence.requiredCapacity !== undefined && <div><dt>Kapazität</dt><dd>{occurrence.requiredCapacity} erforderlich; {occurrence.currentRoomCapacity == null ? 'aktuelle Raumkapazität nicht verfügbar' : `${occurrence.currentRoomCapacity} aktuell`}</dd></div>}
                 {occurrence.validityContext && <>
-                  <div><dt>Configuration</dt><dd>{detailValue(occurrence.validityContext.configurationIdentifier)} · revision {detailValue(occurrence.validityContext.configurationRevision)}</dd></div>
-                  <div><dt>Final teaching</dt><dd>{detailValue(occurrence.validityContext.finalTeachingDate)} at {detailValue(occurrence.validityContext.finalTeachingEndTime)}</dd></div>
-                  <div><dt>Source</dt><dd>{detailValue(occurrence.validityContext.source)}</dd></div>
+                  <div><dt>Konfiguration</dt><dd>{detailValue(occurrence.validityContext.configurationIdentifier)} · Revision {detailValue(occurrence.validityContext.configurationRevision)}</dd></div>
+                  <div><dt>Letzte Lehrveranstaltung</dt><dd>{formatCalendarDate(occurrence.validityContext.finalTeachingDate)} um {detailValue(occurrence.validityContext.finalTeachingEndTime)}</dd></div>
+                  <div><dt>Quelle</dt><dd>{sourceLabel(detailValue(occurrence.validityContext.source))}</dd></div>
                 </>}
-                {occurrence.recommendationContext && <div><dt>Recommended period</dt><dd>{detailValue(occurrence.recommendationContext.recommendedStartDate)}–{detailValue(occurrence.recommendationContext.recommendedEndDate)}{occurrence.recommendationContext.recommendationWasOverridden ? ' · planner override' : ''}</dd></div>}
+                {occurrence.recommendationContext && <div><dt>Empfohlener Zeitraum</dt><dd>{formatCalendarDateRange(occurrence.recommendationContext.recommendedStartDate, occurrence.recommendationContext.recommendedEndDate)}{occurrence.recommendationContext.recommendationWasOverridden ? ' · manuell festgelegt' : ''}</dd></div>}
               </>
             )}
           </dl>
-          <section aria-labelledby="session-pane-warnings"><h3 id="session-pane-warnings">Current warnings</h3>{findings.length ? <ul>{findings.map((item) => <li key={item.findingRef}>{calendarFindingLabel(item)}</li>)}</ul> : <p>No current warnings.</p>}</section>
+          <section aria-labelledby="session-pane-warnings"><h3 id="session-pane-warnings">Aktuelle Hinweise</h3>{findings.length ? <ul>{findings.map((item) => <li key={item.findingRef}>{calendarFindingLabel(item)}</li>)}</ul> : <p>Keine aktuellen Hinweise.</p>}</section>
           {workspace.selectedRevision.readOnly ? (
-            <p className="read-only-note">Correction actions are unavailable for Current Published. Open the Working revision to make changes.</p>
+            <p className="read-only-note">In der aktuellen Veröffentlichung sind keine Korrekturen möglich. Öffnen Sie die Arbeitsrevision, um Änderungen vorzunehmen.</p>
           ) : actionUnavailableReason ? (
             <p className="read-only-note">{actionUnavailableReason}</p>
           ) : (
             <div className="session-pane-actions">
-              {onRequestEdit && <button type="button" onClick={onRequestEdit}>Edit session</button>}
-              {onRequestDelete && <button type="button" className="destructive-button" onClick={onRequestDelete}>Delete with confirmation</button>}
+              {onRequestEdit && <button type="button" onClick={onRequestEdit}>Termin bearbeiten</button>}
+              {onRequestDelete && <button type="button" className="destructive-button" onClick={onRequestDelete}>Mit Bestätigung löschen</button>}
             </div>
           )}
         </>
@@ -226,12 +228,16 @@ export function SessionPane({
 }
 
 function stateLabel(state: string) {
-  if (state === 'ready_for_review') return 'Ready for review'
-  return state === 'published' ? 'Published' : 'Draft'
+  if (state === 'ready_for_review') return 'Bereit zur Prüfung'
+  return state === 'published' ? 'Veröffentlicht' : 'Entwurf'
 }
 
 function detailValue(value: unknown) {
-  return value == null || value === '' ? 'Unavailable' : String(value)
+  return value == null || value === '' ? 'Nicht verfügbar' : String(value)
+}
+
+function sourceLabel(value: string): string {
+  return ({ generated: 'Erzeugt', manual: 'Manuell' } as Record<string, string>)[value] ?? value
 }
 
 function trapFocus(event: KeyboardEvent, container: HTMLElement | null) {

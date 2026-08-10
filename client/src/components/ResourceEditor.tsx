@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { LecturerInput, ResourceRecord, ResourceType, RoomInput } from '../api/resourceCatalog'
+import { label } from '../config/terminology'
 
 export function ResourceEditor({ resourceType, initial, onSubmit, onCancel }: {
   resourceType: ResourceType
@@ -18,17 +19,17 @@ export function ResourceEditor({ resourceType, initial, onSubmit, onCancel }: {
       const base = { name, referenceCode }
       await onSubmit(resourceType === 'rooms' ? { ...base, capacity: Number(capacity) } : base)
       if (!initial) { setName(''); setReferenceCode(''); setCapacity('') }
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Could not save this resource.')
+    } catch {
+      setError(`Die Ressource „${name || referenceCode}“ konnte nicht gespeichert werden. Ihre Eingaben bleiben erhalten; prüfen Sie die Felder und versuchen Sie es erneut.`)
     } finally { setSaving(false) }
   }
 
-  const singular = resourceType === 'rooms' ? 'room' : 'lecturer'
+  const singular = label(resourceType === 'rooms' ? 'room.singular' : 'lecturer.singular')
   return <form className="catalog-editor" onSubmit={(event) => void submit(event)}>
     <label className="catalog-field">Name<input name="name" value={name} maxLength={200} onChange={(event) => setName(event.target.value)} /></label>
-    <label className="catalog-field">Reference code<input name="referenceCode" value={referenceCode} maxLength={100} onChange={(event) => setReferenceCode(event.target.value)} /></label>
-    {resourceType === 'rooms' && <label className="catalog-field">Capacity<input name="capacity" type="number" min="1" step="1" value={capacity} onChange={(event) => setCapacity(event.target.value)} /></label>}
+    <label className="catalog-field">Referenzcode<input name="referenceCode" value={referenceCode} maxLength={100} onChange={(event) => setReferenceCode(event.target.value)} /></label>
+    {resourceType === 'rooms' && <label className="catalog-field">Kapazität<input name="capacity" type="number" min="1" step="1" value={capacity} onChange={(event) => setCapacity(event.target.value)} /></label>}
     {error && <p role="alert">{error}</p>}
-    <div className="dialog-actions"><button type="button" className="secondary-button" onClick={onCancel}>Cancel</button><button type="submit" disabled={saving}>{initial ? `Save ${singular}` : `Create ${singular}`}</button></div>
+    <div className="dialog-actions"><button type="button" className="secondary-button" onClick={onCancel}>Abbrechen</button><button type="submit" disabled={saving}>{initial ? `${singular} speichern` : `${singular} erstellen`}</button></div>
   </form>
 }

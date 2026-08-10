@@ -92,7 +92,7 @@ export function publicLecturerReviewFixture() {
   return {
     intendedLecturer: 'Dr Ada Lecturer',
     identityDisclaimer:
-      'This link is intended for Dr Ada Lecturer; it does not authenticate the person using it.',
+      'Dieser Link ist für Dr Ada Lecturer bestimmt; die Identität der verwendenden Person wird nicht authentifiziert.',
     revision: lecturerReviewRevisionFixture(),
     accessExpiresAt: EXPIRES_AT,
     timeZone: TIME_ZONE,
@@ -103,7 +103,7 @@ export function publicLecturerReviewFixture() {
       {
         findingRef: 'public-finding:room-capacity',
         category: 'room_capacity' as const,
-        message: 'The assigned room may not have enough capacity.',
+        message: 'Betroffen: Data Structures, Termin am 14.12.2026 von 13:00 bis 15:00. Die Raumkapazität reicht möglicherweise nicht aus. Dieser Hinweis blockiert die Rückmeldung nicht.',
         affectedSessionRefs: ['exam:202'],
       },
     ],
@@ -119,15 +119,15 @@ export function publicLecturerReviewFixture() {
       ],
       studyTypes: [{ value: 'Full-time', label: 'Full-time' }],
       sessionTypes: [
-        { value: 'exam', label: 'Exam' },
-        { value: 'teaching', label: 'Teaching' },
+        { value: 'exam', label: 'Prüfungstermin' },
+        { value: 'teaching', label: 'Lehrtermin' },
       ],
       lifecycleContexts: [
-        { value: 'ready_for_review', label: 'Ready For Review' },
+        { value: 'ready_for_review', label: 'Bereit zur Prüfung' },
       ],
       validationCategories: [
-        { value: 'none', label: 'No current issue' },
-        { value: 'room_capacity', label: 'Room Capacity' },
+        { value: 'none', label: 'Kein aktueller Hinweis' },
+        { value: 'room_capacity', label: 'Raumkapazität' },
       ],
     },
     courses: [
@@ -195,7 +195,7 @@ export function longLabelPublicLecturerReviewFixture() {
   value.intendedLecturer =
     'Dr Ada Lecturer with a deliberately long fixed-context display name'
   value.identityDisclaimer =
-    'This link is intended for Dr Ada Lecturer with a deliberately long fixed-context display name; it does not authenticate the person using it.'
+    'Dieser Link ist für Dr Ada Lecturer with a deliberately long fixed-context display name bestimmt; die Identität der verwendenden Person wird nicht authentifiziert.'
   value.courses[0].title =
     'Algorithms and computational problem solving across extended programme titles'
   value.courses[0].sessions[0].roomName =

@@ -56,6 +56,9 @@ import {
   type ExamPlacementInput,
 } from '../components/examPlacementModel'
 import { ExamDeletionDialog } from '../components/ExamDeletionDialog'
+import { EuropeanDateField } from '../components/EuropeanDateField'
+import { label } from '../config/terminology'
+import { formatCalendarDate, formatCalendarDateRange, parseEuropeanDate } from '../utils/datePresentation'
 import {
   createWorkingRevision,
   getScheduleLifecycle,
@@ -97,8 +100,12 @@ import {
   type LecturerReviewOverview,
 } from '../api/lecturerReview'
 import { LecturerReviewManagement } from '../components/LecturerReviewManagement'
+import { safeReasonText, type UserProblem } from '../utils/userProblems'
 
 type GenerationMode = 'single' | 'batch'
+function revisionStateLabel(state: ScheduleRevisionSummary['state']): string {
+  return ({ draft: 'Entwurf', ready_for_review: 'Bereit zur Prüfung', published: 'Veröffentlicht', superseded: 'Ersetzt', abandoned: 'Verworfen' })[state]
+}
 type SessionDeletionConfirmation = {
   sessionId: number
   draftScheduleId: number
@@ -268,10 +275,15 @@ export function CourseSchedulePage({
       : undefined,
     [semesterCourses, selectedSemesterId, loadedOverviewSemesterId, overviewLoading, overviewRefreshError, schedules],
   )
-  const unavailableDates = useMemo(
-    () => [...new Set(unavailableDatesInput.split(',').map((value) => value.trim()).filter(Boolean))].sort(),
-    [unavailableDatesInput],
-  )
+  const parsedUnavailableDates = useMemo(() => {
+    const tokens = [...new Set(unavailableDatesInput.split(',').map((value) => value.trim()).filter(Boolean))]
+    const invalid = tokens.filter((token) => parseEuropeanDate(token) == null)
+    return {
+      dates: tokens.map((token) => parseEuropeanDate(token)).filter((value): value is string => value != null).sort(),
+      invalid,
+    }
+  }, [unavailableDatesInput])
+  const unavailableDates = parsedUnavailableDates.dates
   const selectedDraft = useMemo(
     () => schedules.find((schedule) => schedule.courseId === selectedCourseId && schedule.semesterId === selectedSemesterId) ?? null,
     [schedules, selectedCourseId, selectedSemesterId],
@@ -350,12 +362,12 @@ export function CourseSchedulePage({
       if (targetExists) {
         setCalendarNavigationStatus('')
         setSelectedOccurrenceRef(pendingReviewNavigation.occurrenceRef)
-        setPaneStatus('Opened the current session from lecturer feedback.')
+        setPaneStatus('Der aktuelle Termin aus der Rückmeldung wurde geöffnet.')
       } else {
         setSelectedOccurrenceRef(null)
         setPaneStatus('')
         setCalendarNavigationStatus(
-          'The current session is no longer available in this revision.',
+          'Der aktuelle Termin ist in dieser Revision nicht mehr verfügbar. Wählen Sie einen anderen Termin oder laden Sie den aktuellen Stand.',
         )
       }
     })
@@ -431,13 +443,13 @@ export function CourseSchedulePage({
       setExamPaneDraft(null)
       setExamPaneBaseline(null)
       setPaneError('')
-      setPaneStatus('Editing ended because the current editable session details are no longer available. Review the refreshed session detail before continuing.')
+      setPaneStatus('Die Bearbeitung wurde beendet, weil die bearbeitbaren Termindetails nicht mehr verfügbar sind. Prüfen Sie vor dem Fortfahren die aktualisierten Termindetails.')
     })
     return () => { current = false }
   }, [paneActionModelAvailable, paneMode, selectedOccurrence])
 
   const intendedCalendarContext = selectedSemester
-    ? `${selectedSemester.name} · ${selectedLifecycleRevision ? `Revision ${selectedLifecycleRevision.revisionNumber} · ${selectedLifecycleRevision.isCurrentPublication ? 'Current Published' : 'Active Working'}` : 'No revision'}`
+    ? `${selectedSemester.name} · ${selectedLifecycleRevision ? `Revision ${selectedLifecycleRevision.revisionNumber} · ${selectedLifecycleRevision.isCurrentPublication ? 'Aktuelle Veröffentlichung' : 'Aktive Arbeitsrevision'}` : 'Keine Revision'}`
     : undefined
 
   useEffect(() => {
@@ -465,7 +477,7 @@ export function CourseSchedulePage({
         setSelectedSemesterId((value) => value ?? initialSemesterId)
         setSelectedCourseId((value) => value ?? options.courses.find((course) => course.semesterId == null || course.semesterId === initialSemesterId)?.id ?? null)
       })
-      .catch(() => current && setErrors([{ code: 'REQUEST_FAILED', message: 'Could not load planning options.' }]))
+      .catch(() => current && setErrors([{ code: 'REQUEST_FAILED', message: 'Die Planungsoptionen konnten nicht geladen werden. Prüfen Sie die Verbindung und laden Sie die Seite erneut.' }]))
       .finally(() => current && setOptionsLoading(false))
     return () => { current = false }
   }, [catalogRevision])
@@ -483,7 +495,7 @@ export function CourseSchedulePage({
       } catch (error) {
         if (!current) return
         setGenerationConstraints(null)
-        setErrors(toFailures(error, 'Could not load generation constraints.'))
+        setErrors(toFailures(error, 'Die Erzeugungsregeln konnten nicht geladen werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.'))
       } finally {
         if (current) setConstraintsLoading(false)
       }
@@ -541,7 +553,7 @@ export function CourseSchedulePage({
     let current = true
     void getScheduleRevision(revisionId)
       .then((content) => { if (current) { setSelectedRevisionContent(content); setRevisionLoadFailure(null) } })
-      .catch((reason: ScheduleLifecycleApiError) => { if (current) setRevisionLoadFailure({ revisionId, message: reason.errors?.map((item) => item.message).join(' ') || 'Could not load the selected revision.' }) })
+      .catch(() => { if (current) setRevisionLoadFailure({ revisionId, message: 'Die ausgewählte Revision konnte nicht geladen werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.' }) })
     return () => { current = false }
   }, [selectedLifecycleRevision?.revisionId, selectedLifecycleRevision?.isActiveWorking, revisionLoadAttempt])
 
@@ -566,7 +578,7 @@ export function CourseSchedulePage({
       .catch(() => {
         if (requestIsCurrent()) {
           setLecturerReviewOverview(null)
-          setLecturerReviewError('Could not load lecturer review links and feedback.')
+          setLecturerReviewError(`Die Zugangslinks und Rückmeldungen der ${label('lecturer.plural')} konnten nicht geladen werden. Prüfen Sie die Verbindung und laden Sie den Bereich erneut.`)
         }
       })
       .finally(() => {
@@ -595,9 +607,9 @@ export function CourseSchedulePage({
       .then((value) => {
         if (calendarRequestSequence.current === sequence) setCalendarWorkspace(value)
       })
-      .catch((reason) => {
+      .catch(() => {
         if (calendarRequestSequence.current === sequence) {
-          setCalendarWorkspaceError(reason instanceof Error ? reason.message : 'Could not load the calendar workspace.')
+          setCalendarWorkspaceError('Der Kalender konnte nicht geladen werden. Die bekannte Listenansicht bleibt erhalten; prüfen Sie die Verbindung und wählen Sie „Erneut laden“.')
         }
       })
       .finally(() => {
@@ -631,11 +643,7 @@ export function CourseSchedulePage({
       return result
     } catch (reason) {
       if (requestIsCurrent()) {
-        setLecturerReviewError(
-          reason instanceof Error
-            ? reason.message
-            : 'Could not issue the lecturer review link.',
-        )
+        setLecturerReviewError('Der Zugangslink konnte nicht erstellt werden. Es wurde kein Link angezeigt; prüfen Sie den aktuellen Stand und versuchen Sie es erneut.')
       }
       throw reason
     } finally {
@@ -658,11 +666,7 @@ export function CourseSchedulePage({
       return result
     } catch (reason) {
       if (requestIsCurrent()) {
-        setLecturerReviewError(
-          reason instanceof Error
-            ? reason.message
-            : 'Could not revoke the lecturer review link.',
-        )
+        setLecturerReviewError('Der Zugangslink konnte nicht widerrufen werden. Prüfen Sie den aktuellen Status, bevor Sie die Aktion wiederholen.')
       }
       throw reason
     } finally {
@@ -688,11 +692,7 @@ export function CourseSchedulePage({
       return result
     } catch (reason) {
       if (requestIsCurrent()) {
-        setLecturerReviewError(
-          reason instanceof Error
-            ? reason.message
-            : 'The replacement result could not be confirmed.',
-        )
+        setLecturerReviewError('Das Ergebnis der Link-Ersetzung ist unbekannt. Laden Sie den aktuellen Stand und prüfen Sie die Link-Historie, bevor Sie erneut ersetzen.')
       }
       throw reason
     } finally {
@@ -703,19 +703,19 @@ export function CourseSchedulePage({
   async function handleExamConfiguration(request: SaveExamConfigurationRequest) {
     if (!selectedCourseId) return
     setExamBusy(true); setExamError('')
-    try { const state=await saveExamConfiguration(selectedCourseId, request); if (!await refreshExamOverview(state.semesterId)) setExamError('The exam requirement was saved, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save exam requirement.'); if (failure.status === 409) await refreshExamOverview(failure.currentState?.semesterId ?? request.semesterId) } finally { setExamBusy(false) }
+    try { const state=await saveExamConfiguration(selectedCourseId, request); if (!await refreshExamOverview(state.semesterId)) setExamError('Die Prüfungsanforderung wurde gespeichert, aber die Semesterübersicht konnte nicht aktualisiert werden. Laden Sie die Prüfungsübersicht neu.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.status === 409 ? 'Die Prüfungsanforderung wurde zwischenzeitlich geändert. Prüfen Sie den neu geladenen Stand und speichern Sie danach erneut.' : 'Die Prüfungsanforderung konnte nicht gespeichert werden. Ihre Eingaben bleiben erhalten; prüfen Sie die Felder und versuchen Sie es erneut.'); if (failure.status === 409) await refreshExamOverview(failure.currentState?.semesterId ?? request.semesterId) } finally { setExamBusy(false) }
   }
 
   async function handleExamPlacement(request: Omit<CreateManualExamRequest, 'scheduleRevisionId'> | Omit<UpdateExamRequest, 'scheduleRevisionId'>) {
     if (!selectedCourseId || !activeScheduleRevisionId) return
     setExamBusy(true); setExamError('')
-    try { const guarded = { ...request, scheduleRevisionId: activeScheduleRevisionId }; const state = examEditor === 'create' ? await createManualExam(selectedCourseId, guarded as CreateManualExamRequest) : await updateExam((examEditor as ExamSession).id, guarded as UpdateExamRequest); if (!await refreshExamOverview(state.semesterId)) setExamError('The exam placement was saved, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save exam placement.'); if (failure.status === 409) { setExamEditor(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
+    try { const guarded = { ...request, scheduleRevisionId: activeScheduleRevisionId }; const state = examEditor === 'create' ? await createManualExam(selectedCourseId, guarded as CreateManualExamRequest) : await updateExam((examEditor as ExamSession).id, guarded as UpdateExamRequest); if (!await refreshExamOverview(state.semesterId)) setExamError('Der Prüfungstermin wurde gespeichert, aber die Semesterübersicht konnte nicht aktualisiert werden. Laden Sie die Prüfungsübersicht neu.'); setExamEditor(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.status === 409 ? 'Der Prüfungstermin wurde zwischenzeitlich geändert. Prüfen Sie den neu geladenen Stand, bevor Sie erneut bearbeiten.' : 'Der Prüfungstermin konnte nicht gespeichert werden. Ihre Eingaben bleiben erhalten; prüfen Sie Datum, Zeit und Ressourcen.'); if (failure.status === 409) { setExamEditor(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
   }
 
   async function confirmExamDeletion() {
     if (!examDeletion || !activeScheduleRevisionId) return
     setExamBusy(true); setExamError('')
-    try { const result = await deleteExam(examDeletion.id, { scheduleRevisionId: activeScheduleRevisionId, confirmed: true, expectedExamRevision: examDeletion.revision, inputSnapshotToken: examDeletion.inputSnapshotToken }); if (!await refreshExamOverview(result.state.semesterId)) setExamError('The exam was deleted, but the semester review could not be refreshed. Retry the exam refresh before continuing.'); setExamDeletion(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.errors?.map((item) => item.message).join(' ') || 'Could not delete exam.'); if (failure.status === 409) { setExamDeletion(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
+    try { const result = await deleteExam(examDeletion.id, { scheduleRevisionId: activeScheduleRevisionId, confirmed: true, expectedExamRevision: examDeletion.revision, inputSnapshotToken: examDeletion.inputSnapshotToken }); if (!await refreshExamOverview(result.state.semesterId)) setExamError('Die Prüfung wurde gelöscht, aber die Semesterübersicht konnte nicht aktualisiert werden. Laden Sie die Prüfungsübersicht neu.'); setExamDeletion(null) } catch (reason) { const failure = reason as ExamSchedulingApiError; setExamError(failure.status === 409 ? 'Die Prüfung wurde zwischenzeitlich geändert. Prüfen Sie den neu geladenen Stand und öffnen Sie den Löschdialog erneut.' : 'Die Prüfung konnte nicht gelöscht werden. Prüfen Sie den aktuellen Stand und versuchen Sie es danach erneut.'); if (failure.status === 409) { setExamDeletion(null); await refreshExamOverview(failure.currentState?.semesterId ?? selectedSemesterId) } } finally { setExamBusy(false) }
   }
 
   async function refreshOverview(semesterId: number, resetInteractions = true) {
@@ -777,7 +777,7 @@ export function CourseSchedulePage({
     } catch (reason) {
       const failure = reason as ScheduleLifecycleApiError
       if (failure.currentOverview) setLifecycleOverview(failure.currentOverview)
-      setLifecycleError(failure.errors?.map((item) => item.message).join(' ') || 'Could not start the Draft revision.')
+      setLifecycleError('Die Arbeitsrevision konnte nicht gestartet werden. Prüfen Sie den aktuellen Revisionsstand und versuchen Sie es erneut.')
     } finally { setLifecycleBusy(false) }
   }
 
@@ -788,7 +788,7 @@ export function CourseSchedulePage({
     catch (reason) {
       const failure = reason as ScheduleLifecycleApiError
       if (failure.currentOverview) setLifecycleOverview(failure.currentOverview)
-      setLifecycleError(failure.errors?.map((item) => item.message).join(' ') || 'Could not prepare publication.')
+      setLifecycleError('Die Veröffentlichung konnte nicht vorbereitet werden. Prüfen Sie die angezeigten Bedingungen und den aktuellen Revisionsstand.')
     } finally { setLifecycleBusy(false) }
   }
 
@@ -806,7 +806,7 @@ export function CourseSchedulePage({
       const failure = reason as ScheduleLifecycleApiError
       setPublicationPreparation(null)
       if (failure.currentOverview) setLifecycleOverview(failure.currentOverview)
-      setLifecycleError(failure.errors?.map((item) => item.message).join(' ') || 'Could not publish the revision. Review the refreshed state and retry.')
+      setLifecycleError('Die Revision konnte nicht veröffentlicht werden. Prüfen Sie den aktualisierten Stand und versuchen Sie es danach erneut.')
       await refreshOverview(selectedSemesterId, false)
     } finally { setLifecycleBusy(false) }
   }
@@ -820,22 +820,22 @@ export function CourseSchedulePage({
       setSelectedLifecycleRevisionId(current.activeWorkingRevision?.revisionId ?? current.currentPublication?.revisionId ?? revision.revisionId)
       setAbandonRevision(null)
       await refreshOverview(selectedSemesterId, false)
-      setProgressAnnouncement(action === 'mark_ready' ? 'Revision marked Ready for review.' : action === 'return_to_draft' ? 'Revision returned to Draft.' : action === 'restore' ? 'Abandoned revision restored as the active Draft.' : 'Revision abandoned. The current publication is unchanged.')
+      setProgressAnnouncement(action === 'mark_ready' ? 'Die Revision wurde als bereit zur Prüfung markiert.' : action === 'return_to_draft' ? 'Die Revision wurde in den Entwurf zurückgesetzt.' : action === 'restore' ? 'Die verworfene Revision wurde als aktiver Entwurf wiederhergestellt.' : 'Die Revision wurde verworfen. Die aktuelle Veröffentlichung bleibt unverändert.')
     } catch (reason) {
       const failure = reason as ScheduleLifecycleApiError
       if (failure.currentOverview) setLifecycleOverview(failure.currentOverview)
-      setLifecycleError(failure.errors?.map((item) => item.message).join(' ') || 'Could not change the revision state.')
+      setLifecycleError('Der Revisionsstatus konnte nicht geändert werden. Prüfen Sie den aktuellen Stand und wiederholen Sie die Aktion danach.')
     } finally { setLifecycleBusy(false) }
   }
 
   async function handleGenerateSingle() {
     if (planningSelectionInvalid) {
       const code = semesterSelectionMissing ? 'SEMESTER_NO_LONGER_AVAILABLE' : courseSelectionInvalid ? 'COURSE_SEMESTER_MISMATCH' : (selectedCourse?.availability?.reasons[0] ?? 'COURSE_UNAVAILABLE')
-      setErrors([{ code, message: 'Choose an available Course and Semester before generating.' }])
+      setErrors([{ code, message: `Wählen Sie vor der Erzeugung eine verfügbare ${label('course.singular')} und ein Semester.` }])
       return
     }
     if (!selectedCourseId || !selectedSemesterId || !generationConstraints || !activeScheduleRevisionId) {
-      setErrors([{ code: 'MISSING_SELECTION', message: 'Select a course and semester.' }])
+      setErrors([{ code: 'MISSING_SELECTION', message: `Wählen Sie eine ${label('course.singular')} und ein Semester.` }])
       return
     }
     setSingleGenerating(true)
@@ -852,7 +852,7 @@ export function CourseSchedulePage({
       setGenerationConstraints(saved)
       await refreshOverview(selectedSemesterId, false)
     } catch (error) {
-      setErrors(toFailures(error, 'Generation failed.'))
+      setErrors(toFailures(error, 'Die Planung konnte nicht erzeugt werden. Prüfen Sie die angezeigten Probleme und versuchen Sie es erneut.'))
     } finally {
       setSingleGenerating(false)
     }
@@ -923,7 +923,7 @@ export function CourseSchedulePage({
       await clearGenerationConstraints(selectedCourseId, selectedSemesterId)
       setGenerationConstraints(await getGenerationConstraints(selectedCourseId, selectedSemesterId))
     } catch (error) {
-      setErrors(toFailures(error, 'Could not clear constraints.'))
+      setErrors(toFailures(error, 'Die benutzerdefinierten Erzeugungsregeln konnten nicht zurückgesetzt werden. Ihre Planung bleibt unverändert; versuchen Sie es erneut.'))
     } finally {
       setConstraintsLoading(false)
     }
@@ -948,10 +948,10 @@ export function CourseSchedulePage({
       const result = await createManualDraftSession(selectedCourseId, { ...payload, scheduleRevisionId: activeScheduleRevisionId })
       const refreshed = await refreshOverview(selectedSemesterId, false)
       setProgressAnnouncement(refreshed
-        ? `Draft Session added. ${result.remainingUnits} units remaining.`
-        : `Draft Session saved, but the overview could not be refreshed. ${result.remainingUnits} units remain in the saved state.`)
+        ? `Entwurfstermin hinzugefügt. ${result.remainingUnits} Lehreinheiten sind noch offen.`
+        : `Der Entwurfstermin wurde gespeichert, aber die Übersicht konnte nicht aktualisiert werden. Im gespeicherten Stand sind ${result.remainingUnits} Lehreinheiten offen; laden Sie die Übersicht erneut.`)
     } catch (error) {
-      setManualErrors(toFailures(error, 'Could not add the Draft Session.'))
+      setManualErrors(toFailures(error, 'Der Entwurfstermin konnte nicht hinzugefügt werden. Prüfen Sie die Eingaben und versuchen Sie es erneut.'))
     } finally {
       setManualSaving(false)
     }
@@ -996,16 +996,16 @@ export function CourseSchedulePage({
       setSessionDeletion(null)
       const refreshed = await refreshOverview(result.semesterId, false)
       setProgressAnnouncement(refreshed
-        ? `Draft Session deleted. ${result.remainingUnits} units remaining.`
-        : `Draft Session deleted, but the overview could not be refreshed. ${result.remainingUnits} units remain in the saved state.`)
+        ? `Entwurfstermin gelöscht. ${result.remainingUnits} Lehreinheiten sind noch offen.`
+        : `Der Entwurfstermin wurde gelöscht, aber die Übersicht konnte nicht aktualisiert werden. Im gespeicherten Stand sind ${result.remainingUnits} Lehreinheiten offen; laden Sie die Übersicht erneut.`)
     } catch (error) {
-      const failures = toFailures(error, 'Could not delete the Draft Session.')
+      const failures = toFailures(error, 'Der Entwurfstermin konnte nicht gelöscht werden. Prüfen Sie den aktuellen Stand und versuchen Sie es erneut.')
       if (failures.some((failure) => failure.code === 'STALE_DRAFT')) {
         setSessionDeletion(null)
         const refreshed = selectedSemesterId ? await refreshOverview(selectedSemesterId, false) : false
         setDeletionNotice(refreshed
-          ? 'The Draft Schedule changed. Review the refreshed state and open deletion again to confirm the current scope.'
-          : 'The Draft Schedule changed, but the current state could not be refreshed. Retry refresh before opening deletion again.')
+          ? 'Der Planungsentwurf wurde zwischenzeitlich geändert. Prüfen Sie den aktualisierten Stand und öffnen Sie den Löschdialog erneut, um den aktuellen Umfang zu bestätigen.'
+          : 'Der Planungsentwurf wurde zwischenzeitlich geändert, aber der aktuelle Stand konnte nicht geladen werden. Laden Sie die Übersicht erneut, bevor Sie den Löschdialog wieder öffnen.')
       } else {
         setDeletionErrors(failures)
       }
@@ -1050,16 +1050,16 @@ export function CourseSchedulePage({
       setCourseDeletion(null)
       const refreshed = await refreshOverview(result.semesterId, false)
       setProgressAnnouncement(refreshed
-        ? `Course Draft Schedule cleared. ${result.remainingUnits} units remaining.`
-        : `Course Draft Schedule cleared, but the overview could not be refreshed. ${result.remainingUnits} units remain in the saved state.`)
+        ? `Der Entwurf für „${courseDeletion.scope.courseName}“ wurde geleert. ${result.remainingUnits} Lehreinheiten sind noch offen.`
+        : `Der Entwurf für „${courseDeletion.scope.courseName}“ wurde geleert, aber die Übersicht konnte nicht aktualisiert werden. Im gespeicherten Stand sind ${result.remainingUnits} Lehreinheiten offen; laden Sie die Übersicht erneut.`)
     } catch (error) {
-      const failures = toFailures(error, 'Could not clear the course Draft Schedule.')
+      const failures = toFailures(error, `Der Entwurf für die ${label('course.singular')} konnte nicht geleert werden. Prüfen Sie den aktuellen Stand und versuchen Sie es erneut.`)
       if (failures.some((failure) => failure.code === 'STALE_DRAFT')) {
         setCourseDeletion(null)
         const refreshed = selectedSemesterId ? await refreshOverview(selectedSemesterId, false) : false
         setDeletionNotice(refreshed
-          ? 'The Draft Schedule changed. Review the refreshed state and open deletion again to confirm the current scope.'
-          : 'The Draft Schedule changed, but the current state could not be refreshed. Retry refresh before opening deletion again.')
+          ? 'Der Planungsentwurf wurde zwischenzeitlich geändert. Prüfen Sie den aktualisierten Stand und öffnen Sie den Löschdialog erneut, um den aktuellen Umfang zu bestätigen.'
+          : 'Der Planungsentwurf wurde zwischenzeitlich geändert, aber der aktuelle Stand konnte nicht geladen werden. Laden Sie die Übersicht erneut, bevor Sie den Löschdialog wieder öffnen.')
       } else {
         setDeletionErrors(failures)
       }
@@ -1102,7 +1102,7 @@ export function CourseSchedulePage({
 
   function requestCourseChange(courseId: number | null) {
     requestPaneIntent({
-      label: 'another course',
+      label: `einer anderen ${label('course.singular')}`,
       commit: () => {
         commitPaneSelection(null)
         setSelectedCourseId(courseId)
@@ -1113,7 +1113,7 @@ export function CourseSchedulePage({
 
   function requestSemesterChange(semesterId: number) {
     requestPaneIntent({
-      label: 'another semester',
+      label: 'einem anderen Semester',
       commit: () => {
         commitPaneSelection(null)
         overviewRefreshSequence.current += 1
@@ -1132,7 +1132,7 @@ export function CourseSchedulePage({
 
   function requestRevisionChange(revisionId: number) {
     requestPaneIntent({
-      label: 'another schedule revision',
+      label: 'einer anderen Planungsrevision',
       commit: () => {
         commitPaneSelection(null)
         lecturerReviewRequestSequence.current += 1
@@ -1155,7 +1155,7 @@ export function CourseSchedulePage({
       return
     }
     requestPaneIntent({
-      label: reference == null ? 'the calendar' : 'another session',
+      label: reference == null ? 'dem Kalender' : 'einem anderen Termin',
       commit: () => commitPaneSelection(reference),
     })
   }
@@ -1165,7 +1165,7 @@ export function CourseSchedulePage({
     occurrenceRef: string
   }) {
     requestPaneIntent({
-      label: 'the current lecturer-feedback session',
+      label: 'dem aktuellen Rückmeldungstermin',
       commit: () => {
         commitPaneSelection(null)
         setPendingReviewNavigation(navigation)
@@ -1205,7 +1205,7 @@ export function CourseSchedulePage({
 
   function requestCancelPaneEdit() {
     requestPaneIntent({
-      label: 'session detail',
+      label: 'den Termindetails',
       commit: clearPaneEditor,
     })
   }
@@ -1222,15 +1222,15 @@ export function CourseSchedulePage({
       })
       const refreshed = selectedSemesterId ? await refreshOverview(selectedSemesterId, false) : false
       setPaneStatus(refreshed
-        ? 'Teaching session saved.'
-        : 'Teaching session saved, but the workspace could not be refreshed. Retry refresh before continuing.')
+        ? 'Der Lehrtermin wurde gespeichert.'
+        : 'Der Lehrtermin wurde gespeichert, aber der Arbeitsbereich konnte nicht aktualisiert werden. Laden Sie ihn vor dem Fortfahren erneut.')
       setPaneMode('detail')
       setTeachingPaneBaseline(teachingPaneDraft)
       setTeachingPaneDraft(null)
     } catch (reason) {
       const failures = Array.isArray(reason)
         ? reason as GenerationFailure[]
-        : [{ code: 'SESSION_UPDATE_FAILED', message: 'Could not save the teaching session.' }]
+        : [{ code: 'SESSION_UPDATE_FAILED', message: 'Der Lehrtermin konnte nicht gespeichert werden. Prüfen Sie die Eingaben und versuchen Sie es erneut.' }]
       setTeachingPaneErrors(failures)
     } finally {
       setSessionUpdating(false)
@@ -1248,14 +1248,14 @@ export function CourseSchedulePage({
       } as UpdateExamRequest)
       const refreshed = await refreshOverview(state.semesterId, false)
       setPaneStatus(refreshed
-        ? 'Exam session saved.'
-        : 'Exam session saved, but the workspace could not be refreshed. Retry refresh before continuing.')
+        ? 'Der Prüfungstermin wurde gespeichert.'
+        : 'Der Prüfungstermin wurde gespeichert, aber der Arbeitsbereich konnte nicht aktualisiert werden. Laden Sie ihn vor dem Fortfahren erneut.')
       setPaneMode('detail')
       setExamPaneBaseline(examPaneDraft)
       setExamPaneDraft(null)
     } catch (reason) {
       const failure = reason as ExamSchedulingApiError
-      setPaneError(failure.errors?.map((item) => item.message).join(' ') || 'Could not save the exam session.')
+      setPaneError(failure.status === 409 ? 'Der Prüfungstermin wurde zwischenzeitlich geändert. Prüfen Sie den neu geladenen Stand.' : 'Der Prüfungstermin konnte nicht gespeichert werden. Ihre Eingaben bleiben erhalten; prüfen Sie die Felder.')
       const conflictSemesterId = failure.currentState?.semesterId ?? selectedSemesterId
       if (failure.status === 409 && conflictSemesterId != null) {
         await refreshOverview(conflictSemesterId, false)
@@ -1319,7 +1319,7 @@ export function CourseSchedulePage({
       error={occurrence.kind === 'teaching' ? paneError : undefined}
       decisionOpen={pendingPaneIntent != null}
       actionUnavailableReason={!loadedCalendarWorkspace.selectedRevision.readOnly && !paneActionModelAvailable
-        ? 'Session actions are unavailable because the editable schedule details could not be loaded. Retry refresh before continuing.'
+        ? 'Terminaktionen sind nicht verfügbar, weil die bearbeitbaren Planungsdetails nicht geladen werden konnten. Laden Sie den Arbeitsbereich vor dem Fortfahren erneut.'
         : undefined}
       onRequestClose={() => requestPaneIntent({
         label: 'the calendar',
@@ -1345,8 +1345,8 @@ export function CourseSchedulePage({
     <>
       <section className="workbench">
         <header className="page-header">
-          <div><h1>Resource Planner</h1><p>Draft schedule generation for one or several courses</p></div>
-          <div className="metadata-pill">{selectedSemester?.name ?? 'No semester selected'}</div>
+          <div><h1>Ressourcenplanung</h1><p>Entwurfsplanung für eine oder mehrere {label('course.plural')}</p></div>
+          <div className="metadata-pill">{selectedSemester?.name ?? 'Kein Semester ausgewählt'}</div>
         </header>
 
         <ScheduleContextHeader
@@ -1360,7 +1360,7 @@ export function CourseSchedulePage({
           revisionId={selectedLifecycleRevision?.revisionId ?? null}
           revisions={(lifecycleOverview?.revisions ?? []).map((revision) => ({
             id: revision.revisionId,
-            label: `Revision ${revision.revisionNumber} · ${revision.state.replaceAll('_', ' ')}`,
+            label: `Revision ${revision.revisionNumber} · ${revisionStateLabel(revision.state)}`,
           }))}
           courseId={selectedCourseId}
           courses={selectableCourses.map((course) => ({
@@ -1368,7 +1368,7 @@ export function CourseSchedulePage({
             label: course.name,
             unavailable: course.availability?.available === false,
             statusLabel: course.id === selectedCourseId && courseSelectionInvalid
-              ? 'not assigned to selected semester'
+              ? 'dem ausgewählten Semester nicht zugeordnet'
               : undefined,
           }))}
           headingRef={scheduleContextHeadingRef}
@@ -1378,30 +1378,30 @@ export function CourseSchedulePage({
         />
         {destination === 'calendar' && <div className="planning-input-visibility">
           <button type="button" className="secondary-button" aria-expanded={planningInputsVisible} aria-controls="planning-inputs" onClick={() => setPlanningInputsVisible((visible) => !visible)}>
-            {planningInputsVisible ? 'Hide Planning inputs' : 'Show Planning inputs'}
+            {planningInputsVisible ? 'Planungseingaben ausblenden' : 'Planungseingaben anzeigen'}
           </button>
         </div>}
 
         <div className="planner-grid" data-planning-inputs-visible={destination === 'calendar' && planningInputsVisible ? 'true' : 'false'}>
           <section id="planning-inputs" className="input-summary" aria-labelledby="input-summary-title" hidden={destination !== 'calendar' || !planningInputsVisible} inert={destination !== 'calendar' || !planningInputsVisible || undefined}>
-            <h2 id="input-summary-title">Planning inputs</h2>
+            <h2 id="input-summary-title">Planungseingaben</h2>
             {planningOptions ? (
               <>
-                <div className="mode-switch" aria-label="Generation mode">
-                  <button type="button" className={mode === 'single' ? 'active' : ''} onClick={() => setMode('single')}>One course</button>
-                  <button type="button" className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Several courses</button>
+                <div className="mode-switch" aria-label="Erzeugungsmodus">
+                  <button type="button" className={mode === 'single' ? 'active' : ''} onClick={() => setMode('single')}>Eine {label('course.singular')}</button>
+                  <button type="button" className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Mehrere {label('course.plural')}</button>
                 </div>
                 <div className="planning-selectors">
-                  {mode === 'single' && <SelectField label="Course" value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ` — unavailable: ${course.availability.reasons.join(', ')}` : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — not assigned to selected Semester' : ''}`} onChange={(value) => requestCourseChange(Number(value))} disabled={contextBusy} />}
-                  <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — unavailable' : ''}`} onChange={(value) => requestSemesterChange(Number(value))} disabled={contextBusy} />
+                  {mode === 'single' && <SelectField label={label('course.fieldLabel')} value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ' — nicht verfügbar' : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — dem ausgewählten Semester nicht zugeordnet' : ''}`} onChange={(value) => requestCourseChange(Number(value))} disabled={contextBusy} />}
+                  <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — nicht verfügbar' : ''}`} onChange={(value) => requestSemesterChange(Number(value))} disabled={contextBusy} />
                 </div>
                 {mode === 'single' ? (
                   <>
-                    <PlanningSummary course={selectedCourse} semester={selectedSemester} progress={selectedProgress} progressUnavailableLabel={overviewRefreshError ? 'Unavailable' : 'Loading...'} />
+                    <PlanningSummary course={selectedCourse} semester={selectedSemester} progress={selectedProgress} progressUnavailableLabel={overviewRefreshError ? 'Nicht verfügbar' : 'Wird geladen…'} />
                     {selectedExamState && <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={examConfigurationBusy} saving={examBusy} onSave={handleExamConfiguration} />}
-                    {selectedExamState?.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Place exam manually</button>}
+                    {selectedExamState?.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Prüfung manuell eintragen</button>}
                     {examError && <div className="alert-item" role="alert">{examError}</div>}
-                    {planningSelectionInvalid && <div className="refresh-error" role="alert">{semesterSelectionMissing ? 'The selected Semester is no longer available. Choose another Semester.' : courseSelectionInvalid ? 'This Course is not assigned to the selected Semester. Choose another Course.' : `This Course is unavailable: ${selectedCourse?.availability?.reasons.join(', ')}`}</div>}
+                    {planningSelectionInvalid && <div className="refresh-error" role="alert">{semesterSelectionMissing ? <p>Das ausgewählte Semester ist nicht mehr verfügbar. Wählen Sie ein anderes Semester.</p> : courseSelectionInvalid ? <p>Diese {label('course.singular')} ist dem ausgewählten Semester nicht zugeordnet. Wählen Sie eine andere {label('course.singular')}.</p> : <><p>Diese {label('course.singular')} ist nicht verfügbar. Prüfen Sie die folgenden Gründe:</p><ul>{selectedCourse?.availability?.reasons.map((reason, index) => <li key={`${reason}-${index}`}>{safeReasonText(reason, selectedCourse.name)}</li>)}</ul></>}</div>}
                     {selectedCourse && selectedSemester && (
                       <ManualSessionEditor
                         key={`${selectedCourse.id}-${selectedSemester.id}-${loadedOverviewSemesterId ?? 'loading'}-${planningOptions.lecturers.map((item) => item.id).join('-')}-${planningOptions.cohorts.map((item) => item.id).join('-')}-${planningOptions.rooms.map((item) => item.id).join('-')}`}
@@ -1418,24 +1418,24 @@ export function CourseSchedulePage({
                         onSubmit={handleCreateManualSession}
                       />
                     )}
-                    <button type="button" className="destructive-button clear-course-draft" onClick={beginCourseDeletion} disabled={writeBusy || !selectedDraft}>Clear course draft</button>
+                    <button type="button" className="destructive-button clear-course-draft" onClick={beginCourseDeletion} disabled={writeBusy || !selectedDraft}>{label('course.singular')}-Entwurf leeren</button>
                     {progressAnnouncement && <p className="mutation-feedback" role="status" aria-live="polite">{progressAnnouncement}</p>}
                     {generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={constraintsLoading || singleGenerating} onChange={setGenerationConstraints} onClear={handleClearGenerationConstraints} />}
                     {errors.length > 0 && <ErrorList errors={errors} />}
                     <button type="button" className="generate-button" onClick={handleGenerateSingle} disabled={writeBusy || constraintsLoading || planningSelectionInvalid}>
-                      {singleGenerating ? 'Generating...' : 'Generate'}
+                      {singleGenerating ? 'Wird erzeugt…' : 'Erzeugen'}
                     </button>
                   </>
                 ) : (
-                  <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
+                  <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
                 )}
                 {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
               </>
-            ) : <p className="empty-state">{optionsLoading ? 'Loading planning options...' : 'Planning options are unavailable.'}</p>}
+            ) : <p className="empty-state">{optionsLoading ? 'Planungsoptionen werden geladen…' : 'Planungsoptionen sind nicht verfügbar.'}</p>}
           </section>
 
           <div className="schedule-results">
-            <section className="schedule-workspace-region calendar-workspace-region" aria-label="Calendar workspace" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
+            <section className="schedule-workspace-region calendar-workspace-region" aria-label="Kalender-Arbeitsbereich" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
             {calendarNavigationStatus && (
               <p
                 className="mutation-feedback calendar-navigation-status"
@@ -1476,21 +1476,21 @@ export function CourseSchedulePage({
                 onDeleteExam={setExamDeletion}
                 examCourseNames={displayExamCourseNames}
                 readOnly={selectedLifecycleRevision?.revisionId !== activeScheduleRevisionId}
-                contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Current publication' : 'Active working revision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
+                contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Aktuelle Veröffentlichung' : 'Aktive Arbeitsrevision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
                 workspaceListContext={workspaceListContext}
               />}
             />}
             </section>
             <section className="schedule-workspace-region versions-workspace-region" aria-labelledby="versions-region-title" hidden={destination !== 'versions'} inert={destination !== 'versions' || undefined}>
-              <h2 id="versions-region-title">Versions</h2>
+              <h2 id="versions-region-title">Versionen</h2>
             {lifecycleOverview && <ScheduleLifecyclePanel overview={lifecycleOverview} selectedRevisionId={selectedLifecycleRevision?.revisionId ?? null} busy={lifecycleBusy} onStartDraft={() => void startInitialDraft()} onSelectRevision={requestRevisionChange} onPreparePublication={(revision) => void preparePublication(revision)} onTransition={(revision, action) => void handleLifecycleTransition(revision, action as 'mark_ready' | 'return_to_draft' | 'restore')} onAbandon={setAbandonRevision} />}
             {lifecycleError && <div className="refresh-error" role="alert">{lifecycleError}</div>}
-            {revisionLoadFailure && revisionLoadFailure.revisionId === selectedLifecycleRevision?.revisionId && <div className="refresh-error" role="alert"><span>{revisionLoadFailure.message}</span><button type="button" onClick={() => { setRevisionLoadFailure(null); setRevisionLoadAttempt((attempt) => attempt + 1) }}>Retry selected revision</button></div>}
-            {lifecycleRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh schedule lifecycle. Schedule changes are unavailable.</span><button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)}>Retry lifecycle refresh</button></div>}
+            {revisionLoadFailure && revisionLoadFailure.revisionId === selectedLifecycleRevision?.revisionId && <div className="refresh-error" role="alert"><span>Die ausgewählte Revision konnte nicht geladen werden. Die genaue Ursache ist nicht verfügbar; die aktuell sichtbare Planung bleibt unverändert.</span><button type="button" onClick={() => { setRevisionLoadFailure(null); setRevisionLoadAttempt((attempt) => attempt + 1) }}>Revision erneut laden</button></div>}
+            {lifecycleRefreshError && <div className="refresh-error" role="alert"><span>Der Revisionsstand konnte nicht aktualisiert werden. Änderungen an Revisionen sind nicht verfügbar; die sichtbare Planung bleibt unverändert.</span><button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)}>Revisionsstand erneut laden</button></div>}
             </section>
             <section className="schedule-workspace-region lecturer-reviews-region" aria-labelledby="lecturer-reviews-region-title" hidden={destination !== 'reviews'} inert={destination !== 'reviews' || undefined}>
-              <h2 id="lecturer-reviews-region-title">Lecturer coordination</h2>
-              {destination === 'reviews' && selectedLifecycleRevision && displayedLecturerReviewOverview == null && !lecturerReviewError && <p role="status">Loading lecturer coordination…</p>}
+              <h2 id="lecturer-reviews-region-title">Abstimmung mit {label('lecturer.plural')}</h2>
+              {destination === 'reviews' && selectedLifecycleRevision && displayedLecturerReviewOverview == null && !lecturerReviewError && <p role="status">Abstimmung mit {label('lecturer.plural')} wird geladen…</p>}
               {lecturerReviewError && <div className="refresh-error" role="alert">{lecturerReviewError}</div>}
               {active && destination === 'reviews' && displayedLecturerReviewOverview && (
                 <LecturerReviewManagement
@@ -1503,29 +1503,29 @@ export function CourseSchedulePage({
                   onOpenCurrentSession={openLecturerFeedbackSession}
                 />
               )}
-              {!selectedLifecycleRevision && <p>Select a Working or Current Published revision to review lecturer access.</p>}
+              {!selectedLifecycleRevision && <p>Wählen Sie eine Arbeitsrevision oder die aktuelle Veröffentlichung, um die Zugänge der {label('lecturer.plural')} zu prüfen.</p>}
             </section>
-            <section className="schedule-workspace-region calendar-feedback-region" aria-label="Calendar feedback" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
+            <section className="schedule-workspace-region calendar-feedback-region" aria-label="Kalender-Rückmeldungen" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
             {batchResult && <BatchResultSummary result={batchResult} retryDisabled={writeBusy} onRetryFailed={() => void retryFailedCourses()} />}
             {overviewRefreshError && (
               <div className="refresh-error" role="alert">
-                <span>Could not refresh the Courses overview. The last known schedules remain visible.</span>
-                <button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)} disabled={overviewLoading}>Retry refresh</button>
+                <span>Die Übersicht der {label('course.plural')} konnte nicht aktualisiert werden. Die zuletzt vollständig geladenen Planungen bleiben sichtbar.</span>
+                <button type="button" onClick={() => selectedSemesterId && void refreshOverview(selectedSemesterId, false)} disabled={overviewLoading}>Übersicht erneut laden</button>
               </div>
             )}
             {deletionNotice && <div className="refresh-error" role="alert">{deletionNotice}</div>}
             </section>
             <section className="schedule-workspace-region exams-workspace-region" aria-labelledby="exams-region-title" hidden={destination !== 'exams'} inert={destination !== 'exams' || undefined}>
-              <h2 id="exams-region-title">Exams</h2>
+              <h2 id="exams-region-title">Prüfungen</h2>
               {selectedExamState && <div className="focused-exam-requirement">
                 <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={examConfigurationBusy} saving={examBusy} onSave={handleExamConfiguration} />
-                {selectedExamState.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Place exam manually</button>}
+                {selectedExamState.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Prüfung manuell eintragen</button>}
               </div>}
               {examError && <div className="alert-item" role="alert">{examError}</div>}
-              {examRefreshError && <div className="refresh-error" role="alert"><span>Could not refresh exam planning. The last complete exam view remains visible.</span><button type="button" onClick={()=>void refreshExamOverview()}>Retry exam refresh</button></div>}
+              {examRefreshError && <div className="refresh-error" role="alert"><span>Die Prüfungsplanung konnte nicht aktualisiert werden. Die zuletzt vollständig geladene Prüfungsansicht bleibt sichtbar.</span><button type="button" onClick={()=>void refreshExamOverview()}>Prüfungsplanung erneut laden</button></div>}
               {selectedSemesterId && activeScheduleRevisionId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} scheduleRevisionId={activeScheduleRevisionId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshOverview(selectedSemesterId, false) }} />}
             </section>
-            <section className="schedule-workspace-region calendar-history-region" aria-label="Historical schedule content" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
+            <section className="schedule-workspace-region calendar-history-region" aria-label="Historischer Planungsstand" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
             {selectedRevisionAvailable && selectedLifecycleRevision && !selectedLifecycleRevision.isActiveWorking && !selectedLifecycleRevision.isCurrentPublication ? <DraftSchedulePanel
               resetKey={overviewResetKey}
               schedules={displaySchedules}
@@ -1540,8 +1540,8 @@ export function CourseSchedulePage({
               onDeleteExam={setExamDeletion}
               examCourseNames={displayExamCourseNames}
               readOnly={selectedLifecycleRevision?.revisionId !== activeScheduleRevisionId}
-              contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Current publication' : selectedLifecycleRevision.isActiveWorking ? 'Active working revision' : 'Historical revision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
-            /> : selectedRevisionLoading ? <p role="status">Loading selected revision…</p> : null}
+              contextLabel={selectedLifecycleRevision ? `${selectedLifecycleRevision.isCurrentPublication ? 'Aktuelle Veröffentlichung' : selectedLifecycleRevision.isActiveWorking ? 'Aktive Arbeitsrevision' : 'Historische Revision'} · Revision ${selectedLifecycleRevision.revisionNumber}` : undefined}
+            /> : selectedRevisionLoading ? <p role="status">Ausgewählte Revision wird geladen…</p> : null}
             </section>
           </div>
         </div>
@@ -1559,7 +1559,7 @@ export function CourseSchedulePage({
         <ScheduleDeletionDialog
           scope={sessionDeletion.scope}
           isBusy={deletionBusy}
-          error={deletionErrors.length > 0 ? deletionErrors.map((failure) => failure.message).join(' ') : undefined}
+          problems={deletionProblems(deletionErrors, sessionDeletion.scope)}
           onCancel={() => { setSessionDeletion(null); setDeletionErrors([]) }}
           onConfirm={() => void confirmSessionDeletion()}
         />
@@ -1568,7 +1568,7 @@ export function CourseSchedulePage({
         <ScheduleDeletionDialog
           scope={courseDeletion.scope}
           isBusy={deletionBusy}
-          error={deletionErrors.length > 0 ? deletionErrors.map((failure) => failure.message).join(' ') : undefined}
+          problems={deletionProblems(deletionErrors, courseDeletion.scope)}
           onCancel={() => { setCourseDeletion(null); setDeletionErrors([]) }}
           onConfirm={() => void confirmCourseDeletion()}
         />
@@ -1576,7 +1576,7 @@ export function CourseSchedulePage({
       {examEditor && selectedExamState && (examEditor !== 'create' || selectedExamState.configuration) && (
         <div className="dialog-backdrop"><div className="replacement-dialog"><ExamManualSessionEditor mode={examEditor === 'create' ? 'create' : 'edit'} configuration={selectedExamState.configuration ?? undefined} exam={examEditor === 'create' ? undefined : examEditor} snapshotToken={examEditor === 'create' ? selectedExamState.inputSnapshotToken : examEditor.inputSnapshotToken} semesterId={selectedExamState.semesterId} lecturers={examLecturers} rooms={examRooms} busy={examBusy} serverError={examError || undefined} onCancel={()=>setExamEditor(null)} onSubmit={handleExamPlacement}/></div></div>
       )}
-      {examDeletion && <ExamDeletionDialog courseName={examCourseNames[examDeletion.courseId] ?? `Course #${examDeletion.courseId}`} exam={examDeletion} busy={examBusy} error={examError || undefined} onCancel={()=>setExamDeletion(null)} onConfirm={confirmExamDeletion}/>}
+      {examDeletion && <ExamDeletionDialog courseName={examCourseNames[examDeletion.courseId] ?? `${label('course.singular')} #${examDeletion.courseId}`} exam={examDeletion} busy={examBusy} error={examError || undefined} onCancel={()=>setExamDeletion(null)} onConfirm={confirmExamDeletion}/>}
       {publicationPreparation && <PublicationConfirmationDialog preparation={publicationPreparation} busy={lifecycleBusy} onCancel={() => setPublicationPreparation(null)} onConfirm={() => void confirmPublication()} />}
       {abandonRevision && lifecycleOverview && <AbandonRevisionDialog semesterName={lifecycleOverview.semesterName} revision={abandonRevision} currentPublication={lifecycleOverview.currentPublication} busy={lifecycleBusy} onCancel={() => setAbandonRevision(null)} onConfirm={() => void handleLifecycleTransition(abandonRevision, 'abandon')} />}
       {pendingPaneIntent && <DiscardChangesDialog
@@ -1594,8 +1594,31 @@ export function CourseSchedulePage({
   )
 }
 
-function ErrorList({ errors }: { errors: { code: string; message: string }[] }) {
-  return <div className="alert-list" role="alert">{errors.map((error, index) => <div className="alert-item" key={`${error.code}-${index}`}><strong>{error.code.replaceAll('_', ' ')}</strong><span>{error.message}</span></div>)}</div>
+function safeGenerationFailure(error: { code: string; field?: string }): string {
+  if (error.code.includes('STALE') || error.code.includes('REVISION')) return 'Die angezeigten Daten sind nicht mehr aktuell. Laden Sie den aktuellen Stand neu, prüfen Sie die Werte und wiederholen Sie die Aktion danach.'
+  if (error.code.includes('CAPACITY')) return 'Die Raumkapazität reicht für die betroffene Kohorte nicht aus. Wählen Sie einen ausreichend großen Raum.'
+  if (error.code.includes('CONFLICT')) return 'Der Termin überschneidet sich mit einer bestehenden Zuordnung. Prüfen und ändern Sie einen der betroffenen Termine.'
+  if (error.field) return `Feld „${error.field}“ muss korrigiert werden. Prüfen Sie den erwarteten Wert; Ihre übrigen Eingaben bleiben erhalten.`
+  return 'Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; laden Sie den aktuellen Stand und prüfen Sie ihn vor einem weiteren Versuch.'
+}
+
+function deletionProblems(errors: GenerationFailure[], scope: ScheduleDeletionScope): UserProblem[] {
+  const affected = scope.kind === 'session'
+    ? `Entwurfstermin für „${scope.courseName}“ am ${formatCalendarDate(scope.date)}`
+    : `Planungsentwurf für „${scope.courseName}“`
+  return errors.map((error, index) => ({
+    key: `delete-${error.code}-${index}`,
+    tone: 'blocking',
+    title: `${affected} konnte nicht gelöscht werden`,
+    details: [
+      safeGenerationFailure(error),
+      'Der Abschluss der Löschung konnte nicht bestätigt werden. Laden und prüfen Sie den aktuellen Stand, bevor Sie die Aktion wiederholen.',
+    ],
+  }))
+}
+
+function ErrorList({ errors }: { errors: { code: string; message: string; field?: string }[] }) {
+  return <div className="alert-list" role="alert">{errors.map((error, index) => <div className="alert-item" key={`${error.code}-${index}`}><strong>Aktion nicht möglich</strong><span>{safeGenerationFailure(error)}</span></div>)}</div>
 }
 
 function toFailures(error: unknown, fallback: string): GenerationFailure[] {
@@ -1613,21 +1636,21 @@ function SelectField<T extends Selectable>({ label, value, options, getLabel, on
 }
 
 function PlanningSummary({ course, semester, progress, progressUnavailableLabel }: { course: CourseOption | null; semester: SemesterOption | null; progress: { scheduledUnits: number; remainingUnits: number } | null; progressUnavailableLabel: string }) {
-  if (!course) return <p className="empty-state">No courses are available.</p>
+  if (!course) return <p className="empty-state">Keine {label('course.plural')} verfügbar.</p>
   return <dl>
-    <div><dt>Units</dt><dd>{course.totalUnits}</dd></div>
-    <div><dt>Scheduled units</dt><dd>{progress?.scheduledUnits ?? progressUnavailableLabel}</dd></div>
-    <div><dt>Remaining units</dt><dd>{progress?.remainingUnits ?? progressUnavailableLabel}</dd></div>
-    <div><dt>Session preference</dt><dd>{course.minSessionUnits}-{course.maxSessionUnits} units</dd></div>
-    <div><dt>Cohort</dt><dd>{course.cohort.name}</dd></div>
-    <div><dt>Lecturer</dt><dd>{course.lecturer?.name ?? 'No eligible lecturer'}</dd></div>
-    <div><dt>Room</dt><dd>{course.room?.name ?? 'No usable room'}</dd></div>
-    <div><dt>Study type</dt><dd>{course.studyType.name}</dd></div>
-    <div><dt>Semester dates</dt><dd>{semester ? `${semester.startDate} - ${semester.endDate}` : 'No semester selected'}</dd></div>
+    <div><dt>Lehreinheiten</dt><dd>{course.totalUnits}</dd></div>
+    <div><dt>Geplante Lehreinheiten</dt><dd>{progress?.scheduledUnits ?? progressUnavailableLabel}</dd></div>
+    <div><dt>Offene Lehreinheiten</dt><dd>{progress?.remainingUnits ?? progressUnavailableLabel}</dd></div>
+    <div><dt>Bevorzugte Termingröße</dt><dd>{course.minSessionUnits}-{course.maxSessionUnits} Lehreinheiten</dd></div>
+    <div><dt>{label('cohort.singular')}</dt><dd>{course.cohort.name}</dd></div>
+    <div><dt>{label('lecturer.singular')}</dt><dd>{course.lecturer?.name ?? `Keine geeignete ${label('lecturer.singular')} verfügbar`}</dd></div>
+    <div><dt>{label('room.singular')}</dt><dd>{course.room?.name ?? `Kein geeigneter ${label('room.singular')} verfügbar`}</dd></div>
+    <div><dt>Studienart</dt><dd>{course.studyType.name}</dd></div>
+    <div><dt>Semesterzeitraum</dt><dd>{semester ? formatCalendarDateRange(semester.startDate, semester.endDate) : 'Kein Semester ausgewählt'}</dd></div>
   </dl>
 }
 
-function ManualSessionEditor({
+export function ManualSessionEditor({
   course,
   semester,
   lecturers,
@@ -1685,7 +1708,7 @@ function ManualSessionEditor({
 
   function submit() {
     if (!lecturerId || !cohortId || !roomId || !capacityValidRooms.some((room) => room.id === roomId) || !Number.isInteger(units) || units <= 0 || units > remainingUnits || !isValidSessionTimeRange(startTime, endTime)) {
-      setLocalError('Select a Lecturer, Cohort, and capacity-valid Room; enter positive whole units within the remaining amount and an end time later than the start time.')
+      setLocalError(`Wählen Sie ${label('lecturer.fieldLabel')}, ${label('cohort.fieldLabel')} und einen ausreichend großen ${label('room.fieldLabel')}. Geben Sie positive ganze Einheiten innerhalb des Restumfangs sowie eine Endzeit nach der Startzeit ein. Ihre Eingaben bleiben erhalten.`)
       return
     }
     setLocalError('')
@@ -1693,16 +1716,16 @@ function ManualSessionEditor({
   }
 
   return (
-    <section className="manual-session-editor" aria-labelledby="manual-session-title">
-      <div className="section-heading"><h3 id="manual-session-title">Add one Draft Session</h3></div>
-      <label className="constraint-field"><span>Date</span><input name="manual-date" type="date" value={sessionDate} min={semester.startDate} max={semester.endDate} onChange={(event) => setSessionDate(event.target.value)} /></label>
+    <form className="manual-session-editor" aria-labelledby="manual-session-title" onSubmit={(event) => { event.preventDefault(); submit() }}>
+      <div className="section-heading"><h3 id="manual-session-title">Entwurfstermin hinzufügen</h3></div>
+      <EuropeanDateField id="manual-date" name="manual-date" label="Datum" value={sessionDate} min={semester.startDate} max={semester.endDate} onChange={(value) => setSessionDate(value ?? '')} required />
       <div className="manual-time-grid">
-        <label className="constraint-field"><span>Start time</span><input name="manual-start-time" type="time" value={startTime} onChange={(event) => { const value = event.target.value; setStartTime(value); setEndTime(calculateDefaultEndTime(value, units) ?? '') }} /></label>
-        <label className="constraint-field"><span>Units</span><input name="manual-units" type="number" min="1" step="1" max={remainingUnits} value={units} onChange={(event) => { const value = Number(event.target.value); setUnits(value); setEndTime(calculateDefaultEndTime(startTime, value) ?? '') }} /></label>
-        <label className="constraint-field"><span>End time</span><input name="manual-end-time" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
+        <label className="constraint-field"><span>Beginn</span><input name="manual-start-time" type="time" value={startTime} onChange={(event) => { const value = event.target.value; setStartTime(value); setEndTime(calculateDefaultEndTime(value, units) ?? '') }} /></label>
+        <label className="constraint-field"><span>Lehreinheiten</span><input name="manual-units" type="number" min="1" step="1" max={remainingUnits} value={units} onChange={(event) => { const value = Number(event.target.value); setUnits(value); setEndTime(calculateDefaultEndTime(startTime, value) ?? '') }} /></label>
+        <label className="constraint-field"><span>Ende</span><input name="manual-end-time" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
       </div>
-      <label className="constraint-field"><span>Lecturer</span><select name="manual-lecturer" value={lecturerId ?? ''} onChange={(event) => setLecturerId(Number(event.target.value))}>{lecturers.map((lecturer) => <option key={lecturer.id} value={lecturer.id}>{lecturer.name}</option>)}</select></label>
-      <label className="constraint-field"><span>Cohort</span><select name="manual-cohort" value={cohortId ?? ''} onChange={(event) => {
+      <label className="constraint-field"><span>{label('lecturer.fieldLabel')}</span><select name="manual-lecturer" value={lecturerId ?? ''} onChange={(event) => setLecturerId(Number(event.target.value))}>{lecturers.map((lecturer) => <option key={lecturer.id} value={lecturer.id}>{lecturer.name}</option>)}</select></label>
+      <label className="constraint-field"><span>{label('cohort.fieldLabel')}</span><select name="manual-cohort" value={cohortId ?? ''} onChange={(event) => {
         const nextCohortId = Number(event.target.value)
         const nextCohortSize = cohorts.find((item) => item.id === nextCohortId)?.studentCount
         const nextRooms = rooms.filter((room) => nextCohortSize != null && room.capacity >= nextCohortSize)
@@ -1715,12 +1738,12 @@ function ManualSessionEditor({
               : nextRooms[0]?.id ?? null
         ))
       }}>{cohorts.map((cohort) => <option key={cohort.id} value={cohort.id}>{cohort.name} ({cohort.studentCount})</option>)}</select></label>
-      <label className="constraint-field"><span>Room</span><select name="manual-room" value={roomId ?? ''} onChange={(event) => setRoomId(Number(event.target.value))}>{capacityValidRooms.map((room) => <option key={room.id} value={room.id}>{room.name} ({room.capacity} seats)</option>)}</select></label>
+      <label className="constraint-field"><span>{label('room.fieldLabel')}</span><select name="manual-room" value={roomId ?? ''} onChange={(event) => setRoomId(Number(event.target.value))}>{capacityValidRooms.map((room) => <option key={room.id} value={room.id}>{room.name} ({room.capacity} Plätze)</option>)}</select></label>
       {localError && <div className="alert-item" role="alert">{localError}</div>}
       {errors.length > 0 && <ErrorList errors={errors} />}
-      {requiresDraft && <p className="constraint-note">Start a Draft before adding sessions.</p>}
-      <button type="button" className="generate-button" onClick={submit} disabled={isBusy || !lecturerId || !cohortId || !roomId || remainingUnits <= 0} aria-busy={isSaving || undefined}>{isSaving ? 'Adding…' : 'Add Draft Session'}</button>
-      <p className="sr-only" aria-live="polite">{endTime ? `Proposed end time ${endTime}.` : ''}</p>
-    </section>
+      {requiresDraft && <p className="constraint-note">Starten Sie vor dem Hinzufügen von Terminen einen Entwurf.</p>}
+      <button type="submit" className="generate-button" disabled={isBusy || !lecturerId || !cohortId || !roomId || remainingUnits <= 0} aria-busy={isSaving || undefined}>{isSaving ? 'Wird hinzugefügt…' : 'Entwurfstermin hinzufügen'}</button>
+      <p className="sr-only" aria-live="polite">{endTime ? `Vorgeschlagene Endzeit ${endTime}.` : ''}</p>
+    </form>
   )
 }

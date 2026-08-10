@@ -1,4 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react'
+import { label } from '../config/terminology'
 
 type ReplacementPreparation = {
   courses: { courseId: number; courseName: string | null; replacementRequired: boolean }[]
@@ -51,17 +52,17 @@ export function ReplacementConfirmationDialog({ preparation, disabled = false, o
   return (
     <div className="dialog-backdrop" role="presentation">
       <section ref={dialogRef} className="replacement-dialog" role="dialog" aria-modal="true" aria-labelledby="replacement-title" tabIndex={-1} onKeyDown={handleKeyDown}>
-        <h2 id="replacement-title">Optimize existing Draft Schedules?</h2>
+        <h2 id="replacement-title">Bestehende Planungsentwürfe optimieren?</h2>
         <p className="replacement-warning">
-          Optimization may replace these schedules and manual session edits only when units do not decrease and the approved comparison is strictly better. This cannot be undone from this screen.
+          Die Optimierung darf diese Planungen und manuelle Terminänderungen nur ersetzen, wenn die Lehreinheiten nicht abnehmen und der freigegebene Vergleich eindeutig besser ist. Dies kann auf dieser Ansicht nicht rückgängig gemacht werden.
         </p>
         <ul>
-          {replacements.map((course) => <li key={course.courseId}>{course.courseName ?? `Course ${course.courseId}`}</li>)}
+          {replacements.map((course) => <li key={course.courseId}>{course.courseName ?? `${label('course.singular')} ${course.courseId}`}</li>)}
         </ul>
         <div className="dialog-actions">
-          <button type="button" className="secondary-button" onClick={onCancel} disabled={disabled}>Cancel</button>
+          <button type="button" className="secondary-button" onClick={onCancel} disabled={disabled}>Abbrechen</button>
           <button type="button" onClick={onConfirm} disabled={disabled}>
-            {disabled ? 'Optimizing...' : 'Confirm optimization'}
+            {disabled ? 'Wird optimiert…' : 'Optimierung bestätigen'}
           </button>
         </div>
       </section>

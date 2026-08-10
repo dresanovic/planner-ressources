@@ -15,11 +15,11 @@ describe('ScheduleLifecyclePanel', () => {
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     const empty = { ...lifecycleOverviewFixture(), activeWorkingRevision: null, revisions: [], allowedActions: { createWorkingRevision: true } }
     act(() => root.render(<ScheduleLifecyclePanel overview={empty} selectedRevisionId={null} busy={false} onStartDraft={startDraft} onSelectRevision={vi.fn()} onPreparePublication={vi.fn()} onTransition={vi.fn()} onAbandon={vi.fn()} />))
-    expect(document.querySelector('[aria-label="Schedule publication lifecycle"]')).not.toBeNull()
-    const button = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Start Draft')
+    expect(document.querySelector('[aria-label="Veröffentlichungsstatus der Planung"]')).not.toBeNull()
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Entwurf starten')
     act(() => button?.click())
     expect(startDraft).toHaveBeenCalledOnce()
-    expect(document.body.textContent).not.toContain('Publish revision')
+    expect(document.body.textContent).not.toContain('Revision veröffentlichen')
   })
 
   it('distinguishes active working from current publication using visible text', () => {
@@ -28,10 +28,10 @@ describe('ScheduleLifecyclePanel', () => {
     const published = { ...fixture.activeWorkingRevision!, revisionId: 10, revisionNumber: 0, state: 'published' as const, isActiveWorking: false, isCurrentPublication: true, publishedAt: '2026-07-19T10:00:00Z', allowedActions: { markReady: false, returnToDraft: false, preparePublication: false, abandon: false, restore: false, editSchedule: false } }
     const overview = { ...fixture, currentPublication: published, revisions: [fixture.activeWorkingRevision!, published] }
     act(() => root.render(<ScheduleLifecyclePanel overview={overview} selectedRevisionId={11} busy={false} onStartDraft={vi.fn()} onSelectRevision={vi.fn()} onPreparePublication={vi.fn()} onTransition={vi.fn()} onAbandon={vi.fn()} />))
-    expect(document.body.textContent).toContain('Active working revision')
-    expect(document.body.textContent).toContain('Current publication')
-    expect(document.body.textContent).toContain('Draft')
-    expect(document.body.textContent).toContain('Published')
+    expect(document.body.textContent).toContain('Aktive Arbeitsrevision')
+    expect(document.body.textContent).toContain('Aktuelle Veröffentlichung')
+    expect(document.body.textContent).toContain('Entwurf')
+    expect(document.body.textContent).toContain('Veröffentlicht')
   })
 
   it('renders Ready and restore actions plus machine-readable Vienna history', () => {
@@ -41,8 +41,8 @@ describe('ScheduleLifecyclePanel', () => {
     const overview = { ...fixture, activeWorkingRevision: ready, revisions: [ready] }
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     act(() => root.render(<ScheduleLifecyclePanel overview={overview} selectedRevisionId={ready.revisionId} busy={false} onStartDraft={vi.fn()} onSelectRevision={vi.fn()} onPreparePublication={vi.fn()} onTransition={transition} onAbandon={vi.fn()} />))
-    expect(document.body.textContent).toContain('Ready for review')
-    expect(document.body.textContent).toContain('Return to Draft')
+    expect(document.body.textContent).toContain('Bereit zur Prüfung')
+    expect(document.body.textContent).toContain('In Entwurf zurücksetzen')
     expect(document.querySelector('details')?.open).toBe(false)
     act(() => document.querySelector('summary')?.click())
     const timestamp = document.querySelector('time')

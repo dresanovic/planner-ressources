@@ -170,7 +170,7 @@ export function adaptLecturerReviewToWorkspace(
         availability: 'not_applicable',
         scope: 'complete_revision',
         contributorRefs: [],
-        notApplicableReason: 'Planning authority is not available in lecturer review.',
+        notApplicableReason: 'Die Planungsverantwortung ist in der Terminprüfung nicht verfügbar.',
       },
       conflicts: {
         ...completeMetric,
@@ -196,7 +196,7 @@ export function adaptLecturerReviewToWorkspace(
         availability: 'not_applicable',
         scope: 'complete_revision',
         contributorRefs: [],
-        notApplicableReason: 'Planner outcomes are not part of lecturer review.',
+        notApplicableReason: 'Planungsergebnisse sind nicht Bestandteil der Terminprüfung.',
       },
       needsReview: {
         ...completeMetric,

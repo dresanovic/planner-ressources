@@ -27,6 +27,7 @@ import { CourseResourceEligibilityEditor } from '../components/CourseResourceEli
 import { ACADEMIC_DATA_CATEGORIES, type AcademicDataCategory } from '../components/ApplicationNavigation'
 import { WEEKDAY_NAMES } from '../utils/weekdays'
 import { HolidayAdministration } from '../components/HolidayAdministration'
+import { label } from '../config/terminology'
 
 type PageCategory = AcademicDataCategory
 const categories: ReadonlyArray<{ id: PageCategory; label: string; singular: string }> = ACADEMIC_DATA_CATEGORIES
@@ -94,7 +95,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
         const windows = (await Promise.all(types.map((type) => listTimeWindows(type.id)))).flat()
           .filter((window) => status === 'all' || window.isActive === (status === 'active'))
           .sort((left, right) => (typeNames.get(left.studyTypeId) ?? '').localeCompare(typeNames.get(right.studyTypeId) ?? '') || left.weekday - right.weekday || left.startTime.localeCompare(right.startTime))
-        setRecords(windows.map((window) => ({ ...window, name: `${typeNames.get(window.studyTypeId) ?? 'Unknown Study Type'} · ${WEEKDAY_NAMES[window.weekday] ?? 'Unknown day'}, ${window.startTime}–${window.endTime}` })))
+        setRecords(windows.map((window) => ({ ...window, name: `${typeNames.get(window.studyTypeId) ?? 'Unbekannte Studienform'} · ${WEEKDAY_NAMES[window.weekday] ?? 'Unbekannter Wochentag'}, ${window.startTime}–${window.endTime}` })))
       }
       if (selected === 'courses' || selected === 'time-windows') {
         const [semesters, cohorts, studyTypes, planning] = await Promise.all([
@@ -131,7 +132,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
 
   useEffect(() => {
     let current = true
-    void (async () => { try { await load(category) } catch { if (current) setMessage('Could not load academic data.') } })()
+    void (async () => { try { await load(category) } catch { if (current) setMessage('Die akademischen Stammdaten konnten nicht geladen werden. Prüfen Sie die Verbindung und laden Sie die Seite erneut.') } })()
     return () => { current = false }
   }, [category, load])
 
@@ -146,14 +147,14 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     }
     await load(category)
     setEditorGeneration((value) => value + 1)
-    setMessage(`${categories.find((item) => item.id === category)?.singular ?? 'Record'} created.`)
+    setMessage(`${categories.find((item) => item.id === category)?.singular ?? 'Datensatz'} erstellt.`)
     onCatalogChanged()
   }
 
   async function save(value: Record<string, string | number>) {
     if (!selected) return create(value)
     const expectedRevision = selected.revision
-    let outcomeMessage = `${current.singular} updated.`
+    let outcomeMessage = `${current.singular} aktualisiert.`
     if (category === 'semesters') await updateSemester(selected.id, { ...(value as { name: string; startDate: string; endDate: string }), expectedRevision })
     if (category === 'cohorts') {
       const result = await updateCohort(selected.id, { ...(value as { name: string; studentCount: number }), expectedRevision })
@@ -161,9 +162,9 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
       const unavailableCourses = result?.capacityImpact?.coursesWithoutRooms ?? []
       if (removed.length > 0) {
         const unavailable = unavailableCourses.length > 0
-          ? ` Courses without a usable eligible room: ${unavailableCourses.map((course) => course.name).join(', ')}.`
+          ? ` ${label('course.plural')} ohne geeigneten nutzbaren ${label('room.singular')}: ${unavailableCourses.map((course) => course.name).join(', ')}.`
           : ''
-        outcomeMessage = `${current.singular} updated. Removed ${removed.length} newly insufficient room relationship${removed.length === 1 ? '' : 's'}.${unavailable}`
+        outcomeMessage = `${current.singular} aktualisiert. ${removed.length} wegen zu geringer Kapazität ungültige Raumzuordnung${removed.length === 1 ? '' : 'en'} entfernt.${unavailable}`
       }
     }
     if (category === 'study-types') await updateStudyType(selected.id, { ...(value as { name: string }), expectedRevision })
@@ -175,10 +176,10 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
   async function lifecycle(record: DisplayRecord): Promise<boolean> {
     try {
       await setAcademicLifecycle(category, record.id, record.isActive ? 'archive' : 'reactivate', record.revision)
-      await load(category); setMessage(record.isActive ? 'Record archived.' : 'Record reactivated.'); onCatalogChanged()
+      await load(category); setMessage(record.isActive ? 'Datensatz archiviert.' : 'Datensatz reaktiviert.'); onCatalogChanged()
       return true
-    } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : 'Could not change this record status.')
+    } catch {
+      setMessage(`Der Status von „${record.name}“ konnte nicht geändert werden. Laden Sie den aktuellen Stand neu und versuchen Sie es danach erneut.`)
       return false
     }
   }
@@ -186,18 +187,18 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
   async function remove(record: DisplayRecord) {
     try {
       await deleteAcademicRecord(category, record.id, record.revision)
-      setDeleting(null); await load(category); setMessage('Record permanently deleted.'); onCatalogChanged()
-    } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : 'Could not delete this record.')
+      setDeleting(null); await load(category); setMessage('Datensatz dauerhaft gelöscht.'); onCatalogChanged()
+    } catch {
+      setMessage(`„${record.name}“ konnte nicht gelöscht werden. Prüfen Sie, ob der Datensatz noch verwendet wird, und laden Sie den aktuellen Stand neu.`)
     }
   }
 
   async function refreshResources() {
     try {
       await load(category)
-      setMessage('Resources refreshed.')
+      setMessage('Ressourcen aktualisiert.')
     } catch {
-      setMessage('Could not refresh resources. The selected resource and last-known content were retained.')
+      setMessage('Die Ressourcen konnten nicht aktualisiert werden. Die ausgewählte Ressource und der zuletzt bekannte Inhalt bleiben erhalten.')
     }
   }
 
@@ -212,7 +213,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
       const periods = await listUnavailability(category, record.id)
       if (availabilityRequestId.current === requestId && selectedResourceKey.current === key) setAvailabilityPeriods(periods)
     } catch {
-      if (availabilityRequestId.current === requestId && selectedResourceKey.current === key) setMessage('Could not refresh resource availability. The selected resource was retained.')
+      if (availabilityRequestId.current === requestId && selectedResourceKey.current === key) setMessage('Die Ressourcenverfügbarkeit konnte nicht aktualisiert werden. Die ausgewählte Ressource bleibt erhalten.')
     }
   }
 
@@ -237,7 +238,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     const resourceType = category
     const resourceId = selectedResource.id
     await createUnavailability(resourceType, resourceId, input)
-    if (await refreshAvailability(resourceType, resourceId)) setMessage('Unavailable period added.')
+    if (await refreshAvailability(resourceType, resourceId)) setMessage('Nichtverfügbarkeitszeitraum hinzugefügt.')
   }
 
   async function changeUnavailablePeriod(periodId: number, input: UnavailabilityInput & { expectedRevision: number }) {
@@ -245,7 +246,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     const resourceType = category
     const resourceId = selectedResource.id
     await updateUnavailability(resourceType, resourceId, periodId, input)
-    if (await refreshAvailability(resourceType, resourceId)) setMessage('Unavailable period updated.')
+    if (await refreshAvailability(resourceType, resourceId)) setMessage('Nichtverfügbarkeitszeitraum aktualisiert.')
   }
 
   async function removeUnavailablePeriod(period: UnavailabilityPeriod) {
@@ -253,7 +254,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     const resourceType = category
     const resourceId = selectedResource.id
     await deleteUnavailability(resourceType, resourceId, period.id, period.revision)
-    if (await refreshAvailability(resourceType, resourceId)) setMessage('Unavailable period deleted.')
+    if (await refreshAvailability(resourceType, resourceId)) setMessage('Nichtverfügbarkeitszeitraum gelöscht.')
   }
 
   async function saveResource(input: LecturerInput | RoomInput) {
@@ -266,9 +267,9 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     clearSelectedResource()
     try {
       await load(category)
-      setMessage(`${category === 'lecturers' ? 'Lecturer' : 'Room'} saved.`)
+      setMessage(`${label(category === 'lecturers' ? 'lecturer.singular' : 'room.singular')} gespeichert.`)
     } catch {
-      setMessage('The resource was saved, but the list could not be refreshed. Last-known content was retained.')
+      setMessage('Die Ressource wurde gespeichert, aber die Liste konnte nicht aktualisiert werden. Der zuletzt bekannte Inhalt bleibt sichtbar.')
     }
     onCatalogChanged()
   }
@@ -277,8 +278,8 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     if (category !== 'lecturers' && category !== 'rooms') return
     try {
       setRemovingResource({ record, assessment: await getResourceUsage(category, record.id) })
-    } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : 'Could not assess resource usage.')
+    } catch {
+      setMessage(`Die Verwendung von „${record.name}“ konnte nicht geprüft werden. Laden Sie die Ressourcen neu und versuchen Sie es erneut.`)
     }
   }
 
@@ -290,21 +291,21 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
       clearSelectedResource()
       if (result.outcome === 'deleted') {
         const cleaned = result.removedInactiveCourseLinks.length
-        setMessage(`Resource permanently deleted${cleaned ? `; ${cleaned} inactive course link${cleaned === 1 ? '' : 's'} removed` : ''}.`)
+        setMessage(`Ressource dauerhaft gelöscht${cleaned ? `; ${cleaned} ${cleaned === 1 ? `inaktive Zuordnung zu einer ${label('course.singular')} entfernt` : `inaktive Zuordnungen zu ${label('course.plural')} entfernt`}` : ''}.`)
       } else {
         const courses = result.activeCourses.map((course) => course.name).join(', ')
         const courseReason = result.activeCourses.length > 0
-          ? `${result.activeCourses.length} active course${result.activeCourses.length === 1 ? '' : 's'}${courses ? `: ${courses}` : ''}`
+          ? `${result.activeCourses.length} aktive ${result.activeCourses.length === 1 ? label('course.singular') : label('course.plural')}${courses ? `: ${courses}` : ''}`
           : ''
         const sessionReason = result.sessionUsage.draftSessionCount > 0
-          ? `${result.sessionUsage.draftSessionCount} saved session${result.sessionUsage.draftSessionCount === 1 ? '' : 's'} across ${result.sessionUsage.draftScheduleCount} schedule${result.sessionUsage.draftScheduleCount === 1 ? '' : 's'}`
+          ? `${result.sessionUsage.draftSessionCount} gespeicherte Termine in ${result.sessionUsage.draftScheduleCount} ${result.sessionUsage.draftScheduleCount === 1 ? 'Planung' : 'Planungen'}`
           : ''
-        setMessage(`Resource placed inactive because it is used by ${[courseReason, sessionReason].filter(Boolean).join(' and ')}.`)
+        setMessage(`Ressource inaktiv gesetzt, weil sie noch verwendet wird: ${[courseReason, sessionReason].filter(Boolean).join('; ')}.`)
       }
       await load(category)
       onCatalogChanged()
-    } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : 'Could not remove this resource.')
+    } catch {
+      setMessage(`„${removingResource.record.name}“ konnte nicht entfernt werden. Laden Sie den aktuellen Stand neu und prüfen Sie die bestehenden Zuordnungen.`)
     }
   }
 
@@ -313,11 +314,11 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     try {
       const result = await reactivateResource(category, record.id, record.revision)
       const unusable = result.unusableRelationships.length
-      setMessage(`Resource reactivated${unusable ? `; ${unusable} relationship${unusable === 1 ? ' remains' : 's remain'} unusable` : ''}.`)
+      setMessage(`Ressource reaktiviert${unusable ? `; ${unusable} ${unusable === 1 ? 'Zuordnung bleibt' : 'Zuordnungen bleiben'} nicht nutzbar` : ''}.`)
       await load(category)
       onCatalogChanged()
-    } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : 'Could not reactivate this resource.')
+    } catch {
+      setMessage(`„${record.name}“ konnte nicht reaktiviert werden. Laden Sie den aktuellen Stand neu und prüfen Sie den Datensatz.`)
     }
   }
 
@@ -330,7 +331,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
       const configuration = await getCourseResourceConfiguration(record.id)
       if (eligibilityRequestId.current === requestId) setCourseResources(configuration)
     } catch {
-      if (eligibilityRequestId.current === requestId) setMessage('Could not refresh Course eligibility. The selected Course and current checkbox state were retained.')
+      if (eligibilityRequestId.current === requestId) setMessage(`Die Ressourceneignung für die ausgewählte ${label('course.singular')} konnte nicht aktualisiert werden. Auswahl und Kontrollkästchen bleiben erhalten.`)
     }
   }
 
@@ -343,7 +344,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     if (eligibilityRequestId.current !== requestId) return
     setCourseResources((current) => current?.courseId === courseId ? saved : current)
     setSelected((current) => current?.id === courseId ? { ...current, revision: saved.courseRevision } : current)
-    setMessage('Course resource eligibility saved.')
+    setMessage(`Ressourceneignung für ${label('course.singular')} gespeichert.`)
   }
 
   function editValues(record: DisplayRecord): Record<string, string | number> {
@@ -358,15 +359,15 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
   if (category === 'holidays') return <HolidayAdministration onChanged={onCatalogChanged} />
   if (category === 'lecturers' || category === 'rooms') return <>
     <section className="workbench">
-      <header className="page-header"><div><p className="eyebrow">Planner administration</p><h1>Academic Data</h1></div><label className="catalog-field">Show<select value={resourceStatus} onChange={(event) => setResourceStatus(event.target.value as typeof resourceStatus)}><option value="all">All records</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label></header>
+      <header className="page-header"><div><p className="eyebrow">Planungsverwaltung</p><h1>{label('academicData.heading')}</h1></div><label className="catalog-field">Anzeigen<select value={resourceStatus} onChange={(event) => setResourceStatus(event.target.value as typeof resourceStatus)}><option value="all">Alle Datensätze</option><option value="active">Aktiv</option><option value="inactive">Inaktiv</option></select></label></header>
       {message && <p role="status">{message}</p>}
-      <div className="resource-toolbar"><label className="catalog-field">Search by name or code<input type="search" value={resourceQuery} onChange={(event) => setResourceQuery(event.target.value)} /></label><button type="button" className="secondary-button" onClick={() => void refreshResources()}>Refresh</button></div>
+      <div className="resource-toolbar"><label className="catalog-field">Nach Name oder Code suchen<input type="search" value={resourceQuery} onChange={(event) => setResourceQuery(event.target.value)} /></label><button type="button" className="secondary-button" onClick={() => void refreshResources()}>Aktualisieren</button></div>
       <div className="catalog-grid">
-        <section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Loading…</p> : <ResourceCatalogList resourceType={category} records={resourceRecords} onSelect={(record) => void selectResource(record)} onRemove={(record) => void prepareResourceRemoval(record)} onReactivate={(record) => void reactivate(record)} />}</section>
-        <section className="planner-panel"><h2>{selectedResource ? 'Edit' : 'Create'} {current.singular}</h2><ResourceEditor key={`${category}-${selectedResource?.id ?? 'new'}-${selectedResource?.revision ?? 0}`} resourceType={category} initial={selectedResource} onSubmit={saveResource} onCancel={clearSelectedResource} />{selectedResource && <ResourceAvailabilityEditor periods={availabilityPeriods} onCreate={addUnavailablePeriod} onUpdate={changeUnavailablePeriod} onDelete={removeUnavailablePeriod} />}</section>
+        <section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Wird geladen…</p> : <ResourceCatalogList resourceType={category} records={resourceRecords} onSelect={(record) => void selectResource(record)} onRemove={(record) => void prepareResourceRemoval(record)} onReactivate={(record) => void reactivate(record)} />}</section>
+        <section className="planner-panel"><h2>{selectedResource ? 'Bearbeiten:' : 'Erstellen:'} {current.singular}</h2><ResourceEditor key={`${category}-${selectedResource?.id ?? 'new'}-${selectedResource?.revision ?? 0}`} resourceType={category} initial={selectedResource} onSubmit={saveResource} onCancel={clearSelectedResource} />{selectedResource && <ResourceAvailabilityEditor periods={availabilityPeriods} onCreate={addUnavailablePeriod} onUpdate={changeUnavailablePeriod} onDelete={removeUnavailablePeriod} />}</section>
       </div>
     </section>
     {removingResource && <ResourceRemovalDialog resourceName={`${removingResource.record.name} · ${removingResource.record.referenceCode}`} assessment={removingResource.assessment} onClose={() => setRemovingResource(null)} onConfirm={() => void confirmResourceRemoval()} />}
   </>
-  return <><section className="workbench"><header className="page-header"><div><p className="eyebrow">Planner administration</p><h1>Academic Data</h1></div><label className="catalog-field">Show<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">All records</option><option value="active">Active</option><option value="inactive">Inactive</option></select></label></header>{message && <p role="status">{message}</p>}<div className="catalog-grid"><section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Loading…</p> : <AcademicCatalogList records={records} emptyLabel={`No ${current.label.toLowerCase()} yet`} onEdit={(record) => void selectAcademicRecord(record as DisplayRecord)} onDelete={(record) => setDeleting(record as DisplayRecord)} onLifecycle={(record) => void lifecycle(record as DisplayRecord)} />}</section><section className="planner-panel"><h2>{selected ? 'Edit' : 'Create'} {current.singular}</h2>{selected?.nameRepairRequired === true && <p role="alert">This legacy name conflicts with another record. Enter a unique name to complete repair.</p>}{category === 'courses' && selected && selected.semester == null && <p role="alert">Assign a Semester to complete repair before saving this Course.</p>}<AcademicRecordEditor key={`${category}-${selected?.id ?? 'new'}-${selected?.revision ?? 0}-${editorGeneration}`} category={category as AcademicCategory} options={options} initialValues={selected ? editValues(selected) : {}} submitLabel={selected ? 'Save changes' : 'Create'} includeCourseResources={!selected} onSubmit={save} />{selected && <button type="button" className="secondary-button" onClick={() => setSelected(null)}>Cancel edit</button>}{category === 'courses' && selected && courseResources?.courseId === selected.id && <CourseResourceEligibilityEditor key={`${courseResources.courseId}-${courseResources.courseRevision}`} configuration={courseResources} onSave={saveCourseResources} onCancel={() => void selectAcademicRecord(selected)} />}</section></div></section>{deleting && <ProtectedDeleteDialog name={deleting.name} usage={deleting.usage} canArchive={deleting.isActive} onClose={() => setDeleting(null)} onArchive={() => void lifecycle(deleting).then((changed) => { if (changed) setDeleting(null) })} onDelete={() => void remove(deleting)} />}</>
+  return <><section className="workbench"><header className="page-header"><div><p className="eyebrow">Planungsverwaltung</p><h1>{label('academicData.heading')}</h1></div><label className="catalog-field">Anzeigen<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">Alle Datensätze</option><option value="active">Aktiv</option><option value="inactive">Inaktiv</option></select></label></header>{message && <p role="status">{message}</p>}<div className="catalog-grid"><section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Wird geladen…</p> : <AcademicCatalogList records={records} emptyLabel={`Noch keine ${current.label}`} onEdit={(record) => void selectAcademicRecord(record as DisplayRecord)} onDelete={(record) => setDeleting(record as DisplayRecord)} onLifecycle={(record) => void lifecycle(record as DisplayRecord)} />}</section><section className="planner-panel"><h2>{selected ? 'Bearbeiten:' : 'Erstellen:'} {current.singular}</h2>{selected?.nameRepairRequired === true && <p role="alert">Dieser übernommene Name steht im Konflikt mit einem anderen Datensatz. Geben Sie einen eindeutigen Namen ein.</p>}{category === 'courses' && selected && selected.semester == null && <p role="alert">Ordnen Sie vor dem Speichern dieser {label('course.singular')} ein Semester zu.</p>}<AcademicRecordEditor key={`${category}-${selected?.id ?? 'new'}-${selected?.revision ?? 0}-${editorGeneration}`} category={category as AcademicCategory} options={options} initialValues={selected ? editValues(selected) : {}} submitLabel={selected ? 'Änderungen speichern' : 'Erstellen'} includeCourseResources={!selected} onSubmit={save} />{selected && <button type="button" className="secondary-button" onClick={() => setSelected(null)}>Bearbeitung abbrechen</button>}{category === 'courses' && selected && courseResources?.courseId === selected.id && <CourseResourceEligibilityEditor key={`${courseResources.courseId}-${courseResources.courseRevision}`} configuration={courseResources} onSave={saveCourseResources} onCancel={() => void selectAcademicRecord(selected)} />}</section></div></section>{deleting && <ProtectedDeleteDialog name={deleting.name} usage={deleting.usage} canArchive={deleting.isActive} onClose={() => setDeleting(null)} onArchive={() => void lifecycle(deleting).then((changed) => { if (changed) setDeleting(null) })} onDelete={() => void remove(deleting)} />}</>
 }

@@ -7,6 +7,8 @@ import {
   type LecturerReviewOverview,
   type ReplaceLecturerReviewInput,
 } from '../api/lecturerReview'
+import { formatCalendarDate, formatViennaDateTime } from '../utils/datePresentation'
+import { label } from '../config/terminology'
 
 
 type LecturerReviewManagementProps = {
@@ -173,7 +175,7 @@ export function LecturerReviewManagement({
   async function issue() {
     if (!canIssue || selectedLecturer === null) return
     setError('')
-    setStatus('Issuing review link…')
+    setStatus('Zugangslink wird erstellt…')
     try {
       const result = await onIssue({
         lecturerId: selectedLecturer.lecturerId,
@@ -183,19 +185,19 @@ export function LecturerReviewManagement({
       setResultOverview(result.overview)
       setTransientUrl(buildLecturerReviewUrl(result.secret))
       setStatus(
-        'Review link issued. Copy it now; the secret is shown only in this result.',
+        'Der Zugangslink wurde erstellt. Kopieren Sie ihn jetzt; der geheime Anteil wird nur in diesem Ergebnis angezeigt.',
       )
     } catch {
       setIssued(null)
       setTransientUrl(null)
       setStatus('')
-      setError('The review link could not be issued.')
+      setError('Der Zugangslink konnte nicht erstellt werden. Prüfen Sie den aktuellen Revisionsstand und versuchen Sie es erneut.')
     }
   }
 
   async function revoke(linkId: number) {
     setError('')
-    setStatus('Revoking review link…')
+    setStatus('Zugangslink wird widerrufen…')
     try {
       const result = await onRevoke(linkId)
       setResultOverview(result)
@@ -206,18 +208,18 @@ export function LecturerReviewManagement({
         next.delete(linkId)
         return next
       })
-      setStatus('Link revoked.')
+      setStatus('Der Zugangslink wurde widerrufen.')
     } catch {
       setStatus('')
       setError(
-        'The link could not be revoked. Refresh and review its current status.',
+        'Der Zugangslink konnte nicht widerrufen werden. Laden Sie den aktuellen Stand und prüfen Sie seinen Status.',
       )
     }
   }
 
   async function replace(linkId: number) {
     setError('')
-    setStatus('Replacing review link…')
+    setStatus('Zugangslink wird ersetzt…')
     setIssued(null)
     setTransientUrl(null)
     try {
@@ -233,13 +235,13 @@ export function LecturerReviewManagement({
         return next
       })
       setStatus(
-        'Replacement issued. Earlier access is no longer available; copy the new link now.',
+        'Der Ersatzlink wurde erstellt. Der frühere Zugang ist nicht mehr verfügbar; kopieren Sie jetzt den neuen Link.',
       )
     } catch {
       setUncertainLinkIds((current) => new Set(current).add(linkId))
       setStatus('')
       setError(
-        'The replacement result is unknown because the response was lost. Refresh to check the current status, then replace again to create a new replacement if needed.',
+        'Das Ergebnis der Ersetzung ist unbekannt, weil die Antwort verloren ging. Laden Sie den aktuellen Status; erstellen Sie nur bei Bedarf danach einen neuen Ersatzlink.',
       )
     }
   }
@@ -249,11 +251,11 @@ export function LecturerReviewManagement({
     try {
       await navigator.clipboard.writeText(transientUrl)
       setError('')
-      setStatus('Link copied.')
+      setStatus('Der Link wurde kopiert.')
     } catch {
       setStatus('')
       setError(
-        'Could not copy the link. Select and copy the one-time URL manually.',
+        'Der Link konnte nicht kopiert werden. Markieren und kopieren Sie die einmalig angezeigte URL manuell.',
       )
     }
   }
@@ -261,7 +263,7 @@ export function LecturerReviewManagement({
   function dismiss() {
     setIssued(null)
     setTransientUrl(null)
-    setStatus('One-time link details dismissed.')
+    setStatus('Die einmalig angezeigten Linkdetails wurden geschlossen.')
     setError('')
   }
 
@@ -273,12 +275,12 @@ export function LecturerReviewManagement({
   return (
     <section className="lecturer-review-management">
       <header>
-        <p className="eyebrow">Accountless lecturer review</p>
+        <p className="eyebrow">Kontolose Rückmeldung der {label('lecturer.plural')}</p>
         <h2>{currentOverview.revision.label}</h2>
         <p>
           {humanize(currentOverview.revision.state)}
           {currentOverview.revision.state === 'ready_for_review' &&
-            ' · Recommended time to request feedback'}
+            ' · Empfohlener Zeitpunkt für die Rückmeldungsanfrage'}
         </p>
       </header>
 
@@ -301,30 +303,30 @@ export function LecturerReviewManagement({
         >
           <span aria-hidden="true">!</span>{' '}
           {feedbackComplete
-            ? `Not possible ${prominentImpossibleCount}`
+            ? `Nicht möglich ${prominentImpossibleCount}`
             : currentOverview.feedbackAvailability === 'partial'
-              ? 'Not possible count incomplete'
-              : 'Not possible count unavailable'}
+              ? 'Anzahl „Nicht möglich“ unvollständig'
+              : 'Anzahl „Nicht möglich“ nicht verfügbar'}
         </button>
-        <div className="coordination-counters" aria-label="Feedback counters">
+        <div className="coordination-counters" aria-label="Rückmeldungszähler">
           {feedbackComplete ? (
             <>
-              <span><strong>{filteredRows.length}</strong> all items</span>
-              <span><strong>{filteredCommentCount}</strong> comments</span>
-              <span><strong>{filteredImpossibleCount}</strong> not possible</span>
-              <span><strong>{filteredAffectedSessions}</strong> affected sessions</span>
+              <span><strong>{filteredRows.length}</strong> Einträge</span>
+              <span><strong>{filteredCommentCount}</strong> Kommentare</span>
+              <span><strong>{filteredImpossibleCount}</strong> nicht möglich</span>
+              <span><strong>{filteredAffectedSessions}</strong> betroffene Termine</span>
             </>
           ) : (
             <span>
-              Exact counters {currentOverview.feedbackAvailability === 'partial'
-                ? 'are incomplete'
-                : 'are unavailable'}.
+              Genaue Zähler sind {currentOverview.feedbackAvailability === 'partial'
+                ? 'unvollständig'
+                : 'nicht verfügbar'}.
             </span>
           )}
         </div>
-        <div className="coordination-filters" aria-label="Lecturer feedback filters">
+        <div className="coordination-filters" aria-label={`Filter für Rückmeldungen der ${label('lecturer.plural')}`}>
           <label>
-            <span>Feedback lecturer</span>
+            <span>Rückmeldung von {label('lecturer.singular')}</span>
             <select
               value={feedbackFilters.lecturerId ?? ''}
               onChange={(event) =>
@@ -336,14 +338,14 @@ export function LecturerReviewManagement({
                 }))
               }
             >
-              <option value="">All</option>
+              <option value="">Alle</option>
               {feedbackLecturers.map(([id, name]) => (
                 <option value={id} key={id}>{name}</option>
               ))}
             </select>
           </label>
           <label>
-            <span>Course</span>
+            <span>{label('course.singular')}</span>
             <select
               value={feedbackFilters.courseSourceId ?? ''}
               onChange={(event) =>
@@ -355,14 +357,14 @@ export function LecturerReviewManagement({
                 }))
               }
             >
-              <option value="">All</option>
+              <option value="">Alle</option>
               {feedbackCourses.map(([id, name]) => (
                 <option value={id} key={id}>{name}</option>
               ))}
             </select>
           </label>
           <label>
-            <span>Session kind</span>
+            <span>Terminart</span>
             <select
               value={feedbackFilters.sessionKind ?? ''}
               onChange={(event) =>
@@ -373,14 +375,14 @@ export function LecturerReviewManagement({
                 }))
               }
             >
-              <option value="">All</option>
+              <option value="">Alle</option>
               <option value="revision">Revision</option>
-              <option value="teaching">Teaching</option>
-              <option value="exam">Exam</option>
+              <option value="teaching">Lehrtermin</option>
+              <option value="exam">Prüfung</option>
             </select>
           </label>
           <label>
-            <span>Feedback kind</span>
+            <span>Art der Rückmeldung</span>
             <select
               value={feedbackFilters.feedbackKind ?? ''}
               onChange={(event) =>
@@ -391,10 +393,10 @@ export function LecturerReviewManagement({
                 }))
               }
             >
-              <option value="">All</option>
-              <option value="revision_comment">Revision comment</option>
-              <option value="session_comment">Session comment</option>
-              <option value="impossible_session">Not possible</option>
+              <option value="">Alle</option>
+              <option value="revision_comment">Revisionskommentar</option>
+              <option value="session_comment">Terminkommentar</option>
+              <option value="impossible_session">Nicht möglich</option>
             </select>
           </label>
           <button
@@ -406,14 +408,14 @@ export function LecturerReviewManagement({
               queueMicrotask(() => feedbackHeadingRef.current?.focus())
             }}
           >
-            Clear feedback filters
+            Rückmeldungsfilter zurücksetzen
           </button>
         </div>
         {!feedbackComplete && (
           <p role="status">
             {currentOverview.feedbackAvailability === 'partial'
-              ? 'Feedback is partial; the Not possible count is incomplete.'
-              : 'Feedback is unavailable; no complete count can be shown.'}
+              ? 'Die Rückmeldungen sind unvollständig; die Anzahl „Nicht möglich“ ist nicht vollständig.'
+              : 'Die Rückmeldungen sind nicht verfügbar; es kann keine vollständige Anzahl angezeigt werden.'}
           </p>
         )}
         <h3
@@ -421,28 +423,24 @@ export function LecturerReviewManagement({
           ref={feedbackHeadingRef}
           tabIndex={-1}
         >
-          {notPossibleOnly ? 'Not possible feedback' : 'Lecturer feedback'}
+          {notPossibleOnly ? 'Rückmeldungen „Nicht möglich“' : `Rückmeldungen der ${label('lecturer.plural')}`}
         </h3>
         <p className="review-feedback-announcement" aria-live="polite">
           {feedbackComplete
-            ? `${filteredRows.length} feedback ${
-                filteredRows.length === 1 ? 'item' : 'items'
-              } in ${visibleFeedbackGroups.length} ${
-                visibleFeedbackGroups.length === 1 ? 'group' : 'groups'
-              } shown.`
+            ? `${filteredRows.length} ${filteredRows.length === 1 ? 'Rückmeldung' : 'Rückmeldungen'} in ${visibleFeedbackGroups.length} ${visibleFeedbackGroups.length === 1 ? 'Gruppe' : 'Gruppen'} werden angezeigt.`
             : currentOverview.feedbackAvailability === 'partial'
-              ? 'Displayed feedback is incomplete; exact item and group counts are not available.'
-              : 'Feedback results are unavailable; item and group counts cannot be confirmed.'}
+              ? 'Die angezeigten Rückmeldungen sind unvollständig; genaue Eintrags- und Gruppenzahlen sind nicht verfügbar.'
+              : 'Die Rückmeldungsergebnisse sind nicht verfügbar; Eintrags- und Gruppenzahlen können nicht bestätigt werden.'}
         </p>
         {visibleFeedbackGroups.length === 0 ? (
           <p>
             {!feedbackComplete
               ? currentOverview.feedbackAvailability === 'partial'
-                ? 'Feedback results are incomplete; an empty result cannot be confirmed.'
-                : 'Feedback results are unavailable; an empty result cannot be confirmed.'
+                ? 'Die Rückmeldungsergebnisse sind unvollständig; ein leeres Ergebnis kann nicht bestätigt werden.'
+                : 'Die Rückmeldungsergebnisse sind nicht verfügbar; ein leeres Ergebnis kann nicht bestätigt werden.'
               : notPossibleOnly
-                ? 'No sessions have Not possible feedback.'
-                : 'No feedback has been submitted for this revision.'}
+                ? 'Für keinen Termin liegt eine Rückmeldung „Nicht möglich“ vor.'
+                : 'Für diese Revision wurde noch keine Rückmeldung abgegeben.'}
           </p>
         ) : (
           <div className="review-feedback-groups">
@@ -450,42 +448,42 @@ export function LecturerReviewManagement({
               <article className="review-feedback-group" key={group.groupRef}>
                 <h4>
                   {group.level === 'revision'
-                    ? 'Revision feedback'
+                    ? 'Revisionsrückmeldung'
                     : group.sessionContext?.courseTitle ??
-                      'Historical session feedback'}
+                      'Historische Terminrückmeldung'}
                 </h4>
                 {group.sessionContext !== null && (
                   <dl className="review-feedback-context">
                     <div>
-                      <dt>Course</dt>
+                      <dt>{label('course.singular')}</dt>
                       <dd>
                         {group.sessionContext.courseCode} ·{' '}
                         {group.sessionContext.courseTitle}
                       </dd>
                     </div>
                     <div>
-                      <dt>Session</dt>
+                      <dt>Termin</dt>
                       <dd>{group.sessionContext.sessionType}</dd>
                     </div>
                     <div>
-                      <dt>Date and time</dt>
+                      <dt>Datum und Uhrzeit</dt>
                       <dd>
-                        {group.sessionContext.date},{' '}
+                        {formatCalendarDate(group.sessionContext.date)},{' '}
                         {group.sessionContext.startTime}–
                         {group.sessionContext.endTime} (
                         {group.sessionContext.timeZone})
                       </dd>
                     </div>
                     <div>
-                      <dt>Room</dt>
+                      <dt>{label('room.singular')}</dt>
                       <dd>{group.sessionContext.roomName}</dd>
                     </div>
                     <div>
-                      <dt>Cohort</dt>
+                      <dt>{label('cohort.singular')}</dt>
                       <dd>{group.sessionContext.cohortName}</dd>
                     </div>
                     <div>
-                      <dt>Not possible flags</dt>
+                      <dt>Markierungen „Nicht möglich“</dt>
                       <dd>{group.impossibleFlagCount}</dd>
                     </div>
                   </dl>
@@ -495,22 +493,22 @@ export function LecturerReviewManagement({
                     <li key={item.id}>
                       <strong>{feedbackKindLabel(item.kind)}</strong>
                       {item.comment !== null && <p>{item.comment}</p>}
-                      <p>{item.attribution}</p>
+                      <p>{feedbackAttribution(item.attribution)}</p>
                       <time dateTime={item.submittedAt}>
                         {formatTimestamp(item.submittedAt, item.timeZone)} ({item.timeZone})
                       </time>
                       {item.sessionContext != null && (
                         <dl className="review-feedback-item-context">
-                          <div><dt>Captured course</dt><dd>{item.sessionContext.courseCode} · {item.sessionContext.courseTitle}</dd></div>
-                          <div><dt>Captured session</dt><dd>{humanize(item.sessionContext.sessionKind)} · {item.sessionContext.sessionType}</dd></div>
-                          <div><dt>Captured date and time</dt><dd>{item.sessionContext.date}, {item.sessionContext.startTime}–{item.sessionContext.endTime} ({item.sessionContext.timeZone})</dd></div>
-                          <div><dt>Captured room</dt><dd>{item.sessionContext.roomName}</dd></div>
-                          <div><dt>Captured cohort</dt><dd>{item.sessionContext.cohortName}</dd></div>
-                          <div><dt>Captured study type</dt><dd>{item.sessionContext.studyType ?? 'Unavailable'}</dd></div>
+                          <div><dt>Erfasste {label('course.singular')}</dt><dd>{item.sessionContext.courseCode} · {item.sessionContext.courseTitle}</dd></div>
+                          <div><dt>Erfasster Termin</dt><dd>{humanize(item.sessionContext.sessionKind)} · {item.sessionContext.sessionType}</dd></div>
+                          <div><dt>Erfasstes Datum und Uhrzeit</dt><dd>{formatCalendarDate(item.sessionContext.date)}, {item.sessionContext.startTime}–{item.sessionContext.endTime} ({item.sessionContext.timeZone})</dd></div>
+                          <div><dt>Erfasster {label('room.singular')}</dt><dd>{item.sessionContext.roomName}</dd></div>
+                          <div><dt>Erfasste {label('cohort.singular')}</dt><dd>{item.sessionContext.cohortName}</dd></div>
+                          <div><dt>Erfasste Studienart</dt><dd>{item.sessionContext.studyType ?? 'Nicht verfügbar'}</dd></div>
                           {item.sessionContext.sessionKind === 'teaching' ? (
-                            <div><dt>Teaching units</dt><dd>{item.sessionContext.teachingUnits ?? 'Unavailable'}</dd></div>
+                            <div><dt>Lehreinheiten</dt><dd>{item.sessionContext.teachingUnits ?? 'Nicht verfügbar'}</dd></div>
                           ) : (
-                            <div><dt>Duration</dt><dd>{item.sessionContext.examDurationMinutes == null ? 'Unavailable' : `${item.sessionContext.examDurationMinutes} minutes`}</dd></div>
+                            <div><dt>Dauer</dt><dd>{item.sessionContext.examDurationMinutes == null ? 'Nicht verfügbar' : `${item.sessionContext.examDurationMinutes} Minuten`}</dd></div>
                           )}
                         </dl>
                       )}
@@ -524,11 +522,11 @@ export function LecturerReviewManagement({
                       onOpenCurrentSession?.(group.currentNavigation!)
                     }
                   >
-                    Open current session
+                    Aktuellen Termin öffnen
                   </button>
                 ) : (
                   group.level === 'session' && (
-                    <p>The current session workflow is unavailable.</p>
+                    <p>Der Ablauf für den aktuellen Termin ist nicht verfügbar.</p>
                   )
                 )}
               </article>
@@ -538,14 +536,14 @@ export function LecturerReviewManagement({
       </section>
 
       <div className="review-issue-controls">
-        <label htmlFor="lecturer-review-lecturer">Lecturer</label>
+        <label htmlFor="lecturer-review-lecturer">{label('lecturer.singular')}</label>
         <select
           id="lecturer-review-lecturer"
           value={lecturerId}
           onChange={(event) => setLecturerId(event.target.value)}
           disabled={!working || busy}
         >
-          <option value="">Select lecturer</option>
+          <option value="">{label('lecturer.singular')} auswählen</option>
           {currentOverview.lecturers.map((lecturer) => (
             <option
               value={lecturer.lecturerId}
@@ -557,7 +555,7 @@ export function LecturerReviewManagement({
           ))}
         </select>
 
-        <label htmlFor="lecturer-review-duration">Duration</label>
+        <label htmlFor="lecturer-review-duration">Dauer</label>
         <select
           id="lecturer-review-duration"
           value={durationDays}
@@ -566,29 +564,26 @@ export function LecturerReviewManagement({
           }
           disabled={!working || busy}
         >
-          <option value="1">1 day</option>
-          <option value="2">2 days</option>
-          <option value="3">3 days</option>
+          <option value="1">1 Tag</option>
+          <option value="2">2 Tage</option>
+          <option value="3">3 Tage</option>
         </select>
 
         <button type="button" disabled={!canIssue} onClick={() => void issue()}>
-          Issue review link
+          Zugangslink erstellen
         </button>
       </div>
 
       {!working && (
         <p role="note">
-          Initial links can be issued only from a Working Draft or Ready for
-          review revision.
+          Erste Zugangslinks können nur aus einer Arbeitsrevision im Entwurf oder im Status „Bereit zur Prüfung“ erstellt werden.
         </p>
       )}
 
       <aside className="review-warning">
-        <strong>Manual delivery</strong>
+        <strong>Manuelle Zustellung</strong>
         <p>
-          Send the link yourself through a private channel. It is a bearer
-          link: anyone with it can read this lecturer’s scoped schedule and
-          submit advisory feedback until access ends.
+          Senden Sie den Link selbst über einen privaten Kanal. Wer den Link besitzt, kann die zugeordnete Planung lesen und bis zum Zugangsende beratende Rückmeldungen abgeben.
         </p>
       </aside>
 
@@ -597,7 +592,7 @@ export function LecturerReviewManagement({
           className="review-link-history"
           aria-labelledby="review-link-history"
         >
-          <h3 id="review-link-history">Link history</h3>
+          <h3 id="review-link-history">Linkverlauf</h3>
           <ul>
             {currentOverview.links.map((link) => {
               const uncertain = uncertainLinkIds.has(link.id)
@@ -606,14 +601,14 @@ export function LecturerReviewManagement({
                 <li key={link.id}>
                   <strong>{link.intendedLecturerName}</strong>
                   <span>
-                    {uncertain ? 'Status unknown' : humanize(link.status)}
+                    {uncertain ? 'Status unbekannt' : humanize(link.status)}
                   </span>
                   <span>
-                    Issued {formatTimestamp(link.issuedAt, link.timeZone)} · expires{' '}
+                    Erstellt {formatTimestamp(link.issuedAt, link.timeZone)} · endet{' '}
                     {formatTimestamp(link.expiresAt, link.timeZone)}
                   </span>
                   {link.endedAt !== null && (
-                    <span>Ended {formatTimestamp(link.endedAt, link.timeZone)}</span>
+                    <span>Beendet {formatTimestamp(link.endedAt, link.timeZone)}</span>
                   )}
                   {active && (
                     <div className="review-link-actions">
@@ -622,12 +617,12 @@ export function LecturerReviewManagement({
                         disabled={busy}
                         onClick={() => void revoke(link.id)}
                       >
-                        Revoke link
+                        Link widerrufen
                       </button>
                       {link.replaceAllowed && (
                         <>
                           <label htmlFor={`replacement-duration-${link.id}`}>
-                            Replacement duration
+                            Dauer des Ersatzlinks
                           </label>
                           <select
                             id={`replacement-duration-${link.id}`}
@@ -639,16 +634,16 @@ export function LecturerReviewManagement({
                               )
                             }
                           >
-                            <option value="1">1 day</option>
-                            <option value="2">2 days</option>
-                            <option value="3">3 days</option>
+                            <option value="1">1 Tag</option>
+                            <option value="2">2 Tage</option>
+                            <option value="3">3 Tage</option>
                           </select>
                           <button
                             type="button"
                             disabled={busy}
                             onClick={() => void replace(link.id)}
                           >
-                            Replace link
+                            Link ersetzen
                           </button>
                         </>
                       )}
@@ -663,11 +658,11 @@ export function LecturerReviewManagement({
 
       {issued !== null && transientUrl !== null && (
         <section className="review-one-time-result" aria-labelledby="review-url">
-          <h3 id="review-url">One-time review URL</h3>
+          <h3 id="review-url">Einmalig angezeigte Rückmeldungs-URL</h3>
           <p className="review-secret-url">{transientUrl}</p>
           <dl className="review-metadata">
             <div>
-              <dt>Lecturer</dt>
+              <dt>{label('lecturer.singular')}</dt>
               <dd>{issued.issuedLink.intendedLecturerName}</dd>
             </div>
             <div>
@@ -675,19 +670,19 @@ export function LecturerReviewManagement({
               <dd>{issued.overview.revision.label}</dd>
             </div>
             <div>
-              <dt>Courses</dt>
+              <dt>{label('course.plural')}</dt>
               <dd>
                 {detailLecturer?.courses
                   .map((course) => course.title)
-                  .join(', ') || 'No assigned courses'}
+                  .join(', ') || `Keine zugeordneten ${label('course.plural')}`}
               </dd>
             </div>
             <div>
-              <dt>Issued</dt>
+              <dt>Erstellt</dt>
               <dd>{formatTimestamp(issued.issuedLink.issuedAt, issued.issuedLink.timeZone)}</dd>
             </div>
             <div>
-              <dt>Access expires</dt>
+              <dt>Zugang endet</dt>
               <dd>
                 {formatTimestamp(issued.issuedLink.expiresAt, issued.issuedLink.timeZone)} (
                 {issued.issuedLink.timeZone})
@@ -700,10 +695,10 @@ export function LecturerReviewManagement({
           </dl>
           <div className="review-result-actions">
             <button type="button" onClick={() => void copy()}>
-              Copy link
+              Link kopieren
             </button>
             <button type="button" onClick={dismiss}>
-              Dismiss
+              Schließen
             </button>
           </div>
         </section>
@@ -716,20 +711,27 @@ export function LecturerReviewManagement({
 }
 
 function humanize(value: string) {
-  const words = value.replaceAll('_', ' ')
-  return words.charAt(0).toUpperCase() + words.slice(1)
+  return ({
+    draft: 'Entwurf', ready_for_review: 'Bereit zur Prüfung', published: 'Veröffentlicht',
+    active: 'Aktiv', revoked: 'Widerrufen', expired: 'Abgelaufen', replaced: 'Ersetzt', revision_ended: 'Revision beendet',
+    revision: 'Revision', teaching: 'Lehrtermin', exam: 'Prüfung',
+  } as Record<string, string>)[value] ?? 'Unbekannter Status'
 }
 
 function feedbackKindLabel(value: string) {
-  if (value === 'impossible_session') return 'Not possible'
-  if (value === 'session_comment') return 'Session comment'
-  return 'Revision comment'
+  if (value === 'impossible_session') return 'Nicht möglich'
+  if (value === 'session_comment') return 'Terminkommentar'
+  return 'Revisionskommentar'
 }
 
-function formatTimestamp(value: string, timeZone: string) {
-  return new Date(value).toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone,
-  })
+function feedbackAttribution(value: string) {
+  const match = /^Submitted through the review link intended for (.+); identity was not authenticated\.$/.exec(value)
+  return match
+    ? `Über den Rückmeldungslink für ${match[1]} eingereicht; die Identität wurde nicht authentifiziert.`
+    : 'Über einen kontolosen Rückmeldungslink eingereicht; die Identität wurde nicht authentifiziert.'
+}
+
+function formatTimestamp(value: string, _timeZone: string) {
+  void _timeZone
+  return formatViennaDateTime(value)
 }

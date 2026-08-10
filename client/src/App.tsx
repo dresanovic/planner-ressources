@@ -15,6 +15,7 @@ import {
   readNavigationPinned,
   writeNavigationPinned,
 } from './navigationPreference'
+import { label } from './config/terminology'
 
 function App() {
   const [view, setView] = useState<PlannerView>('schedule')
@@ -51,7 +52,7 @@ function App() {
     const commit = () => commitScheduleDestination(destination)
     if (scheduleNavigationRequester.current) {
       scheduleNavigationRequester.current({
-        label: `Schedule ${destination}`,
+        label: `${label('schedule.navigation')}: ${destination}`,
         commit,
       })
     } else {
@@ -76,7 +77,7 @@ function App() {
     }
     if (view === 'schedule' && scheduleNavigationRequester.current) {
       scheduleNavigationRequester.current({
-        label: `Academic Data: ${category}`,
+        label: `${label('academicData.navigation')}: ${category}`,
         commit,
       })
     } else {
@@ -115,7 +116,7 @@ function App() {
         ref={contentRef}
         className="application-content"
         tabIndex={-1}
-        aria-label={view === 'schedule' ? 'Schedule' : `Academic Data: ${selectedCategory}`}
+        aria-label={view === 'schedule' ? label('schedule.heading') : `${label('academicData.heading')}: ${selectedCategory}`}
         aria-hidden={navigationOpen || undefined}
         inert={navigationOpen || undefined}
       >

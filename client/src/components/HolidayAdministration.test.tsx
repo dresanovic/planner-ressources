@@ -32,6 +32,25 @@ function setInput(input: HTMLInputElement, value: string) {
 }
 
 describe('HolidayAdministration', () => {
+  it('blocks an incomplete date, associates the correction, and focuses the date field', async () => {
+    mocks.listHolidays.mockResolvedValue([])
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    await act(async () => { root.render(<HolidayAdministration onChanged={vi.fn()} />); await Promise.resolve() })
+    const dateInput = document.querySelector<HTMLInputElement>('#holiday-date')!
+    const nameInput = document.querySelector<HTMLInputElement>('input[name="holiday-name"]')!
+    await act(async () => {
+      setInput(dateInput, '1.01.2027')
+      setInput(nameInput, 'Neujahr')
+    })
+
+    await act(async () => button('Feiertag erstellen').click())
+
+    expect(mocks.createHoliday).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(dateInput)
+    expect(dateInput.getAttribute('aria-invalid')).toBe('true')
+    expect(document.body.textContent).toContain('TT.MM.JJJJ')
+  })
+
   it('creates, edits, and confirms deletion while notifying only after success', async () => {
     const original = { id: 1, date: '2026-12-25', name: 'Winter Holiday', revision: 1 }
     const changed = { ...original, name: 'Winter Break', revision: 2 }
@@ -42,24 +61,24 @@ describe('HolidayAdministration', () => {
     const onChanged = vi.fn()
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     await act(async () => { root.render(<HolidayAdministration onChanged={onChanged} />); await Promise.resolve() })
-    const dateInput = document.querySelector<HTMLInputElement>('input[type="date"]')!
+    const dateInput = document.querySelector<HTMLInputElement>('input[inputmode="numeric"]')!
     const nameInput = document.querySelector<HTMLInputElement>('input[name="holiday-name"]')!
     await act(async () => {
-      setInput(dateInput, '2026-12-25')
+      setInput(dateInput, '25.12.2026')
       setInput(nameInput, 'Winter Holiday')
     })
-    await act(async () => { button('Create holiday').click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Feiertag erstellen').click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
     expect(onChanged).toHaveBeenCalledTimes(1)
-    await act(async () => button('Edit').click())
+    await act(async () => button('Bearbeiten').click())
     expect(nameInput.value).toBe('Winter Holiday')
     await act(async () => {
       setInput(nameInput, 'Winter Break')
-      button('Save changes').click(); await new Promise((resolve) => setTimeout(resolve, 0))
+      button('Änderungen speichern').click(); await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(onChanged).toHaveBeenCalledTimes(2)
-    await act(async () => button('Delete').click())
+    await act(async () => button('Löschen').click())
     expect(document.querySelector('[role="dialog"]')).not.toBeNull()
-    await act(async () => { button('Remove holiday').click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    await act(async () => { button('Feiertag entfernen').click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
     expect(onChanged).toHaveBeenCalledTimes(3)
   })
 
@@ -79,23 +98,23 @@ describe('HolidayAdministration', () => {
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     await act(async () => { root.render(<HolidayAdministration onChanged={onChanged} />); await Promise.resolve() })
 
-    expect(document.body.textContent).toContain('2024-02-29')
-    expect(document.body.textContent).toContain('2027-01-01')
-    await act(async () => button('Edit').click())
+    expect(document.body.textContent).toContain('29.02.2024')
+    expect(document.body.textContent).toContain('01.01.2027')
+    await act(async () => button('Bearbeiten').click())
     const nameInput = document.querySelector<HTMLInputElement>('input[name="holiday-name"]')!
     await act(async () => {
       setInput(nameInput, 'My stale edit')
-      button('Save changes').click()
+      button('Änderungen speichern').click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
     expect(onChanged).not.toHaveBeenCalled()
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain('Refresh and try again.')
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain('ungültiger Angaben')
     expect(nameInput.value).toBe('My stale edit')
     expect(mocks.listHolidays).toHaveBeenCalledTimes(2)
 
     await act(async () => {
-      button('Save changes').click()
+      button('Änderungen speichern').click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
@@ -105,7 +124,7 @@ describe('HolidayAdministration', () => {
       expectedRevision: current.revision,
     })
     expect(onChanged).toHaveBeenCalledTimes(1)
-    expect(document.body.textContent).toContain('Holiday updated.')
+    expect(document.body.textContent).toContain('Feiertag aktualisiert.')
   })
 
   it('offers an accessible retry after the initial list request fails', async () => {
@@ -113,10 +132,10 @@ describe('HolidayAdministration', () => {
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     await act(async () => { root.render(<HolidayAdministration onChanged={() => undefined} />); await Promise.resolve() })
 
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain('Offline')
-    await act(async () => { button('Retry holidays').click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain('Verbindung')
+    await act(async () => { button('Feiertage erneut laden').click(); await new Promise((resolve) => setTimeout(resolve, 0)) })
 
-    expect(document.body.textContent).toContain('No holidays yet')
+    expect(document.body.textContent).toContain('Noch keine Feiertage vorhanden')
     expect(document.querySelector('[role="alert"]')).toBeNull()
   })
 })

@@ -13,7 +13,7 @@ it('renders recurring weekday controls and chronological canonical periods', asy
     { id: 2, resourceType: 'lecturer', resourceId: 1, kind: 'dated', startDate: '2026-09-08', startTime: '09:00', endDate: '2026-09-08', endTime: '11:00', revision: 1 },
     { id: 1, resourceType: 'lecturer', resourceId: 1, kind: 'recurring', weekdays: [0, 2], startTime: '08:00', endTime: '10:00', revision: 1 },
   ]} onCreate={onCreate} onUpdate={vi.fn()} onDelete={vi.fn()} />); await Promise.resolve() })
-  expect(document.body.textContent?.indexOf('Monday, Wednesday')).toBeLessThan(document.body.textContent?.indexOf('8 Sept 2026') ?? 0)
+  expect(document.body.textContent?.indexOf('Montag, Mittwoch')).toBeLessThan(document.body.textContent?.indexOf('08.09.2026') ?? 0)
   expect(document.querySelectorAll('input[type="checkbox"]')).toHaveLength(7)
 })
 
@@ -26,11 +26,11 @@ it('keeps the period and announces a failed deletion', async () => {
   ]} onCreate={vi.fn()} onUpdate={vi.fn()} onDelete={onDelete} />); await Promise.resolve() })
 
   await act(async () => {
-    Array.from(document.querySelectorAll('button')).find((item) => item.textContent === 'Delete')?.click()
+    Array.from(document.querySelectorAll('button')).find((item) => item.textContent === 'Löschen')?.click()
     await Promise.resolve()
   })
 
   expect(onDelete).toHaveBeenCalledOnce()
-  expect(document.querySelector('[role="alert"]')?.textContent).toContain('changed')
-  expect(document.body.textContent).toContain('Monday')
+  expect(document.querySelector('[role="alert"]')?.textContent).toContain('aktuellen Stand')
+  expect(document.body.textContent).toContain('Montag')
 })

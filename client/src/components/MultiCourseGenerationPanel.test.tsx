@@ -19,8 +19,8 @@ describe('MultiCourseGenerationPanel', () => {
     const onDates = vi.fn()
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     act(() => root.render(<MultiCourseGenerationPanel courses={courses} selectedCourseIds={[1, 2]} unavailableDatesInput="" onUnavailableDatesInputChange={onDates} onChange={onChange} onGenerate={vi.fn()} />))
-    expect(document.body.textContent).toContain('2 selected')
-    expect(document.body.textContent).toContain('Maximize scheduled units')
+    expect(document.body.textContent).toContain('2 ausgewählt')
+    expect(document.body.textContent).toContain('Maximiert die geplanten Lehreinheiten')
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
     act(() => boxes[2].click())
     expect(onChange).toHaveBeenCalledWith([1, 2, 3])
@@ -32,7 +32,7 @@ describe('MultiCourseGenerationPanel', () => {
       }
     })
     expect(onDates).toHaveBeenCalledWith('2026-10-26, 2026-10-26')
-    const clear = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Clear selection')
+    const clear = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Auswahl aufheben')
     act(() => clear?.click())
     expect(onChange).toHaveBeenCalledWith([])
   })
@@ -55,7 +55,7 @@ describe('MultiCourseGenerationPanel', () => {
     ))
 
     const statuses = [...document.querySelectorAll('.course-draft-status')].map((status) => status.textContent)
-    expect(statuses).toEqual(['Draft · 4/8 units', 'No draft', 'Draft · 8/8 units'])
+    expect(statuses).toEqual(['Entwurf · 4/8 Lehreinheiten', 'Kein Entwurf', 'Entwurf · 8/8 Lehreinheiten'])
 
     act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click())
     expect(onChange).toHaveBeenCalledWith([1])

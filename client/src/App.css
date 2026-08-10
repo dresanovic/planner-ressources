@@ -35,6 +35,11 @@
   margin-bottom: 28px;
 }
 
+.navigation-heading > #navigation-title {
+  flex: 1;
+  min-width: 0;
+}
+
 .application-navigation nav {
   display: grid;
   gap: 6px;
@@ -113,14 +118,56 @@
 }
 
 .navigation-pin {
-  margin-left: auto;
-  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+  border: 1px solid #c8d7e8;
   border-radius: 6px;
   background: #edf2f8;
   color: #173e69;
-  padding: 7px 9px;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 0;
+}
+
+.navigation-pin-symbol {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transition: transform .15s ease;
+}
+
+.navigation-pin.is-pinned .navigation-pin-symbol {
+  transform: rotate(-35deg);
+}
+
+.navigation-close {
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+  border: 1px solid #e3aaa5;
+  border-radius: 6px;
+  background: #fff1f0;
+  color: #b42318;
+  padding: 0;
+}
+
+.navigation-close:hover {
+  background: #ffe3e0;
+  color: #8f1d14;
+}
+
+.navigation-close-symbol {
+  font-size: 1.8rem;
+  font-weight: 400;
+  line-height: 1;
 }
 
 @media (min-width: 821px) {
@@ -986,9 +1033,6 @@ button:disabled[aria-busy='true'] {
 
   .navigation-close {
     display: inline-flex;
-    padding: 8px;
-    background: #edf2f8;
-    color: #172033;
   }
 
   .workbench { padding: 16px; }
@@ -1478,8 +1522,32 @@ button:disabled[aria-busy='true'] {
 }
 
 .calendar-date-controls { align-items: center; }
-.calendar-date-controls input { min-height: 2.5rem; }
-.visible-range { color: var(--calendar-muted); font-variant-numeric: tabular-nums; }
+.calendar-anchor-field { min-width: 12rem; }
+.calendar-date-controls .calendar-anchor-field input {
+  width: 100%;
+  min-height: 2.5rem;
+  box-sizing: border-box;
+  font-variant-numeric: tabular-nums;
+}
+.calendar-anchor-field .field-hint {
+  color: var(--calendar-muted);
+  font-size: .75rem;
+  font-weight: 400;
+  text-transform: none;
+}
+.visible-range-group {
+  display: grid;
+  gap: .25rem;
+  color: var(--calendar-muted);
+  white-space: nowrap;
+}
+.visible-range { font-variant-numeric: tabular-nums; }
+.visible-range-label {
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
 
 .workspace-filters {
   display: grid;
@@ -1612,8 +1680,8 @@ button:disabled[aria-busy='true'] {
   .revision-context-switch,
   .calendar-mode-switch,
   .calendar-date-controls { display: grid; grid-template-columns: 1fr 1fr; }
-  .calendar-date-controls input,
-  .calendar-date-controls .visible-range { grid-column: 1 / -1; }
+  .calendar-date-controls .calendar-anchor-field,
+  .calendar-date-controls .visible-range-group { grid-column: 1 / -1; }
   .schedule-results { order: -1; min-width: 0; }
   .input-summary { order: 1; }
 }
@@ -1997,7 +2065,44 @@ button:disabled[aria-busy='true'] {
   overflow-wrap: anywhere;
 }
 
+.actionable-problems,
+.actionable-problem-list {
+  min-width: 0;
+}
+
+.actionable-problem-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.actionable-problem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid currentColor;
+  border-inline-start-width: 0.35rem;
+  border-radius: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.actionable-problem--blocking { color: #8f1d14; background: #fff3f1; }
+.actionable-problem--warning { color: #614600; background: #fff9df; }
+.actionable-problem p { margin: 0.25rem 0 0; }
+.actionable-problem a:focus-visible,
+.actionable-problem button:focus-visible { outline: 3px solid #1264a3; outline-offset: 2px; }
+
+.field-hint,
+.field-error { display: block; overflow-wrap: anywhere; }
+.field-error { color: #8f1d14; }
+
 @media (max-width: 720px) {
+  .actionable-problem { flex-direction: column; }
+  .actionable-problem .secondary-button { width: 100%; }
   .restricted-calendar-workspace {
     padding-inline: 0.5rem;
   }

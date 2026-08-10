@@ -120,18 +120,16 @@ describe('DraftSchedulePanel', () => {
     })
 
     await act(async () => {})
-    expect(buttonByText('Save')).toBeDefined()
-    expect(document.querySelector<HTMLInputElement>('input[type="date"]')?.value).toBe(
-      draftScheduleFixture.sessions.find((session) => session.id === 2)?.date,
-    )
+    expect(buttonByText('Speichern')).toBeDefined()
+    expect(document.querySelector<HTMLInputElement>('input[inputmode="numeric"]')?.value).toBe('14.09.2026')
     expect(onRequestedEditHandled).toHaveBeenCalledOnce()
   })
 
   it('renders immutable publication context without teaching mutation controls', () => {
     renderPanel({ readOnly: true, contextLabel: 'Current publication · Revision 1' })
     expect(document.body.textContent).toContain('Current publication · Revision 1')
-    expect(buttonByText('Edit')).toBeUndefined()
-    expect(buttonByText('Delete')).toBeUndefined()
+    expect(buttonByText('Bearbeiten')).toBeUndefined()
+    expect(buttonByText('Löschen')).toBeUndefined()
     expect(document.body.textContent).toContain('Planning 101')
   })
 
@@ -143,8 +141,37 @@ describe('DraftSchedulePanel', () => {
       lecturer: { id: 1, name: 'Ada', referenceCode: 'L-1' }, cohort: { id: 1, name: 'C1', referenceCode: null }, room: { id: 1, name: 'R1', referenceCode: 'R-1', capacity: 40 },
       lifecycleStatus: 'active', source: 'manual', validityIssues: [], inputSnapshotToken: 'token',
     }] })
-    expect(document.body.textContent).toContain('Recommended 2026-10-09–2026-10-16 (planner override)')
-    expect(document.body.textContent).toContain('Final teaching 2026-10-02 at 12:00')
+    expect(document.body.textContent).toContain('Empfohlener Zeitraum 09.10.2026–16.10.2026 (manuell festgelegt)')
+    expect(document.body.textContent).toContain('Letzte Lehrveranstaltung 02.10.2026 um 12:00')
+  })
+
+  it('explains an outside-window exam with European dates and a truthful next action', () => {
+    renderPanel({ schedules: [], examCourseNames: { 1: 'KI Grundlagen' }, exams: [{
+      id: 7, revision: 1, courseId: 1, semesterId: 1, configurationIdentifier: 'Klausur', examType: 'Schriftlich', durationMinutes: 90, requiredCapacity: 30,
+      recommendedStartDate: '2026-09-15', recommendedEndDate: '2026-09-30', recommendationWasOverridden: false, outsideRecommendedWindow: true,
+      finalTeachingAnchor: { date: '2026-09-04', endTime: '12:00', teachingSessionId: 42 }, date: '2026-09-11', startTime: '18:00', endTime: '19:30',
+      lecturer: { id: 1, name: 'Ada', referenceCode: 'L-1' }, cohort: { id: 1, name: 'C1', referenceCode: null }, room: { id: 1, name: 'R1', referenceCode: 'R-1', capacity: 40 },
+      lifecycleStatus: 'active', source: 'manual', validityIssues: [
+        { code: 'INSUFFICIENT_ROOM_CAPACITY', message: 'RAW CAPACITY FAILURE', relatedDate: '2026-09-11', relatedResource: { id: 1, name: 'R1', referenceCode: 'R-1' }, relatedSessionId: null, holidayName: null },
+        { code: 'INSTITUTION_HOLIDAY', message: 'RAW HOLIDAY FAILURE', relatedDate: '2026-09-11', relatedResource: null, relatedSessionId: null, holidayName: 'Planungsfeiertag' },
+      ], inputSnapshotToken: 'token',
+    }] })
+
+    const text = document.body.textContent ?? ''
+    expect(text).toContain('Prüfung für „KI Grundlagen“')
+    expect(text).toContain('11.09.2026')
+    expect(text).toContain('15.09.2026–30.09.2026')
+    expect(text).toContain('nicht blockierend')
+    expect(text).toContain('bleibt gespeichert')
+    expect(text).toContain('„Bearbeiten“')
+    expect(text).toContain('bewusst beibehalten')
+    expect(text).not.toContain('OUTSIDE_RECOMMENDED_WINDOW')
+    expect(document.querySelectorAll('.actionable-problem')).toHaveLength(3)
+    expect(text).toContain('R1“ hat 40 Plätze; benötigt werden 30')
+    expect(text).toContain('Planungsfeiertag')
+    expect(text).toContain('blockiert die Verwendung dieses Prüfungstermins')
+    expect(text).not.toContain('RAW CAPACITY FAILURE')
+    expect(text).not.toContain('INSUFFICIENT_ROOM_CAPACITY')
   })
 
   it('renders generated sessions chronologically with planning context', () => {
@@ -152,10 +179,10 @@ describe('DraftSchedulePanel', () => {
 
     const rows = [...document.querySelectorAll('.session-row:not(.session-header)')]
 
-    expect(document.body.textContent).toContain('Courses overview')
+    expect(document.body.textContent).toContain('Lehrveranstaltungen')
     expect(rows).toHaveLength(2)
-    expect(rows[0].textContent).toContain('2026-09-07')
-    expect(rows[1].textContent).toContain('2026-09-14')
+    expect(rows[0].textContent).toContain('07.09.2026')
+    expect(rows[1].textContent).toContain('14.09.2026')
     expect(document.body.textContent).toContain('Planning 101')
     expect(document.body.textContent).toContain('AI 1')
     expect(document.body.textContent).toContain('Ada Lovelace')
@@ -181,7 +208,7 @@ describe('DraftSchedulePanel', () => {
       },
     })
 
-    expect(document.body.textContent).toContain('Affected record')
+    expect(document.body.textContent).toContain('Betroffener Datensatz')
     expect(document.body.textContent).toContain('Scheduling 201 · 2 units remaining')
     expect(document.body.textContent).not.toContain('Planning 101')
     expect(document.querySelector('[aria-label="Draft session filters"]')).toBeNull()
@@ -194,33 +221,33 @@ describe('DraftSchedulePanel', () => {
   it('shows a no-schedule empty state', () => {
     renderPanel({ schedules: [] })
 
-    expect(document.body.textContent).toContain('No Draft Schedules for this semester yet.')
+    expect(document.body.textContent).toContain('Für dieses Semester gibt es noch keine Planungsentwürfe.')
   })
 
   it('shows a distinct empty state when a generated schedule has zero sessions', () => {
     renderPanel({ schedules: [emptyDraftScheduleFixture] })
 
-    expect(document.body.textContent).toContain('No Draft Schedules for this semester yet.')
+    expect(document.body.textContent).toContain('Für dieses Semester gibt es noch keine Planungsentwürfe.')
   })
 
   it('switches between list and weekly review modes', () => {
     renderPanel()
 
-    expect(document.body.textContent).toContain('2026-09-07')
+    expect(document.body.textContent).toContain('07.09.2026')
 
     const weeklyButton = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Weekly',
+      (button) => button.textContent === 'Woche',
     )
 
     act(() => {
       weeklyButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    expect(document.body.textContent).toContain('Week of 2026-09-07')
-    expect(document.body.textContent).toContain('Week of 2026-09-14')
+    expect(document.body.textContent).toContain('Woche ab 07.09.2026')
+    expect(document.body.textContent).toContain('Woche ab 14.09.2026')
 
     const listButton = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'List',
+      (button) => button.textContent === 'Liste',
     )
 
     act(() => {
@@ -233,23 +260,23 @@ describe('DraftSchedulePanel', () => {
   it('offers exact-session Delete actions in list and weekly modes', () => {
     const onDeleteSession = vi.fn()
     renderPanel({ onDeleteSession })
-    const listDeletes = [...document.querySelectorAll('button')].filter((item) => item.textContent === 'Delete')
+    const listDeletes = [...document.querySelectorAll('button')].filter((item) => item.textContent === 'Löschen')
     expect(listDeletes).toHaveLength(2)
     act(() => listDeletes[0].click())
     expect(onDeleteSession).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), expect.objectContaining({ draftScheduleId: 1 }))
 
-    const weekly = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Weekly')!
+    const weekly = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Woche')!
     act(() => weekly.click())
-    const weeklyDeletes = [...document.querySelectorAll('button')].filter((item) => item.textContent === 'Delete')
+    const weeklyDeletes = [...document.querySelectorAll('button')].filter((item) => item.textContent === 'Löschen')
     expect(weeklyDeletes).toHaveLength(2)
   })
 
   it('disables edit entry and an already-open edit save while the overview is stale', () => {
     const onUpdateSession = vi.fn().mockResolvedValue(undefined)
     const root = renderPanel({ onUpdateSession })
-    const edit = [...document.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent === 'Edit')!
+    const edit = [...document.querySelectorAll<HTMLButtonElement>('button')].find((item) => item.textContent === 'Bearbeiten')!
     act(() => edit.click())
-    expect((buttonByText('Save') as HTMLButtonElement).disabled).toBe(false)
+    expect((buttonByText('Speichern') as HTMLButtonElement).disabled).toBe(false)
 
     act(() => {
       root.render(
@@ -262,8 +289,8 @@ describe('DraftSchedulePanel', () => {
       )
     })
 
-    expect((buttonByText('Save') as HTMLButtonElement).disabled).toBe(true)
-    const remainingEdits = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.textContent === 'Edit')
+    expect((buttonByText('Speichern') as HTMLButtonElement).disabled).toBe(true)
+    const remainingEdits = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.textContent === 'Bearbeiten')
     expect(remainingEdits.every((item) => item.disabled)).toBe(true)
   })
 
@@ -289,17 +316,17 @@ describe('DraftSchedulePanel', () => {
       }
     })
 
-    expect(document.body.textContent).toContain('No sessions match the active filters.')
+    expect(document.body.textContent).toContain('Keine Termine entsprechen den aktiven Filtern.')
 
     const clearButton = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Clear filters',
+      (button) => button.textContent === 'Filter zurücksetzen',
     )
 
     act(() => {
       clearButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    expect(document.body.textContent).toContain('2026-09-14')
+    expect(document.body.textContent).toContain('14.09.2026')
   })
 
   it('builds compact overview filters from all generated plans', () => {
@@ -323,7 +350,7 @@ describe('DraftSchedulePanel', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0].textContent).not.toContain('Planning 101')
     expect(rows[0].textContent).toContain('Scheduling 201')
-    expect(rows[0].textContent).toContain('2026-09-21')
+    expect(rows[0].textContent).toContain('21.09.2026')
   })
 
   it('shows generation constraints separately from review filters', () => {
@@ -333,21 +360,21 @@ describe('DraftSchedulePanel', () => {
     const constraintSection = document.querySelector('.generation-constraints')
     const filterBar = document.querySelector('.filter-bar')
 
-    expect(constraintSection?.textContent).toContain('Inputs for the next draft')
-    expect(constraintSection?.textContent).toContain('Start date')
-    expect(filterBar?.textContent).toContain('Course')
-    expect(filterBar?.textContent).not.toContain('Start date')
+    expect(constraintSection?.textContent).toContain('Eingaben für den nächsten Entwurf')
+    expect(constraintSection?.textContent).toContain('Beginn')
+    expect(filterBar?.textContent).toContain('Lehrveranstaltung')
+    expect(filterBar?.textContent).not.toContain('Beginn')
   })
 
   it('emits planning period edits and generation action separately', () => {
     const onConstraintsChange = vi.fn()
     renderConstraintEditor({ onConstraintsChange })
 
-    const startInput = document.querySelector<HTMLInputElement>('input[type="date"]')
+    const startInput = document.querySelector<HTMLInputElement>('input[inputmode="numeric"]')
 
     act(() => {
       if (startInput) {
-        setInputValue(startInput, '2026-09-14')
+        setInputValue(startInput, '14.09.2026')
       }
     })
 
@@ -363,7 +390,7 @@ describe('DraftSchedulePanel', () => {
     renderConstraintEditor({ onConstraintsChange })
 
     const addButton = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Add window',
+      (button) => button.textContent === 'Zeitfenster hinzufügen',
     )
 
     act(() => {
@@ -407,7 +434,7 @@ describe('DraftSchedulePanel', () => {
     renderPanel()
 
     const clearButton = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Clear custom constraints',
+      (button) => button.textContent === 'Benutzerdefinierte Regeln zurücksetzen',
     )
 
     act(() => {
@@ -415,30 +442,30 @@ describe('DraftSchedulePanel', () => {
     })
 
     expect(onClear).toHaveBeenCalledOnce()
-    expect(document.body.textContent).toContain('2026-09-07')
-    expect(document.body.textContent).toContain('2026-09-14')
+    expect(document.body.textContent).toContain('07.09.2026')
+    expect(document.body.textContent).toContain('14.09.2026')
   })
 
   it('opens manual edit controls and cancels without saving', () => {
     const onUpdateSession = vi.fn()
     renderPanel({ onUpdateSession })
 
-    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Bearbeiten')
 
     act(() => {
       editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    expect(document.querySelector<HTMLInputElement>('input[type="date"]')?.value).toBe('2026-09-07')
+    expect(document.querySelector<HTMLInputElement>('input[inputmode="numeric"]')?.value).toBe('07.09.2026')
     expect(document.body.textContent).toContain('3 h 30 min')
 
-    const cancelButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Cancel')
+    const cancelButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Abbrechen')
 
     act(() => {
       cancelButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    expect(document.querySelector<HTMLInputElement>('input[type="date"]')).toBeNull()
+    expect(document.querySelector<HTMLInputElement>('input[inputmode="numeric"]')).toBeNull()
     expect(onUpdateSession).not.toHaveBeenCalled()
   })
 
@@ -446,19 +473,19 @@ describe('DraftSchedulePanel', () => {
     const onUpdateSession = vi.fn().mockResolvedValue(undefined)
     renderPanel({ onUpdateSession })
 
-    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Bearbeiten')
 
     await act(async () => {
       editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    const dateInput = document.querySelector<HTMLInputElement>('input[type="date"]')
+    const dateInput = document.querySelector<HTMLInputElement>('input[inputmode="numeric"]')
     const timeInputs = [...document.querySelectorAll<HTMLInputElement>('input[type="time"]')]
     const roomSelect = document.querySelector<HTMLSelectElement>('.inline-edit-field select')
 
     act(() => {
       if (dateInput) {
-        setInputValue(dateInput, '2026-12-14')
+        setInputValue(dateInput, '14.12.2026')
       }
       if (timeInputs[0]) {
         setInputValue(timeInputs[0], '09:00')
@@ -471,7 +498,7 @@ describe('DraftSchedulePanel', () => {
       }
     })
 
-    const saveButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Save')
+    const saveButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Speichern')
 
     await act(async () => {
       saveButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
@@ -489,7 +516,7 @@ describe('DraftSchedulePanel', () => {
   it('limits room choices to rooms with enough capacity', async () => {
     renderPanel()
 
-    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Bearbeiten')
     await act(async () => {
       editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
@@ -497,9 +524,9 @@ describe('DraftSchedulePanel', () => {
     const roomSelect = document.querySelector<HTMLSelectElement>('.inline-edit-field select')
     const optionLabels = [...(roomSelect?.options ?? [])].map((option) => option.textContent)
 
-    expect(optionLabels).toContain('R1 (40 seats)')
-    expect(optionLabels).toContain('Auditorium (80 seats)')
-    expect(optionLabels).not.toContain('Tiny (20 seats)')
+    expect(optionLabels).toContain('R1 (40 Plätze)')
+    expect(optionLabels).toContain('Auditorium (80 Plätze)')
+    expect(optionLabels).not.toContain('Tiny (20 Plätze)')
   })
 
   it('keeps the current ineligible room selected while offering eligible alternatives', async () => {
@@ -521,7 +548,7 @@ describe('DraftSchedulePanel', () => {
       }],
     })
 
-    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Bearbeiten')
     await act(async () => {
       editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
@@ -530,8 +557,8 @@ describe('DraftSchedulePanel', () => {
     const optionLabels = [...(roomSelect?.options ?? [])].map((option) => option.textContent)
 
     expect(roomSelect?.value).toBe('4')
-    expect(optionLabels).toContain('Tiny (20 seats)')
-    expect(optionLabels.some((label) => label?.includes('R1') && label.includes('ROOM-001') && label.includes('40 seats'))).toBe(true)
+    expect(optionLabels).toContain('Tiny (20 Plätze)')
+    expect(optionLabels.some((label) => label?.includes('R1') && label.includes('ROOM-001') && label.includes('40 Plätze'))).toBe(true)
     expect(optionLabels).not.toContain('R2')
     expect(optionLabels).not.toContain('Auditorium')
   })
@@ -542,18 +569,18 @@ describe('DraftSchedulePanel', () => {
     ])
     renderPanel({ onUpdateSession })
 
-    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Edit')
+    const editButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Bearbeiten')
     await act(async () => {
       editButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    const saveButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Save')
+    const saveButton = [...document.querySelectorAll('button')].find((button) => button.textContent === 'Speichern')
     await act(async () => {
       saveButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    expect(document.body.textContent).toContain('Room capacity is too low.')
-    expect(document.querySelector<HTMLInputElement>('input[type="date"]')).not.toBeNull()
+    expect(document.body.textContent).toContain('Der Termin konnte nicht gespeichert werden')
+    expect(document.querySelector<HTMLInputElement>('input[inputmode="numeric"]')).not.toBeNull()
   })
 
   it('uses edited room values for display and filters', () => {
@@ -582,7 +609,7 @@ describe('DraftSchedulePanel', () => {
       }
     })
 
-    expect(document.body.textContent).toContain('2026-09-07')
+    expect(document.body.textContent).toContain('07.09.2026')
   })
 
   it('shows list-mode alert reasons and related session details within two interactions', () => {
@@ -591,8 +618,7 @@ describe('DraftSchedulePanel', () => {
     const alert = document.querySelector<HTMLDetailsElement>('.validation-alert')
     const summary = alert?.querySelector('summary')
 
-    expect(summary?.textContent).toContain('LECTURER OVERLAP')
-    expect(summary?.textContent).toContain('Lecturer overlaps with 1 session.')
+    expect(summary?.textContent).toContain('zeitliche Überschneidung')
     expect(alert?.open).toBe(false)
 
     act(() => {
@@ -601,7 +627,7 @@ describe('DraftSchedulePanel', () => {
 
     expect(alert?.open).toBe(true)
     expect(alert?.textContent).toContain('Scheduling 201')
-    expect(alert?.textContent).toContain('2026-09-07 09:00-12:30')
+    expect(alert?.textContent).toContain('07.09.2026 09:00-12:30')
   })
 
   it('keeps overlap alerts visible when filters hide related sessions', () => {
@@ -614,7 +640,7 @@ describe('DraftSchedulePanel', () => {
       }
     })
 
-    expect(document.body.textContent).toContain('LECTURER OVERLAP')
+    expect(document.body.textContent).toContain('zeitliche Überschneidung')
     expect(document.body.textContent).toContain('Scheduling 201')
     const rows = [...document.querySelectorAll('.session-row:not(.session-header)')]
     expect(rows.every((row) => row.textContent?.includes('Planning 101'))).toBe(true)
@@ -623,33 +649,33 @@ describe('DraftSchedulePanel', () => {
   it('shows multiple validation alert reasons on one session', () => {
     renderPanel({ schedules: [alertDraftScheduleFixture] })
 
-    expect(document.body.textContent).toContain('ROOM CAPACITY')
-    expect(document.body.textContent).toContain('STUDY TYPE WINDOW VIOLATION')
+    expect(document.body.textContent).toContain('Kapazität reicht nicht aus')
+    expect(document.body.textContent).toContain('genaue Ursache ist nicht verfügbar')
   })
 
   it('updates visible alert state after session update changes schedules', () => {
     const { rerender } = renderPanelWithRoot({ schedules: [draftScheduleFixture] })
 
-    expect(document.body.textContent).not.toContain('LECTURER OVERLAP')
+    expect(document.body.textContent).not.toContain('zeitliche Überschneidung')
 
     act(() => {
       rerender([alertDraftScheduleFixture])
     })
 
-    expect(document.body.textContent).toContain('LECTURER OVERLAP')
+    expect(document.body.textContent).toContain('zeitliche Überschneidung')
 
     act(() => {
       rerender([draftScheduleFixture])
     })
 
-    expect(document.body.textContent).not.toContain('LECTURER OVERLAP')
+    expect(document.body.textContent).not.toContain('zeitliche Überschneidung')
   })
 
   it('shows validation alerts in weekly mode', () => {
     renderPanel({ schedules: [alertDraftScheduleFixture] })
 
     const weeklyButton = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Weekly',
+      (button) => button.textContent === 'Woche',
     )
 
     act(() => {
@@ -657,7 +683,7 @@ describe('DraftSchedulePanel', () => {
     })
 
     expect(document.querySelector('.weekly-review')).not.toBeNull()
-    expect(document.body.textContent).toContain('LECTURER OVERLAP')
+    expect(document.body.textContent).toContain('zeitliche Überschneidung')
   })
 
   it('renders a non-blocking named holiday alert only inside the affected session', () => {
@@ -676,12 +702,12 @@ describe('DraftSchedulePanel', () => {
     }
     renderPanel({ schedules: [holidaySchedule] })
 
-    expect(document.body.textContent).toContain('Founders Day on 2026-09-07')
+    expect(document.body.textContent).toContain('Feiertag „Founders Day“ am 07.09.2026')
     expect(document.querySelectorAll('.validation-alert')).toHaveLength(1)
     expect(document.body.textContent).not.toContain('Holiday calendar entry')
 
-    act(() => [...document.querySelectorAll('button')].find((item) => item.textContent === 'Weekly')?.click())
-    expect(document.querySelector('.weekly-review')?.textContent).toContain('Founders Day on 2026-09-07')
+    act(() => [...document.querySelectorAll('button')].find((item) => item.textContent === 'Woche')?.click())
+    expect(document.querySelector('.weekly-review')?.textContent).toContain('Feiertag „Founders Day“ am 07.09.2026')
   })
 
   it('externally resets active overview filters while preserving schedules and alerts', () => {
@@ -697,7 +723,7 @@ describe('DraftSchedulePanel', () => {
       <DraftSchedulePanel resetKey={1} schedules={[alertDraftScheduleFixture, secondDraftScheduleFixture]} rooms={roomOptionsFixture} />,
     ))
     expect(document.querySelectorAll('.session-row:not(.session-header)')).toHaveLength(3)
-    expect(document.body.textContent).toContain('LECTURER OVERLAP')
+    expect(document.body.textContent).toContain('zeitliche Überschneidung')
   })
 })
 

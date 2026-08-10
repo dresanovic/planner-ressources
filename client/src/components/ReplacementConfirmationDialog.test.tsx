@@ -14,9 +14,9 @@ describe('ReplacementConfirmationDialog', () => {
     act(() => root.render(<ReplacementConfirmationDialog preparation={optimizationPreparationFixture} onConfirm={vi.fn()} onCancel={cancel} />))
     expect(document.body.textContent).toContain('Databases')
     expect(document.body.textContent).not.toContain('Algorithms')
-    expect(document.body.textContent).toContain('manual session edits')
-    expect(document.body.textContent).toContain('units do not decrease')
-    const button = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Cancel')
+    expect(document.body.textContent).toContain('manuelle Terminänderungen')
+    expect(document.body.textContent).toContain('Lehreinheiten nicht abnehmen')
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Abbrechen')
     act(() => button?.click())
     expect(cancel).toHaveBeenCalledOnce()
   })
@@ -60,7 +60,7 @@ describe('ReplacementConfirmationDialog', () => {
     ))
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]')
     const confirmButton = [...document.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent === 'Confirm optimization')
+      .find((button) => button.textContent === 'Optimierung bestätigen')
     act(() => confirmButton?.focus())
     expect(document.activeElement).toBe(confirmButton)
 

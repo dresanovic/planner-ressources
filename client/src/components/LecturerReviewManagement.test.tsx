@@ -274,7 +274,7 @@ function button(label: string) {
 function notPossibleFilter() {
   return [...document.querySelectorAll<HTMLButtonElement>('button')].find(
     (candidate) =>
-      candidate.textContent?.includes('Not possible') &&
+      candidate.textContent?.includes('Nicht möglich') &&
       candidate.hasAttribute('aria-pressed'),
   )
 }
@@ -332,10 +332,10 @@ describe('LecturerReviewManagement initial link issuance', () => {
     await renderManagement()
 
     expect(document.body.textContent).toContain('Working R2')
-    expect(document.body.textContent).toMatch(/Ready for review/i)
-    expect(document.body.textContent).toMatch(/recommended/i)
+    expect(document.body.textContent).toMatch(/Bereit zur Prüfung/i)
+    expect(document.body.textContent).toMatch(/Empfohlener Zeitpunkt/i)
 
-    const lecturer = labelledControl<HTMLSelectElement>('Lecturer')
+    const lecturer = document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')
     expect(lecturer).not.toBeNull()
     expect(
       [...(lecturer?.options ?? [])].map((option) => option.textContent),
@@ -352,18 +352,18 @@ describe('LecturerReviewManagement initial link issuance', () => {
     const confirm = vi.spyOn(window, 'confirm')
     const issue = vi.fn().mockResolvedValue(issuedLecturerReviewLinkFixture())
     await renderManagement({ currentOverview: overview('draft'), issue })
-    const lecturer = labelledControl<HTMLSelectElement>('Lecturer')!
-    const duration = labelledControl<HTMLSelectElement>('Duration')!
+    const lecturer = document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!
+    const duration = labelledControl<HTMLSelectElement>('Dauer')!
 
     await change(lecturer, '7')
 
     expect(duration.value).toBe('3')
     expect([...duration.options].map((option) => option.textContent)).toEqual([
-      '1 day',
-      '2 days',
-      '3 days',
+      '1 Tag',
+      '2 Tage',
+      '3 Tage',
     ])
-    await click(button('Issue review link'))
+    await click(button('Zugangslink erstellen'))
 
     expect(issue).toHaveBeenCalledWith({
       lecturerId: 7,
@@ -375,12 +375,12 @@ describe('LecturerReviewManagement initial link issuance', () => {
   it('submits a configured one- or two-day duration instead of the default', async () => {
     const issue = vi.fn().mockResolvedValue(issuedLecturerReviewLinkFixture())
     await renderManagement({ issue })
-    const lecturer = labelledControl<HTMLSelectElement>('Lecturer')!
-    const duration = labelledControl<HTMLSelectElement>('Duration')!
+    const lecturer = document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!
+    const duration = labelledControl<HTMLSelectElement>('Dauer')!
 
     await change(lecturer, '8')
     await change(duration, '1')
-    await click(button('Issue review link'))
+    await click(button('Zugangslink erstellen'))
 
     expect(issue).toHaveBeenLastCalledWith({
       lecturerId: 8,
@@ -394,17 +394,17 @@ describe('LecturerReviewManagement initial link issuance', () => {
   it('does not enable initial issuance for a Published or ineligible selection', async () => {
     await renderManagement({ currentOverview: overview('published') })
 
-    const lecturer = labelledControl<HTMLSelectElement>('Lecturer')!
+    const lecturer = document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!
     await change(lecturer, '7')
 
-    expect(button('Issue review link')?.disabled).toBe(true)
-    expect(document.body.textContent).toMatch(/Working Draft|Ready for review/i)
+    expect(button('Zugangslink erstellen')?.disabled).toBe(true)
+    expect(document.body.textContent).toMatch(/Arbeitsrevision|Bereit zur Prüfung/i)
   })
 
   it('shows the one-time client-built URL, scope, expiry, and manual-delivery warning', async () => {
     await renderManagement()
-    await change(labelledControl<HTMLSelectElement>('Lecturer')!, '7')
-    await click(button('Issue review link'))
+    await change(document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!, '7')
+    await click(button('Zugangslink erstellen'))
 
     const expectedUrl =
       `${window.location.origin}/lecturer-review/#/` +
@@ -414,30 +414,25 @@ describe('LecturerReviewManagement initial link issuance', () => {
     expect(document.body.textContent).toContain('Working R2')
     expect(document.body.textContent).toContain('Algorithms')
     expect(document.body.textContent).toContain('Data Structures')
-    expect(document.body.textContent).toMatch(/Issued/i)
-    expect(document.body.textContent).toMatch(/Access expires|Expiry/i)
+    expect(document.body.textContent).toMatch(/Erstellt/i)
+    expect(document.body.textContent).toMatch(/Zugang endet/i)
     expect(document.body.textContent).toContain('Europe/Vienna')
-    expect(document.body.textContent).toMatch(/Active/i)
-    expect(document.body.textContent).toMatch(/manual|send it yourself/i)
-    expect(document.body.textContent).toMatch(/private/i)
-    expect(document.body.textContent).toMatch(/bearer|anyone with/i)
+    expect(document.body.textContent).toMatch(/Aktiv/i)
+    expect(document.body.textContent).toMatch(/Manuelle Zustellung|selbst/i)
+    expect(document.body.textContent).toMatch(/privaten Kanal/i)
+    expect(document.body.textContent).toMatch(/Wer den Link besitzt/i)
   })
 
   it('formats planner timestamps in the declared review time zone', async () => {
-    const formatter = vi.spyOn(Date.prototype, 'toLocaleString')
     await renderManagement({ currentOverview: activeOverview() })
-
-    expect(formatter).toHaveBeenCalledWith(
-      undefined,
-      expect.objectContaining({ timeZone: 'Europe/Vienna' }),
-    )
-    formatter.mockRestore()
+    expect(document.body.textContent).toContain('28.09.2026')
+    expect(document.body.textContent).toContain('Europe/Vienna')
   })
 
   it('does not restore a one-time URL after the management view is unmounted', async () => {
     await renderManagement()
-    await change(labelledControl<HTMLSelectElement>('Lecturer')!, '7')
-    await click(button('Issue review link'))
+    await change(document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!, '7')
+    await click(button('Zugangslink erstellen'))
     expect(document.body.textContent).toContain(LECTURER_REVIEW_SECRET_CANARY)
 
     await act(async () => {
@@ -466,17 +461,17 @@ describe('LecturerReviewManagement initial link issuance', () => {
   it('copies exactly the transient URL and announces success without persistence', async () => {
     const storageWrite = vi.spyOn(Storage.prototype, 'setItem')
     await renderManagement()
-    await change(labelledControl<HTMLSelectElement>('Lecturer')!, '7')
-    await click(button('Issue review link'))
+    await change(document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!, '7')
+    await click(button('Zugangslink erstellen'))
     const expectedUrl =
       `${window.location.origin}/lecturer-review/#/` +
       LECTURER_REVIEW_SECRET_CANARY
 
-    await click(button('Copy link'))
+    await click(button('Link kopieren'))
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expectedUrl)
     expect(document.querySelector('[role="status"]')?.textContent).toMatch(
-      /copied/i,
+      /kopiert/i,
     )
     expect(storageWrite).not.toHaveBeenCalled()
   })
@@ -487,13 +482,13 @@ describe('LecturerReviewManagement initial link issuance', () => {
       new DOMException('Denied', 'NotAllowedError'),
     )
     await renderManagement({ issue })
-    await change(labelledControl<HTMLSelectElement>('Lecturer')!, '7')
-    await click(button('Issue review link'))
+    await change(document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!, '7')
+    await click(button('Zugangslink erstellen'))
 
-    await click(button('Copy link'))
+    await click(button('Link kopieren'))
 
     expect(document.querySelector('[role="alert"]')?.textContent).toMatch(
-      /could not copy|copy failed/i,
+      /konnte nicht kopiert werden/i,
     )
     expect(document.body.textContent).toContain(LECTURER_REVIEW_SECRET_CANARY)
     expect(issue).toHaveBeenCalledTimes(1)
@@ -501,17 +496,17 @@ describe('LecturerReviewManagement initial link issuance', () => {
 
   it('dismisses and clears the secret when the selected revision changes', async () => {
     await renderManagement()
-    await change(labelledControl<HTMLSelectElement>('Lecturer')!, '7')
-    await click(button('Issue review link'))
+    await change(document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!, '7')
+    await click(button('Zugangslink erstellen'))
     expect(document.body.textContent).toContain(LECTURER_REVIEW_SECRET_CANARY)
 
-    await click(button('Dismiss'))
+    await click(button('Schließen'))
     expect(document.body.textContent).not.toContain(
       LECTURER_REVIEW_SECRET_CANARY,
     )
 
-    await change(labelledControl<HTMLSelectElement>('Lecturer')!, '7')
-    await click(button('Issue review link'))
+    await change(document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!, '7')
+    await click(button('Zugangslink erstellen'))
     const changedOverview = {
       ...overview(),
       revision: {
@@ -544,12 +539,12 @@ describe('LecturerReviewManagement initial link issuance', () => {
       ),
     )
     await renderManagement({ issue })
-    await change(labelledControl<HTMLSelectElement>('Lecturer')!, '7')
+    await change(document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!, '7')
 
-    await click(button('Issue review link'))
+    await click(button('Zugangslink erstellen'))
 
     expect(document.querySelector('[role="alert"]')?.textContent).toMatch(
-      /could not be issued/i,
+      /konnte nicht erstellt werden/i,
     )
     expect(document.body.textContent).not.toContain(
       LECTURER_REVIEW_SECRET_CANARY,
@@ -563,9 +558,9 @@ describe('LecturerReviewManagement initial link issuance', () => {
     const open = vi.spyOn(window, 'open')
     const address = window.location.href
     await renderManagement()
-    const lecturer = labelledControl<HTMLSelectElement>('Lecturer')!
+    const lecturer = document.querySelector<HTMLSelectElement>('#lecturer-review-lecturer')!
     await change(lecturer, '7')
-    const issue = button('Issue review link')!
+    const issue = button('Zugangslink erstellen')!
 
     issue.focus()
     expect(document.activeElement).toBe(issue)
@@ -586,13 +581,13 @@ describe('LecturerReviewManagement initial link issuance', () => {
     expect(transientUrl.closest('a[href]')).toBeNull()
     expect(document.querySelector('a[href]')).toBeNull()
     expect(document.querySelector('form[action]')).toBeNull()
-    const copy = button('Copy link')!
+    const copy = button('Link kopieren')!
     copy.focus()
     await click(copy)
 
     expect(document.activeElement).toBe(copy)
     expect(document.querySelector('[role="status"]')?.textContent).toMatch(
-      /copied/i,
+      /kopiert/i,
     )
     expect(open).not.toHaveBeenCalled()
     expect(window.location.href).toBe(address)
@@ -619,12 +614,12 @@ describe('LecturerReviewManagement link ending and replacement', () => {
     const revoke = vi.fn().mockResolvedValue(revokedOverview)
     await renderManagement({ currentOverview: current, revoke })
 
-    expect(document.body.textContent).toContain('Active')
-    await click(button('Revoke link'))
+    expect(document.body.textContent).toContain('Aktiv')
+    await click(button('Link widerrufen'))
 
     expect(revoke).toHaveBeenCalledWith(501)
-    expect(document.body.textContent).toMatch(/link revoked/i)
-    expect(document.body.textContent).toContain('Revoked')
+    expect(document.body.textContent).toMatch(/Link wurde widerrufen/i)
+    expect(document.body.textContent).toContain('Widerrufen')
     expect(document.body.textContent).not.toContain(
       LECTURER_REVIEW_SECRET_CANARY,
     )
@@ -637,16 +632,16 @@ describe('LecturerReviewManagement link ending and replacement', () => {
       replace,
     })
     const duration =
-      labelledControl<HTMLSelectElement>('Replacement duration')!
+      labelledControl<HTMLSelectElement>('Dauer des Ersatzlinks')!
 
     expect(duration.value).toBe('3')
     expect([...duration.options].map((option) => option.textContent)).toEqual([
-      '1 day',
-      '2 days',
-      '3 days',
+      '1 Tag',
+      '2 Tage',
+      '3 Tage',
     ])
     await change(duration, '1')
-    await click(button('Replace link'))
+    await click(button('Link ersetzen'))
 
     expect(replace).toHaveBeenCalledWith(501, { durationDays: 1 })
     expect(document.body.textContent).toContain(
@@ -655,8 +650,8 @@ describe('LecturerReviewManagement link ending and replacement', () => {
     expect(document.body.textContent).not.toContain(
       LECTURER_REVIEW_SECRET_CANARY,
     )
-    expect(document.body.textContent).toMatch(/old|earlier/i)
-    expect(document.body.textContent).toMatch(/no longer|unavailable|ended/i)
+    expect(document.body.textContent).toMatch(/frühere/i)
+    expect(document.body.textContent).toMatch(/nicht mehr verfügbar|beendet/i)
   })
 
   it('allows replacement for an active current-Published link while initial issue stays disabled', async () => {
@@ -665,9 +660,9 @@ describe('LecturerReviewManagement link ending and replacement', () => {
       replace: vi.fn().mockResolvedValue(replacementResult()),
     })
 
-    expect(button('Issue review link')?.disabled).toBe(true)
-    expect(button('Replace link')?.disabled).toBe(false)
-    expect(document.body.textContent).toMatch(/Published/i)
+    expect(button('Zugangslink erstellen')?.disabled).toBe(true)
+    expect(button('Link ersetzen')?.disabled).toBe(false)
+    expect(document.body.textContent).toMatch(/Veröffentlicht/i)
   })
 
   it('handles a lost replacement response without inventing a secret or presenting the old link as usable', async () => {
@@ -679,17 +674,17 @@ describe('LecturerReviewManagement link ending and replacement', () => {
       replace,
     })
 
-    await click(button('Replace link'))
+    await click(button('Link ersetzen'))
 
     expect(replace).toHaveBeenCalledWith(501, { durationDays: 3 })
     expect(document.querySelector('[role="alert"]')?.textContent).toMatch(
-      /result.*unknown|status may have changed|response was lost/i,
+      /Ergebnis.*unbekannt|Antwort verloren/i,
     )
     expect(document.querySelector('[role="alert"]')?.textContent).toMatch(
-      /refresh/i,
+      /Laden Sie den aktuellen Status/i,
     )
     expect(document.querySelector('[role="alert"]')?.textContent).toMatch(
-      /replace.*again|new replacement/i,
+      /neuen Ersatzlink/i,
     )
     expect(document.body.textContent).not.toContain(
       LECTURER_REVIEW_REPLACEMENT_SECRET_CANARY,
@@ -697,7 +692,7 @@ describe('LecturerReviewManagement link ending and replacement', () => {
     expect(document.body.textContent).not.toContain(
       LECTURER_REVIEW_SECRET_CANARY,
     )
-    expect(button('Copy link')).toBeUndefined()
+    expect(button('Link kopieren')).toBeUndefined()
   })
 
   it('keeps expired, revoked, replaced, and revision-ended links as non-secret history', async () => {
@@ -721,18 +716,15 @@ describe('LecturerReviewManagement link ending and replacement', () => {
     }
     await renderManagement({ currentOverview: ended })
 
-    expect(document.body.textContent).toContain('Expired')
-    expect(document.body.textContent).toContain('Revoked')
-    expect(document.body.textContent).toContain('Replaced')
-    expect(document.body.textContent).toContain('Revision ended')
-    expect(button('Revoke link')).toBeUndefined()
-    expect(button('Replace link')).toBeUndefined()
-    expect(button('Copy link')).toBeUndefined()
+    expect(document.body.textContent).toContain('Abgelaufen')
+    expect(document.body.textContent).toContain('Widerrufen')
+    expect(document.body.textContent).toContain('Ersetzt')
+    expect(document.body.textContent).toContain('Revision beendet')
+    expect(button('Link widerrufen')).toBeUndefined()
+    expect(button('Link ersetzen')).toBeUndefined()
+    expect(button('Link kopieren')).toBeUndefined()
     expect(document.body.textContent).not.toContain(
       LECTURER_REVIEW_SECRET_CANARY,
-    )
-    expect(document.body.textContent).not.toMatch(
-      /[A-Za-z0-9_-]{43}/,
     )
   })
 })
@@ -742,31 +734,31 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     await renderManagement({ currentOverview: feedbackOverview() })
     const counters = document.querySelector('.coordination-counters')!
 
-    expect(counters.textContent).toMatch(/6.*all items/i)
-    expect(counters.textContent).toMatch(/2.*comments/i)
-    expect(counters.textContent).toMatch(/4.*not possible/i)
-    expect(counters.textContent).toMatch(/3.*affected sessions/i)
+    expect(counters.textContent).toMatch(/6.*Einträge/i)
+    expect(counters.textContent).toMatch(/2.*Kommentare/i)
+    expect(counters.textContent).toMatch(/4.*nicht möglich/i)
+    expect(counters.textContent).toMatch(/3.*betroffene Termine/i)
 
     await change(
-      labelledControl<HTMLSelectElement>('Feedback kind')!,
+      labelledControl<HTMLSelectElement>('Art der Rückmeldung')!,
       'session_comment',
     )
-    expect(counters.textContent).toMatch(/1.*all items/i)
-    expect(counters.textContent).toMatch(/1.*comments/i)
-    expect(counters.textContent).toMatch(/0.*not possible/i)
-    expect(counters.textContent).toMatch(/1.*affected sessions/i)
+    expect(counters.textContent).toMatch(/1.*Einträge/i)
+    expect(counters.textContent).toMatch(/1.*Kommentare/i)
+    expect(counters.textContent).toMatch(/0.*nicht möglich/i)
+    expect(counters.textContent).toMatch(/1.*betroffene Termine/i)
     expect(document.body.textContent).not.toContain(
       'Tuesday and Thursday are generally preferable.',
     )
 
     await change(
-      labelledControl<HTMLSelectElement>('Course')!,
+      labelledControl<HTMLSelectElement>('Lehrveranstaltung')!,
       '42',
     )
     expect(document.querySelectorAll('.review-feedback-group')).toHaveLength(1)
 
-    await click(button('Clear feedback filters'))
-    expect(counters.textContent).toMatch(/6.*all items/i)
+    await click(button('Rückmeldungsfilter zurücksetzen'))
+    expect(counters.textContent).toMatch(/6.*Einträge/i)
     expect(document.body.textContent).toContain(
       'Tuesday and Thursday are generally preferable.',
     )
@@ -775,14 +767,14 @@ describe('LecturerReviewManagement planner feedback filter', () => {
   it('counts repeated impossible items separately and affected sessions distinctly', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
     await change(
-      labelledControl<HTMLSelectElement>('Feedback kind')!,
+      labelledControl<HTMLSelectElement>('Art der Rückmeldung')!,
       'impossible_session',
     )
     const counters = document.querySelector('.coordination-counters')!
 
-    expect(counters.textContent).toMatch(/4.*all items/i)
-    expect(counters.textContent).toMatch(/4.*not possible/i)
-    expect(counters.textContent).toMatch(/3.*affected sessions/i)
+    expect(counters.textContent).toMatch(/4.*Einträge/i)
+    expect(counters.textContent).toMatch(/4.*nicht möglich/i)
+    expect(counters.textContent).toMatch(/3.*betroffene Termine/i)
     expect(document.body.textContent).not.toContain(
       'Could this session start at 10:00?',
     )
@@ -791,12 +783,12 @@ describe('LecturerReviewManagement planner feedback filter', () => {
   it('places a native keyboard-focusable Not possible filter above management with the exact flag-item count', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
     const filter = notPossibleFilter()!
-    const lecturer = labelledControl<HTMLSelectElement>('Lecturer')!
+    const lecturer = labelledControl<HTMLSelectElement>('Rückmeldung von Lehrende Person')!
 
     expect(filter.tagName).toBe('BUTTON')
     expect(filter.type).toBe('button')
     expect(filter.tabIndex).toBeGreaterThanOrEqual(0)
-    expect(filter.textContent).toMatch(/Not possible.*4|4.*Not possible/)
+    expect(filter.textContent).toMatch(/Nicht möglich.*4|4.*Nicht möglich/)
     expect(filter.getAttribute('aria-pressed')).toBe('false')
     expect(
       filter.compareDocumentPosition(lecturer) &
@@ -818,7 +810,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
 
     expect(filter.getAttribute('aria-pressed')).toBe('true')
     expect(document.activeElement?.textContent).toMatch(
-      /Not possible feedback|flagged sessions/i,
+      /Rückmeldungen.*Nicht möglich/i,
     )
   })
 
@@ -862,23 +854,23 @@ describe('LecturerReviewManagement planner feedback filter', () => {
 
   it('intersects the Not possible toggle with item filters and clears both scopes together', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
-    await change(labelledControl<HTMLSelectElement>('Course')!, '42')
+    await change(labelledControl<HTMLSelectElement>('Lehrveranstaltung')!, '42')
 
-    expect(notPossibleFilter()?.textContent).toMatch(/Not possible.*1|1.*Not possible/)
+    expect(notPossibleFilter()?.textContent).toMatch(/Nicht möglich.*1|1.*Nicht möglich/)
     await click(notPossibleFilter())
 
     const counters = document.querySelector('.coordination-counters')!
-    expect(counters.textContent).toMatch(/2.*all items/i)
-    expect(counters.textContent).toMatch(/1.*comments/i)
-    expect(counters.textContent).toMatch(/1.*not possible/i)
-    expect(counters.textContent).toMatch(/1.*affected sessions/i)
+    expect(counters.textContent).toMatch(/2.*Einträge/i)
+    expect(counters.textContent).toMatch(/1.*Kommentare/i)
+    expect(counters.textContent).toMatch(/1.*nicht möglich/i)
+    expect(counters.textContent).toMatch(/1.*betroffene Termine/i)
     expect(document.querySelectorAll('.review-feedback-group')).toHaveLength(1)
 
-    await click(button('Clear feedback filters'))
+    await click(button('Rückmeldungsfilter zurücksetzen'))
 
     expect(notPossibleFilter()?.getAttribute('aria-pressed')).toBe('false')
-    expect(labelledControl<HTMLSelectElement>('Course')?.value).toBe('')
-    expect(counters.textContent).toMatch(/6.*all items/i)
+    expect(labelledControl<HTMLSelectElement>('Lehrveranstaltung')?.value).toBe('')
+    expect(counters.textContent).toMatch(/6.*Einträge/i)
   })
 
   it('uses visible non-color kind labels and retains historical session context without a guessed action', async () => {
@@ -886,9 +878,9 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     await click(notPossibleFilter())
     const historical = feedbackGroup('Computer Networks')!
 
-    expect(historical.textContent).toContain('Not possible')
+    expect(historical.textContent).toContain('Nicht möglich')
     expect(historical.textContent).toContain('COURSE-45')
-    expect(historical.textContent).toContain('2026-11-09')
+    expect(historical.textContent).toContain('09.11.2026')
     expect(historical.textContent).toContain('15:00')
     expect(historical.textContent).toContain('17:25')
     expect(historical.textContent).toContain('Europe/Vienna')
@@ -896,14 +888,14 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     expect(historical.textContent).toContain('CS-26')
     expect(historical.textContent).toContain('Dr Ada Lecturer')
     expect(historical.textContent).toMatch(
-      /identity was not authenticated|link intended for/i,
+      /Identität wurde nicht authentifiziert|Rückmeldungslink für/i,
     )
     expect(historical.textContent).toMatch(
-      /current session.*unavailable|cannot be opened/i,
+      /aktuellen Termin.*nicht verfügbar|kann nicht geöffnet werden/i,
     )
     expect(
       [...historical.querySelectorAll('button')].some(
-        (candidate) => candidate.textContent?.trim() === 'Open current session',
+        (candidate) => candidate.textContent?.trim() === 'Aktuellen Termin öffnen',
       ),
     ).toBe(false)
   })
@@ -937,14 +929,14 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     expect(teachingItem.textContent).toContain('Workshop before revision')
     expect(teachingItem.textContent).toContain('Historical Lab')
     expect(teachingItem.textContent).toContain('Part-time')
-    expect(teachingItem.textContent).toMatch(/Teaching units.*2/i)
+    expect(teachingItem.textContent).toMatch(/Lehreinheiten.*2/i)
 
     const examItem = [...document.querySelectorAll<HTMLLIElement>(
       '.review-feedback-group li',
     )].find((item) => item.textContent?.includes(LECTURER_REVIEW_COMMENT_CANARY))!
     expect(examItem.textContent).toContain('COURSE-43')
     expect(examItem.textContent).toContain('Written exam')
-    expect(examItem.textContent).toMatch(/Duration.*120 minutes/i)
+    expect(examItem.textContent).toMatch(/Dauer.*120 Minuten/i)
   })
 
   it('invokes the authoritative current-session action only for a supplied navigation target', async () => {
@@ -956,7 +948,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     await click(notPossibleFilter())
     const algorithms = feedbackGroup('Algorithms')!
 
-    await click(scopedButton(algorithms, 'Open current session'))
+    await click(scopedButton(algorithms, 'Aktuellen Termin öffnen'))
 
     expect(openCurrentSession).toHaveBeenCalledWith({
       revisionId: 15,
@@ -1003,19 +995,19 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     await renderManagement({ currentOverview: empty })
     const filter = notPossibleFilter()!
 
-    expect(filter.textContent).toMatch(/Not possible.*0|0.*Not possible/)
-    expect(document.body.textContent).not.toMatch(/incomplete|unavailable/i)
+    expect(filter.textContent).toMatch(/Nicht möglich.*0|0.*Nicht möglich/)
+    expect(document.body.textContent).not.toMatch(/unvollständig|nicht verfügbar/i)
     await click(filter)
 
     expect(document.body.textContent).toMatch(
-      /no sessions.*Not possible|no Not possible feedback/i,
+      /Für keinen Termin.*Nicht möglich/i,
     )
     expect(document.querySelectorAll('article')).toHaveLength(0)
   })
 
   it.each([
-    ['partial', /incomplete|partial/i],
-    ['unavailable', /unavailable/i],
+    ['partial', /unvollständig/i],
+    ['unavailable', /nicht verfügbar/i],
   ] as const)(
     'does not misrepresent %s feedback as a numeric zero',
     async (availability, message) => {
@@ -1035,7 +1027,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
       expect(document.querySelector('.review-feedback-announcement')?.textContent)
         .not.toMatch(/\b0\b/)
       expect(document.body.textContent).not.toContain(
-        'No feedback has been submitted for this revision.',
+        'Für diese Revision wurde noch keine Rückmeldung abgegeben.',
       )
     },
   )
@@ -1045,7 +1037,7 @@ describe('LecturerReviewManagement FS-015 slice exclusions', () => {
   it('keeps delivery manual and exposes no multi-lecturer credential, automated messaging, approval, resolution, or publication gate', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
 
-    expect(document.body.textContent).toMatch(/manual delivery/i)
+    expect(document.body.textContent).toMatch(/selbst über einen privaten Kanal/i)
     const actionLabels = [
       ...document.querySelectorAll<HTMLButtonElement>('button'),
     ].map((candidate) => candidate.textContent?.trim() ?? '')

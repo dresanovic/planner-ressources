@@ -3,6 +3,7 @@ import type {
   WorkspaceOccurrence,
 } from '../api/calendarWorkspace'
 import type { ReactNode } from 'react'
+import { formatCalendarDate } from '../utils/datePresentation'
 
 type Props = {
   workspace: LoadedCalendarWorkspace
@@ -17,7 +18,7 @@ export function ScheduleOccurrenceList({
   occurrences = workspace.occurrences,
   selectedOccurrenceRef = null,
   onSelectOccurrence,
-  emptyMessage = 'No sessions match the active filters.',
+  emptyMessage = 'Keine Termine entsprechen den aktiven Filtern.',
 }: Props) {
   const courseByRef = new Map(
     workspace.courses.map((course) => [course.courseRef, course]),
@@ -33,7 +34,7 @@ export function ScheduleOccurrenceList({
   }
 
   return (
-    <div className="schedule-occurrence-list" role="list" aria-label="Schedule sessions">
+    <div className="schedule-occurrence-list" role="list" aria-label="Planungstermine">
       {ordered.map((occurrence) => {
         const course = courseByRef.get(occurrence.courseRef)
         return (
@@ -49,15 +50,15 @@ export function ScheduleOccurrenceList({
               onSelect={onSelectOccurrence}
             >
               <span className="occurrence-kind">
-                {occurrence.kind === 'teaching' ? 'Teaching' : 'Exam'}
+                {occurrence.kind === 'teaching' ? 'Lehrtermin' : 'Prüfungstermin'}
               </span>
               <strong>{course?.name ?? occurrence.courseRef}</strong>
-              <span>{occurrence.date}</span>
+              <span>{formatCalendarDate(occurrence.date)}</span>
               <span>{occurrence.startTime}–{occurrence.endTime}</span>
               <span>{occurrence.cohort}</span>
               {occurrence.findingRefs.length > 0 && (
                 <span className="warning-label">
-                  ⚠ {occurrence.findingRefs.length} current warning
+                  ⚠ {occurrence.findingRefs.length} {occurrence.findingRefs.length === 1 ? 'aktueller Hinweis' : 'aktuelle Hinweise'}
                   {occurrence.findingRefs.length === 1 ? '' : 's'}
                 </span>
               )}

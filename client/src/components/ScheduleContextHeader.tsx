@@ -1,5 +1,6 @@
 import type { RefObject } from 'react'
 import type { ScheduleDestination } from './ApplicationNavigation'
+import { label } from '../config/terminology'
 
 type Option = {
   id: number
@@ -36,15 +37,15 @@ export function ScheduleContextHeader({
   onCourseChange,
 }: Props) {
   return (
-    <section className="schedule-context-surface" aria-label="Schedule context">
+    <section className="schedule-context-surface" aria-label={`${label('schedule.heading')} – Kontext`}>
       <div>
-        <p className="eyebrow">Schedule workspace</p>
+        <p className="eyebrow">{label('schedule.heading')}</p>
         <h2 ref={headingRef} tabIndex={-1}>{destinationLabel(destination)}</h2>
       </div>
       <div className="schedule-context-controls">
         <ContextSelect label="Semester" value={semesterId} options={semesters} onChange={onSemesterChange} />
-        {destination !== 'exams' && <ContextSelect label="Revision" value={revisionId} options={revisions} onChange={onRevisionChange} emptyLabel="No revision available" />}
-        {destination !== 'versions' && destination !== 'reviews' && <ContextSelect label="Course" value={courseId} options={courses} onChange={onCourseChange} emptyLabel="No course available" />}
+        {destination !== 'exams' && <ContextSelect label="Revision" value={revisionId} options={revisions} onChange={onRevisionChange} emptyLabel="Keine Revision verfügbar" />}
+        {destination !== 'versions' && destination !== 'reviews' && <ContextSelect label={label('course.fieldLabel')} value={courseId} options={courses} onChange={onCourseChange} emptyLabel={`Keine ${label('course.singular')} verfügbar`} />}
       </div>
     </section>
   )
@@ -55,7 +56,7 @@ function ContextSelect({
   value,
   options,
   onChange,
-  emptyLabel = 'Unavailable',
+  emptyLabel = 'Nicht verfügbar',
 }: {
   label: string
   value: number | null
@@ -71,7 +72,7 @@ function ContextSelect({
         {!valueAvailable && <option value="">{emptyLabel}</option>}
         {options.map((option) => (
           <option key={option.id} value={option.id}>
-            {option.label}{option.statusLabel ? ` — ${option.statusLabel}` : option.unavailable ? ' — unavailable' : ''}
+            {option.label}{option.statusLabel ? ` — ${option.statusLabel}` : option.unavailable ? ' — nicht verfügbar' : ''}
           </option>
         ))}
       </select>
@@ -80,8 +81,8 @@ function ContextSelect({
 }
 
 function destinationLabel(destination: ScheduleDestination) {
-  if (destination === 'versions') return 'Versions'
-  if (destination === 'exams') return 'Exams'
-  if (destination === 'reviews') return 'Lecturer coordination'
-  return 'Calendar'
+  if (destination === 'versions') return 'Versionen'
+  if (destination === 'exams') return 'Prüfungen'
+  if (destination === 'reviews') return `Abstimmung mit ${label('lecturer.plural')}`
+  return 'Kalender'
 }
