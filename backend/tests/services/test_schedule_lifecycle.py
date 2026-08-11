@@ -628,10 +628,16 @@ def test_comments_and_flags_survive_publish_abandon_restore_and_supersession(db)
     }
     first_review = get_lecturer_review_overview(db, first["revisionId"])
     successor_review = get_lecturer_review_overview(db, successor["revisionId"])
+    # Feedback on a superseded revision remains available as history, but its
+    # impossible-session marker is no longer an actionable notification.
     assert (
         first_review.total_feedback_count,
         first_review.impossible_flag_count,
-    ) == (2, 1)
+    ) == (2, 0)
+    first_session_group = next(
+        group for group in first_review.feedback_groups if group.level == "session"
+    )
+    assert first_session_group.items[0].session_status == "unavailable"
     assert (
         successor_review.total_feedback_count,
         successor_review.impossible_flag_count,
