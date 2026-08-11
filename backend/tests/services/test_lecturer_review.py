@@ -817,6 +817,54 @@ def test_each_planner_feedback_item_retains_its_submission_context(db):
     assert items[0]["sessionContext"]["date"] != items[1]["sessionContext"]["date"]
     assert items[0]["sessionContext"]["roomName"] == "Room 101"
     assert items[1]["sessionContext"]["roomName"] == "Room 201"
+    assert items[0]["sessionStatus"] == "changed"
+    assert items[1]["sessionStatus"] == "current"
+
+
+def test_changed_session_resolves_impossible_feedback_without_deleting_history(db):
+    session, fixture = db
+    secret = _issue_secret(session, fixture)
+    submit_lecturer_review_feedback(
+        session,
+        secret,
+        FeedbackInput(
+            client_submission_id=UUID(int=33),
+            kind="impossible_session",
+            session_ref="teaching:101",
+            comment="The original appointment is not possible.",
+        ),
+        clock=DeterministicUtcClock(),
+    )
+    session.commit()
+
+    before = _json(
+        get_lecturer_review_overview(
+            session,
+            fixture.working_revision_id,
+            clock=DeterministicUtcClock(),
+        )
+    )
+    assert before["feedbackGroups"][0]["items"][0]["sessionStatus"] == "current"
+
+    teaching = session.get(DraftSession, 101)
+    assert teaching is not None
+    teaching.date = date(2026, 10, 14)
+    teaching.start_time = time(14, 0)
+    teaching.end_time = time(16, 0)
+    session.commit()
+
+    after = _json(
+        get_lecturer_review_overview(
+            session,
+            fixture.working_revision_id,
+            clock=DeterministicUtcClock(),
+        )
+    )
+
+    assert after["totalFeedbackCount"] == 1
+    assert after["impossibleFlagCount"] == 0
+    assert after["feedbackGroups"][0]["impossibleFlagCount"] == 0
+    assert after["feedbackGroups"][0]["items"][0]["sessionStatus"] == "changed"
 
 
 def test_feedback_rejects_session_reassigned_out_of_link_scope(db):

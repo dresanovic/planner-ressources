@@ -424,7 +424,7 @@ def get_lecturer_review_overview(
     )
     groups = _planner_feedback_groups(db, feedback)
     impossible_count = sum(
-        1 for item in feedback if item.kind == "impossible_session"
+        group["impossibleFlagCount"] for group in groups
     )
     return PlannerReviewOverview.model_validate(
         {
@@ -1705,6 +1705,71 @@ def _planner_feedback_groups(
     for ref, items in groups.items():
         first = items[0]
         context = first.session_context
+        current_contexts: dict[tuple[int, str, int], dict[str, Any] | None] = {}
+
+        def session_status(item: LecturerReviewFeedback) -> str | None:
+            if item.session_kind is None or item.source_session_id is None:
+                return None
+            cache_key = (
+                item.review_link_id,
+                item.session_kind,
+                item.source_session_id,
+            )
+            if cache_key not in current_contexts:
+                current_contexts[cache_key] = _current_session_context(
+                    db,
+                    item.review_link,
+                    item.session_kind,
+                    item.source_session_id,
+                )
+            current_context = current_contexts[cache_key]
+            if current_context is None:
+                return "unavailable"
+            captured_context = item.session_context
+            if not isinstance(captured_context, dict):
+                return "unavailable"
+            material_fields = (
+                "sessionRef",
+                "sessionKind",
+                "sourceSessionId",
+                "sessionType",
+                "courseSourceId",
+                "date",
+                "startTime",
+                "endTime",
+                "roomName",
+                "cohortName",
+                "teachingUnits",
+                "examDurationMinutes",
+            )
+            return (
+                "current"
+                if all(
+                    captured_context.get(field) == current_context.get(field)
+                    for field in material_fields
+                )
+                else "changed"
+            )
+
+        planner_items = [
+            {
+                "id": item.id,
+                "intendedLecturerId": item.review_link.lecturer_id,
+                "intendedLecturerName": item.review_link.intended_lecturer_name,
+                "attribution": (
+                    "Submitted through the review link intended for "
+                    f"{item.review_link.intended_lecturer_name}; "
+                    "identity was not authenticated."
+                ),
+                "kind": item.kind,
+                "comment": item.comment_text,
+                "sessionContext": item.session_context,
+                "sessionStatus": session_status(item),
+                "submittedAt": _iso(item.submitted_at),
+                "timeZone": TIME_ZONE,
+            }
+            for item in items
+        ]
         result.append(
             {
                 "groupRef": ref,
@@ -1720,26 +1785,12 @@ def _planner_feedback_groups(
                     else None
                 ),
                 "impossibleFlagCount": sum(
-                    1 for item in items if item.kind == "impossible_session"
+                    1
+                    for item in planner_items
+                    if item["kind"] == "impossible_session"
+                    and item["sessionStatus"] == "current"
                 ),
-                "items": [
-                    {
-                        "id": item.id,
-                        "intendedLecturerId": item.review_link.lecturer_id,
-                        "intendedLecturerName": item.review_link.intended_lecturer_name,
-                        "attribution": (
-                            "Submitted through the review link intended for "
-                            f"{item.review_link.intended_lecturer_name}; "
-                            "identity was not authenticated."
-                        ),
-                        "kind": item.kind,
-                        "comment": item.comment_text,
-                        "sessionContext": item.session_context,
-                        "submittedAt": _iso(item.submitted_at),
-                        "timeZone": TIME_ZONE,
-                    }
-                    for item in items
-                ],
+                "items": planner_items,
             }
         )
     return sorted(result, key=lambda item: (item["groupRef"] != "revision", item["groupRef"]))

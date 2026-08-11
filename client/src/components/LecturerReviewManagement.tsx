@@ -101,6 +101,8 @@ export function LecturerReviewManagement({
   const feedbackRows = currentOverview.feedbackGroups.flatMap((group) =>
     group.items.map((item) => ({ group, item })),
   )
+  const isOpenImpossible = (item: (typeof feedbackRows)[number]['item']) =>
+    item.kind === 'impossible_session' && item.sessionStatus === 'current'
   const itemFilteredRows = feedbackRows.filter(({ group, item }) => (
     (feedbackFilters.lecturerId === undefined ||
       item.intendedLecturerId === feedbackFilters.lecturerId) &&
@@ -115,7 +117,7 @@ export function LecturerReviewManagement({
   ))
   const flaggedGroupRefs = new Set(
     itemFilteredRows
-      .filter(({ item }) => item.kind === 'impossible_session')
+      .filter(({ item }) => isOpenImpossible(item))
       .map(({ group }) => group.groupRef),
   )
   const filteredRows = notPossibleOnly
@@ -130,7 +132,7 @@ export function LecturerReviewManagement({
         ...group,
         items,
         impossibleFlagCount: items.filter(
-          (item) => item.kind === 'impossible_session',
+          (item) => isOpenImpossible(item),
         ).length,
       }
     })
@@ -139,14 +141,14 @@ export function LecturerReviewManagement({
     (value) => value !== undefined,
   ).length + (notPossibleOnly ? 1 : 0)
   const prominentImpossibleCount = itemFilteredRows.filter(
-    ({ item }) => item.kind === 'impossible_session',
+    ({ item }) => isOpenImpossible(item),
   ).length
   const filteredCommentCount = filteredRows.filter(
     ({ item }) =>
       item.kind === 'revision_comment' || item.kind === 'session_comment',
   ).length
   const filteredImpossibleCount = filteredRows.filter(
-    ({ item }) => item.kind === 'impossible_session',
+    ({ item }) => isOpenImpossible(item),
   ).length
   const filteredAffectedSessions = new Set(
     filteredRows
@@ -288,32 +290,38 @@ export function LecturerReviewManagement({
         className="review-feedback-area"
         aria-labelledby="review-feedback-heading"
       >
-        <button
-          type="button"
-          className="review-feedback-filter"
-          aria-pressed={notPossibleOnly}
-          disabled={!feedbackComplete}
-          onClick={() => {
-            const next = !notPossibleOnly
-            setNotPossibleOnly(next)
-            if (next) {
-              queueMicrotask(() => feedbackHeadingRef.current?.focus())
-            }
-          }}
-        >
-          <span aria-hidden="true">!</span>{' '}
-          {feedbackComplete
-            ? `Nicht möglich ${prominentImpossibleCount}`
-            : currentOverview.feedbackAvailability === 'partial'
-              ? 'Anzahl „Nicht möglich“ unvollständig'
-              : 'Anzahl „Nicht möglich“ nicht verfügbar'}
-        </button>
+        {feedbackComplete && prominentImpossibleCount === 0 ? (
+          <p className="review-feedback-clear-status">
+            Keine offenen Rückmeldungen „Nicht möglich“.
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="review-feedback-filter"
+            aria-pressed={notPossibleOnly}
+            disabled={!feedbackComplete}
+            onClick={() => {
+              const next = !notPossibleOnly
+              setNotPossibleOnly(next)
+              if (next) {
+                queueMicrotask(() => feedbackHeadingRef.current?.focus())
+              }
+            }}
+          >
+            <span aria-hidden="true">!</span>{' '}
+            {feedbackComplete
+              ? `Nicht möglich ${prominentImpossibleCount}`
+              : currentOverview.feedbackAvailability === 'partial'
+                ? 'Anzahl „Nicht möglich“ unvollständig'
+                : 'Anzahl „Nicht möglich“ nicht verfügbar'}
+          </button>
+        )}
         <div className="coordination-counters" aria-label="Rückmeldungszähler">
           {feedbackComplete ? (
             <>
               <span><strong>{filteredRows.length}</strong> Einträge</span>
               <span><strong>{filteredCommentCount}</strong> Kommentare</span>
-              <span><strong>{filteredImpossibleCount}</strong> nicht möglich</span>
+              <span><strong>{filteredImpossibleCount}</strong> offen nicht möglich</span>
               <span><strong>{filteredAffectedSessions}</strong> betroffene Termine</span>
             </>
           ) : (
@@ -483,14 +491,32 @@ export function LecturerReviewManagement({
                       <dd>{group.sessionContext.cohortName}</dd>
                     </div>
                     <div>
-                      <dt>Markierungen „Nicht möglich“</dt>
+                      <dt>Offene Markierungen „Nicht möglich“</dt>
                       <dd>{group.impossibleFlagCount}</dd>
                     </div>
                   </dl>
                 )}
                 <ul>
                   {group.items.map((item) => (
-                    <li key={item.id}>
+                    <li
+                      key={item.id}
+                      className={
+                        item.sessionStatus === 'changed' ||
+                        item.sessionStatus === 'unavailable'
+                          ? 'review-feedback-item-historical'
+                          : undefined
+                      }
+                    >
+                      {item.sessionStatus === 'changed' && (
+                        <p className="review-feedback-resolution">
+                          Erledigt durch Terminänderung · Diese Rückmeldung zählt nicht mehr als offen.
+                        </p>
+                      )}
+                      {item.sessionStatus === 'unavailable' && (
+                        <p className="review-feedback-resolution">
+                          Historisch · Der erfasste Termin ist nicht mehr in dieser Zuordnung verfügbar.
+                        </p>
+                      )}
                       <strong>{feedbackKindLabel(item.kind)}</strong>
                       {item.comment !== null && <p>{item.comment}</p>}
                       <p>{feedbackAttribution(item.attribution)}</p>

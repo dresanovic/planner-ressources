@@ -62,6 +62,12 @@ class SessionKind(StrEnum):
     EXAM = "exam"
 
 
+class FeedbackSessionStatus(StrEnum):
+    CURRENT = "current"
+    CHANGED = "changed"
+    UNAVAILABLE = "unavailable"
+
+
 class FeedbackOutcome(StrEnum):
     CREATED = "created"
     ALREADY_ACCEPTED = "already_accepted"
@@ -144,16 +150,21 @@ class PlannerFeedbackItem(LecturerReviewModel):
     kind: FeedbackKind
     comment: str | None = Field(default=None, max_length=2000)
     session_context: SessionContext | None = None
+    session_status: FeedbackSessionStatus | None = None
     submitted_at: datetime
     time_zone: str = Field(min_length=1)
 
     @model_validator(mode="after")
     def kind_matches_captured_context(self):
         if self.kind == FeedbackKind.REVISION_COMMENT:
-            if self.session_context is not None:
-                raise ValueError("Revision feedback cannot contain session context.")
-        elif self.session_context is None:
-            raise ValueError("Session feedback requires captured session context.")
+            if self.session_context is not None or self.session_status is not None:
+                raise ValueError(
+                    "Revision feedback cannot contain session context or status."
+                )
+        elif self.session_context is None or self.session_status is None:
+            raise ValueError(
+                "Session feedback requires captured session context and status."
+            )
         return self
 
 

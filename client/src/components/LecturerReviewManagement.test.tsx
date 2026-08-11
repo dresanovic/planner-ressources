@@ -112,7 +112,7 @@ function feedbackOverview(): LecturerReviewOverview {
   return {
     ...fixture,
     totalFeedbackCount: 6,
-    impossibleFlagCount: 4,
+    impossibleFlagCount: 3,
     feedbackGroups: [
       revision,
       {
@@ -129,6 +129,7 @@ function feedbackOverview(): LecturerReviewOverview {
             kind: 'impossible_session',
             comment: 'Monday morning cannot work.',
             sessionContext: teaching.sessionContext,
+            sessionStatus: 'current',
             submittedAt: '2026-09-28T09:50:00Z',
             timeZone: 'Europe/Vienna',
           },
@@ -148,6 +149,7 @@ function feedbackOverview(): LecturerReviewOverview {
             kind: 'impossible_session',
             comment: 'Could take this exam on 15 December.',
             sessionContext: exam.sessionContext,
+            sessionStatus: 'current',
             submittedAt: '2026-09-28T09:55:00Z',
             timeZone: 'Europe/Vienna',
           },
@@ -172,7 +174,7 @@ function feedbackOverview(): LecturerReviewOverview {
           cohortName: 'CS-26',
         },
         currentNavigation: null,
-        impossibleFlagCount: 1,
+        impossibleFlagCount: 0,
         items: [
           {
             id: 706,
@@ -197,6 +199,7 @@ function feedbackOverview(): LecturerReviewOverview {
               roomName: 'Historical Room C',
               cohortName: 'CS-26',
             },
+            sessionStatus: 'unavailable',
             submittedAt: '2026-09-28T10:00:00Z',
             timeZone: 'Europe/Vienna',
           },
@@ -736,7 +739,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
 
     expect(counters.textContent).toMatch(/6.*Einträge/i)
     expect(counters.textContent).toMatch(/2.*Kommentare/i)
-    expect(counters.textContent).toMatch(/4.*nicht möglich/i)
+    expect(counters.textContent).toMatch(/3.*offen nicht möglich/i)
     expect(counters.textContent).toMatch(/3.*betroffene Termine/i)
 
     await change(
@@ -773,7 +776,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     const counters = document.querySelector('.coordination-counters')!
 
     expect(counters.textContent).toMatch(/4.*Einträge/i)
-    expect(counters.textContent).toMatch(/4.*nicht möglich/i)
+    expect(counters.textContent).toMatch(/3.*offen nicht möglich/i)
     expect(counters.textContent).toMatch(/3.*betroffene Termine/i)
     expect(document.body.textContent).not.toContain(
       'Could this session start at 10:00?',
@@ -788,7 +791,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     expect(filter.tagName).toBe('BUTTON')
     expect(filter.type).toBe('button')
     expect(filter.tabIndex).toBeGreaterThanOrEqual(0)
-    expect(filter.textContent).toMatch(/Nicht möglich.*4|4.*Nicht möglich/)
+    expect(filter.textContent).toMatch(/Nicht möglich.*3|3.*Nicht möglich/)
     expect(filter.getAttribute('aria-pressed')).toBe('false')
     expect(
       filter.compareDocumentPosition(lecturer) &
@@ -814,17 +817,17 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     )
   })
 
-  it('filters to each affected session exactly once while retaining every item in each group', async () => {
+  it('filters to each currently affected session exactly once while retaining every item in each group', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
     await click(notPossibleFilter())
 
     const algorithms = feedbackGroup('Algorithms')!
     const structures = feedbackGroup('Data Structures')!
-    const networks = feedbackGroup('Computer Networks')!
-    const affected = [algorithms, structures, networks]
+    const networks = feedbackGroup('Computer Networks')
+    const affected = [algorithms, structures]
 
     expect(affected.every((group) => group !== null)).toBe(true)
-    expect(new Set(affected).size).toBe(3)
+    expect(new Set(affected).size).toBe(2)
     expect(algorithms.textContent).toContain(
       'Could this session start at 10:00?',
     )
@@ -840,7 +843,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     expect(structures.textContent).toContain(
       'Could take this exam on 15 December.',
     )
-    expect(networks.textContent).toContain('I am away on that date.')
+    expect(networks).toBeNull()
     expect(document.body.textContent).not.toContain(
       'Tuesday and Thursday are generally preferable.',
     )
@@ -875,7 +878,6 @@ describe('LecturerReviewManagement planner feedback filter', () => {
 
   it('uses visible non-color kind labels and retains historical session context without a guessed action', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
-    await click(notPossibleFilter())
     const historical = feedbackGroup('Computer Networks')!
 
     expect(historical.textContent).toContain('Nicht möglich')
@@ -893,6 +895,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     expect(historical.textContent).toMatch(
       /aktuellen Termin.*nicht verfügbar|kann nicht geöffnet werden/i,
     )
+    expect(historical.textContent).toContain('Historisch')
     expect(
       [...historical.querySelectorAll('button')].some(
         (candidate) => candidate.textContent?.trim() === 'Aktuellen Termin öffnen',
@@ -979,13 +982,13 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     expect(document.body.textContent).toContain(
       'Tuesday and Thursday are generally preferable.',
     )
-    expect(filter.textContent).toMatch(/4/)
+    expect(filter.textContent).toMatch(/3/)
     expect(issue).not.toHaveBeenCalled()
     expect(revoke).not.toHaveBeenCalled()
     expect(replace).not.toHaveBeenCalled()
   })
 
-  it('shows an exact complete zero and an explicit empty filtered result', async () => {
+  it('shows an exact complete zero without rendering an alert control', async () => {
     const empty: LecturerReviewOverview = {
       ...feedbackOverview(),
       totalFeedbackCount: 0,
@@ -993,16 +996,28 @@ describe('LecturerReviewManagement planner feedback filter', () => {
       feedbackGroups: [],
     }
     await renderManagement({ currentOverview: empty })
-    const filter = notPossibleFilter()!
-
-    expect(filter.textContent).toMatch(/Nicht möglich.*0|0.*Nicht möglich/)
-    expect(document.body.textContent).not.toMatch(/unvollständig|nicht verfügbar/i)
-    await click(filter)
-
-    expect(document.body.textContent).toMatch(
-      /Für keinen Termin.*Nicht möglich/i,
+    expect(notPossibleFilter()).toBeUndefined()
+    expect(document.body.textContent).toContain(
+      'Keine offenen Rückmeldungen „Nicht möglich“.',
     )
+    expect(document.body.textContent).not.toMatch(/unvollständig|nicht verfügbar/i)
     expect(document.querySelectorAll('article')).toHaveLength(0)
+  })
+
+  it('clears changed impossible feedback from the alert while retaining it as resolved history', async () => {
+    const changed: LecturerReviewOverview = plannerLecturerReviewOverviewFixture()
+    const impossible = changed.feedbackGroups[2].items[0]
+    impossible.sessionStatus = 'changed'
+    changed.feedbackGroups[2].impossibleFlagCount = 0
+    changed.impossibleFlagCount = 0
+
+    await renderManagement({ currentOverview: changed })
+
+    expect(notPossibleFilter()).toBeUndefined()
+    expect(document.querySelector('.coordination-counters')?.textContent)
+      .toMatch(/0.*offen nicht möglich/i)
+    expect(document.body.textContent).toContain('Erledigt durch Terminänderung')
+    expect(document.body.textContent).toContain(LECTURER_REVIEW_COMMENT_CANARY)
   })
 
   it.each([

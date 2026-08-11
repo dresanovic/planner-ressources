@@ -501,9 +501,9 @@ Use **Link widerrufen** to end active access. Use **Link ersetzen** to invalidat
 
 #### Review lecturer feedback
 
-The coordination area shows counts for entries, comments, **Nicht möglich** flags, and affected sessions. Filter by lecturer, Lehrveranstaltung, appointment type, or feedback type. Select **Aktuellen Termin öffnen** when current navigation is available.
+The coordination area shows counts for entries, comments, open **Nicht möglich** flags, and affected sessions. Filter by lecturer, Lehrveranstaltung, appointment type, or feedback type. Select **Aktuellen Termin öffnen** when current navigation is available.
 
-Feedback is advisory and immutable. It does not approve, reject, move, or delete an appointment and never blocks publication. Historical feedback retains captured session context even when the current appointment is no longer navigable.
+Feedback is advisory and immutable. It does not approve, reject, move, or delete an appointment and never blocks publication. When the referenced appointment is changed, removed, or reassigned, its **Nicht möglich** feedback no longer counts as open and is shown as resolved or historical. The captured session context remains available for traceability even when the current appointment is no longer navigable.
 
 #### Lecturer workflow and privacy
 

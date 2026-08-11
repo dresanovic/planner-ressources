@@ -16,6 +16,10 @@ export type ReviewFeedbackKind =
   | 'session_comment'
   | 'impossible_session'
 export type ReviewSessionKind = 'teaching' | 'exam'
+export type ReviewFeedbackSessionStatus =
+  | 'current'
+  | 'changed'
+  | 'unavailable'
 
 export type ReviewRevision = {
   id: number
@@ -75,6 +79,7 @@ export type PlannerReviewFeedbackItem = {
   kind: ReviewFeedbackKind
   comment: string | null
   sessionContext: LecturerReviewSessionContext | null
+  sessionStatus: ReviewFeedbackSessionStatus | null
   submittedAt: string
   timeZone: string
 }
@@ -601,7 +606,8 @@ function validateFeedbackGroup(value: unknown): void {
   ) invalidResponse()
   value.items.forEach(validatePlannerFeedback)
   const flagCount = value.items.filter(
-    (item) => item.kind === 'impossible_session',
+    (item) =>
+      item.kind === 'impossible_session' && item.sessionStatus === 'current',
   ).length
   if (flagCount !== value.impossibleFlagCount) invalidResponse()
 
@@ -653,6 +659,7 @@ function validatePlannerFeedback(value: unknown): void {
     'kind',
     'comment',
     'sessionContext',
+    'sessionStatus',
     'submittedAt',
     'timeZone',
   ])
@@ -668,11 +675,19 @@ function validatePlannerFeedback(value: unknown): void {
     !FEEDBACK_KINDS.has(String(value.kind)) ||
     (value.comment !== null &&
       (typeof value.comment !== 'string' || value.comment.length > 2000)) ||
-    (value.sessionContext !== null && !isRecord(value.sessionContext))
+    (value.sessionContext !== null && !isRecord(value.sessionContext)) ||
+    ![null, 'current', 'changed', 'unavailable'].includes(
+      value.sessionStatus as null | string,
+    )
   ) {
     invalidResponse()
   }
   if (value.sessionContext !== null) validateSessionContext(value.sessionContext)
+  if (
+    value.kind === 'revision_comment'
+      ? value.sessionContext !== null || value.sessionStatus !== null
+      : value.sessionContext === null || value.sessionStatus === null
+  ) invalidResponse()
 }
 
 function validateSessionContext(value: unknown): void {

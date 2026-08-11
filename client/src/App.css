@@ -1076,7 +1076,7 @@ button:disabled[aria-busy='true'] {
   .metadata-pill { max-width: 100%; }
 }
 .lifecycle-panel {
-  border: 1px solid var(--border-color, #d7dce5);
+  border: 1px solid #d7dce5;
   border-radius: 0.85rem;
   background: #fff;
   padding: 1rem;
@@ -1156,7 +1156,7 @@ button:disabled[aria-busy='true'] {
   display: grid;
   gap: 0.2rem;
   margin-top: 0.35rem;
-  color: var(--muted-text, #5c6470);
+  color: #5c6470;
 }
 
 .lifecycle-event-history time { font-variant-numeric: tabular-nums; }
@@ -1837,6 +1837,17 @@ button:disabled[aria-busy='true'] {
   color: #465263;
 }
 
+.review-feedback-clear-status {
+  justify-self: start;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid #8aa39a;
+  border-radius: 6px;
+  background: #f1f8f5;
+  color: #315f50;
+  font-weight: 700;
+}
+
 .review-feedback-announcement {
   margin: 0;
   color: #526071;
@@ -1890,6 +1901,16 @@ button:disabled[aria-busy='true'] {
   padding: 12px;
   border-left: 4px solid #742416;
   background: #f7f9fc;
+}
+
+.review-feedback-group li.review-feedback-item-historical {
+  border-left-color: #7b8794;
+  background: #f4f6f8;
+}
+
+.review-feedback-resolution {
+  color: #465263;
+  font-weight: 700;
 }
 
 .review-feedback-group li p {
@@ -1993,9 +2014,9 @@ button:disabled[aria-busy='true'] {
   gap: 0.2rem;
   min-width: min(100%, 18rem);
   padding: 0.75rem 1rem;
-  border: 1px solid var(--border-color, #c9d2dc);
+  border: 1px solid #c9d2dc;
   border-radius: 0.75rem;
-  background: var(--surface-subtle, #f4f7fa);
+  background: #f4f7fa;
 }
 
 .lecturer-fixed-context strong,
@@ -2043,7 +2064,7 @@ button:disabled[aria-busy='true'] {
 
 .coordination-counters span {
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--border-color, #c9d2dc);
+  border: 1px solid #c9d2dc;
   border-radius: 0.6rem;
 }
 
