@@ -10,16 +10,80 @@ The planner application is German. Accountless lecturers can review only the ass
 
 ### Before you start
 
-You need:
+Choose one way to access the application:
 
-- Python with the packages in `backend/requirements.txt`
-- Node.js and npm with the packages in `client/package.json`
-- two terminal windows
-- planning records for the Semester, Lehrveranstaltungen, Kohorten, Studienformen, Zeitfenster, Lehrende, and Räume
+- **Hosted installation:** use the address supplied by your organization.
+- **Docker Desktop installation:** use a current Docker Desktop installation, an exact Resource Planner image tag supplied by the maintainer, and a dedicated local data folder.
+- **Developer start:** use Python with `backend/requirements.txt`, Node.js and npm with `client/package.json`, and two terminal windows.
 
 If your organization already hosts the application and has prepared its data, open the supplied application address and continue with [First-use setup](#first-use-setup).
 
+### Install and open with Docker Desktop on Windows
+
+This procedure is for a local single-computer installation. It runs the complete browser application and backend in one Linux container. Docker Desktop's current Windows requirements and installer are available in the [official Docker Desktop installation guide](https://docs.docker.com/desktop/setup/install/windows-install/).
+
+#### Install Docker Desktop
+
+1. Download and run the official Docker Desktop installer.
+2. Use the recommended per-user installation and WSL 2 backend unless your organization requires another supported configuration.
+3. Start **Docker Desktop**, accept its terms when prompted, and wait until the container engine is running.
+4. On Windows, confirm Docker Desktop is using **Linux containers**.
+
+#### Download the Resource Planner image
+
+1. In Docker Desktop, open the integrated terminal from the bottom-right corner.
+2. Pull the exact release tag supplied by the maintainer:
+
+   ```powershell
+   docker pull ghcr.io/dresanovic/planner-ressources:<release-tag>
+   ```
+
+3. If the package is private, authenticate first with the GitHub username and package-read token supplied by your deployment administrator. Never put the token in the container settings, `.env`, or this manual.
+
+**Expected result:** The image appears under **Images** in Docker Desktop. Do not substitute `latest` when a tested exact release tag is available.
+
+#### Prepare persistent data and the required key
+
+1. Create a dedicated folder such as `C:\DockerData\planner-ressources`. Keep it outside OneDrive or another synchronized folder.
+2. Open PowerShell and generate the required private key:
+
+   ```powershell
+   $key = New-Object byte[] 32
+   $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+   $rng.GetBytes($key)
+   $rng.Dispose()
+   [BitConverter]::ToString($key).Replace('-', '').ToLowerInvariant()
+   ```
+
+3. Copy the displayed 64-character value to a secure location. Keep the same value across container restarts and upgrades.
+
+#### Create and run the container
+
+1. In Docker Desktop, open **Images**.
+2. Find the pulled Resource Planner image and select **Run**.
+3. Expand **Optional settings** and enter:
+
+   | Setting | Value |
+   | --- | --- |
+   | Container name | `planner-ressources` |
+   | Host port | `8080` |
+   | Container port | `8080` |
+   | Host path | `C:\DockerData\planner-ressources` or your dedicated folder |
+   | Container path | `/data` |
+   | Environment variable | `LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY` |
+   | Environment value | The generated 64-character key |
+
+4. Select **Run**.
+5. Open **Containers** and wait until `planner-ressources` is running and healthy.
+6. Open `http://localhost:8080` in a browser.
+
+**Expected result:** Resource Planner opens through one address. Its database is stored in the mapped host folder and remains available when the container is restarted or replaced. The health address `http://localhost:8080/health` returns `{"status":"ok"}`.
+
+If port `8080` is already occupied, use host port `8081`, keep container port `8080`, and open `http://localhost:8081`.
+
 ### Open the system locally
+
+Use this developer procedure only when you need to run the frontend and backend from source instead of Docker Desktop.
 
 1. In the first PowerShell terminal, open the `backend` directory.
 2. Install the backend packages:
@@ -178,6 +242,55 @@ On wide screens, use the pin icon to detach or permanently display the navigatio
 At 820 pixels or narrower, select **Menü** to open the temporary navigation. The red **×** or Escape closes it. Pinning is intentionally unavailable in this narrow presentation.
 
 In Kalender, **Planungseingaben ausblenden** reclaims additional width without changing the navigation. This choice is not retained after the application is revisited.
+
+### Operate a Docker Desktop installation
+
+These procedures are for the person responsible for the local installation.
+
+#### Start, stop, and inspect the application
+
+1. Open Docker Desktop and select **Containers**.
+2. Use the action beside `planner-ressources` to start, stop, or restart it.
+3. Select the container to view its status and **Logs**.
+4. After a start or restart, wait for the container to become healthy before opening the application.
+
+Run only one Resource Planner application container against a data folder. The current SQLite deployment is not designed for multiple application containers sharing the same database.
+
+#### Populate an empty demonstration catalog
+
+The image contains an optional demonstration-data script. It creates catalog records but does not create schedules, teaching sessions, exams, or generation constraints.
+
+1. Start the container and wait until it is healthy.
+2. In **Containers**, open the actions for `planner-ressources` and select **Open in terminal**.
+3. Run:
+
+   ```text
+   python scripts/seed_dummy_planning_data.py
+   ```
+
+**Expected result:** The baseline catalog is available in the application. Repeating the command updates or reuses its known records instead of duplicating them. Review demonstration values before using them for a real institution.
+
+#### Create a database backup
+
+1. Open the running container's terminal in Docker Desktop.
+2. Run:
+
+   ```text
+   python scripts/backup_sqlite_db.py --output-dir /data/backups
+   ```
+
+3. Confirm that a backup was reported and appears in the `backups` subfolder of the mapped host data folder.
+4. Copy backups to separate protected storage and test the restore process before relying on them.
+
+#### Upgrade the application image
+
+1. Create a verified database backup.
+2. Pull the new exact release tag through Docker Desktop's integrated terminal.
+3. Stop and remove the old application container, but do not delete the mapped host data folder.
+4. Run the new image with the same `/data` host folder, container name, port mapping, and fingerprint key.
+5. Wait for the new container to become healthy and verify the application and saved data.
+
+The image is replaceable; the mapped `/data` folder and its key are installation data and must be preserved.
 
 ### Language, terminology, and date format
 
@@ -585,6 +698,20 @@ The current limit is 20 Lehrveranstaltungen per teaching optimization and 100 Le
 4. Verify `VITE_API_BASE_URL` points to the backend address.
 
 If startup reports a terminology configuration problem, verify `CUSTOMER_TERMINOLOGY_FILE`, JSON syntax, stable keys, and non-empty text values. Remove the optional setting to use the shipped German defaults, or correct the file and restart.
+
+For a Docker Desktop installation:
+
+1. Open **Containers** and confirm `planner-ressources` is running and healthy.
+2. Open the container and read **Logs**.
+3. Confirm host port `8080` maps to container port `8080`, or use the alternate host port you configured.
+4. Confirm `LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY` contains the complete generated 64-character value.
+5. Confirm the host data folder still exists and is mapped to `/data`.
+
+If the image pull is denied, the GitHub Container Registry package may be private. Ask the deployment administrator for package-read access and authenticate through Docker without storing the registry token in container configuration.
+
+#### Docker starts with an empty application
+
+The container was probably started without the previous `/data` mapping or with a different host folder. Stop it, locate the original data folder, and recreate the container with that folder mapped to `/data`. Do not initialize or copy over the original database until a backup exists.
 
 #### A date cannot be saved
 
