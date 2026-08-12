@@ -6,6 +6,8 @@ type Props = {
   courseDraftStatuses?: Record<number, { hasDraft: boolean; scheduledUnits: number; totalUnits: number }>
   selectedCourseIds: number[]
   disabled?: boolean
+  busy?: boolean
+  disabledReason?: string
   unavailableDatesInput?: string
   unavailableDateErrors?: string[]
   onChange: (courseIds: number[]) => void
@@ -18,6 +20,8 @@ export function MultiCourseGenerationPanel({
   courseDraftStatuses,
   selectedCourseIds,
   disabled = false,
+  busy = false,
+  disabledReason,
   unavailableDatesInput = '',
   unavailableDateErrors = [],
   onChange,
@@ -87,8 +91,9 @@ export function MultiCourseGenerationPanel({
         </label>
       )}
       {unavailableDateErrors.length > 0 && <div id="unavailable-date-errors" className="field-error" role="alert">{unavailableDateErrors.map((value) => <p key={value}>„{value}“ ist ungültig. Verwenden Sie TT.MM.JJJJ.</p>)}</div>}
+      {disabledReason && <p className="constraint-note" role="status">{disabledReason}</p>}
       <button type="button" className="generate-button" onClick={onGenerate} disabled={disabled || !valid || unavailableDateErrors.length > 0}>
-        {disabled ? `Ausgewählte ${label('course.plural')} werden optimiert…` : `Ausgewählte ${label('course.plural')} optimieren`}
+        {busy ? `Ausgewählte ${label('course.plural')} werden optimiert…` : `Ausgewählte ${label('course.plural')} optimieren`}
       </button>
     </section>
   )

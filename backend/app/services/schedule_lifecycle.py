@@ -424,7 +424,6 @@ def _build_snapshot(
         for row in db.scalars(
             select(GenerationConstraintSet)
             .where(GenerationConstraintSet.semester_id == semester_id)
-            .options(selectinload(GenerationConstraintSet.windows))
         )
     }
     study_type_ids = {course.study_type_id for course in courses}
@@ -447,14 +446,13 @@ def _build_snapshot(
         scheduled = sum(item.units for item in sessions)
         remaining = max(course.total_units - scheduled, 0)
         saved_constraint = saved_constraints.get(course.id)
+        constraint_windows = default_windows.get(course.study_type_id, [])
         if saved_constraint is None:
-            constraint_windows = default_windows.get(course.study_type_id, [])
             planning_start_date = semester.start_date
             planning_end_date = semester.end_date
             source_revision = None
             is_custom = False
         else:
-            constraint_windows = list(saved_constraint.windows)
             planning_start_date = saved_constraint.planning_start_date
             planning_end_date = saved_constraint.planning_end_date
             source_revision = saved_constraint.revision
@@ -772,25 +770,14 @@ def _teaching_validation_alerts(
     constraints_by_course_id = {}
     for draft in drafts:
         saved = saved_by_course_id.get(draft.course_id)
+        allowed_windows = study_windows_by_study_type_id[
+            draft.course.study_type_id
+        ]
         if saved is None:
-            allowed_windows = study_windows_by_study_type_id[
-                draft.course.study_type_id
-            ]
             planning_period = PlanningPeriodPlan(
                 start_date=semester.start_date, end_date=semester.end_date
             )
         else:
-            allowed_windows = [
-                TimeWindowPlan(
-                    id=window.source_time_window_id,
-                    weekday=window.weekday,
-                    start_time=window.start_time,
-                    end_time=window.end_time,
-                    sort_order=window.sort_order,
-                    constraint_window_index=index,
-                )
-                for index, window in enumerate(saved.windows)
-            ]
             planning_period = PlanningPeriodPlan(
                 start_date=saved.planning_start_date,
                 end_date=saved.planning_end_date,
@@ -803,6 +790,8 @@ def _teaching_validation_alerts(
             is_custom=saved is not None,
             constraint_set_id=saved.id if saved is not None else None,
             revision=saved.revision if saved is not None else None,
+            study_type_id=draft.course.study_type_id,
+            study_type_name=draft.course.study_type.name,
         )
     unavailability_by_resource = {}
     periods = db.scalars(

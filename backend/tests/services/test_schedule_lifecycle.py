@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 import pytest
 
 from app.db.schema import initialize_database
-from app.models.planning import Course, CourseExamConfiguration, DraftSchedule, DraftSession, ExamSession, Lecturer, LecturerReviewActivityEvent, LecturerReviewFeedback, LecturerReviewLink, Room, ScheduleRevision, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Course, CourseExamConfiguration, DraftSchedule, DraftSession, ExamSession, GenerationConstraintSet, GenerationConstraintWindow, Lecturer, LecturerReviewActivityEvent, LecturerReviewFeedback, LecturerReviewLink, Room, ScheduleRevision, Semester, StudyType, StudyTypeTimeWindow
 from app.schemas.lecturer_review import FeedbackInput
 from app.services.academic_catalog import usage_for
 from app.services.lecturer_review import (
@@ -187,7 +187,7 @@ def test_publication_condition_for_enabled_unscheduled_exam_contains_course_cont
 
 
 def test_publication_uses_current_study_type_for_default_generation_constraints(db):
-    seed_lifecycle_semester(db, with_schedule=True)
+    semester, _course = seed_lifecycle_semester(db, with_schedule=True)
     db.add_all([
         StudyTypeTimeWindow(
             study_type_id=1,
@@ -199,17 +199,35 @@ def test_publication_uses_current_study_type_for_default_generation_constraints(
         StudyType(id=2, name="Current study type"),
     ])
     db.flush()
+    current_window = StudyTypeTimeWindow(
+        study_type_id=2,
+        weekday=1,
+        start_time=time(9),
+        end_time=time(11),
+        sort_order=0,
+    )
+    db.add(current_window)
+    db.flush()
+    db.get(Course, 1).study_type_id = 2
     db.add(
-        StudyTypeTimeWindow(
-            study_type_id=2,
-            weekday=1,
-            start_time=time(9),
-            end_time=time(11),
-            sort_order=0,
+        GenerationConstraintSet(
+            course_id=1,
+            semester_id=1,
+            planning_start_date=semester.start_date,
+            planning_end_date=semester.end_date,
+            windows=[
+                GenerationConstraintWindow(
+                    weekday=0,
+                    start_time=time(9),
+                    end_time=time(11),
+                    sort_order=0,
+                )
+            ],
         )
     )
-    db.get(Course, 1).study_type_id = 2
     db.commit()
+    original_session = db.scalar(select(DraftSession).where(DraftSession.course_id == 1))
+    original_interval = (original_session.date, original_session.start_time, original_session.end_time)
     initial = get_lifecycle_overview(db, 1)
     created = create_working_revision(db, 1, initial["stateToken"])
     db.commit()
@@ -227,8 +245,33 @@ def test_publication_uses_current_study_type_for_default_generation_constraints(
         for condition in preparation["conditions"]
         if condition["code"] == "teaching_validation_alert"
     }
-    assert "GENERATION_CONSTRAINT_VIOLATION" in alert_codes
-    assert "STUDY_TYPE_WINDOW_VIOLATION" not in alert_codes
+    assert "GENERATION_CONSTRAINT_VIOLATION" not in alert_codes
+    assert "STUDY_TYPE_WINDOW_VIOLATION" in alert_codes
+    db.refresh(original_session)
+    assert (original_session.date, original_session.start_time, original_session.end_time) == original_interval
+
+    published = transition_revision(
+        db,
+        revision["revisionId"],
+        action="publish",
+        expected_revision_version=revision["revisionVersion"],
+        expected_state_token=created["stateToken"],
+        confirmed=True,
+        publication_token=preparation["preparationToken"],
+    )
+    db.commit()
+    content = get_revision_content(db, published["currentPublication"]["revisionId"])
+    constraint_profile = content["snapshot"]["courses"][0]["constraintProfile"]
+    assert constraint_profile["isCustom"] is True
+    assert constraint_profile["allowedTeachingWindows"] == [
+        {
+            "sourceTimeWindowId": current_window.id,
+            "weekday": 1,
+            "startTime": "09:00:00",
+            "endTime": "11:00:00",
+            "sortOrder": 0,
+        }
+    ]
 
 
 def test_stale_and_repeated_first_publication_write_no_duplicate_events(db):

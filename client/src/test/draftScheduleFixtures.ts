@@ -1,6 +1,5 @@
 import type { DraftSchedule, DraftScheduleMutationResult, GenerationConstraints, MutationFailure } from '../api/draftSchedule'
 import type { RoomOption } from '../api/planningOptions'
-import type { BatchGenerationResult, BatchPreparation } from '../api/multiCourseDraftGeneration'
 
 export const generationConstraintsFixture: GenerationConstraints = {
   courseId: 1,
@@ -11,6 +10,7 @@ export const generationConstraintsFixture: GenerationConstraints = {
     startDate: '2026-09-07',
     endDate: '2026-12-20',
   },
+  studyType: { id: 1, name: 'Full-time' },
   allowedTeachingWindows: [
     {
       weekday: 0,
@@ -219,25 +219,4 @@ export const staleDraftFailureFixture: MutationFailure = {
   code: 'STALE_DRAFT',
   message: 'The Draft Schedule changed. Review the refreshed state and confirm again.',
   currentRevision: 3,
-}
-
-export const batchPreparationFixture: BatchPreparation = {
-  semesterId: 1,
-  scheduleRevisionId: 11,
-  operationKind: 'initial',
-  courses: [
-    { courseId: 1, courseName: 'Planning 101', available: true, draftScheduleId: 1, draftRevision: 1, replacementRequired: true },
-    { courseId: 2, courseName: 'Scheduling 201', available: true, draftScheduleId: null, draftRevision: null, replacementRequired: false },
-  ],
-  replacementCourseIds: [1],
-}
-
-export const batchResultFixture: BatchGenerationResult = {
-  semesterId: 1,
-  operationKind: 'initial',
-  summary: { total: 2, succeeded: 1, failed: 1 },
-  outcomes: [
-    { courseId: 1, courseName: 'Planning 101', status: 'succeeded', draftScheduleId: 1, draftRevision: 2, errors: [] },
-    { courseId: 2, courseName: 'Scheduling 201', status: 'failed', draftScheduleId: null, draftRevision: null, errors: [{ code: 'INSUFFICIENT_ROOM_CAPACITY', message: 'Room is too small.' }] },
-  ],
 }

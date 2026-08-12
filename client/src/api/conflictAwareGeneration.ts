@@ -12,17 +12,21 @@ export type BlockingReason = {
   relatedCount: number
   holidayDate?: string
   holidayName?: string
+  sourceKind?: 'teaching_session' | 'active_exam'
+  sourceId?: number
 }
 
 export type PreparedOptimizationCourse = {
   courseId: number
   courseName: string | null
   available: boolean
+  unavailableReasons: BlockingReason[]
   draftScheduleId: number | null
   draftRevision: number | null
   scheduledUnits: number
   remainingUnits: number
   replacementRequired: boolean
+  effectiveConstraints: GenerationConstraints
   inputSnapshotToken: string
 }
 
@@ -147,3 +151,4 @@ async function request(input: RequestInfo | URL, init?: RequestInit): Promise<Re
     throw [{ code: 'NETWORK_ERROR', message: 'Could not reach the backend API.' }]
   }
 }
+import type { GenerationConstraints } from './draftSchedule'

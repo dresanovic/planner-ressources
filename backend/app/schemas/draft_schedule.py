@@ -96,6 +96,11 @@ class AllowedTeachingWindowResponse(BaseModel):
     source_time_window_id: int | None = Field(default=None, alias="sourceTimeWindowId")
 
 
+class StudyTypeSummaryResponse(BaseModel):
+    id: int
+    name: str
+
+
 class GenerationConstraintsResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -104,7 +109,17 @@ class GenerationConstraintsResponse(BaseModel):
     is_custom: bool = Field(alias="isCustom")
     revision: int | None = None
     planning_period: PlanningPeriodResponse = Field(alias="planningPeriod")
+    study_type: StudyTypeSummaryResponse = Field(alias="studyType")
     allowed_teaching_windows: list[AllowedTeachingWindowResponse] = Field(alias="allowedTeachingWindows")
+
+
+class SaveGenerationConstraintsRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    semester_id: int = Field(alias="semesterId", ge=1)
+    schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
+    expected_revision: int | None = Field(alias="expectedRevision", ge=1)
+    planning_period: PlanningPeriodInput = Field(alias="planningPeriod")
 
 
 class RelatedSessionResponse(BaseModel):
@@ -188,6 +203,13 @@ class DraftScheduleResponse(BaseModel):
     sessions: list[DraftSessionResponse]
 
 
+class GenerationConstraintMutationResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    constraints: GenerationConstraintsResponse
+    draft_schedule: DraftScheduleResponse | None = Field(alias="draftSchedule")
+
+
 class ManualSessionFailureCode(StrEnum):
     INVALID_SESSION_DATE = "INVALID_SESSION_DATE"
     INVALID_SESSION_TIME_RANGE = "INVALID_SESSION_TIME_RANGE"
@@ -262,6 +284,19 @@ class GenerationFailure(BaseModel):
 
 class GenerationFailureResponse(BaseModel):
     errors: list[GenerationFailure]
+
+
+class RetiredGenerationReplacement(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    prepare_path: Literal["/api/draft-schedules/optimization/prepare"] = Field(alias="preparePath")
+    generate_path: Literal["/api/draft-schedules/optimization/generate"] = Field(alias="generatePath")
+
+
+class RetiredGenerationResponse(BaseModel):
+    code: Literal["GENERATION_ENDPOINT_RETIRED"]
+    message: str
+    replacement: RetiredGenerationReplacement
 
 
 class SessionEditFailure(BaseModel):

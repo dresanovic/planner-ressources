@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.schemas.draft_schedule import GenerationConstraintsResponse
+
 
 class OptimizationStatus(StrEnum):
     COMPLETE = "complete"
@@ -17,6 +19,8 @@ class BlockingReasonCode(StrEnum):
     LECTURER_OCCUPIED = "LECTURER_OCCUPIED"
     ROOM_OCCUPIED = "ROOM_OCCUPIED"
     COHORT_OCCUPIED = "COHORT_OCCUPIED"
+    ACTIVE_EXAM_BOUNDARY = "ACTIVE_EXAM_BOUNDARY"
+    STUDY_TYPE_WINDOW_UNAVAILABLE = "STUDY_TYPE_WINDOW_UNAVAILABLE"
     LECTURER_UNAVAILABLE = "LECTURER_UNAVAILABLE"
     ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
     NO_ELIGIBLE_LECTURER = "NO_ELIGIBLE_LECTURER"
@@ -44,6 +48,10 @@ class BlockingReason(BaseModel):
     related_count: int = Field(default=1, alias="relatedCount", ge=1)
     holiday_date: date | None = Field(default=None, alias="holidayDate")
     holiday_name: str | None = Field(default=None, alias="holidayName")
+    source_kind: Literal["teaching_session", "active_exam"] | None = Field(
+        default=None, alias="sourceKind"
+    )
+    source_id: int | None = Field(default=None, alias="sourceId", ge=1)
 
     @model_validator(mode="after")
     def validate_holiday_evidence(self) -> "BlockingReason":
@@ -54,6 +62,8 @@ class BlockingReason(BaseModel):
             raise ValueError("Institution holiday reasons require holiday date and name.")
         if not is_holiday and has_either:
             raise ValueError("Holiday evidence is only valid for institution holiday reasons.")
+        if (self.source_kind is None) != (self.source_id is None):
+            raise ValueError("Protected source kind and ID must be provided together.")
         return self
 
 
@@ -81,11 +91,15 @@ class PreparedOptimizationCourse(BaseModel):
     course_id: int = Field(alias="courseId")
     course_name: str | None = Field(alias="courseName")
     available: bool
+    unavailable_reasons: list[BlockingReason] = Field(
+        default_factory=list, alias="unavailableReasons"
+    )
     draft_schedule_id: int | None = Field(alias="draftScheduleId")
     draft_revision: int | None = Field(alias="draftRevision")
     scheduled_units: int = Field(alias="scheduledUnits", ge=0)
     remaining_units: int = Field(alias="remainingUnits", ge=0)
     replacement_required: bool = Field(alias="replacementRequired")
+    effective_constraints: GenerationConstraintsResponse = Field(alias="effectiveConstraints")
     input_snapshot_token: str = Field(alias="inputSnapshotToken", min_length=1)
 
 

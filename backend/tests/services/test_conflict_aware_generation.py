@@ -1,4 +1,5 @@
 import pytest
+import app.services.conflict_aware_generation as conflict_aware_service
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -13,6 +14,7 @@ from app.models.planning import (
     CourseEligibleLecturer,
     CourseEligibleRoom,
     DraftSchedule,
+    ExamSession,
     GenerationConstraintSet,
     GenerationConstraintWindow,
     Lecturer,
@@ -20,14 +22,15 @@ from app.models.planning import (
     ResourceUnavailabilityWeekday,
     Room,
     Semester,
+    StudyType,
     StudyTypeTimeWindow,
     InstitutionHoliday,
 )
 from app.schemas.conflict_aware_generation import PreparedOptimizationCourseInput
-from app.services.conflict_aware_generation import generate_optimization, prepare_optimization
+from app.services.conflict_aware_generation import InvalidOptimizationSelection, generate_optimization, load_operation, prepare_optimization
 from app.services.draft_schedule_repository import load_course_plan, replace_draft_schedule
 from app.services.schedule_generation import GeneratedSession
-from tests.optimization_fixtures import seed_optimization_planner
+from tests.optimization_fixtures import active_exam, past_exam, seed_optimization_planner
 
 
 def make_session():
@@ -76,7 +79,155 @@ def test_preparation_is_canonical_read_only_and_generation_saves_complete_result
     assert result.summary.complete == 2
     assert result.summary.optimal_for_prepared_snapshot is True
     assert db.query(DraftSchedule).count() == 2
-    assert db.query(GenerationConstraintSet).count() == 2
+    assert db.query(GenerationConstraintSet).count() == 0
+
+
+def test_active_exams_are_loaded_as_protected_occupancy_and_past_exams_are_absent_from_tokens(monkeypatch):
+    db = make_session()
+    seed_optimization_planner(db, course_count=1)
+    import app.services.conflict_aware_generation as service
+
+    monkeypatch.setattr(conflict_aware_service, "institution_today", lambda: date(2026, 9, 1))
+    db.add(active_exam(exam_id=40, course_id=1))
+    db.commit()
+    before_past = prepare_optimization(db, 1, [1], [])
+
+    db.add(past_exam(exam_id=41, course_id=1))
+    db.commit()
+    after_past = prepare_optimization(db, 1, [1], [])
+    loaded = load_operation(db, 1, [1], [])
+
+    assert before_past.shared_snapshot_token == after_past.shared_snapshot_token
+    assert before_past.courses[0].input_snapshot_token == after_past.courses[0].input_snapshot_token
+    assert {(row.source_kind, row.source_id) for row in loaded.fixed_sessions} == {
+        ("active_exam", 40)
+    }
+    assert loaded.courses[0].optimization.latest_teaching_end.date() == date(2026, 10, 5)
+    assert loaded.courses[0].optimization.latest_teaching_source_id == 40
+
+    db.add(active_exam(exam_id=42, course_id=1, exam_date=date(2026, 10, 12)))
+    db.commit()
+    after_active = prepare_optimization(db, 1, [1], [])
+    assert after_active.shared_snapshot_token != after_past.shared_snapshot_token
+
+
+def test_active_exam_resource_conflicts_keep_precise_codes_and_source_evidence(monkeypatch):
+    db = make_session()
+    seed_optimization_planner(db, course_count=2, total_units=4)
+    import app.services.conflict_aware_generation as service
+
+    monkeypatch.setattr(conflict_aware_service, "institution_today", lambda: date(2026, 9, 1))
+    db.query(CourseEligibleLecturer).filter(CourseEligibleLecturer.course_id == 2).delete()
+    db.query(CourseEligibleRoom).filter(CourseEligibleRoom.course_id == 2).delete()
+    db.add_all([
+        CourseEligibleLecturer(course_id=2, lecturer_id=1),
+        CourseEligibleRoom(course_id=2, room_id=1),
+        active_exam(
+            exam_id=50,
+            course_id=1,
+            exam_date=date(2026, 10, 5),
+            start=time(8),
+            end=time(12),
+        ),
+        GenerationConstraintSet(
+            course_id=2,
+            semester_id=1,
+            planning_start_date=date(2026, 10, 5),
+            planning_end_date=date(2026, 10, 5),
+        ),
+    ])
+    db.get(Course, 2).cohort_id = 1
+    db.commit()
+    prepared = prepare_optimization(db, 1, [2], [])
+
+    result = generate_optimization(
+        db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token
+    )
+
+    reasons = {(row.code.value, row.source_kind, row.source_id) for row in result.outcomes[0].reasons}
+    assert reasons >= {
+        ("LECTURER_OCCUPIED", "active_exam", 50),
+        ("ROOM_OCCUPIED", "active_exam", 50),
+        ("COHORT_OCCUPIED", "active_exam", 50),
+    }
+    assert db.query(DraftSchedule).count() == 0
+    protected_exam = db.get(ExamSession, 50)
+    assert (protected_exam.exam_date, protected_exam.start_time, protected_exam.end_time, protected_exam.revision) == (
+        date(2026, 10, 5), time(8), time(12), 1
+    )
+
+
+def test_active_same_course_exam_boundary_and_short_study_window_are_precise(monkeypatch):
+    db = make_session()
+    seed_optimization_planner(db, course_count=2, total_units=4)
+    import app.services.conflict_aware_generation as service
+
+    monkeypatch.setattr(service, "institution_today", lambda: date(2026, 9, 1))
+    db.add_all([
+        active_exam(
+            exam_id=60,
+            course_id=1,
+            exam_date=date(2026, 9, 7),
+            start=time(9, 40),
+            end=time(11, 40),
+        ),
+        GenerationConstraintSet(
+            course_id=1,
+            semester_id=1,
+            planning_start_date=date(2026, 9, 7),
+            planning_end_date=date(2026, 9, 7),
+        ),
+        StudyType(id=2, name="Short-window study"),
+        StudyTypeTimeWindow(
+            id=3,
+            study_type_id=2,
+            weekday=0,
+            start_time=time(8),
+            end_time=time(9),
+            sort_order=1,
+        ),
+    ])
+    db.get(Course, 2).study_type_id = 2
+    db.commit()
+
+    boundary_prepared = prepare_optimization(db, 1, [1], [])
+    boundary = generate_optimization(
+        db, 1, execution_courses(boundary_prepared), [], boundary_prepared.shared_snapshot_token
+    ).outcomes[0]
+    with pytest.raises(InvalidOptimizationSelection) as unavailable:
+        prepare_optimization(db, 1, [2], [])
+
+    assert boundary.scheduled_units == 2
+    reason = next(row for row in boundary.reasons if row.code == "ACTIVE_EXAM_BOUNDARY")
+    assert (reason.source_kind, reason.source_id) == ("active_exam", 60)
+    assert unavailable.value.code == "STUDY_TYPE_WINDOW_UNAVAILABLE"
+
+
+def test_unproven_solver_result_preserves_all_existing_state(monkeypatch):
+    db = make_session()
+    seed_optimization_planner(db, course_count=1, total_units=4)
+    original = replace_draft_schedule(db, load_course_plan(db, 1), 1, [
+        GeneratedSession(date(2026, 9, 7), time(8), time(9, 40), 2, 1, 0, 1, 1)
+    ])
+    db.commit()
+    prepared = prepare_optimization(db, 1, [1], [])
+    import app.services.conflict_aware_generation as service
+    from app.services.semester_optimization import OptimalResultNotProven
+
+    monkeypatch.setattr(
+        service,
+        "optimize_semester",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(OptimalResultNotProven("timeout")),
+    )
+    with pytest.raises(OptimalResultNotProven):
+        generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    db.rollback()
+
+    preserved = db.get(DraftSchedule, original.id)
+    assert preserved.revision == original.revision
+    assert [(row.date, row.start_time, row.end_time) for row in preserved.sessions] == [
+        (date(2026, 9, 7), time(8), time(9, 40))
+    ]
 
 
 def test_preparation_tokens_are_bound_to_the_schedule_revision():
@@ -230,7 +381,7 @@ def test_unfillable_remaining_units_report_course_constraint_in_saved_partial_ou
     assert {item.code for item in outcome.reasons} >= {"COURSE_CONSTRAINT"}
 
 
-def test_post_solve_stale_course_is_preserved_while_exact_unaffected_result_saves_without_resolve(monkeypatch):
+def test_post_solve_stale_course_invalidates_complete_operation_without_saving(monkeypatch):
     db = make_session()
     seed_optimization_planner(db, course_count=2)
     prepared = prepare_optimization(db, 1, [1, 2], [])
@@ -251,13 +402,13 @@ def test_post_solve_stale_course_is_preserved_while_exact_unaffected_result_save
     db.commit()
 
     assert calls == 1
-    assert result.summary.stale == 1 and result.summary.complete == 1
-    assert next(item for item in result.outcomes if item.course_id == 1).saved is False
-    assert next(item for item in result.outcomes if item.course_id == 2).saved is True
-    assert db.query(DraftSchedule).count() == 1
+    assert result.summary.stale == 2 and result.summary.complete == 0
+    assert result.summary.optimal_for_prepared_snapshot is False
+    assert all(item.saved is False for item in result.outcomes)
+    assert db.query(DraftSchedule).count() == 0
 
 
-def test_course_save_failure_rolls_back_only_that_course_and_keeps_exact_unaffected_save(monkeypatch):
+def test_course_save_failure_rolls_back_every_selected_course(monkeypatch):
     db = make_session()
     seed_optimization_planner(db, course_count=2)
     prepared = prepare_optimization(db, 1, [1, 2], [])
@@ -270,15 +421,14 @@ def test_course_save_failure_rolls_back_only_that_course_and_keeps_exact_unaffec
         return original(database, course_plan, *args, **kwargs)
 
     monkeypatch.setattr(service, "replace_draft_schedule", fail_first)
-    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
-    db.commit()
+    with pytest.raises(RuntimeError, match="injected course save failure"):
+        generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    db.rollback()
 
-    assert result.summary.failed == 1 and result.summary.complete == 1
-    assert next(item for item in result.outcomes if item.course_id == 1).errors[0].code == "COURSE_SAVE_FAILED"
-    assert db.query(DraftSchedule).count() == 1
+    assert db.query(DraftSchedule).count() == 0
 
 
-def test_unavailable_selected_draft_remains_fixed_occupancy_for_eligible_courses():
+def test_unavailable_selected_course_rejects_complete_selection_without_mutation():
     db = make_session()
     seed_optimization_planner(db, course_count=2, total_units=4)
     replace_draft_schedule(db, load_course_plan(db, 1), 1, [
@@ -293,28 +443,25 @@ def test_unavailable_selected_draft_remains_fixed_occupancy_for_eligible_courses
     db.get(Course, 1).is_active = False
     db.commit()
 
-    prepared = prepare_optimization(db, 1, [1, 2], [])
-    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    with pytest.raises(InvalidOptimizationSelection) as rejected:
+        prepare_optimization(db, 1, [1, 2], [])
     drafts = {item.course_id: item for item in db.query(DraftSchedule).all()}
 
-    assert next(item for item in prepared.courses if item.course_id == 1).available is False
-    assert next(item for item in result.outcomes if item.course_id == 1).status == "failed"
+    assert rejected.value.code == "RECORD_INACTIVE"
     assert drafts[1].sessions[0].date == date(2026, 9, 7)
-    assert drafts[2].sessions[0].date != date(2026, 9, 7)
+    assert 2 not in drafts
 
 
-def test_inactive_cohort_is_not_available_and_cannot_be_saved():
+def test_inactive_cohort_rejects_selection_and_cannot_be_saved():
     db = make_session()
     seed_optimization_planner(db, course_count=1)
     db.get(Cohort, 1).is_active = False
     db.commit()
 
-    prepared = prepare_optimization(db, 1, [1], [])
-    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    with pytest.raises(InvalidOptimizationSelection) as rejected:
+        prepare_optimization(db, 1, [1], [])
 
-    assert prepared.courses[0].available is False
-    assert result.outcomes[0].status == "failed"
-    assert result.outcomes[0].saved is False
+    assert rejected.value.code == "COHORT_INACTIVE"
     assert db.query(DraftSchedule).count() == 0
 
 
@@ -343,7 +490,7 @@ def test_post_solve_semester_change_marks_custom_constraint_result_stale(monkeyp
     assert db.query(DraftSchedule).count() == 0
 
 
-def test_save_failure_revalidates_later_results_against_preserved_draft(monkeypatch):
+def test_save_failure_preserves_existing_draft_and_discards_later_results(monkeypatch):
     db = make_session()
     seed_optimization_planner(db, course_count=2, total_units=4)
     db.query(CourseEligibleLecturer).filter(CourseEligibleLecturer.course_id == 2).delete()
@@ -357,6 +504,12 @@ def test_save_failure_revalidates_later_results_against_preserved_draft(monkeypa
     ])
     save_custom_constraints(db, 1, 2, 2)
     save_custom_constraints(db, 2, 0, 1)
+    first_constraints = db.query(GenerationConstraintSet).filter_by(course_id=1).one()
+    first_constraints.planning_start_date = date(2026, 9, 9)
+    first_constraints.planning_end_date = date(2026, 9, 9)
+    second_constraints = db.query(GenerationConstraintSet).filter_by(course_id=2).one()
+    second_constraints.planning_start_date = date(2026, 9, 7)
+    second_constraints.planning_end_date = date(2026, 9, 7)
     db.commit()
     prepared = prepare_optimization(db, 1, [1, 2], [])
     import app.services.conflict_aware_generation as service
@@ -368,11 +521,13 @@ def test_save_failure_revalidates_later_results_against_preserved_draft(monkeypa
         return original(database, course_plan, *args, **kwargs)
 
     monkeypatch.setattr(service, "replace_draft_schedule", fail_first)
-    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    with pytest.raises(RuntimeError, match="injected course save failure"):
+        generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    db.rollback()
+    draft = db.query(DraftSchedule).one()
 
-    assert next(item for item in result.outcomes if item.course_id == 1).status == "failed"
-    assert next(item for item in result.outcomes if item.course_id == 2).status in {"stale", "failed"}
-    assert db.query(DraftSchedule).count() == 1
+    assert draft.course_id == 1
+    assert draft.revision == 1
 
 
 def test_operation_rollback_removes_released_course_savepoint(monkeypatch):
@@ -430,7 +585,7 @@ def test_post_solve_reload_detects_change_committed_by_another_session(monkeypat
     assert db.query(DraftSchedule).count() == 0
 
 
-def test_asymmetric_save_failure_keeps_unaffected_dependency_result(monkeypatch):
+def test_asymmetric_save_failure_rolls_back_all_dependency_results(monkeypatch):
     db = make_session()
     seed_optimization_planner(db, course_count=2, total_units=4)
     db.query(CourseEligibleLecturer).filter(CourseEligibleLecturer.course_id == 2).delete()
@@ -458,13 +613,13 @@ def test_asymmetric_save_failure_keeps_unaffected_dependency_result(monkeypatch)
         return original(database, course_plan, *args, **kwargs)
 
     monkeypatch.setattr(service, "replace_draft_schedule", fail_first)
-    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
-    first = next(item for item in result.outcomes if item.course_id == 1)
-    second = next(item for item in result.outcomes if item.course_id == 2)
+    with pytest.raises(RuntimeError, match="injected course save failure"):
+        generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    db.rollback()
+    drafts = {item.course_id: item for item in db.query(DraftSchedule).all()}
 
-    assert first.status == "failed" and first.saved is False
-    assert second.status == "complete" and second.saved is True
-    assert second.draft_revision == 2
+    assert drafts[1].revision == 1
+    assert drafts[2].revision == 1
 
 
 def test_mutual_save_dependency_rolls_back_the_atomic_cycle(monkeypatch):
@@ -495,10 +650,13 @@ def test_mutual_save_dependency_rolls_back_the_atomic_cycle(monkeypatch):
         return original(database, course_plan, *args, **kwargs)
 
     monkeypatch.setattr(service, "replace_draft_schedule", fail_first)
-    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    with pytest.raises(RuntimeError, match="injected course save failure"):
+        generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+    db.rollback()
+    drafts = {item.course_id: item for item in db.query(DraftSchedule).all()}
 
-    assert [item.status for item in result.outcomes] == ["failed", "failed"]
-    assert all(item.saved is False and item.draft_revision == 1 for item in result.outcomes)
+    assert drafts[1].revision == 1
+    assert drafts[2].revision == 1
 
 
 def test_solver_budget_reserves_time_for_revalidation_and_saving(monkeypatch):
@@ -644,3 +802,37 @@ def test_material_input_changes_after_preparation_are_stale_and_preserved(change
     assert result.outcomes[0].saved is False
     assert load_course_plan(db, 1).id == 1
     assert db.query(DraftSchedule).filter_by(course_id=1, semester_id=1).one_or_none() is None
+
+
+def test_active_exam_added_after_preparation_is_stale_and_preserves_saved_constraints(monkeypatch):
+    db = make_session()
+    seed_optimization_planner(db, course_count=1, total_units=4)
+    save_custom_constraints(db, 1, 0, 1)
+    db.commit()
+    monkeypatch.setattr(conflict_aware_service, "institution_today", lambda: date(2026, 9, 1))
+    prepared = prepare_optimization(db, 1, [1], [])
+    saved_revision = db.query(GenerationConstraintSet).filter_by(course_id=1, semester_id=1).one().revision
+
+    db.add(active_exam(exam_id=90, course_id=1, exam_date=date(2026, 10, 5)))
+    db.commit()
+    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+
+    assert result.outcomes[0].status == "stale"
+    assert result.outcomes[0].saved is False
+    assert db.query(DraftSchedule).filter_by(course_id=1, semester_id=1).one_or_none() is None
+    assert db.query(GenerationConstraintSet).filter_by(course_id=1, semester_id=1).one().revision == saved_revision
+
+
+def test_past_exam_added_after_preparation_does_not_make_snapshot_stale(monkeypatch):
+    db = make_session()
+    seed_optimization_planner(db, course_count=1, total_units=4)
+    monkeypatch.setattr(conflict_aware_service, "institution_today", lambda: date(2026, 9, 1))
+    prepared = prepare_optimization(db, 1, [1], [])
+
+    db.add(past_exam(exam_id=91, course_id=1))
+    db.commit()
+    result = generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
+
+    assert result.summary.stale == 0
+    assert result.outcomes[0].status in {"complete", "partial"}
+    assert result.outcomes[0].saved is True

@@ -140,14 +140,16 @@ If planning data already exists, skip this section.
 
 ### Common use cases
 
-#### Generate a draft for one Lehrveranstaltung
+#### Generate or optimize one or more Lehrveranstaltungen
 
 1. Open **Planung > Kalender** and select **Planungseingaben anzeigen** if necessary.
-2. Select **Eine Lehrveranstaltung**, then select the Semester and Lehrveranstaltung.
-3. Review **Eingaben für den nächsten Entwurf**. Keep the defaults for routine generation.
-4. Select **Erzeugen**.
+2. Select the Semester and a focused Lehrveranstaltung to review its details.
+3. Under **Eingaben für den nächsten Entwurf**, review the inherited or custom date boundaries and the read-only Studienart time windows. If you change the dates, select **Datumsgrenzen speichern** before continuing.
+4. Under **Konfliktfreie Semesteroptimierung**, select between 1 and 20 Lehrveranstaltungen.
+5. Optionally enter future unavailable dates as comma-separated `TT.MM.JJJJ` values.
+6. Select **Ausgewählte Lehrveranstaltungen optimieren**. If an existing draft would be replaced, review and confirm the preparation.
 
-**Expected result:** A complete Lehrveranstaltung draft is saved in the active Arbeitsrevision and appears in the Kalender. If no complete valid draft can be produced, the application explains the reasons and preserves the existing draft.
+**Expected result:** The same conflict-aware workflow handles both one and several selected Lehrveranstaltungen. It saves valid complete or improved partial results, keeps protected schedules unchanged, and explains remaining units or failures for each selection. If the prepared input becomes stale, no result from that preparation is saved.
 
 #### Review and correct a session in the Kalender
 
@@ -157,16 +159,6 @@ If planning data already exists, skip this section.
 4. Change the available fields and select **Speichern**.
 
 **Expected result:** The occurrence and affected summaries refresh in place. The Kalender mode, date, filters, and selected revision remain unchanged.
-
-#### Optimize several Lehrveranstaltungen together
-
-1. In **Planung > Kalender**, show **Planungseingaben** and select **Mehrere Lehrveranstaltungen**.
-2. Select between 1 and 20 Lehrveranstaltungen.
-3. Optionally enter future unavailable dates as comma-separated `TT.MM.JJJJ` values.
-4. Select **Ausgewählte Lehrveranstaltungen optimieren**.
-5. Review the preparation dialog and confirm.
-
-**Expected result:** The application saves the best valid complete or improved partial results for the prepared snapshot, preserves worse or stale schedules, and explains remaining units and failures per Lehrveranstaltung.
 
 #### Prepare and generate exams
 
@@ -256,19 +248,32 @@ These procedures are for the person responsible for the local installation.
 
 Run only one Resource Planner application container against a data folder. The current SQLite deployment is not designed for multiple application containers sharing the same database.
 
-#### Populate an empty demonstration catalog
+#### Import or export planning setup data
 
-The image contains an optional demonstration-data script. It creates catalog records but does not create schedules, teaching sessions, exams, or generation constraints.
+The image contains an optional JSON-based setup script. It imports catalog and configuration records, but it does not create schedules, teaching sessions, exam sessions, or generation constraints.
 
 1. Start the container and wait until it is healthy.
 2. In **Containers**, open the actions for `planner-ressources` and select **Open in terminal**.
-3. Run:
+3. To import the bundled baseline JSON, run:
 
    ```text
    python scripts/seed_dummy_planning_data.py
    ```
 
-**Expected result:** The baseline catalog is available in the application. Repeating the command updates or reuses its known records instead of duplicating them. Review demonstration values before using them for a real institution.
+4. To export the current non-scheduling setup to editable JSON in the persistent `/data` volume, run:
+
+   ```text
+   python scripts/create_seed_data.py --output-file /data/planning-setup.json
+   ```
+
+5. Copy `/data/planning-setup.json` from the mapped Docker volume if the file must be stored outside the container.
+6. To import an edited JSON file, place it in a mounted container path and run:
+
+   ```text
+   python scripts/seed_dummy_planning_data.py --data-file /data/planning-setup.json
+   ```
+
+**Expected result:** The configured catalog is available in the application. Repeating the command updates or reuses configured records instead of duplicating them. Review demonstration values before using them for a real institution.
 
 #### Create a database backup
 
@@ -397,53 +402,54 @@ Use the shared context header to choose:
 
 When both exist, Kalender lets you switch between **Arbeitsrevision R…** and **Veröffentlichung R…**. Only the Arbeitsrevision is editable. Historical revisions remain available as read-only content.
 
-### Configure and generate one Lehrveranstaltung
+### Configure teaching-generation constraints
 
 #### Use default constraints
 
-The default planning period comes from the Semester. Weekly teaching windows come from the Lehrveranstaltung's active Studienform time windows.
+The default planning period comes from the Semester. Weekly teaching windows always come from the Lehrveranstaltung's current Studienart mappings and are displayed read-only in Kalender. They apply whether one or several Lehrveranstaltungen are selected.
 
-Select **Erzeugen** without changing the defaults.
+#### Set custom date boundaries
 
-#### Set custom constraints
-
-1. Select the Lehrveranstaltung and Semester.
+1. Select the focused Lehrveranstaltung and Semester.
 2. Set a planning start and end date inside the Semester.
-3. Add one or more valid weekly windows.
-4. Select **Erzeugen**.
+3. Select **Datumsgrenzen speichern**.
 
-Successful generation saves the constraints for that Lehrveranstaltung and Semester. A failed attempt does not overwrite the saved constraints or replace the existing draft.
+The saved dates become active immediately and existing sessions are revalidated, but they are not moved automatically. Saving constraints is separate from generation, so a later failed or cancelled generation does not undo the saved dates. Unsaved date changes must be saved or discarded before optimization can start.
+
+To change weekly windows, update the Lehrveranstaltung's Studienart or its mapped Zeitfenster under **Stammdaten**. The new mapping becomes active immediately, revalidates existing sessions, and invalidates any preparation made with the previous mapping. A Lehrveranstaltung is unavailable for automatic generation when no active mapped window can hold its minimum session length.
 
 #### Restore defaults
 
-Select **Clear custom constraints** in the constraint editor. Existing sessions do not move until generation is run again.
+Select **Benutzerdefinierte Regeln zurücksetzen**. The Lehrveranstaltung immediately inherits the Semester boundaries again. Existing sessions are revalidated but do not move until a planner performs a new generation or manual edit.
 
-### Optimize several Lehrveranstaltungen
+### Generate or optimize teaching schedules
 
-The several-Lehrveranstaltungen workflow coordinates the selected records as one conflict-aware problem.
+One unified conflict-aware workflow is used for every teaching-generation request, including a selection containing only one Lehrveranstaltung.
 
-1. Select **Mehrere Lehrveranstaltungen** under **Planungseingaben**.
+1. Open **Konfliktfreie Semesteroptimierung** under **Planungseingaben**.
 2. Select 1 to 20 Lehrveranstaltungen.
 3. Optionally enter comma-separated future unavailable dates in `TT.MM.JJJJ` format, for example `26.10.2026, 02.11.2026`.
 4. Select **Ausgewählte Lehrveranstaltungen optimieren**.
-5. Review the prepared input and existing schedules.
-6. Confirm the operation.
+5. Review the prepared constraints, existing drafts, and replacement requirements.
+6. Confirm when one or more existing drafts would be replaced.
 
 The optimizer:
 
 - maximizes scheduled teaching units
 - avoids new lecturer, Raum, and Kohorte overlaps
-- respects active periods, eligibility, availability, Raum capacity, generation windows, and holidays
-- preserves unselected sessions as fixed Semester occupancy
+- respects active course dates, current Studienart windows, eligibility, availability, Raum capacity, and holidays
+- treats unselected teaching sessions and active exams as fixed occupancy that it cannot move
+- ensures teaching for a selected Lehrveranstaltung ends no later than the start of its active exam
+- ignores past exams as generation occupancy while leaving those historical exams unchanged
 - may retain an improved partial schedule with understandable remaining-unit reasons
 - does not replace an existing Lehrveranstaltung result with fewer units or an otherwise worse approved comparison
 - applies stable preference priorities when several maximum-unit arrangements are possible
 
 An approved replacement may replace manual edits in a selected Lehrveranstaltung. Cancel the confirmation to keep all current schedules unchanged.
 
-After the operation, review **Gespeichertes Optimierungsergebnis**. It separates complete, improved partial, unchanged, failed, and stale outcomes. Use **Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen** to prepare those records again from current data.
+After the operation, review **Gespeichertes Optimierungsergebnis**. It separates complete, improved partial, unchanged, failed, and stale outcomes. Blocking evidence distinguishes a teaching appointment from an active exam and identifies lecturer, Raum, Kohorte, or the active-exam teaching boundary. Use **Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen** to prepare affected records again from current data.
 
-The optimality statement applies to the prepared snapshot. If inputs became stale, preserved stale outcomes are not described as globally optimal for the refreshed Semester.
+The optimality statement applies only to the prepared snapshot. If any selected input becomes stale before saving, no selected result from that preparation is saved and current drafts remain unchanged. Refresh the input and prepare the complete selection again.
 
 ### Review the Kalender
 
@@ -503,7 +509,7 @@ On a wide Kalender, the pane docks beside the Kalender when enough content width
 
 #### Add one teaching draft appointment
 
-1. Select a Lehrveranstaltung and Semester in **Eine Lehrveranstaltung** mode.
+1. Select the Semester and focused Lehrveranstaltung under **Planungseingaben**.
 2. Under **Entwurfstermin hinzufügen**, enter the date, start time, and whole-number units.
 3. Review or change the proposed end time.
 4. Select the Lehrende Person, Kohorte, and capacity-sufficient Raum.
@@ -525,15 +531,15 @@ Cancelled, failed, or stale confirmations make no saved change.
 
 Current warnings can identify:
 
-- lecturer, Raum, or Kohorte overlaps
+- **Lehrendenkonflikt**, **Raumkonflikt**, and **Kohortenkonflikt** as separate categories, including the affected resource and related appointment context
 - insufficient Raum capacity
-- a session outside active Lehrveranstaltung generation constraints
-- a session outside its Studienform time windows
+- a session outside its active course date boundaries
+- **Studienart-Zeitfenster verletzt** when a session is outside the current mapped weekly windows
 - a session on an institution holiday
 - inactive, unavailable, ineligible, or missing planning resources
 - an exam that no longer satisfies a hard constraint
 
-Back-to-back sessions are not overlaps when one ends exactly as the next begins. One session may have several warnings.
+Back-to-back sessions are not overlaps when one ends exactly as the next begins. One session may have several different warnings, but the same conflict category is not repeated for the same related appointment pair. Where available, conflict details identify whether the blocker is another teaching appointment or an active exam.
 
 Warnings are non-blocking for manual teaching edits and lifecycle publication. They do not automatically repair the schedule. Exam creation and correction use stricter hard-constraint validation and reject invalid placements.
 
@@ -656,13 +662,13 @@ Use **Abandon revision** to remove an unpublished revision from active work with
 
 - No scheduling change can be saved without an active Working revision.
 - Draft and Ready for review are editable; Current Published, superseded, abandoned, and historical selections are read-only.
-- A stale edit, optimization, lifecycle action, or destructive confirmation never overwrites newer saved state.
+- A stale edit, lifecycle action, or destructive confirmation never overwrites newer saved state. A stale unified teaching preparation saves none of its selected results.
 - Existing sessions are not moved when catalog data, holidays, availability, or capacity changes.
-- Failed one-Lehrveranstaltung generation preserves the previous draft.
-- Semester optimization may save useful improved partial results but never silently worsens protected schedules.
-- Generation constraints do not edit existing sessions until generation is selected.
+- Failed or cancelled unified teaching generation preserves previous drafts and protected teaching and exams.
+- Unified teaching optimization may save useful improved partial results but never silently worsens protected schedules.
+- Saved course date boundaries and current Studienart windows apply immediately and revalidate existing sessions without moving them.
 - Removing a holiday affects future generation but not saved sessions.
-- An active exam prevents creation of a second active exam for that Lehrveranstaltung and Semester.
+- An active exam prevents creation of a second active exam for that Lehrveranstaltung and Semester, blocks overlapping teaching generation, and sets the latest teaching end for its course. Past exams do not constrain teaching generation.
 - A failed refresh keeps the last known complete view where available and presents a retry action.
 - Navigation, filters, mode changes, pinning, and hiding Planungseingaben do not mutate schedule data.
 - Human-visible dates use `DD.MM.YYYY`; API, database, export, and other machine formats remain unchanged.
@@ -734,9 +740,9 @@ Open **Planung > Versionen** or Kalender and select **Entwurf starten**. Publish
 4. Confirm the Lehrveranstaltung has an active eligible lecturer and usable eligible Raum.
 5. Correct the record in Stammdaten and return to Planung.
 
-#### One-Lehrveranstaltung generation fails
+#### Teaching generation fails
 
-Read every displayed reason. Check the selected period and windows, session-size values, active planning data, eligible resources, availability, Raum capacity, and holidays.
+Read every displayed reason. Check the selected course dates, current Studienart windows, session-size values, active planning data, eligible resources, availability, Raum capacity, holidays, unselected teaching, and active exams. A course with no mapped Studienart window long enough for its minimum session cannot be selected.
 
 #### Optimization leaves a Lehrveranstaltung unchanged
 
@@ -789,14 +795,16 @@ The latest refresh failed. The application preserves the last complete view wher
 - **Planner:** The current end-user role with scheduling and administration access.
 - **Arbeitsrevision:** The single editable Semester revision in Entwurf or Bereit zur Prüfung state.
 - **Aktuelle Veröffentlichung:** The immutable published revision currently designated for the Semester.
-- **Generation constraints:** The date range and weekly windows used for the next one-Lehrveranstaltung generation.
+- **Generation constraints:** The active course-semester date boundaries plus the current read-only weekly windows derived from the Lehrveranstaltung's Studienart.
+- **Unified teaching optimization:** The single conflict-aware workflow used to generate or regenerate one to twenty selected Lehrveranstaltungen.
+- **Protected occupancy:** Unselected teaching sessions and active exams that teaching generation must leave unchanged and must not overlap.
 - **Eligible resource:** A lecturer or Raum permitted for a Lehrveranstaltung.
 - **Unavailable period:** A recurring or dated interval during which a resource cannot be assigned.
 - **Validation warning:** A current, non-blocking issue attached to a saved occurrence.
 - **Prepared snapshot:** The exact input state approved before optimization or generation executes.
 - **Stale outcome:** A result not saved because relevant planning state changed after preparation.
-- **Active exam:** An exam dated today or later; only one is allowed per Lehrveranstaltung and Semester.
-- **Past exam:** An exam dated before today that remains available as historical schedule content.
+- **Active exam:** An exam dated today or later; only one is allowed per Lehrveranstaltung and Semester. It is protected occupancy and the latest teaching boundary for its course.
+- **Past exam:** An exam dated before today that remains available as historical schedule content but does not constrain teaching generation.
 - **Terminology catalog:** The installation-wide German labels for selected reusable concepts. Customer overrides change presentation only.
 - **Problem item:** One separately presented warning or error containing its own context and next action.
 - **Accountless review link:** A temporary private URL that grants one lecturer read-only access to personal assignments in one revision and permits advisory feedback.

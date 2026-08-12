@@ -1,0 +1,840 @@
+openapi: 3.1.0
+info:
+  title: Unified Teaching Schedule Generation Contract
+  version: 1.0.0
+  description: >-
+    Cross-stack contract for immediate course date-constraint persistence, the
+    single supported teaching generation workflow, and retired legacy routes.
+servers:
+  - url: /
+paths:
+  /api/courses/{courseId}/generation-constraints:
+    get:
+      summary: Read effective course-semester generation constraints
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+        - $ref: '#/components/parameters/SemesterIdQuery'
+      responses:
+        '200':
+          description: Saved or inherited dates plus read-only current study-type windows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationConstraints'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+    put:
+      summary: Save a course-semester date override immediately
+      description: >-
+        Commits the date override independently of generation. It does not move,
+        replace, or delete teaching sessions. Current schedule validation is
+        refreshed from the saved state.
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveGenerationConstraintsRequest'
+      responses:
+        '200':
+          description: Override is active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationConstraintMutationResult'
+        '409':
+          $ref: '#/components/responses/StaleOrLifecycleFailure'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+    delete:
+      summary: Reset course dates to inherited semester boundaries
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+        - $ref: '#/components/parameters/SemesterIdQuery'
+        - name: scheduleRevisionId
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+        - name: expectedRevision
+          in: query
+          required: true
+          description: Current saved override revision; reset is valid only when an override exists
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Inherited dates are active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationConstraintMutationResult'
+        '404':
+          description: No saved course-semester date override exists; no state changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationConstraintOverrideNotFound'
+        '409':
+          $ref: '#/components/responses/StaleOrLifecycleFailure'
+
+  /api/draft-schedules/optimization/prepare:
+    post:
+      summary: Prepare the only supported teaching generation operation
+      description: >-
+        Accepts one to twenty selected courses. Reads current saved date
+        constraints and study-type windows, protected unselected teaching, and
+        active exams without mutating any planning state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnifiedGenerationPreparationRequest'
+      responses:
+        '200':
+          description: Prepared snapshot and replacement requirements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnifiedGenerationPreparation'
+        '409':
+          $ref: '#/components/responses/StaleOrLifecycleFailure'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+
+  /api/draft-schedules/optimization/generate:
+    post:
+      summary: Generate and atomically save a proven teaching result
+      description: >-
+        Revalidates the prepared snapshot, evaluates all selected courses
+        together, and never changes constraints or exams. Replacement must be
+        explicitly confirmed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnifiedGenerationRequest'
+      responses:
+        '200':
+          description: Course-specific outcomes for the prepared selection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnifiedGenerationResult'
+        '409':
+          description: Replacement confirmation, stale input, or lifecycle failure
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ReplacementConfirmationRequired'
+                  - $ref: '#/components/schemas/ErrorEnvelope'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+        '503':
+          description: No result was saved because a permitted result was not proven
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizationFailure'
+
+  /api/courses/{courseId}/draft-schedule/generate:
+    post:
+      deprecated: true
+      summary: Retired legacy single-course generator
+      parameters:
+        - $ref: '#/components/parameters/CourseId'
+      responses:
+        '410':
+          $ref: '#/components/responses/RetiredGenerationOperation'
+
+  /api/draft-schedules/batch/prepare:
+    post:
+      deprecated: true
+      summary: Retired independent batch preparation
+      responses:
+        '410':
+          $ref: '#/components/responses/RetiredGenerationOperation'
+
+  /api/draft-schedules/batch/generate:
+    post:
+      deprecated: true
+      summary: Retired independent batch generator
+      responses:
+        '410':
+          $ref: '#/components/responses/RetiredGenerationOperation'
+
+components:
+  parameters:
+    CourseId:
+      name: courseId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    SemesterIdQuery:
+      name: semesterId
+      in: query
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    NotFound:
+      description: Course or semester was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ValidationFailure:
+      description: Request is invalid or a course is unavailable for automatic generation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    StaleOrLifecycleFailure:
+      description: Expected revision is stale or the schedule revision is not editable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    RetiredGenerationOperation:
+      description: This route performs no preparation and no mutation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RetiredGenerationResponse'
+
+  schemas:
+    PlanningPeriod:
+      type: object
+      required: [startDate, endDate]
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    TeachingWindow:
+      type: object
+      required: [sourceTimeWindowId, weekday, startTime, endTime]
+      properties:
+        sourceTimeWindowId:
+          type: integer
+        weekday:
+          type: integer
+          minimum: 0
+          maximum: 6
+        startTime:
+          type: string
+          pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'
+        endTime:
+          type: string
+          pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'
+
+    StudyTypeSummary:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    GenerationConstraints:
+      type: object
+      required:
+        - courseId
+        - semesterId
+        - isCustom
+        - revision
+        - planningPeriod
+        - studyType
+        - allowedTeachingWindows
+      properties:
+        courseId:
+          type: integer
+        semesterId:
+          type: integer
+        isCustom:
+          type: boolean
+        revision:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        planningPeriod:
+          $ref: '#/components/schemas/PlanningPeriod'
+        studyType:
+          $ref: '#/components/schemas/StudyTypeSummary'
+        allowedTeachingWindows:
+          type: array
+          description: Read-only current active mappings of the course study type
+          items:
+            $ref: '#/components/schemas/TeachingWindow'
+
+    SaveGenerationConstraintsRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, scheduleRevisionId, expectedRevision, planningPeriod]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        scheduleRevisionId:
+          type: integer
+          minimum: 1
+        expectedRevision:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        planningPeriod:
+          $ref: '#/components/schemas/PlanningPeriod'
+
+    GenerationConstraintMutationResult:
+      type: object
+      required: [constraints, draftSchedule]
+      properties:
+        constraints:
+          $ref: '#/components/schemas/GenerationConstraints'
+        draftSchedule:
+          description: >-
+            Authoritative refreshed draft response, including current validation
+            alerts; null when no draft exists.
+          oneOf:
+            - $ref: '#/components/schemas/DraftSchedule'
+            - type: 'null'
+
+    GenerationConstraintOverrideNotFound:
+      type: object
+      additionalProperties: false
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          maxItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [code, message]
+            properties:
+              code:
+                const: GENERATION_CONSTRAINT_OVERRIDE_NOT_FOUND
+              message:
+                type: string
+
+    PlanningEntity:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+
+    PlanningResource:
+      type: object
+      additionalProperties: false
+      required: [id, name, referenceCode]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+        referenceCode:
+          type: string
+
+    RelatedSession:
+      type: object
+      additionalProperties: false
+      required:
+        - sessionId
+        - draftScheduleId
+        - courseId
+        - courseName
+        - date
+        - startTime
+        - endTime
+        - cohortName
+        - lecturerName
+        - roomName
+      properties:
+        sessionId: {type: integer, minimum: 1}
+        draftScheduleId: {type: integer, minimum: 1}
+        courseId: {type: integer, minimum: 1}
+        courseName: {type: string}
+        date: {type: string, format: date}
+        startTime:
+          type: string
+          pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'
+        endTime:
+          type: string
+          pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'
+        cohortName: {type: string}
+        lecturerName: {type: string}
+        roomName: {type: string}
+
+    ValidationAlert:
+      type: object
+      additionalProperties: false
+      required: [code, message, relatedSessions, holidayDate, holidayName]
+      properties:
+        code:
+          type: string
+          enum:
+            - LECTURER_OVERLAP
+            - ROOM_OVERLAP
+            - COHORT_OVERLAP
+            - ROOM_CAPACITY
+            - GENERATION_CONSTRAINT_VIOLATION
+            - STUDY_TYPE_WINDOW_VIOLATION
+            - VALIDATION_DATA_MISSING
+            - LECTURER_UNAVAILABLE
+            - ROOM_UNAVAILABLE
+            - LECTURER_INELIGIBLE
+            - ROOM_INELIGIBLE
+            - INSTITUTION_HOLIDAY
+        message:
+          type: string
+        relatedSessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelatedSession'
+        holidayDate:
+          oneOf:
+            - type: string
+              format: date
+            - type: 'null'
+        holidayName:
+          oneOf:
+            - type: string
+            - type: 'null'
+
+    DraftSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - date
+        - startTime
+        - endTime
+        - units
+        - courseId
+        - lecturerId
+        - lecturerName
+        - lecturerReferenceCode
+        - cohortId
+        - roomId
+        - roomName
+        - roomReferenceCode
+        - studyTypeId
+        - timeWindowId
+        - constraintWindowIndex
+        - validationAlerts
+        - lecturer
+        - room
+      properties:
+        id: {type: integer, minimum: 1}
+        date: {type: string, format: date}
+        startTime:
+          type: string
+          pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'
+        endTime:
+          type: string
+          pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]$'
+        units: {type: integer, minimum: 1}
+        courseId: {type: integer, minimum: 1}
+        lecturerId: {type: integer, minimum: 1}
+        lecturerName: {type: string}
+        lecturerReferenceCode: {type: string}
+        cohortId: {type: integer, minimum: 1}
+        roomId: {type: integer, minimum: 1}
+        roomName: {type: string}
+        roomReferenceCode: {type: string}
+        studyTypeId: {type: integer, minimum: 1}
+        timeWindowId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: 'null'
+        constraintWindowIndex: {type: integer, minimum: 0}
+        validationAlerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationAlert'
+        lecturer:
+          $ref: '#/components/schemas/PlanningResource'
+        room:
+          $ref: '#/components/schemas/PlanningResource'
+
+    DraftScheduleContext:
+      type: object
+      additionalProperties: false
+      required: [course, cohort, cohortSize, lecturer, room, studyType]
+      properties:
+        course:
+          $ref: '#/components/schemas/PlanningEntity'
+        cohort:
+          $ref: '#/components/schemas/PlanningEntity'
+        cohortSize:
+          type: integer
+          minimum: 0
+        lecturer:
+          $ref: '#/components/schemas/PlanningEntity'
+        room:
+          $ref: '#/components/schemas/PlanningEntity'
+        studyType:
+          $ref: '#/components/schemas/PlanningEntity'
+
+    DraftSchedule:
+      type: object
+      additionalProperties: false
+      required: [draftScheduleId, revision, courseId, semesterId, context, sessions]
+      properties:
+        draftScheduleId: {type: integer, minimum: 1}
+        revision: {type: integer, minimum: 1}
+        courseId: {type: integer, minimum: 1}
+        semesterId: {type: integer, minimum: 1}
+        context:
+          $ref: '#/components/schemas/DraftScheduleContext'
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DraftSession'
+
+    UnifiedGenerationPreparationRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, scheduleRevisionId, courseIds]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        scheduleRevisionId:
+          type: integer
+          minimum: 1
+        courseIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+        unavailableDates:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            format: date
+          default: []
+
+    PreparedCourse:
+      type: object
+      required:
+        - courseId
+        - courseName
+        - available
+        - draftScheduleId
+        - draftRevision
+        - scheduledUnits
+        - remainingUnits
+        - replacementRequired
+        - effectiveConstraints
+        - inputSnapshotToken
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          oneOf: [{type: string}, {type: 'null'}]
+        available:
+          type: boolean
+        unavailableReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlockingReason'
+        draftScheduleId:
+          oneOf: [{type: integer}, {type: 'null'}]
+        draftRevision:
+          oneOf: [{type: integer}, {type: 'null'}]
+        scheduledUnits:
+          type: integer
+          minimum: 0
+        remainingUnits:
+          type: integer
+          minimum: 0
+        replacementRequired:
+          type: boolean
+        effectiveConstraints:
+          $ref: '#/components/schemas/GenerationConstraints'
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+
+    UnifiedGenerationPreparation:
+      type: object
+      required:
+        - semesterId
+        - scheduleRevisionId
+        - unavailableDates
+        - sharedSnapshotToken
+        - courses
+        - replacementCourseIds
+      properties:
+        semesterId:
+          type: integer
+        scheduleRevisionId:
+          type: integer
+        unavailableDates:
+          type: array
+          items: {type: string, format: date}
+        sharedSnapshotToken:
+          type: string
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PreparedCourse'
+        replacementCourseIds:
+          type: array
+          uniqueItems: true
+          items: {type: integer}
+
+    PreparedCourseInput:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - expectedDraftScheduleId
+        - expectedDraftRevision
+        - inputSnapshotToken
+      properties:
+        courseId:
+          type: integer
+          minimum: 1
+        expectedDraftScheduleId:
+          oneOf: [{type: integer}, {type: 'null'}]
+        expectedDraftRevision:
+          oneOf: [{type: integer}, {type: 'null'}]
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+
+    UnifiedGenerationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - scheduleRevisionId
+        - unavailableDates
+        - sharedSnapshotToken
+        - replacementConfirmed
+        - courses
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        scheduleRevisionId:
+          type: integer
+          minimum: 1
+        unavailableDates:
+          type: array
+          items: {type: string, format: date}
+        sharedSnapshotToken:
+          type: string
+        replacementConfirmed:
+          type: boolean
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PreparedCourseInput'
+
+    BlockingReason:
+      type: object
+      required: [code, message, relatedCount]
+      properties:
+        code:
+          type: string
+          enum:
+            - LECTURER_OCCUPIED
+            - ROOM_OCCUPIED
+            - COHORT_OCCUPIED
+            - ACTIVE_EXAM_BOUNDARY
+            - STUDY_TYPE_WINDOW_UNAVAILABLE
+            - LECTURER_UNAVAILABLE
+            - ROOM_UNAVAILABLE
+            - NO_ELIGIBLE_LECTURER
+            - NO_ELIGIBLE_ROOM
+            - INSUFFICIENT_ROOM_CAPACITY
+            - UNAVAILABLE_DATE
+            - INSTITUTION_HOLIDAY
+            - NO_ALLOWED_DATE_OR_WINDOW
+            - COURSE_CONSTRAINT
+            - SELECTED_COURSE_COMPETITION
+            - INVALID_PLANNING_INPUT
+            - STALE_PLANNING_INPUT
+        message:
+          type: string
+        relatedCount:
+          type: integer
+          minimum: 1
+        sourceKind:
+          type: string
+          description: Protected occurrence that substantiates an occupancy or exam-boundary reason
+          enum: [teaching_session, active_exam]
+        sourceId:
+          type: integer
+          minimum: 1
+
+    CourseOutcome:
+      type: object
+      required:
+        - courseId
+        - courseName
+        - status
+        - draftScheduleId
+        - draftRevision
+        - scheduledUnits
+        - remainingUnits
+        - saved
+        - reasons
+        - errors
+      properties:
+        courseId: {type: integer}
+        courseName:
+          oneOf: [{type: string}, {type: 'null'}]
+        status:
+          type: string
+          enum: [complete, improved_partial, unchanged, failed, stale]
+        draftScheduleId:
+          oneOf: [{type: integer}, {type: 'null'}]
+        draftRevision:
+          oneOf: [{type: integer}, {type: 'null'}]
+        scheduledUnits: {type: integer, minimum: 0}
+        remainingUnits: {type: integer, minimum: 0}
+        saved: {type: boolean}
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlockingReason'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
+
+    UnifiedGenerationResult:
+      type: object
+      required: [semesterId, summary, outcomes]
+      properties:
+        semesterId: {type: integer}
+        summary:
+          $ref: '#/components/schemas/OptimizationSummary'
+        outcomes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CourseOutcome'
+
+    OptimizationSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - total
+        - complete
+        - improvedPartial
+        - unchanged
+        - failed
+        - stale
+        - scheduledUnits
+        - remainingUnits
+        - elapsedMilliseconds
+        - optimalForPreparedSnapshot
+      properties:
+        total: {type: integer, minimum: 1, maximum: 20}
+        complete: {type: integer, minimum: 0}
+        improvedPartial: {type: integer, minimum: 0}
+        unchanged: {type: integer, minimum: 0}
+        failed: {type: integer, minimum: 0}
+        stale: {type: integer, minimum: 0}
+        scheduledUnits: {type: integer, minimum: 0}
+        remainingUnits: {type: integer, minimum: 0}
+        elapsedMilliseconds: {type: integer, minimum: 0, maximum: 60000}
+        optimalForPreparedSnapshot: {type: boolean}
+
+    ReplacementConfirmationRequired:
+      type: object
+      required: [code, message, replacementCourseIds]
+      properties:
+        code:
+          const: REPLACEMENT_CONFIRMATION_REQUIRED
+        message: {type: string}
+        replacementCourseIds:
+          type: array
+          items: {type: integer}
+
+    OptimizationFailure:
+      type: object
+      required: [code, message, saved]
+      properties:
+        code:
+          type: string
+          enum:
+            - OPTIMAL_RESULT_NOT_PROVEN
+            - OPTIMIZATION_MODEL_INVALID
+            - OPTIMIZATION_OPERATION_FAILED
+        message: {type: string}
+        saved:
+          const: false
+
+    RetiredGenerationResponse:
+      type: object
+      required: [code, message, replacement]
+      properties:
+        code:
+          const: GENERATION_ENDPOINT_RETIRED
+        message:
+          type: string
+        replacement:
+          type: object
+          required: [preparePath, generatePath]
+          properties:
+            preparePath:
+              const: /api/draft-schedules/optimization/prepare
+            generatePath:
+              const: /api/draft-schedules/optimization/generate
+
+    ErrorItem:
+      type: object
+      required: [code, message]
+      properties:
+        code: {type: string}
+        message: {type: string}
+
+    ErrorEnvelope:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ErrorItem'

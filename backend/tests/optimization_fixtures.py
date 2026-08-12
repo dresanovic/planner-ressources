@@ -5,6 +5,7 @@ from app.models.planning import (
     Course,
     CourseEligibleLecturer,
     CourseEligibleRoom,
+    ExamSession,
     Lecturer,
     Room,
     ScheduleRevision,
@@ -18,6 +19,7 @@ from app.services.semester_optimization import FixedSession, OptimizationCourse
 
 SEMESTER_START = date(2026, 9, 7)
 SEMESTER_END = date(2026, 12, 20)
+INSTITUTION_TODAY = date(2026, 9, 1)
 
 
 def resource(resource_id: int, code: str, *, capacity: int | None = None):
@@ -65,8 +67,133 @@ def fixed_session(
     session_date: date = SEMESTER_START,
     start: time = time(8),
     end: time = time(12),
+    source_kind: str = "teaching_session",
+    source_id: int | None = None,
 ):
-    return FixedSession(course_id, cohort_id, lecturer_id, room_id, session_date, start, end)
+    return FixedSession(
+        course_id,
+        cohort_id,
+        lecturer_id,
+        room_id,
+        session_date,
+        start,
+        end,
+        source_kind=source_kind,
+        source_id=source_id,
+    )
+
+
+def protected_unselected_teaching(
+    *,
+    course_id: int = 99,
+    cohort_id: int = 99,
+    lecturer_id: int = 99,
+    room_id: int = 99,
+    session_date: date = SEMESTER_START,
+    start: time = time(8),
+    end: time = time(10),
+):
+    """A deterministic fixed session owned by a course outside the selection."""
+    return fixed_session(
+        course_id,
+        cohort_id=cohort_id,
+        lecturer_id=lecturer_id,
+        room_id=room_id,
+        session_date=session_date,
+        start=start,
+        end=end,
+    )
+
+
+def exam_session(
+    *,
+    exam_id: int = 1,
+    course_id: int = 1,
+    exam_date: date = date(2026, 10, 5),
+    cohort_id: int | None = None,
+    lecturer_id: int | None = None,
+    room_id: int | None = None,
+    start: time = time(10),
+    end: time = time(12),
+):
+    """Build a complete saved exam record without relying on the wall clock."""
+    cohort = cohort_id or course_id
+    lecturer = lecturer_id or course_id
+    room = room_id or course_id
+    duration_minutes = (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute)
+    return ExamSession(
+        id=exam_id,
+        course_id=course_id,
+        semester_id=1,
+        cohort_id=cohort,
+        lecturer_id=lecturer,
+        room_id=room,
+        exam_date=exam_date,
+        start_time=start,
+        end_time=end,
+        source="manual",
+        revision=1,
+        configuration_identifier=f"EXAM-{exam_id}",
+        configuration_revision=1,
+        duration_minutes=duration_minutes,
+        exam_type="Written",
+        required_capacity=30,
+        recommended_start_date=exam_date,
+        recommended_end_date=exam_date,
+        recommendation_was_overridden=False,
+        final_teaching_date=exam_date,
+        final_teaching_end_time=start,
+        final_teaching_session_id_snapshot=exam_id,
+        course_name_snapshot=f"Course {course_id}",
+        semester_name_snapshot="Fall 2026",
+        cohort_name_snapshot=f"Cohort {cohort}",
+        lecturer_name_snapshot=f"Lecturer {lecturer}",
+        lecturer_reference_snapshot=f"LEC-{lecturer:03}",
+        room_name_snapshot=f"Room {room}",
+        room_reference_snapshot=f"ROOM-{room:03}",
+    )
+
+
+def active_exam(**overrides):
+    overrides.setdefault("exam_date", date(2026, 10, 5))
+    return exam_session(**overrides)
+
+
+def past_exam(**overrides):
+    overrides.setdefault("exam_date", date(2025, 8, 31))
+    return exam_session(**overrides)
+
+
+def shared_resource_occupancy(*, session_date: date = SEMESTER_START):
+    """Fixed sessions that independently occupy a lecturer, room, and cohort."""
+    return {
+        "lecturer": protected_unselected_teaching(
+            course_id=91, cohort_id=191, lecturer_id=1, room_id=191, session_date=session_date
+        ),
+        "room": protected_unselected_teaching(
+            course_id=92, cohort_id=192, lecturer_id=192, room_id=1, session_date=session_date
+        ),
+        "cohort": protected_unselected_teaching(
+            course_id=93, cohort_id=1, lecturer_id=193, room_id=193, session_date=session_date
+        ),
+    }
+
+
+def exact_boundary_occupancy(*, session_date: date = SEMESTER_START):
+    """Adjacent intervals that must not be classified as overlaps."""
+    return (
+        protected_unselected_teaching(
+            course_id=94, session_date=session_date, start=time(6), end=time(8)
+        ),
+        protected_unselected_teaching(
+            course_id=95, session_date=session_date, start=time(10), end=time(12)
+        ),
+    )
+
+
+def selected_course_exam_deadline(*, course_id: int = 1, exam_date: date = date(2026, 10, 5)):
+    """An active same-course exam whose start is the latest valid teaching boundary."""
+    return exam_session(course_id=course_id, exam_date=exam_date, start=time(10), end=time(12))
 
 
 def seed_optimization_planner(db, *, course_count: int = 3, total_units: int = 8):

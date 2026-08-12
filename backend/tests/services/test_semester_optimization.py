@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import date, time
+from datetime import date, datetime, time
 
 from app.services.schedule_generation import PlanningPeriodPlan, ResourceCandidatePlan, TimeWindowPlan
 from app.services.holiday_calendar import HolidayReference
@@ -116,6 +116,42 @@ def test_actual_over_scheduled_baseline_and_equal_current_draft_are_preserved_wh
     assert equal.courses[0].retained_current is True
 
 
+def test_current_draft_outside_active_course_dates_is_replaced():
+    current = CurrentSession(1, 1, 1, 1, SEMESTER_START, time(8), time(11, 30), 4, 1, 0)
+    valid_date = date(2026, 9, 14)
+    course = replace(
+        optimization_course(1, total_units=4, min_units=4, max_units=4),
+        planning_period=PlanningPeriodPlan(valid_date, valid_date),
+        current_sessions=(current,),
+    )
+
+    result = optimize_semester([course], [], deadline_seconds=10)
+
+    optimized = result.courses[0]
+    assert optimized.retained_current is False
+    assert [(item.date, item.start_time, item.units) for item in optimized.sessions] == [
+        (valid_date, time(8), 4)
+    ]
+
+
+def test_current_draft_outside_active_study_type_window_is_replaced():
+    current = CurrentSession(1, 1, 1, 1, SEMESTER_START, time(8), time(11, 30), 4, 1, 0)
+    course = replace(
+        optimization_course(1, total_units=4, min_units=4, max_units=4),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START),
+        windows=(TimeWindowPlan(2, 0, time(13), time(16, 30)),),
+        current_sessions=(current,),
+    )
+
+    result = optimize_semester([course], [], deadline_seconds=10)
+
+    optimized = result.courses[0]
+    assert optimized.retained_current is False
+    assert [(item.date, item.start_time, item.units) for item in optimized.sessions] == [
+        (SEMESTER_START, time(13), 4)
+    ]
+
+
 def test_equal_unit_current_conflicts_are_replaced_before_preservation_tier():
     current_one = CurrentSession(1, 1, 1, 1, SEMESTER_START, time(8), time(10), 2, 1, 0)
     current_two = CurrentSession(2, 1, 1, 1, SEMESTER_START, time(8), time(10), 2, 1, 0)
@@ -157,3 +193,70 @@ def test_canonical_tie_break_prefers_earlier_session_sequence():
         (date(2026, 9, 7), 2),
         (date(2026, 9, 9), 2),
     ]
+
+
+def test_active_exam_is_fixed_occupancy_with_source_evidence_and_half_open_boundaries():
+    course = replace(
+        optimization_course(1, total_units=4, min_units=2, max_units=3),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START),
+    )
+    exam = FixedSession(
+        99,
+        1,
+        1,
+        1,
+        SEMESTER_START,
+        time(9, 40),
+        time(12),
+        source_kind="active_exam",
+        source_id=77,
+    )
+
+    candidates = generate_candidates(course, [exam], frozenset())
+
+    assert [(item.units, item.end_time) for item in candidates.candidates] == [
+        (2, time(9, 40))
+    ]
+    sourced = {
+        (item.code, item.source_kind, item.source_id)
+        for item in candidates.evidence
+    }
+    assert sourced >= {
+        ("LECTURER_OCCUPIED", "active_exam", 77),
+        ("ROOM_OCCUPIED", "active_exam", 77),
+        ("COHORT_OCCUPIED", "active_exam", 77),
+    }
+
+
+def test_same_course_exam_deadline_allows_exact_end_and_reports_later_candidates():
+    course = replace(
+        optimization_course(1, total_units=4, min_units=2, max_units=3),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START),
+        latest_teaching_end=datetime.combine(SEMESTER_START, time(9, 40)),
+        latest_teaching_source_id=88,
+    )
+
+    candidates = generate_candidates(course, [], frozenset())
+    result = optimize_semester([course], [], deadline_seconds=10)
+
+    assert [(item.units, item.end_time) for item in candidates.candidates] == [
+        (2, time(9, 40))
+    ]
+    boundary = next(item for item in candidates.evidence if item.code == "ACTIVE_EXAM_BOUNDARY")
+    assert (boundary.source_kind, boundary.source_id) == ("active_exam", 88)
+    assert result.total_units == 2
+    assert result.courses[0].sessions[0].end_time == time(9, 40)
+
+
+def test_too_short_study_type_windows_are_reported_precisely():
+    course = replace(
+        optimization_course(1, total_units=4, min_units=2, max_units=2),
+        windows=(TimeWindowPlan(1, 0, time(8), time(9)),),
+    )
+
+    candidates = generate_candidates(course, [], frozenset())
+
+    assert candidates.candidates == ()
+    assert {item.code for item in candidates.evidence} == {
+        "STUDY_TYPE_WINDOW_UNAVAILABLE"
+    }

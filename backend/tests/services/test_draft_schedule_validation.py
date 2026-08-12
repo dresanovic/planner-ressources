@@ -256,8 +256,14 @@ def test_overlap_alerts_apply_to_all_affected_sessions_with_related_context():
     assert ValidationAlertCode.ROOM_OVERLAP in alert_codes(alerts, first_session.id)
     assert ValidationAlertCode.COHORT_OVERLAP in alert_codes(alerts, first_session.id)
     lecturer_alert = next(alert for alert in alerts[first_session.id] if alert.code == ValidationAlertCode.LECTURER_OVERLAP)
+    assert sum(alert.code == ValidationAlertCode.LECTURER_OVERLAP for alert in alerts[first_session.id]) == 1
+    assert 'Lecturer "Lecturer 1"' in lecturer_alert.message
     assert [related.course_name for related in lecturer_alert.related_sessions] == ["Scheduling 201"]
+    assert lecturer_alert.related_sessions[0].date == date(2026, 9, 7)
+    assert lecturer_alert.related_sessions[0].start_time == "09:00"
+    assert lecturer_alert.related_sessions[0].end_time == "11:00"
     cohort_alert = next(alert for alert in alerts[first_session.id] if alert.code == ValidationAlertCode.COHORT_OVERLAP)
+    assert 'Cohort "AI 1"' in cohort_alert.message
     assert [related.session_id for related in cohort_alert.related_sessions] == [third_session.id]
     assert ValidationAlertCode.LECTURER_OVERLAP in alert_codes(alerts, second_session.id)
     assert ValidationAlertCode.COHORT_OVERLAP in alert_codes(alerts, third_session.id)
@@ -326,11 +332,10 @@ def test_current_generation_constraints_and_default_fallback_create_window_alert
         ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION,
     ).message
     assert "Session date 2026-09-07 is before the allowed planning period 2026-09-14–2026-09-28" in message
-    assert "Monday is not an allowed teaching day" in message
-    assert "Wednesday 08:00–12:00" in message
+    assert "Monday is not an allowed teaching day" not in message
 
 
-def test_custom_active_constraints_allow_friday_evening_without_study_type_alert():
+def test_custom_date_constraints_still_use_current_study_type_windows():
     db = make_session()
     seed_validation_courses(db)
     course_plan = load_course_plan(db, 1)
@@ -358,11 +363,12 @@ def test_custom_active_constraints_allow_friday_evening_without_study_type_alert
 
     alerts = collect_validation_alerts([draft], **validation_context(db, [draft]))
 
-    assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION not in alert_codes(alerts, draft.sessions[0].id)
-    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION not in alert_codes(alerts, draft.sessions[0].id)
+    codes = alert_codes(alerts, draft.sessions[0].id)
+    assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION not in codes
+    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
 
 
-def test_custom_active_constraints_report_only_generation_violation_when_session_is_outside_custom_window():
+def test_custom_date_constraints_report_study_type_violation_for_weekly_window_mismatch():
     db = make_session()
     seed_validation_courses(db)
     course_plan = load_course_plan(db, 1)
@@ -390,15 +396,16 @@ def test_custom_active_constraints_report_only_generation_violation_when_session
 
     alerts = collect_validation_alerts([draft], **validation_context(db, [draft]))
 
-    assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION in alert_codes(alerts, draft.sessions[0].id)
-    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION not in alert_codes(alerts, draft.sessions[0].id)
+    codes = alert_codes(alerts, draft.sessions[0].id)
+    assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION not in codes
+    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
     message = alert_for(
         alerts,
         draft.sessions[0].id,
-        ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION,
+        ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION,
     ).message
-    assert "Session time 17:01–21:30 on Friday is outside the allowed time" in message
-    assert "Allowed on Friday: 18:00–22:00" in message
+    assert "Friday is not an allowed teaching day" in message
+    assert "Allowed teaching windows: Monday 08:00–12:00, Wednesday 08:00–12:00" in message
 
 
 def test_study_type_window_and_multiple_alerts_are_reported_together():
@@ -425,28 +432,50 @@ def test_study_type_window_and_multiple_alerts_are_reported_together():
         planning_start_date=constraints.planning_period.start_date,
         planning_end_date=constraints.planning_period.end_date,
         allowed_windows=constraints.allowed_windows,
-        is_custom=constraints.is_custom,
         study_type_windows=load_time_windows(db, draft.study_type_id_snapshot),
     )
 
     codes = alert_codes(alerts, draft.sessions[0].id)
     assert ValidationAlertCode.ROOM_CAPACITY in codes
-    assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION in codes
+    assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION not in codes
     assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
     assert set(shared_evaluation.issue_codes) <= {code.value for code in codes}
-    generation_message = alert_for(
-        alerts,
-        draft.sessions[0].id,
-        ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION,
-    ).message
     study_type_message = alert_for(
         alerts,
         draft.sessions[0].id,
         ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION,
     ).message
-    assert "Tuesday is not an allowed teaching day" in generation_message
-    assert "Monday 08:00–12:00" in generation_message
+    assert "Tuesday is not an allowed teaching day" in study_type_message
+    assert "Monday 08:00–12:00" in study_type_message
     assert "Wednesday 08:00–12:00" in study_type_message
+
+
+def test_custom_date_and_study_type_violations_are_reported_as_distinct_alerts():
+    db = make_session()
+    seed_validation_courses(db)
+    save_generation_constraints(
+        db,
+        course_plan=load_course_plan(db, 1),
+        semester_plan=load_semester_plan(db, 1),
+        planning_period=PlanningPeriodPlan(date(2026, 9, 14), date(2026, 9, 28)),
+    )
+    draft = replace_course_draft(
+        db,
+        1,
+        [generated_session(day=date(2026, 9, 8), start=time(13, 0), end=time(15, 0), window_id=None)],
+    )
+
+    alerts = collect_validation_alerts([draft], **validation_context(db, [draft]))
+    codes = alert_codes(alerts, draft.sessions[0].id)
+
+    assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION in codes
+    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
+    assert "before the allowed planning period" in alert_for(
+        alerts, draft.sessions[0].id, ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION
+    ).message
+    assert "Tuesday is not an allowed teaching day" in alert_for(
+        alerts, draft.sessions[0].id, ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION
+    ).message
 
 
 def test_regeneration_replacement_removes_prior_alerts():

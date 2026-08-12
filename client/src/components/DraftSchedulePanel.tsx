@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
-  AllowedTeachingWindow,
   DraftSession,
   DraftSchedule,
   GenerationConstraints,
   PlanningEntity,
+  PlanningPeriod,
   ReviewFilters,
   SessionEditFailure,
   ViewMode,
@@ -289,7 +289,7 @@ function DraftSchedulePanelStateful({
             visibleExams.length === 0 && <p className="empty-state">Keine Termine entsprechen den aktiven Filtern.</p>
           ) : viewMode === 'list' ? (
             <div className="session-table" aria-label="Entwurfstermine">
-              <div className="session-row session-header">
+              <div className="session-row teaching-session-row session-header">
                 <span>Datum</span>
                 <span>Zeit</span>
                 <span>Dauer</span>
@@ -316,23 +316,23 @@ function DraftSchedulePanelStateful({
                 </div>
                 ) : (
                   <ScheduleOccurrenceRow
-                    className="session-row"
+                    className="session-row teaching-session-row"
                     occurrenceRef={`teaching:${session.id}`}
                     kind="teaching"
                     key={`${session.draftScheduleId}-${session.id}`}
                   >
-                    <span>
+                    <span data-label="Datum">
                       {formatCalendarDate(session.date)}
-                      <SessionAlerts alerts={session.validationAlerts} />
+                      <SessionAlerts alerts={session.validationAlerts} lecturerName={resourceLabel(session.lecturer)} roomName={resourceLabel(session.room)} cohortName={session.context.cohort.name} />
                     </span>
-                    <span>{session.startTime}-{session.endTime}</span>
-                    <span>{derivedLengthLabel(session.startTime, session.endTime)}</span>
-                    <span>{session.context.course.name}</span>
-                    <span>{session.context.cohort.name}</span>
-                    <span>{resourceLabel(session.lecturer)}</span>
-                    <span>{resourceLabel(session.room)}</span>
-                    <span>{session.context.studyType.name}</span>
-                    {!readOnly && <span className="session-actions">
+                    <span data-label="Zeit">{session.startTime}-{session.endTime}</span>
+                    <span data-label="Dauer">{derivedLengthLabel(session.startTime, session.endTime)}</span>
+                    <span data-label={label('course.tableHeading')}>{session.context.course.name}</span>
+                    <span data-label={label('cohort.tableHeading')}>{session.context.cohort.name}</span>
+                    <span data-label={label('lecturer.tableHeading')}>{resourceLabel(session.lecturer)}</span>
+                    <span data-label={label('room.tableHeading')}>{resourceLabel(session.room)}</span>
+                    <span data-label="Studienart">{session.context.studyType.name}</span>
+                    {!readOnly && <span className="session-actions" data-label="Aktionen">
                       <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>Bearbeiten</button>
                       <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>Löschen</button>
                     </span>}
@@ -360,7 +360,7 @@ function DraftSchedulePanelStateful({
                             <span>{resourceLabel(session.lecturer)}</span>
                             <span>{resourceLabel(session.room)}</span>
                             <span>{session.context.studyType.name}</span>
-                            <SessionAlerts alerts={session.validationAlerts} />
+                            <SessionAlerts alerts={session.validationAlerts} lecturerName={resourceLabel(session.lecturer)} roomName={resourceLabel(session.room)} cohortName={session.context.cohort.name} />
                             {!readOnly && <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
                               Bearbeiten
                             </button>}
@@ -442,17 +442,22 @@ function DraftSchedulePanelStateful({
   }
 }
 
-function SessionAlerts({ alerts }: { alerts: DraftSession['validationAlerts'] }) {
+function SessionAlerts({ alerts, lecturerName, roomName, cohortName }: { alerts: DraftSession['validationAlerts']; lecturerName: string; roomName: string; cohortName: string }) {
   if (alerts.length === 0) {
     return null
   }
+  const uniqueAlerts = [...new Map(alerts.map((alert) => [
+    `${alert.code}:${[...new Set(alert.relatedSessions.map((related) => related.sessionId))].sort((a, b) => a - b).join(',')}`,
+    alert,
+  ])).values()]
   return (
     <div className="validation-alerts">
-      {alerts.map((alert) => (
-        <details className="validation-alert" key={`${alert.code}-${alert.message}`}>
+      {uniqueAlerts.map((alert) => {
+        const presentation = conflictPresentation(alert.code, { lecturerName, roomName, cohortName }, alert.message)
+        return <details className="validation-alert" key={`${alert.code}-${alert.relatedSessions.map((related) => related.sessionId).join('-')}`}>
           <summary>
-            <span className="validation-alert-code">Hinweis</span>
-            <span>{safeReasonText(alert.code, 'Termin')}{alert.holidayDate ? ` Feiertag „${alert.holidayName ?? 'unbekannt'}“ am ${formatCalendarDate(alert.holidayDate)}.` : ''}</span>
+            <span className="validation-alert-code">{presentation.title}</span>
+            <span>{presentation.detail}{alert.holidayDate ? ` Feiertag „${alert.holidayName ?? 'unbekannt'}“ am ${formatCalendarDate(alert.holidayDate)}.` : ''}</span>
           </summary>
           {alert.relatedSessions.length > 0 && (
             <ul>
@@ -464,9 +469,25 @@ function SessionAlerts({ alerts }: { alerts: DraftSession['validationAlerts'] })
             </ul>
           )}
         </details>
-      ))}
+      })}
     </div>
   )
+}
+
+function conflictPresentation(code: DraftSession['validationAlerts'][number]['code'], resources: { lecturerName: string; roomName: string; cohortName: string }, fallback: string) {
+  if (code === 'LECTURER_OVERLAP') return { title: 'Lehrendenkonflikt', detail: `Die lehrende Person „${resources.lecturerName}“ ist zur selben Zeit in einem weiteren Termin eingeplant.` }
+  if (code === 'ROOM_OVERLAP') return { title: 'Raumkonflikt', detail: `Der Raum „${resources.roomName}“ ist zur selben Zeit durch einen weiteren Termin belegt.` }
+  if (code === 'COHORT_OVERLAP') return { title: 'Kohortenkonflikt', detail: `Die Kohorte „${resources.cohortName}“ hat zur selben Zeit einen weiteren Termin.` }
+  if (code === 'ROOM_CAPACITY') return { title: 'Raumkapazität reicht nicht aus', detail: `Der Raum „${resources.roomName}“ ist für die zugeordnete Kohorte „${resources.cohortName}“ zu klein.` }
+  if (code === 'GENERATION_CONSTRAINT_VIOLATION') return { title: 'Datumsgrenzen verletzt', detail: 'Der Termin liegt außerhalb der aktuell gespeicherten Start- und Enddaten dieser Lehrveranstaltung.' }
+  if (code === 'STUDY_TYPE_WINDOW_VIOLATION') return { title: 'Studienart-Zeitfenster verletzt', detail: 'Der Termin liegt außerhalb eines aktuell aktiven Zeitfensters der zugeordneten Studienart.' }
+  if (code === 'LECTURER_UNAVAILABLE') return { title: 'Lehrende Person nicht verfügbar', detail: `Die lehrende Person „${resources.lecturerName}“ ist für diesen Zeitraum als nicht verfügbar hinterlegt.` }
+  if (code === 'ROOM_UNAVAILABLE') return { title: 'Raum nicht verfügbar', detail: `Der Raum „${resources.roomName}“ ist für diesen Zeitraum als nicht verfügbar hinterlegt.` }
+  if (code === 'LECTURER_INELIGIBLE') return { title: 'Lehrende Person nicht freigegeben', detail: `Die lehrende Person „${resources.lecturerName}“ ist für diese Lehrveranstaltung nicht freigegeben.` }
+  if (code === 'ROOM_INELIGIBLE') return { title: 'Raum nicht freigegeben', detail: `Der Raum „${resources.roomName}“ ist für diese Lehrveranstaltung nicht freigegeben.` }
+  if (code === 'INSTITUTION_HOLIDAY') return { title: 'Feiertag', detail: 'Der Termin liegt auf einem institutionellen Feiertag.' }
+  if (code === 'VALIDATION_DATA_MISSING') return { title: 'Prüfdaten fehlen', detail: 'Der Termin konnte nicht vollständig geprüft werden, weil dafür benötigte Planungsdaten fehlen.' }
+  return { title: 'Hinweis', detail: fallback || safeReasonText(code, 'Termin') }
 }
 
 type FilterSelectProps = {
@@ -502,16 +523,34 @@ function FilterSelect({ label, name, value, options, onChange }: FilterSelectPro
 type GenerationConstraintEditorProps = {
   constraints: GenerationConstraints
   isLoading: boolean
-  onChange: (constraints: GenerationConstraints) => void
+  onChange?: (constraints: GenerationConstraints) => void
+  onSave?: (planningPeriod: PlanningPeriod) => void | Promise<void>
   onClear: () => void
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 export function GenerationConstraintEditor({
   constraints,
   isLoading,
   onChange,
+  onSave,
   onClear,
+  onDirtyChange,
 }: GenerationConstraintEditorProps) {
+  const [editorState, setEditorState] = useState({ source: constraints, planningPeriod: constraints.planningPeriod })
+  const planningPeriod = editorState.source === constraints
+    ? editorState.planningPeriod
+    : constraints.planningPeriod
+  const dirty = planningPeriod.startDate !== constraints.planningPeriod.startDate
+    || planningPeriod.endDate !== constraints.planningPeriod.endDate
+  useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange])
+  const invalid = !planningPeriod.startDate || !planningPeriod.endDate
+    || planningPeriod.startDate > planningPeriod.endDate
+
+  function updatePeriod(next: PlanningPeriod) {
+    setEditorState({ source: constraints, planningPeriod: next })
+    onChange?.({ ...constraints, planningPeriod: next })
+  }
   return (
     <section className="generation-constraints" aria-labelledby="generation-constraints-title">
       <div className="section-heading">
@@ -530,103 +569,31 @@ export function GenerationConstraintEditor({
       </div>
 
       <div className="constraint-grid">
-        <EuropeanDateField id="generation-start-date" label="Beginn" value={constraints.planningPeriod.startDate} onChange={(value) => onChange({ ...constraints, planningPeriod: { ...constraints.planningPeriod, startDate: value ?? '' } })} required />
-        <EuropeanDateField id="generation-end-date" label="Ende" value={constraints.planningPeriod.endDate} min={constraints.planningPeriod.startDate} onChange={(value) => onChange({ ...constraints, planningPeriod: { ...constraints.planningPeriod, endDate: value ?? '' } })} required />
+        <EuropeanDateField id="generation-start-date" label="Beginn" value={planningPeriod.startDate} onChange={(value) => updatePeriod({ ...planningPeriod, startDate: value ?? '' })} required />
+        <EuropeanDateField id="generation-end-date" label="Ende" value={planningPeriod.endDate} min={planningPeriod.startDate} onChange={(value) => updatePeriod({ ...planningPeriod, endDate: value ?? '' })} required />
       </div>
+
+      <p className="constraint-study-type">Studienart: {constraints.studyType.name}</p>
 
       <div className="constraint-window-list" aria-label="Erlaubte wöchentliche Lehrzeitfenster">
         {constraints.allowedTeachingWindows.map((window, index) => (
           <div className="constraint-window-row" key={`${window.weekday}-${index}`}>
-            <label className="constraint-field">
-              <span>Wochentag</span>
-              <select
-                value={window.weekday}
-                onChange={(event) =>
-                  onChange(updateWindow(constraints, index, { weekday: Number(event.target.value) }))
-                }
-              >
-                {WEEKDAY_NAMES.map((label, weekday) => (
-                  <option value={weekday} key={label}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="constraint-field">
-              <span>Beginn</span>
-              <input
-                type="time"
-                value={window.startTime}
-                onChange={(event) =>
-                  onChange(updateWindow(constraints, index, { startTime: event.target.value }))
-                }
-              />
-            </label>
-            <label className="constraint-field">
-              <span>Ende</span>
-              <input
-                type="time"
-                value={window.endTime}
-                onChange={(event) =>
-                  onChange(updateWindow(constraints, index, { endTime: event.target.value }))
-                }
-              />
-            </label>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => onChange(removeWindow(constraints, index))}
-              disabled={constraints.allowedTeachingWindows.length <= 1}
-            >
-              Entfernen
-            </button>
+            <span>{WEEKDAY_NAMES[window.weekday]}</span>
+            <span>{window.startTime} - {window.endTime}</span>
           </div>
         ))}
       </div>
 
       <button
         type="button"
-        className="secondary-button"
-        onClick={() =>
-          onChange({
-            ...constraints,
-            allowedTeachingWindows: [
-              ...constraints.allowedTeachingWindows,
-              { weekday: 0, startTime: '08:00', endTime: '12:00' },
-            ],
-          })
-        }
+        className="primary-button"
+        onClick={() => void onSave?.(planningPeriod)}
+        disabled={isLoading || !dirty || invalid || !onSave}
       >
-        Zeitfenster hinzufügen
+        Datumsgrenzen speichern
       </button>
     </section>
   )
-}
-
-function updateWindow(
-  constraints: GenerationConstraints,
-  index: number,
-  patch: Partial<AllowedTeachingWindow>,
-): GenerationConstraints {
-  return {
-    ...constraints,
-    allowedTeachingWindows: constraints.allowedTeachingWindows.map((window, currentIndex) =>
-      currentIndex === index
-        ? {
-            ...window,
-            ...patch,
-            sourceTimeWindowId: patch.weekday === undefined ? window.sourceTimeWindowId : null,
-          }
-        : window,
-    ),
-  }
-}
-
-function removeWindow(constraints: GenerationConstraints, index: number): GenerationConstraints {
-  return {
-    ...constraints,
-    allowedTeachingWindows: constraints.allowedTeachingWindows.filter((_, currentIndex) => currentIndex !== index),
-  }
 }
 
 type FilterOptions = {

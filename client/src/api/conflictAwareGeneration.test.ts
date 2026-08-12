@@ -10,6 +10,7 @@ describe('conflict-aware generation API', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(optimizationPreparationFixture), { status: 200 }))
     const result = await prepareConflictAwareGeneration(1, 11, [1, 2], ['2026-10-26'])
     expect(result.sharedSnapshotToken).toBe('shared-snapshot')
+    expect(result.courses[0].effectiveConstraints.studyType.name).toBe('Full-time')
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({ semesterId: 1, scheduleRevisionId: 11, courseIds: [1, 2], unavailableDates: ['2026-10-26'] })
   })
 
@@ -17,6 +18,19 @@ describe('conflict-aware generation API', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(optimizationResultFixture), { status: 200 }))
     const result = await generateConflictAwareSchedules(optimizationPreparationFixture, true)
     expect(result.summary.complete).toBe(1)
+    expect(result.summary).toEqual(expect.objectContaining({
+      total: 2,
+      complete: 1,
+      improvedPartial: 1,
+      unchanged: 0,
+      failed: 0,
+      stale: 0,
+      scheduledUnits: 14,
+      remainingUnits: 2,
+      elapsedMilliseconds: 245,
+      optimalForPreparedSnapshot: true,
+    }))
+    expect(result.outcomes[1].reasons[0]).toMatchObject({ sourceKind: 'active_exam', sourceId: 44 })
     const payload = JSON.parse(String(fetchMock.mock.calls[0][1]?.body))
     expect(payload.sharedSnapshotToken).toBe('shared-snapshot')
     expect(payload.replacementConfirmed).toBe(true)

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getDraftSchedules: vi.fn(),
   generateDraftSchedule: vi.fn(),
   clearGenerationConstraints: vi.fn(),
+  saveGenerationConstraints: vi.fn(),
   updateDraftSession: vi.fn(),
   createManualDraftSession: vi.fn(),
   deleteDraftSession: vi.fn(),
@@ -37,6 +38,7 @@ vi.mock('../api/draftSchedule', () => ({
   getDraftSchedules: mocks.getDraftSchedules,
   generateDraftSchedule: mocks.generateDraftSchedule,
   clearGenerationConstraints: mocks.clearGenerationConstraints,
+  saveGenerationConstraints: mocks.saveGenerationConstraints,
   updateDraftSession: mocks.updateDraftSession,
   createManualDraftSession: mocks.createManualDraftSession,
   deleteDraftSession: mocks.deleteDraftSession,
@@ -1502,6 +1504,109 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(document.body.textContent).not.toContain('Bestehende Planungsentwürfe optimieren?')
   })
 
+  it('blocks generation during a constraint reset and clears stale preparation afterward', async () => {
+    const customConstraints = {
+      ...generationConstraintsFixture,
+      isCustom: true,
+      revision: 3,
+      planningPeriod: { startDate: '2026-09-14', endDate: '2026-12-10' },
+    }
+    const reset = deferred<{ constraints: typeof generationConstraintsFixture; draftSchedule: null }>()
+    mocks.getGenerationConstraints.mockResolvedValue(customConstraints)
+    mocks.clearGenerationConstraints.mockReturnValue(reset.promise)
+    mocks.prepare.mockResolvedValue({
+      semesterId: 1, scheduleRevisionId: 11, unavailableDates: [], sharedSnapshotToken: 'shared', replacementCourseIds: [1],
+      courses: [{ courseId: 1, courseName: 'Course 1', available: true, draftScheduleId: 5, draftRevision: 2, scheduledUnits: 4, remainingUnits: 4, replacementRequired: true, inputSnapshotToken: 'course-1' }],
+    })
+    await renderPage()
+    act(() => document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
+    await act(async () => {
+      button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(document.body.textContent).toContain('Bestehende Planungsentwürfe optimieren?')
+
+    act(() => button('Benutzerdefinierte Regeln zurücksetzen')?.click())
+
+    const generate = document.querySelector<HTMLButtonElement>('.multi-course-panel .generate-button')
+    expect(generate?.disabled).toBe(true)
+    expect(generate?.textContent).toContain('optimieren')
+    expect(generate?.textContent).not.toContain('werden optimiert')
+    act(() => generate?.click())
+    expect(mocks.prepare).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      reset.resolve({ constraints: generationConstraintsFixture, draftSchedule: null })
+      await reset.promise
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.body.textContent).not.toContain('Bestehende Planungsentwürfe optimieren?')
+  })
+
+  it('blocks constraint reset while unified preparation is in flight', async () => {
+    const customConstraints = {
+      ...generationConstraintsFixture,
+      isCustom: true,
+      revision: 3,
+      planningPeriod: { startDate: '2026-09-14', endDate: '2026-12-10' },
+    }
+    const preparation = deferred<{
+      semesterId: number
+      scheduleRevisionId: number
+      unavailableDates: string[]
+      sharedSnapshotToken: string
+      replacementCourseIds: number[]
+      courses: Array<{
+        courseId: number
+        courseName: string
+        available: boolean
+        draftScheduleId: number
+        draftRevision: number
+        scheduledUnits: number
+        remainingUnits: number
+        replacementRequired: boolean
+        inputSnapshotToken: string
+      }>
+    }>()
+    mocks.getGenerationConstraints.mockResolvedValue(customConstraints)
+    mocks.prepare.mockReturnValue(preparation.promise)
+    await renderPage()
+    act(() => document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
+
+    act(() => button('Ausgewählte Lehrveranstaltungen optimieren')?.click())
+
+    const resetButton = document.querySelector<HTMLButtonElement>('.generation-constraints .secondary-button')
+    expect(resetButton?.disabled).toBe(true)
+    act(() => resetButton?.click())
+    expect(mocks.clearGenerationConstraints).not.toHaveBeenCalled()
+
+    await act(async () => {
+      preparation.resolve({
+        semesterId: 1,
+        scheduleRevisionId: 11,
+        unavailableDates: [],
+        sharedSnapshotToken: 'shared',
+        replacementCourseIds: [1],
+        courses: [{
+          courseId: 1,
+          courseName: 'Course 1',
+          available: true,
+          draftScheduleId: 5,
+          draftRevision: 2,
+          scheduledUnits: 4,
+          remainingUnits: 4,
+          replacementRequired: true,
+          inputSnapshotToken: 'course-1',
+        }],
+      })
+      await preparation.promise
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(document.body.textContent).toContain('Bestehende Planungsentwürfe optimieren?')
+  })
+
   it('re-prepares failed and stale courses before retrying and refreshes each result', async () => {
     const preparation = {
       semesterId: 1, unavailableDates: [], sharedSnapshotToken: 'shared', replacementCourseIds: [],
@@ -1626,7 +1731,8 @@ describe('CourseSchedulePage academic option compatibility', () => {
     act(() => { selects[1].value = '2'; selects[1].dispatchEvent(new Event('change', { bubbles: true })) })
     expect(selects[0].value).toBe('1')
     expect(document.body.textContent).toContain('dem ausgewählten Semester nicht zugeordnet')
-    expect((button('Erzeugen') as HTMLButtonElement).disabled).toBe(true)
+    expect(button('Erzeugen')).toBeUndefined()
+    expect(document.querySelector('.multi-course-panel .generate-button')).not.toBeNull()
   })
 
   it('refreshes options without replacing a still-valid selected Course', async () => {
@@ -1658,7 +1764,8 @@ describe('CourseSchedulePage academic option compatibility', () => {
     expect(courseSelect.value).toBe('2')
     expect(document.body.textContent).not.toContain('OPTION_NO_LONGER_AVAILABLE')
     expect(document.body.textContent).toContain('genaue Ursache ist nicht verfügbar')
-    expect((button('Erzeugen') as HTMLButtonElement).disabled).toBe(true)
+    expect(button('Erzeugen')).toBeUndefined()
+    expect(document.querySelector('.multi-course-panel .generate-button')).not.toBeNull()
   })
 })
 

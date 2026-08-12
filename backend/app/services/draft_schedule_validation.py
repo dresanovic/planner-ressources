@@ -413,24 +413,36 @@ def collect_validation_alerts(
             }[finding.issue_code]
             alerts[session.id].append(ValidationAlert(code=code, message=message))
     conflict_metadata = {
-        "lecturer_conflict": (
-            ValidationAlertCode.LECTURER_OVERLAP,
-            "lecturer",
-        ),
-        "room_conflict": (ValidationAlertCode.ROOM_OVERLAP, "room"),
-        "cohort_conflict": (ValidationAlertCode.COHORT_OVERLAP, "Cohort"),
+        "lecturer_conflict": ValidationAlertCode.LECTURER_OVERLAP,
+        "room_conflict": ValidationAlertCode.ROOM_OVERLAP,
+        "cohort_conflict": ValidationAlertCode.COHORT_OVERLAP,
     }
     for (category, occurrence_ref), related_refs in conflict_groups.items():
-        _draft, session = session_by_ref[occurrence_ref]
-        code, label = conflict_metadata[category]
-        related = [
+        draft, session = session_by_ref[occurrence_ref]
+        code = conflict_metadata[category]
+        related_by_id = {
+            related.session_id: related
+            for related in (
             _related_session(*session_by_ref[ref], rooms_by_id, lecturers_by_id)
             for ref in sorted(related_refs)
-        ]
+            )
+        }
+        related = list(related_by_id.values())
+        if category == "lecturer_conflict":
+            lecturer = lecturers_by_id.get(session.lecturer_id)
+            subject = lecturer.name if lecturer is not None else f"Lecturer {session.lecturer_id}"
+            message = f'Lecturer "{subject}" overlaps with {len(related)} related session(s).'
+        elif category == "room_conflict":
+            room = rooms_by_id.get(session.room_id)
+            subject = room.name if room is not None else f"Room {session.room_id}"
+            message = f'Room "{subject}" overlaps with {len(related)} related session(s).'
+        else:
+            subject = draft.cohort_name_snapshot or f"Cohort {draft.cohort_id_snapshot}"
+            message = f'Cohort "{subject}" overlaps with {len(related)} related session(s).'
         alerts[session.id].append(
             ValidationAlert(
                 code=code,
-                message=f"{label} overlaps with {len(related)} session(s).",
+                message=message,
                 related_sessions=related,
             )
         )
@@ -542,7 +554,6 @@ def _add_generation_constraint_alert(
         planning_start_date=constraints.planning_period.start_date,
         planning_end_date=constraints.planning_period.end_date,
         allowed_windows=constraints.allowed_windows,
-        is_custom=constraints.is_custom,
     )
     if evaluation.generation_reasons:
         alerts[session.id].append(
@@ -564,7 +575,12 @@ def _add_study_type_window_alert(
     constraints_by_course_id: dict[int, GenerationConstraints],
 ) -> None:
     constraints = constraints_by_course_id.get(draft.course_id)
-    windows = study_windows_by_study_type_id.get(draft.study_type_id_snapshot)
+    active_study_type_id = (
+        constraints.study_type_id
+        if constraints is not None
+        else draft.study_type_id_snapshot
+    )
+    windows = study_windows_by_study_type_id.get(active_study_type_id)
     evaluation = evaluate_teaching_constraints(
         session_date=session.date,
         start_time=session.start_time,
@@ -584,7 +600,6 @@ def _add_study_type_window_alert(
             if constraints is not None
             else windows or []
         ),
-        is_custom=constraints.is_custom if constraints is not None else False,
         study_type_windows=windows or [],
     )
     if (
@@ -613,14 +628,11 @@ def _add_study_type_window_alert(
         )
 
 
-def _generation_constraint_violation_reasons_for_values(
+def _planning_period_violation_reasons_for_values(
     *,
     session_date: date,
-    start_time: time,
-    end_time: time,
     planning_start_date: date,
     planning_end_date: date,
-    allowed_windows: list[TimeWindowPlan],
 ) -> tuple[str, ...]:
     reasons: list[str] = []
     if session_date < planning_start_date:
@@ -632,20 +644,6 @@ def _generation_constraint_violation_reasons_for_values(
         reasons.append(
             f"Session date {session_date.isoformat()} is after the allowed planning period "
             f"{planning_start_date.isoformat()}–{planning_end_date.isoformat()}."
-        )
-    if not fits_any_validation_window(
-        session_date,
-        start_time,
-        end_time,
-        allowed_windows,
-    ):
-        reasons.append(
-            _teaching_window_violation_reason_for_values(
-                session_date=session_date,
-                start_time=start_time,
-                end_time=end_time,
-                windows=allowed_windows,
-            )
         )
     return tuple(reasons)
 
@@ -734,36 +732,31 @@ def evaluate_teaching_constraints(
     planning_start_date: date,
     planning_end_date: date,
     allowed_windows: list[TimeWindowPlan],
-    is_custom: bool,
     study_type_windows: list[TimeWindowPlan] | None = None,
 ) -> TeachingConstraintEvaluation:
     """Evaluate established teaching constraints for live or captured facts."""
-    generation_reasons = _generation_constraint_violation_reasons_for_values(
+    generation_reasons = _planning_period_violation_reasons_for_values(
         session_date=session_date,
-        start_time=start_time,
-        end_time=end_time,
         planning_start_date=planning_start_date,
         planning_end_date=planning_end_date,
-        allowed_windows=allowed_windows,
     )
     effective_study_windows = (
         allowed_windows if study_type_windows is None else study_type_windows
     )
     study_type_issue_code = None
-    if not is_custom:
-        if not effective_study_windows:
-            study_type_issue_code = (
-                ValidationAlertCode.VALIDATION_DATA_MISSING.value
-            )
-        elif not fits_any_validation_window(
-            session_date,
-            start_time,
-            end_time,
-            effective_study_windows,
-        ):
-            study_type_issue_code = (
-                ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION.value
-            )
+    if not effective_study_windows:
+        study_type_issue_code = (
+            ValidationAlertCode.VALIDATION_DATA_MISSING.value
+        )
+    elif not fits_any_validation_window(
+        session_date,
+        start_time,
+        end_time,
+        effective_study_windows,
+    ):
+        study_type_issue_code = (
+            ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION.value
+        )
     return TeachingConstraintEvaluation(
         generation_reasons=generation_reasons,
         study_type_issue_code=study_type_issue_code,

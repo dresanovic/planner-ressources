@@ -1,5 +1,5 @@
 import re
-from datetime import date, datetime, time, timezone
+from datetime import date, time
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import JSONResponse
@@ -14,20 +14,20 @@ from app.schemas.draft_schedule import (
     DraftScheduleMutationResponse,
     DraftScheduleResponse,
     DraftSessionResponse,
-    GenerateDraftScheduleRequest,
     GenerationConstraintsResponse,
-    GenerationFailure,
-    FailureCode,
-    GenerationFailureResponse,
+    GenerationConstraintMutationResponse,
     PlanningEntityResponse,
     PlanningResourceResponse,
     PlanningPeriodResponse,
     RelatedSessionResponse,
+    RetiredGenerationResponse,
     SessionEditFailure,
     SessionEditFailureCode,
     SessionEditFailureResponse,
     StaleDraftFailure,
     StaleDraftResponse,
+    StudyTypeSummaryResponse,
+    SaveGenerationConstraintsRequest,
     CreateManualDraftSessionRequest,
     ManualSessionFailure,
     ManualSessionFailureCode,
@@ -39,6 +39,8 @@ from app.services.draft_schedule_repository import (
     DraftSessionEditValidationError,
     ManualSessionValidationError,
     StaleDraftError,
+    StaleGenerationConstraintsError,
+    GenerationConstraintOverrideNotFoundError,
     GenerationConstraints,
     PlanningInputNotFoundError,
     clear_generation_constraints,
@@ -56,8 +58,8 @@ from app.services.draft_schedule_repository import (
     save_generation_constraints,
     update_draft_session,
 )
-from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan, generate_schedule
-from app.services.schedule_lifecycle import LifecycleFailure, claim_active_working_revision, require_active_working_revision
+from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan
+from app.services.schedule_lifecycle import LifecycleFailure, claim_active_working_revision
 from app.api.schedule_lifecycle import lifecycle_failure_response
 from app.models.planning import Course
 from app.services.academic_catalog import planning_eligibility_reasons
@@ -66,12 +68,22 @@ from app.services.draft_schedule_validation import (
     collect_validation_alerts,
 )
 from app.services.holiday_calendar import holiday_snapshot
-from app.services.planning_outcomes import (
-    StalePlanningOutcomeError,
-    retain_planning_outcome,
-)
 
 router = APIRouter(prefix="/api/courses/{course_id}/draft-schedule", tags=["draft schedule"])
+
+
+def retired_generation_response() -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_410_GONE,
+        content={
+            "code": "GENERATION_ENDPOINT_RETIRED",
+            "message": "This generation endpoint has been retired. Use the unified conflict-aware workflow.",
+            "replacement": {
+                "preparePath": "/api/draft-schedules/optimization/prepare",
+                "generatePath": "/api/draft-schedules/optimization/generate",
+            },
+        },
+    )
 constraints_router = APIRouter(
     prefix="/api/courses/{course_id}/generation-constraints",
     tags=["draft schedule"],
@@ -205,138 +217,14 @@ def remove_course_draft(
 
 @router.post(
     "/generate",
-    response_model=DraftScheduleResponse,
-    status_code=status.HTTP_201_CREATED,
-    responses={422: {"model": GenerationFailureResponse}},
+    response_model=RetiredGenerationResponse,
+    status_code=status.HTTP_410_GONE,
+    deprecated=True,
 )
 def generate_draft_schedule(
     course_id: int,
-    request: GenerateDraftScheduleRequest,
-    db: Session = Depends(get_db),
-) -> DraftScheduleResponse | JSONResponse:
-    try:
-        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
-    except LifecycleFailure as exc:
-        return lifecycle_failure_response(exc)
-    try:
-        course = load_course_plan(db, course_id)
-        semester = load_semester_plan(db, request.semester_id)
-    except PlanningInputNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    source_course = db.get(Course, course_id)
-    eligibility = planning_eligibility_reasons(db, source_course, request.semester_id)
-    if any(link.room.is_active for link in source_course.eligible_rooms):
-        eligibility = [reason for reason in eligibility if reason != "NO_USABLE_ELIGIBLE_ROOM"]
-    if eligibility:
-        return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content={"errors": [{"code": code, "message": "Course academic data is not eligible for this Semester."} for code in eligibility]},
-        )
-    planning_period = PlanningPeriodPlan(
-        start_date=request.planning_period.start_date,
-        end_date=request.planning_period.end_date,
-    )
-    time_windows = [_request_window_to_plan(index, window) for index, window in enumerate(request.allowed_teaching_windows)]
-    holidays = holiday_snapshot(db, planning_period.start_date, planning_period.end_date)
-
-    result = generate_schedule(
-        course=course,
-        semester=semester,
-        planning_period=planning_period,
-        time_windows=time_windows,
-        holidays=holidays.by_date,
-    )
-    if not result.ok:
-        current_holidays = holiday_snapshot(db, planning_period.start_date, planning_period.end_date)
-        if current_holidays.token != holidays.token:
-            return JSONResponse(
-                status_code=status.HTTP_409_CONFLICT,
-                content=GenerationFailureResponse(errors=[GenerationFailure(
-                    code=FailureCode.STALE_HOLIDAY_CALENDAR,
-                    message="The holiday calendar changed during generation. Review the current calendar and retry.",
-                )]).model_dump(mode="json", by_alias=True, exclude_none=True),
-            )
-        try:
-            retain_planning_outcome(
-                db,
-                schedule_revision_id=request.schedule_revision_id,
-                course_id=course_id,
-                operation_kind="single_course_generation",
-                classification="failed",
-                source_status=result.errors[0].code.value if result.errors else "failed",
-                result_payload={
-                    "errors": [
-                        {
-                            "code": error.code.value,
-                            "message": error.message,
-                            "holidayDate": error.holiday_date.isoformat()
-                            if error.holiday_date
-                            else None,
-                            "holidayName": error.holiday_name,
-                        }
-                        for error in result.errors
-                    ]
-                },
-                completed_at=datetime.now(timezone.utc),
-            )
-            db.commit()
-        except StalePlanningOutcomeError:
-            db.rollback()
-        response = JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content=GenerationFailureResponse(errors=result.errors).model_dump(mode="json", by_alias=True, exclude_none=True),
-        )
-        return response
-    try:
-        # SQLite defers its physical transaction until the first write. Establish
-        # the write boundary before the final holiday reload and hold it through
-        # persistence so a holiday change cannot commit in between them.
-        claim_active_working_revision(
-            db, request.semester_id, request.schedule_revision_id
-        )
-        current_holidays = holiday_snapshot(db, planning_period.start_date, planning_period.end_date)
-        conflicting = next((session.date for session in result.sessions if session.date in current_holidays.by_date), None)
-        if conflicting is not None:
-            holiday = current_holidays.by_date[conflicting]
-            return JSONResponse(
-                status_code=status.HTTP_409_CONFLICT,
-                content=GenerationFailureResponse(errors=[GenerationFailure(
-                    code=FailureCode.STALE_HOLIDAY_CALENDAR,
-                    message=f"The holiday calendar changed. {holiday.name} on {holiday.date.isoformat()} now conflicts with this result; retry generation.",
-                )]).model_dump(mode="json", by_alias=True, exclude_none=True),
-            )
-        draft = replace_draft_schedule(
-            db,
-            course_plan=course,
-            semester_id=semester.id,
-            generated_sessions=result.sessions,
-        )
-        save_generation_constraints(
-            db,
-            course_plan=course,
-            semester_plan=semester,
-            planning_period=planning_period,
-            allowed_windows=time_windows,
-        )
-        retain_planning_outcome(
-            db,
-            schedule_revision_id=request.schedule_revision_id,
-            course_id=course_id,
-            operation_kind="single_course_generation",
-            classification="successful",
-            source_status="generated",
-            result_payload={
-                "draftScheduleId": draft.id,
-                "draftRevision": draft.revision,
-                "scheduledUnits": sum(session.units for session in result.sessions),
-            },
-            completed_at=datetime.now(timezone.utc),
-        )
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    return _to_response_with_validation(db, draft)
+) -> JSONResponse:
+    return retired_generation_response()
 
 
 @router.get("", response_model=DraftScheduleResponse)
@@ -428,17 +316,87 @@ def read_generation_constraints(
     return _constraints_to_response(load_generation_constraints(db, course, semester))
 
 
-@constraints_router.delete("", status_code=status.HTTP_204_NO_CONTENT)
+@constraints_router.put("", response_model=GenerationConstraintMutationResponse)
+def put_generation_constraints(
+    course_id: int,
+    request: SaveGenerationConstraintsRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        claim_active_working_revision(
+            db, request.semester_id, request.schedule_revision_id
+        )
+        course = load_course_plan(db, course_id)
+        semester = load_semester_plan(db, request.semester_id)
+        eligibility = planning_eligibility_reasons(
+            db, db.get(Course, course_id), request.semester_id
+        )
+        if eligibility:
+            db.rollback()
+            return JSONResponse(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                content={"errors": [{
+                    "code": code,
+                    "message": "Course academic data is not eligible for this Semester.",
+                } for code in eligibility]},
+            )
+        constraints = save_generation_constraints(
+            db,
+            course,
+            semester,
+            PlanningPeriodPlan(
+                request.planning_period.start_date,
+                request.planning_period.end_date,
+            ),
+            expected_revision=request.expected_revision,
+        )
+        db.commit()
+    except StaleGenerationConstraintsError as exc:
+        db.rollback()
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"errors": [{
+                "code": "STALE_GENERATION_CONSTRAINTS",
+                "message": str(exc),
+                "currentRevision": exc.current_revision,
+            }]},
+        )
+    except PlanningInputNotFoundError as exc:
+        db.rollback()
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        db.rollback()
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"errors": [{"code": "INVALID_PLANNING_PERIOD", "message": str(exc)}]},
+        )
+    except LifecycleFailure as exc:
+        db.rollback()
+        return lifecycle_failure_response(exc)
+    draft = get_draft_schedule(db, course_id, request.semester_id)
+    return GenerationConstraintMutationResponse(
+        constraints=_constraints_to_response(constraints),
+        draftSchedule=_to_response_with_validation(db, draft) if draft is not None else None,
+    )
+
+
+@constraints_router.delete("", response_model=GenerationConstraintMutationResponse)
 def delete_generation_constraints(
     course_id: int,
     semesterId: int,
+    scheduleRevisionId: int,
+    expectedRevision: int,
     db: Session = Depends(get_db),
-) -> Response:
+) -> GenerationConstraintMutationResponse:
     try:
-        load_course_plan(db, course_id)
-        load_semester_plan(db, semesterId)
+        claim_active_working_revision(db, semesterId, scheduleRevisionId)
+        course = load_course_plan(db, course_id)
+        semester = load_semester_plan(db, semesterId)
     except PlanningInputNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except LifecycleFailure as exc:
+        db.rollback()
+        return lifecycle_failure_response(exc)
     eligibility = planning_eligibility_reasons(db, db.get(Course, course_id), semesterId)
     if eligibility:
         return JSONResponse(
@@ -446,12 +404,41 @@ def delete_generation_constraints(
             content={"errors": [{"code": code, "message": "Course academic data is not eligible for this Semester."} for code in eligibility]},
         )
     try:
-        clear_generation_constraints(db, course_id=course_id, semester_id=semesterId)
+        clear_generation_constraints(
+            db,
+            course_id=course_id,
+            semester_id=semesterId,
+            expected_revision=expectedRevision,
+        )
         db.commit()
+    except GenerationConstraintOverrideNotFoundError as exc:
+        db.rollback()
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"errors": [{
+                "code": "GENERATION_CONSTRAINT_OVERRIDE_NOT_FOUND",
+                "message": str(exc),
+            }]},
+        )
+    except StaleGenerationConstraintsError as exc:
+        db.rollback()
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"errors": [{
+                "code": "STALE_GENERATION_CONSTRAINTS",
+                "message": str(exc),
+                "currentRevision": exc.current_revision,
+            }]},
+        )
     except Exception:
         db.rollback()
         raise
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    constraints = load_generation_constraints(db, course, semester)
+    draft = get_draft_schedule(db, course_id, semesterId)
+    return GenerationConstraintMutationResponse(
+        constraints=_constraints_to_response(constraints),
+        draftSchedule=_to_response_with_validation(db, draft) if draft is not None else None,
+    )
 
 
 def _to_response_with_validation(db: Session, draft) -> DraftScheduleResponse:
@@ -682,6 +669,10 @@ def _constraints_to_response(constraints: GenerationConstraints) -> GenerationCo
         planningPeriod=PlanningPeriodResponse(
             startDate=constraints.planning_period.start_date,
             endDate=constraints.planning_period.end_date,
+        ),
+        studyType=StudyTypeSummaryResponse(
+            id=constraints.study_type_id,
+            name=constraints.study_type_name,
         ),
         allowedTeachingWindows=[
             AllowedTeachingWindowResponse(

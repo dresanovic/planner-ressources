@@ -2,12 +2,15 @@ from copy import deepcopy
 from datetime import date, datetime, time, timezone
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from app.db.schema import initialize_database
 from app.models.planning import (
+    DraftSession,
+    GenerationConstraintSet,
+    GenerationConstraintWindow,
     InstitutionHoliday,
     Lecturer,
     ScheduleRevision,
@@ -183,9 +186,56 @@ def test_working_default_preserves_study_type_window_validation_code():
             if row["category"] == "other"
         }
 
-        assert "GENERATION_CONSTRAINT_VIOLATION" in issue_codes
+        assert "GENERATION_CONSTRAINT_VIOLATION" not in issue_codes
         assert "STUDY_TYPE_WINDOW_VIOLATION" in issue_codes
         assert "VALIDATION_DATA_MISSING" not in issue_codes
+
+
+def test_calendar_revalidates_saved_teaching_against_live_windows_without_moving_it():
+    with _db() as db:
+        semester, _course = seed_lifecycle_semester(db, with_schedule=True)
+        db.add_all(
+            [
+                StudyTypeTimeWindow(
+                    study_type_id=1,
+                    weekday=1,
+                    start_time=time(9),
+                    end_time=time(11),
+                    sort_order=0,
+                ),
+                GenerationConstraintSet(
+                    course_id=1,
+                    semester_id=1,
+                    planning_start_date=semester.start_date,
+                    planning_end_date=semester.end_date,
+                    windows=[
+                        GenerationConstraintWindow(
+                            weekday=0,
+                            start_time=time(9),
+                            end_time=time(11),
+                            sort_order=0,
+                        )
+                    ],
+                ),
+            ]
+        )
+        initial = get_lifecycle_overview(db, 1)
+        create_working_revision(db, 1, initial["stateToken"])
+        db.commit()
+        source = db.scalar(select(DraftSession).where(DraftSession.course_id == 1))
+        original_interval = (source.date, source.start_time, source.end_time)
+
+        workspace = get_calendar_workspace(db, 1)
+
+        issue_codes = {
+            row["details"].get("issueCode")
+            for row in workspace["validationFindings"]
+            if row["category"] == "other"
+        }
+        assert "GENERATION_CONSTRAINT_VIOLATION" not in issue_codes
+        assert "STUDY_TYPE_WINDOW_VIOLATION" in issue_codes
+        db.refresh(source)
+        assert (source.date, source.start_time, source.end_time) == original_interval
 
 
 def test_same_revision_lifecycle_change_during_read_returns_conflict(monkeypatch):
