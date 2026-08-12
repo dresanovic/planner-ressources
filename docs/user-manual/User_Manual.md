@@ -256,19 +256,32 @@ These procedures are for the person responsible for the local installation.
 
 Run only one Resource Planner application container against a data folder. The current SQLite deployment is not designed for multiple application containers sharing the same database.
 
-#### Populate an empty demonstration catalog
+#### Import or export planning setup data
 
-The image contains an optional demonstration-data script. It creates catalog records but does not create schedules, teaching sessions, exams, or generation constraints.
+The image contains an optional JSON-based setup script. It imports catalog and configuration records, but it does not create schedules, teaching sessions, exam sessions, or generation constraints.
 
 1. Start the container and wait until it is healthy.
 2. In **Containers**, open the actions for `planner-ressources` and select **Open in terminal**.
-3. Run:
+3. To import the bundled baseline JSON, run:
 
    ```text
    python scripts/seed_dummy_planning_data.py
    ```
 
-**Expected result:** The baseline catalog is available in the application. Repeating the command updates or reuses its known records instead of duplicating them. Review demonstration values before using them for a real institution.
+4. To export the current non-scheduling setup to editable JSON in the persistent `/data` volume, run:
+
+   ```text
+   python scripts/create_seed_data.py --output-file /data/planning-setup.json
+   ```
+
+5. Copy `/data/planning-setup.json` from the mapped Docker volume if the file must be stored outside the container.
+6. To import an edited JSON file, place it in a mounted container path and run:
+
+   ```text
+   python scripts/seed_dummy_planning_data.py --data-file /data/planning-setup.json
+   ```
+
+**Expected result:** The configured catalog is available in the application. Repeating the command updates or reuses configured records instead of duplicating them. Review demonstration values before using them for a real institution.
 
 #### Create a database backup
 

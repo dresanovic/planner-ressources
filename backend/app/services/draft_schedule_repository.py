@@ -10,11 +10,11 @@ from app.models.planning import (
     DraftSchedule,
     DraftSession,
     GenerationConstraintSet,
-    GenerationConstraintWindow,
     Lecturer,
     Room,
     ResourceUnavailabilityPeriod,
     Semester,
+    StudyType,
     StudyTypeTimeWindow,
 )
 from app.services.schedule_generation import (
@@ -54,6 +54,16 @@ class StaleDraftError(ValueError):
         self.current_revision = current_revision
 
 
+class StaleGenerationConstraintsError(ValueError):
+    def __init__(self, current_revision: int | None) -> None:
+        super().__init__("Generation constraints changed. Refresh and try again.")
+        self.current_revision = current_revision
+
+
+class GenerationConstraintOverrideNotFoundError(ValueError):
+    pass
+
+
 class GenerationConstraints:
     def __init__(
         self,
@@ -64,6 +74,8 @@ class GenerationConstraints:
         is_custom: bool,
         constraint_set_id: int | None = None,
         revision: int | None = None,
+        study_type_id: int | None = None,
+        study_type_name: str | None = None,
     ) -> None:
         self.course_id = course_id
         self.semester_id = semester_id
@@ -72,6 +84,8 @@ class GenerationConstraints:
         self.is_custom = is_custom
         self.constraint_set_id = constraint_set_id
         self.revision = revision
+        self.study_type_id = study_type_id
+        self.study_type_name = study_type_name
 
 
 def load_course_plan(db: Session, course_id: int) -> CoursePlan:
@@ -171,6 +185,10 @@ def load_generation_constraints(
     course_plan: CoursePlan,
     semester_plan: SemesterPlan,
 ) -> GenerationConstraints:
+    study_type = db.get(StudyType, course_plan.study_type_id)
+    if study_type is None:
+        raise PlanningInputNotFoundError("Course study type not found.")
+    allowed_windows = load_time_windows(db, course_plan.study_type_id)
     saved = (
         db.execute(
             select(GenerationConstraintSet)
@@ -178,7 +196,6 @@ def load_generation_constraints(
                 GenerationConstraintSet.course_id == course_plan.id,
                 GenerationConstraintSet.semester_id == semester_plan.id,
             )
-            .options(selectinload(GenerationConstraintSet.windows))
         )
         .scalars()
         .one_or_none()
@@ -191,20 +208,12 @@ def load_generation_constraints(
                 start_date=saved.planning_start_date,
                 end_date=saved.planning_end_date,
             ),
-            allowed_windows=[
-                TimeWindowPlan(
-                    id=window.source_time_window_id,
-                    weekday=window.weekday,
-                    start_time=window.start_time,
-                    end_time=window.end_time,
-                    sort_order=window.sort_order,
-                    constraint_window_index=index,
-                )
-                for index, window in enumerate(saved.windows)
-            ],
+            allowed_windows=allowed_windows,
             is_custom=True,
             constraint_set_id=saved.id,
             revision=saved.revision,
+            study_type_id=study_type.id,
+            study_type_name=study_type.name,
         )
 
     return GenerationConstraints(
@@ -214,8 +223,10 @@ def load_generation_constraints(
             start_date=semester_plan.start_date,
             end_date=semester_plan.end_date,
         ),
-        allowed_windows=load_time_windows(db, course_plan.study_type_id),
+        allowed_windows=allowed_windows,
         is_custom=False,
+        study_type_id=study_type.id,
+        study_type_name=study_type.name,
     )
 
 
@@ -224,11 +235,18 @@ def save_generation_constraints(
     course_plan: CoursePlan,
     semester_plan: SemesterPlan,
     planning_period: PlanningPeriodPlan,
-    allowed_windows: list[TimeWindowPlan],
+    allowed_windows: list[TimeWindowPlan] | None = None,
     *,
+    expected_revision=_UNSET,
     existing_set=_UNSET,
     reload: bool = True,
 ) -> GenerationConstraints:
+    if (
+        planning_period.start_date < semester_plan.start_date
+        or planning_period.end_date > semester_plan.end_date
+        or planning_period.end_date < planning_period.start_date
+    ):
+        raise ValueError("The planning period must be inside the Semester planning period.")
     existing = existing_set
     if existing is _UNSET:
         existing = (
@@ -243,16 +261,10 @@ def save_generation_constraints(
             .scalars()
             .one_or_none()
         )
-    new_windows = [
-        GenerationConstraintWindow(
-            source_time_window_id=window.id,
-            weekday=window.weekday,
-            start_time=window.start_time,
-            end_time=window.end_time,
-            sort_order=index,
-        )
-        for index, window in enumerate(allowed_windows)
-    ]
+    if expected_revision is not _UNSET:
+        current_revision = existing.revision if existing is not None else None
+        if expected_revision != current_revision:
+            raise StaleGenerationConstraintsError(current_revision)
     if existing is None:
         constraint_set = GenerationConstraintSet(
             course_id=course_plan.id,
@@ -260,30 +272,46 @@ def save_generation_constraints(
             planning_start_date=planning_period.start_date,
             planning_end_date=planning_period.end_date,
             revision=1,
-            windows=new_windows,
+            windows=[],
         )
         db.add(constraint_set)
-    elif not _constraints_match(existing, planning_period, allowed_windows):
-        existing.planning_start_date = planning_period.start_date
-        existing.planning_end_date = planning_period.end_date
-        existing.revision += 1
-        existing.windows = new_windows
+    else:
+        constraint_set = existing
+        if not _constraints_match(existing, planning_period):
+            existing.planning_start_date = planning_period.start_date
+            existing.planning_end_date = planning_period.end_date
+            existing.revision += 1
+        # Historical per-course copies are not effective constraints anymore.
+        # Clear them opportunistically without treating their removal as a
+        # planner-visible date-override revision.
+        existing.windows = []
     db.flush()
     if reload:
         return load_generation_constraints(db, course_plan, semester_plan)
-    active = constraint_set if existing is None else existing
+    active = constraint_set
+    study_type = db.get(StudyType, course_plan.study_type_id)
+    if study_type is None:
+        raise PlanningInputNotFoundError("Course study type not found.")
     return GenerationConstraints(
         course_id=course_plan.id,
         semester_id=semester_plan.id,
         planning_period=planning_period,
-        allowed_windows=allowed_windows,
+        allowed_windows=load_time_windows(db, course_plan.study_type_id),
         is_custom=True,
         constraint_set_id=active.id,
         revision=active.revision,
+        study_type_id=study_type.id,
+        study_type_name=study_type.name,
     )
 
 
-def clear_generation_constraints(db: Session, course_id: int, semester_id: int) -> None:
+def clear_generation_constraints(
+    db: Session,
+    course_id: int,
+    semester_id: int,
+    *,
+    expected_revision=_UNSET,
+) -> None:
     existing = (
         db.execute(
             select(GenerationConstraintSet).where(
@@ -294,9 +322,16 @@ def clear_generation_constraints(db: Session, course_id: int, semester_id: int) 
         .scalars()
         .one_or_none()
     )
-    if existing is not None:
-        db.delete(existing)
-        db.flush()
+    if existing is None:
+        if expected_revision is not _UNSET:
+            raise GenerationConstraintOverrideNotFoundError(
+                "No saved generation constraint override exists."
+            )
+        return
+    if expected_revision is not _UNSET and expected_revision != existing.revision:
+        raise StaleGenerationConstraintsError(existing.revision)
+    db.delete(existing)
+    db.flush()
 
 
 def _capture_academic_snapshot(draft: DraftSchedule, course: Course, semester: Semester) -> None:
@@ -731,21 +766,10 @@ def update_draft_session(
 def _constraints_match(
     existing: GenerationConstraintSet,
     planning_period: PlanningPeriodPlan,
-    allowed_windows: list[TimeWindowPlan],
 ) -> bool:
-    if (
-        existing.planning_start_date != planning_period.start_date
-        or existing.planning_end_date != planning_period.end_date
-        or len(existing.windows) != len(allowed_windows)
-    ):
-        return False
-    return all(
-        saved.source_time_window_id == incoming.id
-        and saved.weekday == incoming.weekday
-        and saved.start_time == incoming.start_time
-        and saved.end_time == incoming.end_time
-        and saved.sort_order == index
-        for index, (saved, incoming) in enumerate(zip(existing.windows, allowed_windows))
+    return (
+        existing.planning_start_date == planning_period.start_date
+        and existing.planning_end_date == planning_period.end_date
     )
 
 

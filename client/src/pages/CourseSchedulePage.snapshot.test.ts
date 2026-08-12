@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest'
+// @ts-expect-error Test-only Node builtin; the browser application intentionally omits Node globals.
+import { readFileSync } from 'node:fs'
+// @ts-expect-error Test-only Node builtin; the browser application intentionally omits Node globals.
+import { join } from 'node:path'
 
 import type { ScheduleRevisionContent } from '../api/scheduleLifecycle'
 import { lifecycleOverviewFixture, snapshotFixture } from '../test/lifecycleFixtures'
 import { snapshotExamCourseNames, snapshotExams, snapshotSchedules } from './scheduleSnapshot'
+
+declare const process: { cwd: () => string }
+const applicationCss = readFileSync(join(process.cwd(), 'src', 'App.css'), 'utf8')
 
 function contentFixture(): ScheduleRevisionContent {
   const revision = {
@@ -67,6 +74,12 @@ function contentFixture(): ScheduleRevisionContent {
 }
 
 describe('captured schedule snapshots', () => {
+  it('scopes generic occurrence grids so they cannot override teaching list rows', () => {
+    expect(applicationCss).toContain('.schedule-occurrence-list .schedule-occurrence-row')
+    expect(applicationCss).not.toMatch(/(^|\n)\.schedule-occurrence-row\s*\{/)
+    expect(applicationCss).toContain('.teaching-session-row')
+    expect(applicationCss).toContain('--teaching-list-grid')
+  })
   it('retains captured teaching alerts and their related sessions', () => {
     const alert = snapshotSchedules(contentFixture())[0].sessions[0].validationAlerts[0]
     expect(alert.message).toBe('Captured holiday conflict.')

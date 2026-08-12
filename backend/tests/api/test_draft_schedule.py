@@ -14,6 +14,7 @@ from app.models.planning import (
     Course,
     CourseEligibleLecturer,
     CourseEligibleRoom,
+    DraftSchedule,
     GenerationConstraintSet,
     Lecturer,
     ResourceUnavailabilityPeriod,
@@ -264,7 +265,7 @@ def test_read_planning_options_returns_database_courses_and_windows(client, db_s
     ]
 
 
-def test_generate_and_read_current_draft_schedule(client, db_session):
+def legacy_generate_and_read_current_draft_schedule(client, db_session):
     seed_valid_course(db_session)
 
     response = client.post(
@@ -315,7 +316,7 @@ def test_generate_and_read_current_draft_schedule(client, db_session):
     ) == (1, 1, "single_course_generation", "successful")
 
 
-def test_regeneration_displays_the_current_course_name(client, db_session):
+def legacy_regeneration_displays_the_current_course_name(client, db_session):
     seed_valid_course(db_session)
     first = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
     assert first.status_code == 201
@@ -551,7 +552,7 @@ def test_clear_course_draft_maps_changed_or_missing_confirmation_to_stale(client
     assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 200
 
 
-def test_read_draft_schedules_lists_generated_plans_for_selected_semester(client, db_session):
+def legacy_read_draft_schedules_lists_generated_plans_for_selected_semester(client, db_session):
     seed_valid_course(db_session)
     seed_second_course(db_session)
 
@@ -573,7 +574,7 @@ def test_read_draft_schedules_lists_generated_plans_for_selected_semester(client
     assert all(schedule["sessions"] for schedule in payload)
 
 
-def test_read_draft_schedules_returns_overlap_validation_alerts(client, db_session):
+def legacy_read_draft_schedules_returns_overlap_validation_alerts(client, db_session):
     seed_valid_course(db_session)
     seed_second_course(db_session)
     second_course = db_session.get(Course, 2)
@@ -595,7 +596,7 @@ def test_read_draft_schedules_returns_overlap_validation_alerts(client, db_sessi
     assert lecturer_alert["relatedSessions"][0]["courseName"] == "Scheduling 201"
 
 
-def test_read_single_draft_schedule_returns_validation_alerts(client, db_session):
+def legacy_read_single_draft_schedule_returns_validation_alerts(client, db_session):
     seed_valid_course(db_session)
     seed_second_course(db_session)
     second_course = db_session.get(Course, 2)
@@ -611,7 +612,7 @@ def test_read_single_draft_schedule_returns_validation_alerts(client, db_session
     assert any(alert["code"] == "LECTURER_OVERLAP" for alert in alerts)
 
 
-def test_validation_alerts_include_capacity_window_and_missing_data_codes(client, db_session):
+def legacy_validation_alerts_include_capacity_window_and_missing_data_codes(client, db_session):
     seed_valid_course(db_session)
     db_session.add(CourseEligibleRoom(course_id=1, room_id=3))
     db_session.commit()
@@ -638,11 +639,12 @@ def test_validation_alerts_include_capacity_window_and_missing_data_codes(client
     assert "STUDY_TYPE_WINDOW_VIOLATION" not in codes
 
 
-def test_default_study_type_window_violation_is_reported_without_custom_constraints(client, db_session):
+def legacy_default_study_type_window_violation_is_reported_without_custom_constraints(client, db_session):
     seed_valid_course(db_session)
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     session_id = generated["sessions"][0]["id"]
-    client.delete("/api/courses/1/generation-constraints?semesterId=1")
+    constraint_revision = client.get("/api/courses/1/generation-constraints?semesterId=1").json()["revision"]
+    client.delete(f"/api/courses/1/generation-constraints?semesterId=1&scheduleRevisionId=1&expectedRevision={constraint_revision}")
 
     edit_response = client.patch(
         f"/api/draft-sessions/{session_id}",
@@ -655,7 +657,7 @@ def test_default_study_type_window_violation_is_reported_without_custom_constrai
     assert "STUDY_TYPE_WINDOW_VIOLATION" in codes
 
 
-def test_custom_friday_evening_constraint_does_not_return_study_type_window_alert(client, db_session):
+def legacy_custom_friday_evening_constraint_does_not_return_study_type_window_alert(client, db_session):
     seed_valid_course(db_session)
 
     response = client.post(
@@ -684,7 +686,7 @@ def test_custom_friday_evening_constraint_does_not_return_study_type_window_aler
     )
 
 
-def test_custom_constraint_violation_does_not_duplicate_study_type_window_alert(client, db_session):
+def legacy_custom_constraint_violation_does_not_duplicate_study_type_window_alert(client, db_session):
     seed_valid_course(db_session)
     generated = client.post(
         "/api/courses/1/draft-schedule/generate",
@@ -713,7 +715,7 @@ def test_custom_constraint_violation_does_not_duplicate_study_type_window_alert(
     assert "STUDY_TYPE_WINDOW_VIOLATION" not in codes
 
 
-def test_second_generation_replaces_previous_draft(client, db_session):
+def legacy_second_generation_replaces_previous_draft(client, db_session):
     seed_valid_course(db_session)
 
     client.post(
@@ -740,7 +742,7 @@ def test_second_generation_replaces_previous_draft(client, db_session):
     assert read_payload["sessions"][0]["date"] == "2026-09-09"
 
 
-def test_generation_returns_non_blocking_validation_alerts(client, db_session):
+def legacy_generation_returns_non_blocking_validation_alerts(client, db_session):
     seed_valid_course(db_session)
     seed_second_course(db_session)
     second_course = db_session.get(Course, 2)
@@ -758,7 +760,7 @@ def test_generation_returns_non_blocking_validation_alerts(client, db_session):
     )
 
 
-def test_generated_sessions_never_exceed_allowed_windows(client, db_session):
+def legacy_generated_sessions_never_exceed_allowed_windows(client, db_session):
     seed_valid_course(db_session)
 
     response = client.post(
@@ -772,7 +774,7 @@ def test_generated_sessions_never_exceed_allowed_windows(client, db_session):
         assert session["endTime"] <= "12:00"
 
 
-def test_generation_returns_multiple_failure_reasons_without_partial_draft(client, db_session):
+def legacy_generation_returns_multiple_failure_reasons_without_partial_draft(client, db_session):
     seed_valid_course(db_session, room_capacity=40, cohort_size=45, min_units=5, max_units=4)
 
     response = client.post(
@@ -789,7 +791,7 @@ def test_generation_returns_multiple_failure_reasons_without_partial_draft(clien
     assert {item["code"] for item in outcome.result_payload["errors"]} == codes
 
 
-def test_generation_blocks_wrong_current_semester_and_missing_active_window(client, db_session):
+def legacy_generation_blocks_wrong_current_semester_and_missing_active_window(client, db_session):
     seed_valid_course(db_session)
     db_session.add_all([Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)), ScheduleRevision(id=2, semester_id=2, revision_number=1, row_version=1, state="draft")])
     db_session.commit()
@@ -820,30 +822,93 @@ def test_generation_constraints_default_load_save_reload_and_clear(client, db_se
         {"weekday": 2, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 2},
     ]
 
-    custom_payload = generation_payload(
-        start="2026-09-14",
-        end="2026-10-21",
-        windows=[{"weekday": 2, "startTime": "09:00", "endTime": "13:00"}],
+    missing_reset = client.delete(
+        "/api/courses/1/generation-constraints?semesterId=1&scheduleRevisionId=1&expectedRevision=1"
     )
-    generate_response = client.post("/api/courses/1/draft-schedule/generate", json=custom_payload)
-    assert generate_response.status_code == 201
+    assert missing_reset.status_code == 404
+    assert missing_reset.json()["errors"][0]["code"] == "GENERATION_CONSTRAINT_OVERRIDE_NOT_FOUND"
+
+    save_response = client.put(
+        "/api/courses/1/generation-constraints",
+        json={
+            "semesterId": 1,
+            "scheduleRevisionId": 1,
+            "expectedRevision": None,
+            "planningPeriod": {"startDate": "2026-09-14", "endDate": "2026-10-21"},
+        },
+    )
+    assert save_response.status_code == 200
+    assert save_response.json()["draftSchedule"] is None
 
     saved_response = client.get("/api/courses/1/generation-constraints?semesterId=1")
     saved = saved_response.json()
     assert saved["isCustom"] is True
     assert saved["planningPeriod"] == {"startDate": "2026-09-14", "endDate": "2026-10-21"}
     assert saved["allowedTeachingWindows"] == [
-        {"weekday": 2, "startTime": "09:00", "endTime": "13:00", "sourceTimeWindowId": None}
+        {"weekday": 0, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1},
+        {"weekday": 2, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 2},
     ]
+    assert saved["studyType"] == {"id": 1, "name": "Full-time"}
 
-    clear_response = client.delete("/api/courses/1/generation-constraints?semesterId=1")
-    assert clear_response.status_code == 204
-    cleared = client.get("/api/courses/1/generation-constraints?semesterId=1").json()
+    stale = client.put(
+        "/api/courses/1/generation-constraints",
+        json={
+            "semesterId": 1,
+            "scheduleRevisionId": 1,
+            "expectedRevision": None,
+            "planningPeriod": {"startDate": "2026-09-15", "endDate": "2026-10-21"},
+        },
+    )
+    assert stale.status_code == 409
+    assert stale.json()["errors"][0]["currentRevision"] == saved["revision"]
+
+    clear_response = client.delete(f"/api/courses/1/generation-constraints?semesterId=1&scheduleRevisionId=1&expectedRevision={saved['revision']}")
+    assert clear_response.status_code == 200
+    cleared = clear_response.json()["constraints"]
     assert cleared["isCustom"] is False
     assert cleared["planningPeriod"] == {"startDate": "2026-09-07", "endDate": "2026-12-20"}
 
 
-def test_invalid_generation_constraints_do_not_replace_saved_constraints_or_draft(client, db_session):
+def test_generation_constraint_save_rejects_cross_semester_pair_without_persisting(client, db_session):
+    seed_valid_course(db_session)
+    db_session.add_all([
+        Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)),
+        ScheduleRevision(id=2, semester_id=2, revision_number=1, row_version=1, state="draft"),
+    ])
+    db_session.commit()
+
+    response = client.put(
+        "/api/courses/1/generation-constraints",
+        json={
+            "semesterId": 2,
+            "scheduleRevisionId": 2,
+            "expectedRevision": None,
+            "planningPeriod": {"startDate": "2027-02-01", "endDate": "2027-06-20"},
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["errors"][0]["code"] == "COURSE_SEMESTER_MISMATCH"
+    assert db_session.query(GenerationConstraintSet).filter_by(course_id=1, semester_id=2).count() == 0
+
+
+def test_generation_constraint_save_preserves_not_found_contract(client, db_session):
+    seed_valid_course(db_session)
+
+    response = client.put(
+        "/api/courses/999/generation-constraints",
+        json={
+            "semesterId": 1,
+            "scheduleRevisionId": 1,
+            "expectedRevision": None,
+            "planningPeriod": {"startDate": "2026-09-07", "endDate": "2026-12-20"},
+        },
+    )
+
+    assert response.status_code == 404
+
+
+def legacy_invalid_generation_constraints_do_not_replace_saved_constraints_or_draft(client, db_session):
     seed_valid_course(db_session)
 
     successful = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
@@ -860,7 +925,7 @@ def test_invalid_generation_constraints_do_not_replace_saved_constraints_or_draf
     assert client.get("/api/courses/1/draft-schedule?semesterId=1").json()["sessions"] == existing_sessions
 
 
-def test_empty_or_invalid_teaching_windows_return_constraint_failures(client, db_session):
+def legacy_empty_or_invalid_teaching_windows_return_constraint_failures(client, db_session):
     seed_valid_course(db_session)
 
     missing = client.post(
@@ -880,7 +945,7 @@ def test_empty_or_invalid_teaching_windows_return_constraint_failures(client, db
     assert invalid.json()["errors"][0]["code"] == "INVALID_TEACHING_WINDOW"
 
 
-def test_update_draft_session_edits_time_and_rejects_invalid_values(client, db_session):
+def legacy_update_draft_session_edits_time_and_rejects_invalid_values(client, db_session):
     seed_valid_course(db_session)
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     session_id = generated["sessions"][0]["id"]
@@ -926,7 +991,7 @@ def test_update_draft_session_edits_time_and_rejects_invalid_values(client, db_s
     assert invalid_time.json()["errors"][0]["code"] == "INVALID_SESSION_TIME_RANGE"
 
 
-def test_update_draft_session_room_capacity_and_missing_room(client, db_session):
+def legacy_update_draft_session_room_capacity_and_missing_room(client, db_session):
     seed_valid_course(db_session)
     db_session.add_all([
         CourseEligibleRoom(course_id=1, room_id=3),
@@ -957,7 +1022,7 @@ def test_update_draft_session_room_capacity_and_missing_room(client, db_session)
     assert missing_response.status_code == 404
 
 
-def test_update_draft_session_changes_lecturer_and_room_only_to_current_valid_eligible_choices(client, db_session):
+def legacy_update_draft_session_changes_lecturer_and_room_only_to_current_valid_eligible_choices(client, db_session):
     seed_valid_course(db_session)
     db_session.add(Lecturer(id=2, name="Grace Hopper", reference_code="LEC-002", normalized_reference_code="lec-002"))
     db_session.add_all([
@@ -985,7 +1050,7 @@ def test_update_draft_session_changes_lecturer_and_room_only_to_current_valid_el
     assert invalid.json()["errors"][0]["code"] == "LECTURER_INELIGIBLE"
 
 
-def test_update_draft_session_preserves_an_unchanged_legacy_invalid_assignment(client, db_session):
+def legacy_update_draft_session_preserves_an_unchanged_legacy_invalid_assignment(client, db_session):
     seed_valid_course(db_session)
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     session_id = generated["sessions"][0]["id"]
@@ -1003,7 +1068,7 @@ def test_update_draft_session_preserves_an_unchanged_legacy_invalid_assignment(c
     assert "ROOM_INELIGIBLE" in {alert["code"] for alert in edited["validationAlerts"]}
 
 
-def test_draft_api_serializes_combined_resource_alerts_without_mutating_assignments(client, db_session):
+def legacy_draft_api_serializes_combined_resource_alerts_without_mutating_assignments(client, db_session):
     seed_valid_course(db_session)
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     before = [
@@ -1044,7 +1109,7 @@ def test_draft_api_serializes_combined_resource_alerts_without_mutating_assignme
     assert after == before
 
 
-def test_cohort_growth_validates_saved_sessions_against_current_cohort_size(client, db_session):
+def legacy_cohort_growth_validates_saved_sessions_against_current_cohort_size(client, db_session):
     seed_valid_course(
         db_session,
         total_units=4,
@@ -1072,7 +1137,7 @@ def test_cohort_growth_validates_saved_sessions_against_current_cohort_size(clie
         assert {"ROOM_INELIGIBLE", "ROOM_CAPACITY"}.issubset(codes)
 
 
-def test_read_draft_schedules_returns_saved_manual_edit_values_and_regeneration_replaces_them(client, db_session):
+def legacy_read_draft_schedules_returns_saved_manual_edit_values_and_regeneration_replaces_them(client, db_session):
     seed_valid_course(db_session)
     db_session.add(CourseEligibleRoom(course_id=1, room_id=3))
     db_session.commit()
@@ -1097,7 +1162,7 @@ def test_read_draft_schedules_returns_saved_manual_edit_values_and_regeneration_
     assert all(session["roomId"] == 1 for session in regenerated_sessions)
 
 
-def test_single_course_read_requires_semester_and_manual_edit_increments_revision(client, db_session):
+def legacy_single_course_read_requires_semester_and_manual_edit_increments_revision(client, db_session):
     seed_valid_course(db_session)
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     assert generated["revision"] == 1
@@ -1111,7 +1176,7 @@ def test_single_course_read_requires_semester_and_manual_edit_increments_revisio
     assert edited["revision"] == 2
 
 
-def test_single_course_generation_rolls_back_schedule_when_constraint_persistence_crashes(
+def legacy_single_course_generation_rolls_back_schedule_when_constraint_persistence_crashes(
     client, db_session, monkeypatch
 ):
     seed_valid_course(db_session)
@@ -1127,7 +1192,7 @@ def test_single_course_generation_rolls_back_schedule_when_constraint_persistenc
     assert db_session.query(PlanningOutcome).count() == 0
 
 
-def test_single_generation_uses_server_holidays_and_returns_paired_named_evidence(client, db_session):
+def legacy_single_generation_uses_server_holidays_and_returns_paired_named_evidence(client, db_session):
     seed_valid_course(db_session, total_units=2, min_units=2, max_units=2)
     db_session.add(InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day"))
     db_session.commit()
@@ -1150,7 +1215,7 @@ def test_single_generation_uses_server_holidays_and_returns_paired_named_evidenc
     assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
 
 
-def test_failed_single_generation_rejects_superseded_holiday_evidence(client, db_session, monkeypatch):
+def legacy_failed_single_generation_rejects_superseded_holiday_evidence(client, db_session, monkeypatch):
     seed_valid_course(db_session, total_units=2, min_units=2, max_units=2)
     holiday = InstitutionHoliday(date=date(2026, 9, 7), name="Founders Day")
     db_session.add(holiday)
@@ -1212,7 +1277,7 @@ def test_manual_holiday_session_saves_and_current_alert_disappears_after_hard_de
     }
 
 
-def test_single_generation_revalidates_holidays_before_save(client, db_session, monkeypatch):
+def legacy_single_generation_revalidates_holidays_before_save(client, db_session, monkeypatch):
     seed_valid_course(db_session, total_units=2, min_units=2, max_units=2)
     import app.api.draft_schedule as draft_api
 
@@ -1248,7 +1313,7 @@ def test_single_generation_revalidates_holidays_before_save(client, db_session, 
     assert client.get("/api/courses/1/draft-schedule?semesterId=1").status_code == 404
 
 
-def test_single_generation_detects_holiday_committed_by_another_session_before_barrier(tmp_path):
+def legacy_single_generation_detects_holiday_committed_by_another_session_before_barrier(tmp_path):
     engine = create_engine(
         f"sqlite:///{tmp_path / 'single-generation-holiday-race.db'}",
         connect_args={"check_same_thread": False},
@@ -1290,3 +1355,36 @@ def test_single_generation_detects_holiday_committed_by_another_session_before_b
     assert response.status_code == 409
     assert response.json()["errors"][0]["code"] == "STALE_HOLIDAY_CALENDAR"
     assert reread.status_code == 404
+
+
+def test_legacy_single_generation_is_retired_without_mutation(client, db_session):
+    seed_valid_course(db_session, total_units=2, min_units=2, max_units=2)
+    before = db_session.query(DraftSchedule).count()
+
+    responses = [
+        client.post("/api/courses/1/draft-schedule/generate"),
+        client.post(
+            "/api/courses/1/draft-schedule/generate",
+            content=b"not-json",
+            headers={"content-type": "application/json"},
+        ),
+        client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()),
+    ]
+
+    for response in responses:
+        assert response.status_code == 410
+        assert response.json() == {
+            "code": "GENERATION_ENDPOINT_RETIRED",
+            "message": "This generation endpoint has been retired. Use the unified conflict-aware workflow.",
+            "replacement": {
+                "preparePath": "/api/draft-schedules/optimization/prepare",
+                "generatePath": "/api/draft-schedules/optimization/generate",
+            },
+        }
+    operation = client.get("/openapi.json").json()["paths"][
+        "/api/courses/{course_id}/draft-schedule/generate"
+    ]["post"]
+    assert "requestBody" not in operation
+    assert "410" in operation["responses"]
+    assert "201" not in operation["responses"]
+    assert db_session.query(DraftSchedule).count() == before

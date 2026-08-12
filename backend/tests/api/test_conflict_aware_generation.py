@@ -58,6 +58,11 @@ def test_prepare_deduplicates_dates_and_generate_returns_proven_complete_saved_r
     prepared = response.json()
     assert prepared["unavailableDates"] == ["2026-10-26"]
     assert [item["courseId"] for item in prepared["courses"]] == [1, 2]
+    assert prepared["courses"][0]["effectiveConstraints"]["studyType"] == {
+        "id": 1,
+        "name": "Full-time",
+    }
+    assert prepared["courses"][0]["effectiveConstraints"]["allowedTeachingWindows"][0]["sourceTimeWindowId"] == 1
 
     generated = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
     assert generated.status_code == 200
@@ -121,12 +126,12 @@ def test_optimizer_api_rejects_holiday_snapshot_change_without_saving(client, db
     assert db_session.query(PlanningOutcome).one().classification == "stale"
 
 
-@pytest.mark.parametrize("course_ids", [[], list(range(1, 22)), [1, 1]])
+@pytest.mark.parametrize("course_ids", [[], list(range(1, 22)), [1, 1], [999]])
 def test_prepare_rejects_invalid_selection(client, db_session, course_ids):
     seed_optimization_planner(db_session, course_count=1)
     response = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": course_ids, "unavailableDates": []})
     assert response.status_code == 422
-    assert response.json()["errors"][0]["code"] in {"INVALID_OPTIMIZATION_SIZE", "DUPLICATE_COURSE_SELECTION"}
+    assert response.json()["errors"][0]["code"] in {"INVALID_OPTIMIZATION_SIZE", "DUPLICATE_COURSE_SELECTION", "COURSE_NOT_FOUND"}
 
 
 def test_prepare_rejects_complete_selection_when_one_course_belongs_to_another_semester(client, db_session):
@@ -141,6 +146,21 @@ def test_prepare_rejects_complete_selection_when_one_course_belongs_to_another_s
 
     assert response.status_code == 422
     assert response.json()["errors"][0]["code"] == "COURSE_SEMESTER_MISMATCH"
+    assert db_session.query(DraftSchedule).count() == 0
+
+
+def test_prepare_rejects_complete_selection_when_one_course_is_unavailable(client, db_session):
+    seed_optimization_planner(db_session, course_count=2)
+    db_session.get(Cohort, 2).is_active = False
+    db_session.commit()
+
+    response = client.post(
+        "/api/draft-schedules/optimization/prepare",
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1, 2], "unavailableDates": []},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["errors"][0]["code"] == "COHORT_INACTIVE"
     assert db_session.query(DraftSchedule).count() == 0
 
 
@@ -273,50 +293,27 @@ def test_confirmed_equal_unit_conflict_reduction_replaces_current_draft(client, 
     assert current.sessions[0].date != date(2026, 9, 7)
 
 
-def test_mixed_saved_failed_and_post_solve_stale_outcomes_share_one_response(client, db_session, monkeypatch):
-    seed_optimization_planner(db_session, course_count=3, total_units=4)
-    db_session.get(Cohort, 2).is_active = False
-    db_session.commit()
+def test_persistence_failure_rolls_back_every_selected_draft_and_outcome(client, db_session, monkeypatch):
+    seed_optimization_planner(db_session, course_count=2, total_units=4)
     prepared = client.post(
         "/api/draft-schedules/optimization/prepare",
-        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1, 2, 3], "unavailableDates": []},
+        json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1, 2], "unavailableDates": []},
     ).json()
     import app.services.conflict_aware_generation as service
-    original = service.optimize_semester
+    original = service.replace_draft_schedule
 
-    def solve_then_change_third_course(*args, **kwargs):
-        result = original(*args, **kwargs)
-        course = db_session.get(Course, 3)
-        course.total_units = 6
-        course.revision += 1
-        db_session.flush()
-        return result
+    def fail_second(database, course_plan, *args, **kwargs):
+        if course_plan.id == 2:
+            raise RuntimeError("injected course save failure")
+        return original(database, course_plan, *args, **kwargs)
 
-    monkeypatch.setattr(service, "optimize_semester", solve_then_change_third_course)
+    monkeypatch.setattr(service, "replace_draft_schedule", fail_second)
     response = client.post(
         "/api/draft-schedules/optimization/generate",
         json=generation_payload(prepared),
     )
-    body = response.json()
 
-    assert response.status_code == 200
-    assert body["summary"] | {"elapsedMilliseconds": 0} == {
-        "total": 3,
-        "complete": 1,
-        "improvedPartial": 0,
-        "unchanged": 0,
-        "failed": 1,
-        "stale": 1,
-        "scheduledUnits": 4,
-        "remainingUnits": 10,
-        "elapsedMilliseconds": 0,
-        "optimalForPreparedSnapshot": True,
-    }
-    assert [item["status"] for item in body["outcomes"]] == ["complete", "failed", "stale"]
-    assert [
-        (row.course_id, row.classification)
-        for row in db_session.query(PlanningOutcome).order_by(PlanningOutcome.course_id)
-    ] == [(1, "successful"), (2, "failed"), (3, "stale")]
-    assert db_session.query(DraftSchedule).filter_by(course_id=1, semester_id=1).count() == 1
-    assert db_session.query(DraftSchedule).filter_by(course_id=2, semester_id=1).count() == 0
-    assert db_session.query(DraftSchedule).filter_by(course_id=3, semester_id=1).count() == 0
+    assert response.status_code == 500
+    assert response.json()["saved"] is False
+    assert db_session.query(DraftSchedule).count() == 0
+    assert db_session.query(PlanningOutcome).count() == 0

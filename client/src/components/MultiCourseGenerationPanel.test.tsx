@@ -80,4 +80,23 @@ describe('MultiCourseGenerationPanel', () => {
 
     expect(input?.value).toBe('2026-10-26, 2026-11-02')
   })
+
+  it('explains a constraint-mutation guard without claiming generation is running', () => {
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    act(() => root.render(
+      <MultiCourseGenerationPanel
+        courses={courses}
+        selectedCourseIds={[1]}
+        disabled
+        disabledReason="Die Datumsgrenzen werden gerade aktualisiert."
+        onChange={vi.fn()}
+        onGenerate={vi.fn()}
+      />,
+    ))
+
+    expect(document.body.textContent).toContain('Die Datumsgrenzen werden gerade aktualisiert.')
+    expect(document.body.textContent).toContain('Ausgewählte Lehrveranstaltungen optimieren')
+    expect(document.body.textContent).not.toContain('werden optimiert')
+    expect(document.querySelector<HTMLButtonElement>('.generate-button')?.disabled).toBe(true)
+  })
 })

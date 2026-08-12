@@ -4,13 +4,14 @@ import {
   clearCourseDraft,
   createManualDraftSession,
   deleteDraftSession,
-  generateDraftSchedule,
   getDraftSchedules,
   getGenerationConstraints,
+  saveGenerationConstraints,
   type DraftSchedule,
   type CreateManualDraftSessionRequest,
   type GenerationConstraints,
   type GenerationFailure,
+  type PlanningPeriod,
   type UpdateDraftSessionRequest,
   updateDraftSession,
 } from '../api/draftSchedule'
@@ -102,7 +103,6 @@ import {
 import { LecturerReviewManagement } from '../components/LecturerReviewManagement'
 import { safeReasonText, type UserProblem } from '../utils/userProblems'
 
-type GenerationMode = 'single' | 'batch'
 function revisionStateLabel(state: ScheduleRevisionSummary['state']): string {
   return ({ draft: 'Entwurf', ready_for_review: 'Bereit zur Prüfung', published: 'Veröffentlicht', superseded: 'Ersetzt', abandoned: 'Verworfen' })[state]
 }
@@ -152,7 +152,6 @@ export function CourseSchedulePage({
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | null>(null)
   const [generationConstraints, setGenerationConstraints] = useState<GenerationConstraints | null>(null)
   const [schedules, setSchedules] = useState<DraftSchedule[]>([])
-  const [mode, setMode] = useState<GenerationMode>('single')
   const [planningInputsVisible, setPlanningInputsVisible] = useState(true)
   const [selectedBatchCourseIds, setSelectedBatchCourseIds] = useState<number[]>([])
   const [errors, setErrors] = useState<GenerationFailure[]>([])
@@ -162,9 +161,9 @@ export function CourseSchedulePage({
   const [unavailableDatesInput, setUnavailableDatesInput] = useState('')
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [constraintsLoading, setConstraintsLoading] = useState(false)
+  const [constraintsDirty, setConstraintsDirty] = useState(false)
   const [overviewLoading, setOverviewLoading] = useState(false)
   const [loadedOverviewSemesterId, setLoadedOverviewSemesterId] = useState<number | null>(null)
-  const [singleGenerating, setSingleGenerating] = useState(false)
   const [batchPreparing, setBatchPreparing] = useState(false)
   const [batchExecuting, setBatchExecuting] = useState(false)
   const [overviewRefreshError, setOverviewRefreshError] = useState(false)
@@ -294,7 +293,7 @@ export function CourseSchedulePage({
     selectedLifecycleRevisionIdRef.current = selectedLifecycleRevision?.revisionId ?? null
     lecturerReviewRequestSequence.current += 1
   }, [selectedLifecycleRevision?.revisionId])
-  const mutationBusy = singleGenerating || batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
+  const mutationBusy = batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
   const contextBusy = mutationBusy || overviewLoading || examBusy
   const writeBusy = contextBusy || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
   const examConfigurationBusy = contextBusy || overviewRefreshError || examRefreshError
@@ -828,38 +827,8 @@ export function CourseSchedulePage({
     } finally { setLifecycleBusy(false) }
   }
 
-  async function handleGenerateSingle() {
-    if (planningSelectionInvalid) {
-      const code = semesterSelectionMissing ? 'SEMESTER_NO_LONGER_AVAILABLE' : courseSelectionInvalid ? 'COURSE_SEMESTER_MISMATCH' : (selectedCourse?.availability?.reasons[0] ?? 'COURSE_UNAVAILABLE')
-      setErrors([{ code, message: `Wählen Sie vor der Erzeugung eine verfügbare ${label('course.singular')} und ein Semester.` }])
-      return
-    }
-    if (!selectedCourseId || !selectedSemesterId || !generationConstraints || !activeScheduleRevisionId) {
-      setErrors([{ code: 'MISSING_SELECTION', message: `Wählen Sie eine ${label('course.singular')} und ein Semester.` }])
-      return
-    }
-    setSingleGenerating(true)
-    setErrors([])
-    try {
-      await generateDraftSchedule(
-        selectedCourseId,
-        selectedSemesterId,
-        activeScheduleRevisionId,
-        generationConstraints.planningPeriod,
-        generationConstraints.allowedTeachingWindows,
-      )
-      const saved = await getGenerationConstraints(selectedCourseId, selectedSemesterId)
-      setGenerationConstraints(saved)
-      await refreshOverview(selectedSemesterId, false)
-    } catch (error) {
-      setErrors(toFailures(error, 'Die Planung konnte nicht erzeugt werden. Prüfen Sie die angezeigten Probleme und versuchen Sie es erneut.'))
-    } finally {
-      setSingleGenerating(false)
-    }
-  }
-
   async function startBatch(courseIds = selectedBatchCourseIds) {
-    if (!selectedSemesterId || !activeScheduleRevisionId) return
+    if (!selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty) return
     setBatchPreparing(true)
     setBatchErrors([])
     try {
@@ -877,6 +846,7 @@ export function CourseSchedulePage({
   }
 
   async function executeBatch(preparation: OptimizationPreparation, confirmed: boolean) {
+    if (constraintsLoading || constraintsDirty) return
     setBatchExecuting(true)
     setBatchErrors([])
     try {
@@ -886,7 +856,11 @@ export function CourseSchedulePage({
       if (selectedSemesterId !== result.semesterId) setSelectedSemesterId(result.semesterId)
       await refreshOverview(result.semesterId, false)
     } catch (error) {
-      setBatchErrors(toBatchErrors(error))
+      const failures = toBatchErrors(error)
+      setBatchErrors(failures)
+      if (failures.some((failure) => failure.code.toUpperCase().includes('STALE'))) {
+        setBatchPreparation(null)
+      }
     } finally {
       setBatchExecuting(false)
     }
@@ -901,6 +875,7 @@ export function CourseSchedulePage({
   }
 
   async function startBatchForSemester(semesterId: number, courseIds: number[]) {
+    if (constraintsLoading || constraintsDirty) return
     setBatchPreparing(true)
     setBatchErrors([])
     try {
@@ -916,14 +891,42 @@ export function CourseSchedulePage({
   }
 
   async function handleClearGenerationConstraints() {
-    if (!selectedCourseId || !selectedSemesterId) return
+    if (batchPreparing || batchExecuting || constraintsLoading || !selectedCourseId || !selectedSemesterId || !activeScheduleRevisionId || !generationConstraints?.revision) return
+    setConstraintsLoading(true)
+    setErrors([])
+    setBatchPreparation(null)
+    setBatchResult(null)
+    try {
+      const result = await clearGenerationConstraints(selectedCourseId, selectedSemesterId, activeScheduleRevisionId, generationConstraints.revision)
+      setGenerationConstraints(result.constraints)
+      setConstraintsDirty(false)
+      await refreshOverview(selectedSemesterId, false)
+    } catch (error) {
+      setErrors(toFailures(error, 'Die benutzerdefinierten Erzeugungsregeln konnten nicht zurückgesetzt werden. Ihre Planung bleibt unverändert; versuchen Sie es erneut.'))
+    } finally {
+      setConstraintsLoading(false)
+    }
+  }
+
+  async function handleSaveGenerationConstraints(planningPeriod: PlanningPeriod) {
+    if (batchPreparing || batchExecuting || constraintsLoading || !selectedCourseId || !selectedSemesterId || !activeScheduleRevisionId || !generationConstraints) return
     setConstraintsLoading(true)
     setErrors([])
     try {
-      await clearGenerationConstraints(selectedCourseId, selectedSemesterId)
-      setGenerationConstraints(await getGenerationConstraints(selectedCourseId, selectedSemesterId))
+      const result = await saveGenerationConstraints(
+        selectedCourseId,
+        selectedSemesterId,
+        activeScheduleRevisionId,
+        generationConstraints.revision ?? null,
+        planningPeriod,
+      )
+      setGenerationConstraints(result.constraints)
+      setConstraintsDirty(false)
+      setBatchPreparation(null)
+      setBatchResult(null)
+      await refreshOverview(selectedSemesterId, false)
     } catch (error) {
-      setErrors(toFailures(error, 'Die benutzerdefinierten Erzeugungsregeln konnten nicht zurückgesetzt werden. Ihre Planung bleibt unverändert; versuchen Sie es erneut.'))
+      setErrors(toFailures(error, 'Die Datumsgrenzen konnten nicht gespeichert werden.'))
     } finally {
       setConstraintsLoading(false)
     }
@@ -1387,16 +1390,14 @@ export function CourseSchedulePage({
             <h2 id="input-summary-title">Planungseingaben</h2>
             {planningOptions ? (
               <>
-                <div className="mode-switch" aria-label="Erzeugungsmodus">
-                  <button type="button" className={mode === 'single' ? 'active' : ''} onClick={() => setMode('single')}>Eine {label('course.singular')}</button>
-                  <button type="button" className={mode === 'batch' ? 'active' : ''} onClick={() => setMode('batch')}>Mehrere {label('course.plural')}</button>
-                </div>
                 <div className="planning-selectors">
-                  {mode === 'single' && <SelectField label={label('course.fieldLabel')} value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ' — nicht verfügbar' : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — dem ausgewählten Semester nicht zugeordnet' : ''}`} onChange={(value) => requestCourseChange(Number(value))} disabled={contextBusy} />}
+                  <SelectField label={`Fokussierte ${label('course.singular')}`} value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ' — nicht verfügbar' : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — dem ausgewählten Semester nicht zugeordnet' : ''}`} onChange={(value) => requestCourseChange(Number(value))} disabled={contextBusy} />
                   <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — nicht verfügbar' : ''}`} onChange={(value) => requestSemesterChange(Number(value))} disabled={contextBusy} />
                 </div>
-                {mode === 'single' ? (
-                  <>
+                <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading} busy={batchPreparing || batchExecuting} disabledReason={constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
+                {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
+                <section className="focused-course-planning" aria-label={`Details für ${label('course.singular')}`}>
+                    <h3>Details und Regeln der fokussierten {label('course.singular')}</h3>
                     <PlanningSummary course={selectedCourse} semester={selectedSemester} progress={selectedProgress} progressUnavailableLabel={overviewRefreshError ? 'Nicht verfügbar' : 'Wird geladen…'} />
                     {selectedExamState && <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={examConfigurationBusy} saving={examBusy} onSave={handleExamConfiguration} />}
                     {selectedExamState?.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Prüfung manuell eintragen</button>}
@@ -1420,16 +1421,9 @@ export function CourseSchedulePage({
                     )}
                     <button type="button" className="destructive-button clear-course-draft" onClick={beginCourseDeletion} disabled={writeBusy || !selectedDraft}>{label('course.singular')}-Entwurf leeren</button>
                     {progressAnnouncement && <p className="mutation-feedback" role="status" aria-live="polite">{progressAnnouncement}</p>}
-                    {generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={constraintsLoading || singleGenerating} onChange={setGenerationConstraints} onClear={handleClearGenerationConstraints} />}
+                    {generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={constraintsLoading || batchPreparing || batchExecuting} onSave={handleSaveGenerationConstraints} onClear={handleClearGenerationConstraints} onDirtyChange={setConstraintsDirty} />}
                     {errors.length > 0 && <ErrorList errors={errors} />}
-                    <button type="button" className="generate-button" onClick={handleGenerateSingle} disabled={writeBusy || constraintsLoading || planningSelectionInvalid}>
-                      {singleGenerating ? 'Wird erzeugt…' : 'Erzeugen'}
-                    </button>
-                  </>
-                ) : (
-                  <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy} />
-                )}
-                {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
+                </section>
               </>
             ) : <p className="empty-state">{optionsLoading ? 'Planungsoptionen werden geladen…' : 'Planungsoptionen sind nicht verfügbar.'}</p>}
           </section>
@@ -1506,7 +1500,7 @@ export function CourseSchedulePage({
               {!selectedLifecycleRevision && <p>Wählen Sie eine Arbeitsrevision oder die aktuelle Veröffentlichung, um die Zugänge der {label('lecturer.plural')} zu prüfen.</p>}
             </section>
             <section className="schedule-workspace-region calendar-feedback-region" aria-label="Kalender-Rückmeldungen" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
-            {batchResult && <BatchResultSummary result={batchResult} retryDisabled={writeBusy} onRetryFailed={() => void retryFailedCourses()} />}
+            {batchResult && <BatchResultSummary result={batchResult} retryDisabled={writeBusy || constraintsDirty || constraintsLoading} onRetryFailed={() => void retryFailedCourses()} />}
             {overviewRefreshError && (
               <div className="refresh-error" role="alert">
                 <span>Die Übersicht der {label('course.plural')} konnte nicht aktualisiert werden. Die zuletzt vollständig geladenen Planungen bleiben sichtbar.</span>
@@ -1550,7 +1544,7 @@ export function CourseSchedulePage({
       {batchPreparation && (
         <ReplacementConfirmationDialog
           preparation={batchPreparation}
-          disabled={batchExecuting}
+          disabled={batchExecuting || constraintsLoading || constraintsDirty}
           onCancel={() => setBatchPreparation(null)}
           onConfirm={() => void executeBatch(batchPreparation, true)}
         />

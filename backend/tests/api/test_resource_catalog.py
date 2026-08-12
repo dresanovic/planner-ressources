@@ -132,16 +132,32 @@ def test_course_resource_configuration_includes_unavailability_and_course_sessio
     ).json()
     lifecycle = client.get(f"/api/semesters/{semester['id']}/schedule-lifecycle").json()
     working = client.post(f"/api/semesters/{semester['id']}/schedule-revisions", json={"expectedStateToken": lifecycle["stateToken"]}).json()
-    generated = client.post(
-        f"/api/courses/{course['id']}/draft-schedule/generate",
+    prepared = client.post(
+        "/api/draft-schedules/optimization/prepare",
         json={
             "semesterId": semester["id"],
             "scheduleRevisionId": working["activeWorkingRevision"]["revisionId"],
-            "planningPeriod": {"startDate": "2026-09-07", "endDate": "2026-09-07"},
-            "allowedTeachingWindows": [{"weekday": 0, "startTime": "09:00", "endTime": "12:00", "sourceTimeWindowId": window["id"]}],
+            "courseIds": [course["id"]],
+            "unavailableDates": [],
+        },
+    ).json()
+    generated = client.post(
+        "/api/draft-schedules/optimization/generate",
+        json={
+            "semesterId": prepared["semesterId"],
+            "scheduleRevisionId": prepared["scheduleRevisionId"],
+            "unavailableDates": prepared["unavailableDates"],
+            "sharedSnapshotToken": prepared["sharedSnapshotToken"],
+            "replacementConfirmed": False,
+            "courses": [{
+                "courseId": item["courseId"],
+                "expectedDraftScheduleId": item["draftScheduleId"],
+                "expectedDraftRevision": item["draftRevision"],
+                "inputSnapshotToken": item["inputSnapshotToken"],
+            } for item in prepared["courses"]],
         },
     )
-    assert generated.status_code == 201
+    assert generated.status_code == 200
     assert client.delete(f"/api/resources/lecturers/{lecturer['id']}?expectedRevision={lecturer['revision']}&confirmed=true").json()["outcome"] == "inactivated"
     assert client.delete(f"/api/resources/rooms/{room['id']}?expectedRevision={room['revision']}&confirmed=true").json()["outcome"] == "inactivated"
     replaced = client.put(

@@ -2,10 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   clearCourseDraft,
+  clearGenerationConstraints,
   createManualDraftSession,
   deleteDraftSession,
-  generateDraftSchedule,
   getDraftSchedule,
+  getGenerationConstraints,
+  saveGenerationConstraints,
   updateDraftSession,
 } from './draftSchedule'
 import type { ValidationAlert } from './draftSchedule'
@@ -27,25 +29,37 @@ describe('getDraftSchedule', () => {
   })
 })
 
-describe('institution holiday contracts', () => {
-  it('preserves paired holiday evidence and omits it from other generation failures', async () => {
-    const errors = [
-      { code: 'INSUFFICIENT_SEMESTER_CAPACITY', message: 'No capacity.' },
-      { code: 'INSTITUTION_HOLIDAY', message: 'Founders Day.', holidayDate: '2026-09-07', holidayName: 'Founders Day' },
-    ]
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 422, json: async () => ({ errors }) }))
+describe('generation constraint mutation contracts', () => {
+  it('reads effective constraints and sends a date-only immediate save', async () => {
+    const constraints = { courseId: 2, semesterId: 3, isCustom: true, revision: 4, planningPeriod: { startDate: '2026-09-14', endDate: '2026-12-01' }, studyType: { id: 1, name: 'Full-time' }, allowedTeachingWindows: [] }
+    const mutation = { constraints, draftSchedule: { draftScheduleId: 9, revision: 2, courseId: 2, semesterId: 3, context: {}, sessions: [{ validationAlerts: [{ code: 'GENERATION_CONSTRAINT_VIOLATION', message: 'Outside dates.', relatedSessions: [] }] }] } }
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => constraints })
+      .mockResolvedValueOnce({ ok: true, json: async () => mutation })
+    vi.stubGlobal('fetch', fetchMock)
 
-    await expect(generateDraftSchedule(
-      1,
-      1,
-      11,
-      { startDate: '2026-09-07', endDate: '2026-09-07' },
-      [{ weekday: 0, startTime: '08:00', endTime: '12:00' }],
-    )).rejects.toEqual(errors)
-    expect(errors[0]).not.toHaveProperty('holidayDate')
-    expect(errors[1]).toMatchObject({ holidayDate: '2026-09-07', holidayName: 'Founders Day' })
+    await expect(getGenerationConstraints(2, 3)).resolves.toEqual(constraints)
+    await expect(saveGenerationConstraints(2, 3, 11, 3, constraints.planningPeriod)).resolves.toEqual(mutation)
+    expect(fetchMock).toHaveBeenLastCalledWith('/api/courses/2/generation-constraints', expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({ semesterId: 3, scheduleRevisionId: 11, expectedRevision: 3, planningPeriod: constraints.planningPeriod }),
+    }))
   })
 
+  it('sends an exact reset and preserves missing/stale structured failures', async () => {
+    const failure = [{ code: 'GENERATION_CONSTRAINT_OVERRIDE_NOT_FOUND', message: 'No override.' }]
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({ errors: failure }) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(clearGenerationConstraints(2, 3, 11, 4)).rejects.toEqual(failure)
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/courses/2/generation-constraints?semesterId=3&scheduleRevisionId=11&expectedRevision=4',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+})
+
+describe('institution holiday contracts', () => {
   it('exposes current holiday alert context without related sessions', async () => {
     const alert = {
       code: 'INSTITUTION_HOLIDAY', message: 'Founders Day.', relatedSessions: [],

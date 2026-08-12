@@ -47,6 +47,8 @@ WORKDIR /app/backend
 COPY --from=python-dependencies /install/ /usr/local/
 COPY backend/app ./app
 COPY backend/scripts/backup_sqlite_db.py ./scripts/backup_sqlite_db.py
+COPY backend/scripts/create_seed_data.py ./scripts/create_seed_data.py
+COPY backend/scripts/planning_baseline.json ./scripts/planning_baseline.json
 COPY backend/scripts/seed_dummy_planning_data.py ./scripts/seed_dummy_planning_data.py
 COPY --from=frontend-build /build/client/dist /app/frontend
 

@@ -13,6 +13,8 @@ from app.models.planning import (
     Course,
     CourseEligibleLecturer,
     CourseEligibleRoom,
+    GenerationConstraintSet,
+    GenerationConstraintWindow,
     Lecturer,
     Room,
     Semester,
@@ -23,6 +25,8 @@ from app.services.draft_schedule_repository import (
     DraftSessionEditValidationError,
     ManualSessionValidationError,
     StaleDraftError,
+    StaleGenerationConstraintsError,
+    GenerationConstraintOverrideNotFoundError,
     clear_generation_constraints,
     clear_course_draft,
     course_semester_progress,
@@ -267,6 +271,9 @@ def test_generation_constraints_default_save_replace_and_clear():
 
     assert defaults.is_custom is False
     assert defaults.planning_period.start_date == date(2026, 9, 7)
+    assert defaults.planning_period.end_date == date(2026, 12, 20)
+    assert defaults.study_type_id == 1
+    assert defaults.study_type_name == "Full-time"
     assert [window.weekday for window in defaults.allowed_windows] == [0]
 
     saved = save_generation_constraints(
@@ -287,8 +294,9 @@ def test_generation_constraints_default_save_replace_and_clear():
 
     assert saved.is_custom is True
     assert saved.planning_period.start_date == date(2026, 9, 14)
-    assert saved.allowed_windows[0].id is None
-    assert saved.allowed_windows[0].weekday == 2
+    assert saved.planning_period.end_date == date(2026, 10, 5)
+    assert saved.allowed_windows[0].id == 1
+    assert saved.allowed_windows[0].weekday == 0
 
     clear_generation_constraints(db, course_id=1, semester_id=1)
     cleared = load_generation_constraints(db, course_plan, semester_plan)
@@ -296,6 +304,96 @@ def test_generation_constraints_default_save_replace_and_clear():
     assert cleared.is_custom is False
     assert cleared.planning_period.start_date == date(2026, 9, 7)
     assert [window.weekday for window in cleared.allowed_windows] == [0]
+
+
+@pytest.mark.parametrize(
+    "period",
+    [
+        PlanningPeriodPlan(date(2026, 9, 6), date(2026, 10, 5)),
+        PlanningPeriodPlan(date(2026, 9, 14), date(2026, 12, 21)),
+        PlanningPeriodPlan(date(2026, 10, 5), date(2026, 10, 4)),
+    ],
+)
+def test_saved_generation_constraint_dates_must_be_inside_the_semester(period):
+    db = make_session()
+    seed_course(db)
+
+    with pytest.raises(ValueError, match="planning period"):
+        save_generation_constraints(
+            db,
+            load_course_plan(db, 1),
+            load_semester_plan(db, 1),
+            period,
+            [],
+        )
+
+
+def test_effective_constraints_follow_current_study_type_and_active_windows():
+    db = make_session()
+    seed_course(db)
+    course_plan = load_course_plan(db, 1)
+    semester_plan = load_semester_plan(db, 1)
+    save_generation_constraints(
+        db,
+        course_plan,
+        semester_plan,
+        PlanningPeriodPlan(date(2026, 9, 14), date(2026, 10, 5)),
+        [TimeWindowPlan(id=None, weekday=4, start_time=time(14), end_time=time(18))],
+    )
+    db.get(StudyTypeTimeWindow, 1).is_active = False
+    db.add_all(
+        [
+            StudyType(id=2, name="Part-time"),
+            StudyTypeTimeWindow(
+                id=2,
+                study_type_id=2,
+                weekday=2,
+                start_time=time(17),
+                end_time=time(21),
+                sort_order=1,
+            ),
+        ]
+    )
+    db.get(Course, 1).study_type_id = 2
+    db.flush()
+
+    current_plan = load_course_plan(db, 1)
+    effective = load_generation_constraints(db, current_plan, semester_plan)
+
+    assert effective.is_custom is True
+    assert effective.study_type_id == 2
+    assert effective.study_type_name == "Part-time"
+    assert [(row.weekday, row.start_time, row.end_time) for row in effective.allowed_windows] == [
+        (2, time(17), time(21))
+    ]
+
+
+def test_legacy_copied_generation_windows_are_ignored():
+    db = make_session()
+    seed_course(db)
+    plan = load_course_plan(db, 1)
+    semester = load_semester_plan(db, 1)
+    saved = save_generation_constraints(
+        db,
+        plan,
+        semester,
+        PlanningPeriodPlan(date(2026, 9, 14), date(2026, 10, 5)),
+        [],
+    )
+    legacy_set = db.get(GenerationConstraintSet, saved.constraint_set_id)
+    legacy_set.windows = [
+        GenerationConstraintWindow(
+            weekday=4,
+            start_time=time(14),
+            end_time=time(18),
+            sort_order=0,
+        )
+    ]
+    db.flush()
+
+    effective = load_generation_constraints(db, plan, semester)
+
+    assert [(row.id, row.weekday) for row in effective.allowed_windows] == [(1, 0)]
 
 
 def test_update_draft_session_persists_date_time_and_room():
@@ -454,7 +552,7 @@ def test_constraint_revision_changes_only_when_saved_values_change():
     first = save_generation_constraints(db, plan, semester, period, windows)
     unchanged = save_generation_constraints(db, plan, semester, period, windows)
     changed = save_generation_constraints(
-        db, plan, semester, period,
+        db, plan, semester, PlanningPeriodPlan(date(2026, 9, 14), date(2026, 12, 20)),
         [TimeWindowPlan(id=None, weekday=2, start_time=time(9), end_time=time(13), sort_order=0)],
     )
 
@@ -463,6 +561,39 @@ def test_constraint_revision_changes_only_when_saved_values_change():
     assert unchanged.revision == 1
     assert changed.constraint_set_id == first.constraint_set_id
     assert changed.revision == 2
+
+
+def test_date_override_optimistic_create_update_idempotency_reset_and_isolation():
+    db = make_session()
+    seed_course(db)
+    db.add(Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)))
+    db.flush()
+    plan = load_course_plan(db, 1)
+    fall = load_semester_plan(db, 1)
+    period = PlanningPeriodPlan(date(2026, 9, 14), date(2026, 10, 5))
+
+    created = save_generation_constraints(db, plan, fall, period, expected_revision=None)
+    unchanged = save_generation_constraints(db, plan, fall, period, expected_revision=created.revision)
+    assert created.revision == unchanged.revision == 1
+    with pytest.raises(StaleGenerationConstraintsError):
+        save_generation_constraints(db, plan, fall, period, expected_revision=None)
+
+    updated = save_generation_constraints(
+        db,
+        plan,
+        fall,
+        PlanningPeriodPlan(date(2026, 9, 21), date(2026, 10, 12)),
+        expected_revision=1,
+    )
+    assert updated.revision == 2
+    assert load_generation_constraints(db, plan, load_semester_plan(db, 2)).is_custom is False
+
+    with pytest.raises(StaleGenerationConstraintsError):
+        clear_generation_constraints(db, 1, 1, expected_revision=1)
+    clear_generation_constraints(db, 1, 1, expected_revision=2)
+    assert load_generation_constraints(db, plan, fall).is_custom is False
+    with pytest.raises(GenerationConstraintOverrideNotFoundError):
+        clear_generation_constraints(db, 1, 1, expected_revision=2)
 
 
 def test_repository_mutations_flush_without_commit_and_rollback_as_one_unit():

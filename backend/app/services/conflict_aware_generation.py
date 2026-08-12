@@ -3,13 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, replace
-from datetime import date
+from datetime import date, datetime, timedelta
 from time import monotonic
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from app.models.planning import Course, DraftSchedule, Semester
+from app.models.planning import Course, DraftSchedule, ExamSession, Semester
 from app.schemas.conflict_aware_generation import (
     ArrangementImprovement,
     BlockingReason,
@@ -32,9 +32,10 @@ from app.services.draft_schedule_repository import (
     load_generation_constraints,
     load_semester_plan,
     replace_draft_schedule,
-    save_generation_constraints,
 )
 from app.services.schedule_generation import CoursePlan, SemesterPlan
+from app.services.schedule_generation import session_duration_minutes
+from app.services.exam_scheduling import institution_today
 from app.services.holiday_calendar import HolidayReference, holiday_snapshot
 from app.services.semester_optimization import (
     CourseOptimization,
@@ -110,6 +111,10 @@ def prepare_optimization(
             "COURSE_SEMESTER_MISMATCH",
             f"Course {mismatched.course.id} is not assigned to the selected semester.",
         )
+    for item in loaded.courses:
+        unavailable = _unavailable_selection_error(db, item, semester_id)
+        if unavailable is not None:
+            raise unavailable
     prepared = []
     replacement_ids = []
     for item in loaded.courses:
@@ -117,15 +122,26 @@ def prepare_optimization(
         replacement = item.draft is not None
         if replacement:
             replacement_ids.append(item.course.id)
+        window_unavailable = not _windows_host_minimum_session(item)
         prepared.append(PreparedOptimizationCourse(
             courseId=item.course.id,
             courseName=item.course.name,
-            available=_course_available(db, item.course, semester_id),
+            available=_course_available(db, item.course, semester_id) and not window_unavailable,
+            unavailableReasons=(
+                [BlockingReason(
+                    code=BlockingReasonCode.STUDY_TYPE_WINDOW_UNAVAILABLE,
+                    message="The current study type has no active teaching window long enough for the minimum session.",
+                    relatedCount=1,
+                )]
+                if window_unavailable
+                else []
+            ),
             draftScheduleId=item.draft.id if item.draft else None,
             draftRevision=item.draft.revision if item.draft else None,
             scheduledUnits=scheduled,
             remainingUnits=max(item.course.total_units - scheduled, 0),
             replacementRequired=replacement,
+            effectiveConstraints=_constraints_response(item.constraints),
             inputSnapshotToken=item.input_snapshot_token,
         ))
     return OptimizationPreparationResponse(
@@ -171,7 +187,10 @@ def generate_optimization(
         stale_ids.update(course_ids)
 
     availability = {
-        item.course.id: _course_available(db, item.course, semester_id)
+        item.course.id: (
+            _course_available(db, item.course, semester_id)
+            and _windows_host_minimum_session(item)
+        )
         for item in loaded.courses
     }
     eligible = [
@@ -182,10 +201,18 @@ def generate_optimization(
         item.course.id for item in loaded.courses
         if item.course.id not in stale_ids and not availability[item.course.id]
     }
+    if unavailable_ids:
+        unavailable_course_id = min(unavailable_ids)
+        unavailable = _unavailable_selection_error(
+            db,
+            next(item for item in loaded.courses if item.course.id == unavailable_course_id),
+            semester_id,
+        )
+        raise unavailable or InvalidOptimizationSelection(
+            "INVALID_PLANNING_INPUT",
+            f"Course {unavailable_course_id} is not available for planning in this semester.",
+        )
     solve_occupancy = list(loaded.fixed_sessions)
-    for item in loaded.courses:
-        if item.course.id in unavailable_ids and item.draft is not None:
-            solve_occupancy.extend(_draft_as_fixed(item.draft))
     solution = _empty_solution()
     optimal_for_prepared_snapshot = False
     if eligible:
@@ -226,6 +253,12 @@ def generate_optimization(
     for course_id in course_ids:
         if refreshed_by_id[course_id].input_snapshot_token != original_by_id[course_id].input_snapshot_token:
             stale_ids.add(course_id)
+    if stale_ids:
+        # A unified generation request is one transactional operation. Once any
+        # selected input is stale, no sibling result from the old snapshot may
+        # be persisted or described as optimal for that snapshot.
+        stale_ids.update(course_ids)
+        optimal_for_prepared_snapshot = False
     unavailable_ids.difference_update(stale_ids)
 
     improvements: dict[int, ArrangementImprovement] = {}
@@ -263,66 +296,38 @@ def generate_optimization(
     planned_save_ids.difference_update(stale_ids)
 
     saved_ids: set[int] = set()
-    save_errors: dict[int, tuple[str, str]] = {}
     components, component_dependencies = _save_plan(planned_save_ids, solved, refreshed_by_id)
     pending_components = set(range(len(components)))
-    failed_components: set[int] = set()
-    while pending_components:
-        ready = sorted(
-            (
-                component_id for component_id in pending_components
-                if not (component_dependencies[component_id] & pending_components)
-            ),
-            key=lambda component_id: min(components[component_id]),
-        )
-        if not ready:
-            raise RuntimeError("The condensed save-dependency graph must be acyclic.")
-        for component_id in ready:
-            component = components[component_id]
-            if component_dependencies[component_id] & failed_components:
-                failed_components.add(component_id)
-                for course_id in component:
-                    save_errors[course_id] = (
-                        "DEPENDENT_RESULT_INVALIDATED",
-                        "This exact result depended on a course whose previous draft was preserved after a save failure.",
+    # One savepoint covers the complete selected result. Any persistence error
+    # propagates to the API's operation transaction, so no successful sibling
+    # course can be committed after another selected course fails to save.
+    with db.begin_nested():
+        while pending_components:
+            ready = sorted(
+                (
+                    component_id for component_id in pending_components
+                    if not (component_dependencies[component_id] & pending_components)
+                ),
+                key=lambda component_id: min(components[component_id]),
+            )
+            if not ready:
+                raise RuntimeError("The condensed save-dependency graph must be acyclic.")
+            for component_id in ready:
+                component = components[component_id]
+                _require_time_remaining(deadline, "The optimization deadline elapsed before all result groups could be saved.")
+                for course_id in sorted(component):
+                    item = refreshed_by_id[course_id]
+                    replace_draft_schedule(
+                        db,
+                        item.plan,
+                        semester_id,
+                        list(solved[course_id].sessions),
+                        existing_draft=item.draft,
+                        reload=False,
                     )
-                pending_components.remove(component_id)
-                continue
-            _require_time_remaining(deadline, "The optimization deadline elapsed before all result groups could be saved.")
-            try:
-                with db.begin_nested():
-                    for course_id in sorted(component):
-                        item = refreshed_by_id[course_id]
-                        replace_draft_schedule(
-                            db,
-                            item.plan,
-                            semester_id,
-                            list(solved[course_id].sessions),
-                            existing_draft=item.draft,
-                            reload=False,
-                        )
-                        if not item.constraints.is_custom:
-                            save_generation_constraints(
-                                db,
-                                item.plan,
-                                refreshed.semester,
-                                item.constraints.planning_period,
-                                item.constraints.allowed_windows,
-                                existing_set=None,
-                                reload=False,
-                            )
-                    db.flush()
-            except Exception:
-                failed_components.add(component_id)
-                for course_id in component:
-                    save_errors[course_id] = (
-                        "COURSE_SAVE_FAILED",
-                        "This atomic result group could not be saved; its previous drafts and constraints were preserved.",
-                    )
-                db.expire_all()
-            else:
+                db.flush()
                 saved_ids.update(component)
-            pending_components.remove(component_id)
+                pending_components.remove(component_id)
 
     outcomes: list[CourseOptimizationOutcome] = []
     for item in loaded.courses:
@@ -332,16 +337,14 @@ def generate_optimization(
             continue
         if item.course.id in unavailable_ids:
             current_item = replace(refreshed_by_id[item.course.id], draft=get_draft_schedule(db, item.course.id, semester_id))
-            outcomes.append(_failed_outcome(current_item, "INVALID_PLANNING_INPUT", "The course is not available for planning in this semester."))
-            continue
-        if item.course.id in save_errors:
-            current_item = replace(refreshed_by_id[item.course.id], draft=get_draft_schedule(db, item.course.id, semester_id))
-            code, message = save_errors[item.course.id]
-            outcomes.append(_failed_outcome(
-                current_item,
-                code,
-                message,
-            ))
+            if not _windows_host_minimum_session(current_item):
+                outcomes.append(_failed_outcome(
+                    current_item,
+                    "STUDY_TYPE_WINDOW_UNAVAILABLE",
+                    "The current study type has no active teaching window long enough for the minimum session.",
+                ))
+            else:
+                outcomes.append(_failed_outcome(current_item, "INVALID_PLANNING_INPUT", "The course is not available for planning in this semester."))
             continue
         course_solution = solved[item.course.id]
         baseline_units = sum(session.units for session in item.draft.sessions) if item.draft else 0
@@ -373,6 +376,8 @@ def generate_optimization(
                     relatedCount=reason.count,
                     holidayDate=reason.holiday_date,
                     holidayName=reason.holiday_name,
+                    sourceKind=reason.source_kind,
+                    sourceId=reason.source_id,
                 )
                 for reason in course_solution.evidence
                 if scheduled < item.course.total_units
@@ -419,7 +424,7 @@ def load_operation(
     holidays = holiday_snapshot(db, semester.start_date, semester.end_date)
     drafts = list_draft_schedules_by_semester(db, semester_id)
     selected_ids = set(course_ids)
-    fixed_sessions = tuple(
+    protected_teaching = tuple(
         FixedSession(
             course_id=draft.course_id,
             cohort_id=session.cohort_id,
@@ -428,10 +433,37 @@ def load_operation(
             date=session.date,
             start_time=session.start_time,
             end_time=session.end_time,
+            source_kind="teaching_session",
+            source_id=session.id,
         )
         for draft in drafts if draft.course_id not in selected_ids
         for session in draft.sessions
     )
+    active_exams = tuple(
+        db.scalars(
+            select(ExamSession)
+            .where(
+                ExamSession.semester_id == semester_id,
+                ExamSession.exam_date >= institution_today(),
+            )
+            .order_by(ExamSession.exam_date, ExamSession.start_time, ExamSession.id)
+        )
+    )
+    protected_exams = tuple(
+        FixedSession(
+            course_id=exam.course_id,
+            cohort_id=exam.cohort_id,
+            lecturer_id=exam.lecturer_id,
+            room_id=exam.room_id,
+            date=exam.exam_date,
+            start_time=exam.start_time,
+            end_time=exam.end_time,
+            source_kind="active_exam",
+            source_id=exam.id,
+        )
+        for exam in active_exams
+    )
+    fixed_sessions = protected_teaching + protected_exams
     loaded_courses: list[LoadedCourse] = []
     for course_id in sorted(course_ids):
         course = db.get(Course, course_id)
@@ -455,6 +487,12 @@ def load_operation(
             )
             for session in (draft.sessions if draft else [])
         )
+        course_exams = [exam for exam in active_exams if exam.course_id == course_id]
+        earliest_exam = min(
+            course_exams,
+            key=lambda exam: (exam.exam_date, exam.start_time, exam.id),
+            default=None,
+        )
         optimization = OptimizationCourse(
             course_id=course.id,
             course_name=course.name,
@@ -468,6 +506,12 @@ def load_operation(
             lecturers=tuple(plan.lecturer_candidates),
             rooms=tuple(plan.room_candidates),
             current_sessions=current,
+            latest_teaching_end=(
+                datetime.combine(earliest_exam.exam_date, earliest_exam.start_time)
+                if earliest_exam is not None
+                else None
+            ),
+            latest_teaching_source_id=earliest_exam.id if earliest_exam is not None else None,
         )
         relevant_fixed = [
             session for session in fixed_sessions
@@ -532,6 +576,78 @@ def _course_available(db: Session, course: Course, semester_id: int) -> bool:
     return not (
         set(planning_eligibility_reasons(db, course, semester_id))
         - solver_explainable_reasons
+    )
+
+
+def _unavailable_selection_error(
+    db: Session,
+    item: LoadedCourse,
+    semester_id: int,
+) -> InvalidOptimizationSelection | None:
+    solver_explainable_reasons = {
+        "MISSING_ACTIVE_TIME_WINDOW",
+        "NO_ACTIVE_ELIGIBLE_LECTURER",
+        "NO_USABLE_ELIGIBLE_ROOM",
+    }
+    hard_reasons = [
+        reason
+        for reason in planning_eligibility_reasons(db, item.course, semester_id)
+        if reason not in solver_explainable_reasons
+    ]
+    if hard_reasons:
+        reason = hard_reasons[0]
+        return InvalidOptimizationSelection(
+            reason,
+            f"Course {item.course.id} is unavailable for automatic generation ({reason}).",
+        )
+    if not _windows_host_minimum_session(item):
+        return InvalidOptimizationSelection(
+            "STUDY_TYPE_WINDOW_UNAVAILABLE",
+            f"Course {item.course.id}'s current study type has no active teaching window long enough for the minimum session.",
+        )
+    return None
+
+
+def _windows_host_minimum_session(item: LoadedCourse) -> bool:
+    required = timedelta(minutes=session_duration_minutes(item.course.min_session_units))
+    return any(
+        datetime.combine(date.min, window.end_time)
+        - datetime.combine(date.min, window.start_time)
+        >= required
+        for window in item.constraints.allowed_windows
+    )
+
+
+def _constraints_response(constraints: GenerationConstraints):
+    from app.schemas.draft_schedule import (
+        AllowedTeachingWindowResponse,
+        GenerationConstraintsResponse,
+        PlanningPeriodResponse,
+        StudyTypeSummaryResponse,
+    )
+
+    return GenerationConstraintsResponse(
+        courseId=constraints.course_id,
+        semesterId=constraints.semester_id,
+        isCustom=constraints.is_custom,
+        revision=constraints.revision,
+        planningPeriod=PlanningPeriodResponse(
+            startDate=constraints.planning_period.start_date,
+            endDate=constraints.planning_period.end_date,
+        ),
+        studyType=StudyTypeSummaryResponse(
+            id=constraints.study_type_id,
+            name=constraints.study_type_name,
+        ),
+        allowedTeachingWindows=[
+            AllowedTeachingWindowResponse(
+                weekday=window.weekday,
+                startTime=window.start_time.strftime("%H:%M"),
+                endTime=window.end_time.strftime("%H:%M"),
+                sourceTimeWindowId=window.id,
+            )
+            for window in constraints.allowed_windows
+        ],
     )
 
 
@@ -708,11 +824,11 @@ def _draft_payload(draft):
 
 
 def _fixed_payload(item):
-    return [item.course_id, item.cohort_id, item.lecturer_id, item.room_id, item.date.isoformat(), item.start_time.isoformat(), item.end_time.isoformat()]
+    return [item.source_kind, item.source_id, item.course_id, item.cohort_id, item.lecturer_id, item.room_id, item.date.isoformat(), item.start_time.isoformat(), item.end_time.isoformat()]
 
 
 def _fixed_sort_key(item):
-    return (item.date, item.start_time, item.end_time, item.course_id, item.lecturer_id, item.room_id)
+    return (item.date, item.start_time, item.end_time, item.source_kind, item.source_id or 0, item.course_id, item.lecturer_id, item.room_id)
 
 
 def _draft_changes(draft, attribute):
@@ -746,6 +862,8 @@ def _draft_as_fixed(draft):
             date=session.date,
             start_time=session.start_time,
             end_time=session.end_time,
+            source_kind="teaching_session",
+            source_id=session.id,
         )
         for session in draft.sessions
     ]

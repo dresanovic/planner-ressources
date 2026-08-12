@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+import argparse
+import json
 import os
 import sys
 from datetime import date, time
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATABASE_URL = f"sqlite:///{(BACKEND_ROOT / 'planner.db').as_posix()}"
+DEFAULT_DATA_FILE = BACKEND_ROOT / "scripts" / "planning_baseline.json"
 
 if os.getenv("DATABASE_URL") in {None, "sqlite:///./planner.db"}:
     os.environ["DATABASE_URL"] = DEFAULT_DATABASE_URL
@@ -24,8 +27,15 @@ from app.models.planning import (  # noqa: E402
     Course,
     CourseEligibleLecturer,
     CourseEligibleRoom,
+    CourseExamConfiguration,
+    DraftSchedule,
+    DraftSession,
+    ExamSession,
+    GenerationConstraintSet,
     InstitutionHoliday,
     Lecturer,
+    ResourceUnavailabilityPeriod,
+    ResourceUnavailabilityWeekday,
     Room,
     Semester,
     StudyType,
@@ -33,214 +43,23 @@ from app.models.planning import (  # noqa: E402
 )
 
 ModelT = TypeVar("ModelT")
+JsonObject = dict[str, Any]
 
 
-LECTURERS = [
-    {"name": "Prof. Elena Fischer", "reference_code": "LECT-1", "revision": 1},
-    {"name": "Prof. Martin Novak", "reference_code": "LECT-2", "revision": 1},
-    {"name": "Prof. Daniel Resanovic", "reference_code": "DR", "revision": 1},
-    {"name": "Prof. Selver Softic", "reference_code": "SelS", "revision": 1},
-    {"name": "Prof. Stefan Günter", "reference_code": "SG", "revision": 1},
-    {"name": "Prof. Patrick Beer", "reference_code": "PB", "revision": 1},
-    {"name": "Safet Softic", "reference_code": "SafS", "revision": 1},
-    {"name": "Eva Schirgi", "reference_code": "ES", "revision": 1},
-]
+def parse_date(value: str | None) -> date | None:
+    return date.fromisoformat(value) if value else None
 
-ROOMS = [
-    {"name": "Room CZ-103", "reference_code": "ROOM-1", "capacity": 36, "revision": 2},
-    {"name": "Room CR-402", "reference_code": "ROOM-2", "capacity": 30, "revision": 2},
-    {"name": "Room CZ-106", "reference_code": "ROOM-3", "capacity": 30, "revision": 2},
-    {"name": "Room CZ-107", "reference_code": "ROOM-7", "capacity": 36, "revision": 1},
-    {"name": "Room CZ-108", "reference_code": "ROOM-8", "capacity": 36, "revision": 1},
-    {"name": "Room CZ-109", "reference_code": "ROOM-9", "capacity": 32, "revision": 1},
-]
 
-COHORTS = [
-    {"name": "AI and Business Analitics 2026", "student_count": 25, "revision": 2},
-    {"name": "Business SW Dev 2026", "student_count": 25, "revision": 2},
-    {"name": "Business Informatics 2026", "student_count": 35, "revision": 2},
-]
+def parse_time(value: str) -> time:
+    return time.fromisoformat(value)
 
-SEMESTERS = [
-    {
-        "name": "Fall 2026",
-        "start_date": date(2026, 9, 7),
-        "end_date": date(2027, 2, 12),
-        "revision": 2,
-    }
-]
 
-STUDY_TYPES = [
-    {"name": "Full-time", "revision": 1},
-    {"name": "Part-time", "revision": 1},
-]
+def serialize_date(value: date | None) -> str | None:
+    return value.isoformat() if value else None
 
-STUDY_TYPE_TIME_WINDOWS = [
-    {
-        "study_type": "Full-time",
-        "weekday": 1,
-        "start_time": time(8, 0),
-        "end_time": time(13, 0),
-        "sort_order": 1,
-        "is_active": True,
-        "revision": 3,
-    },
-    {
-        "study_type": "Full-time",
-        "weekday": 2,
-        "start_time": time(9, 0),
-        "end_time": time(13, 0),
-        "sort_order": 2,
-        "is_active": True,
-        "revision": 1,
-    },
-    {
-        "study_type": "Part-time",
-        "weekday": 4,
-        "start_time": time(16, 0),
-        "end_time": time(20, 0),
-        "sort_order": 7740,
-        "is_active": False,
-        "revision": 2,
-    },
-    {
-        "study_type": "Part-time",
-        "weekday": 5,
-        "start_time": time(9, 0),
-        "end_time": time(15, 0),
-        "sort_order": 7740,
-        "is_active": True,
-        "revision": 2,
-    },
-    {
-        "study_type": "Full-time",
-        "weekday": 0,
-        "start_time": time(8, 15),
-        "end_time": time(13, 45),
-        "sort_order": 0,
-        "is_active": True,
-        "revision": 1,
-    },
-    {
-        "study_type": "Part-time",
-        "weekday": 4,
-        "start_time": time(18, 0),
-        "end_time": time(22, 0),
-        "sort_order": 0,
-        "is_active": True,
-        "revision": 1,
-    },
-]
 
-COURSES = [
-    {
-        "name": "Operations Planning",
-        "total_units": 20,
-        "min_session_units": 2,
-        "max_session_units": 4,
-        "cohort": "AI and Business Analitics 2026",
-        "study_type": "Full-time",
-        "current_semester": "Fall 2026",
-        "revision": 1,
-    },
-    {
-        "name": "KI Grundlagen",
-        "total_units": 22,
-        "min_session_units": 3,
-        "max_session_units": 5,
-        "cohort": "Business SW Dev 2026",
-        "study_type": "Part-time",
-        "current_semester": "Fall 2026",
-        "revision": 3,
-    },
-    {
-        "name": "SOD 2",
-        "total_units": 24,
-        "min_session_units": 3,
-        "max_session_units": 4,
-        "cohort": "Business Informatics 2026",
-        "study_type": "Full-time",
-        "current_semester": "Fall 2026",
-        "revision": 3,
-    },
-    {
-        "name": "SSY",
-        "total_units": 28,
-        "min_session_units": 3,
-        "max_session_units": 5,
-        "cohort": "Business SW Dev 2026",
-        "study_type": "Full-time",
-        "current_semester": "Fall 2026",
-        "revision": 1,
-    },
-    {
-        "name": "VSY",
-        "total_units": 34,
-        "min_session_units": 3,
-        "max_session_units": 5,
-        "cohort": "Business Informatics 2026",
-        "study_type": "Part-time",
-        "current_semester": "Fall 2026",
-        "revision": 1,
-    },
-    {
-        "name": "Mathematik 1",
-        "total_units": 28,
-        "min_session_units": 2,
-        "max_session_units": 4,
-        "cohort": "AI and Business Analitics 2026",
-        "study_type": "Full-time",
-        "current_semester": "Fall 2026",
-        "revision": 1,
-    },
-    {
-        "name": "Data Visualization",
-        "total_units": 24,
-        "min_session_units": 3,
-        "max_session_units": 6,
-        "cohort": "AI and Business Analitics 2026",
-        "study_type": "Full-time",
-        "current_semester": "Fall 2026",
-        "revision": 1,
-    },
-]
-
-ELIGIBLE_LECTURERS = [
-    ("Operations Planning", "Prof. Elena Fischer"),
-    ("KI Grundlagen", "Prof. Martin Novak"),
-    ("KI Grundlagen", "Prof. Daniel Resanovic"),
-    ("SOD 2", "Prof. Elena Fischer"),
-    ("SSY", "Prof. Martin Novak"),
-    ("VSY", "Prof. Daniel Resanovic"),
-    ("Mathematik 1", "Eva Schirgi"),
-    ("Data Visualization", "Prof. Selver Softic"),
-]
-
-ELIGIBLE_ROOMS = [
-    ("Operations Planning", "Room CZ-103"),
-    ("KI Grundlagen", "Room CR-402"),
-    ("SOD 2", "Room CZ-103"),
-    ("SSY", "Room CR-402"),
-    ("VSY", "Room CZ-103"),
-    ("Mathematik 1", "Room CZ-106"),
-    ("Data Visualization", "Room CZ-106"),
-]
-
-INSTITUTION_HOLIDAYS = [
-    (date(2026, 12, 25), "Weihnachten", 1),
-    (date(2026, 11, 2), "Allerseelen", 1),
-    (date(2026, 10, 26), "Österreichischer Nationalfeiertag (gesetzlicher Feiertag)", 1),
-    (date(2026, 12, 8), "Mariä Empfängnis (gesetzlicher Feiertag)", 1),
-    (date(2026, 12, 24), "Weihnachtsferien", 1),
-    (date(2026, 12, 28), "Weihnachtsferien", 1),
-    (date(2026, 12, 29), "Weihnachtsferien", 1),
-    (date(2026, 12, 30), "Weihnachtsferien", 1),
-    (date(2026, 12, 31), "Weihnachtsferien", 1),
-    (date(2027, 1, 1), "Neujahr (gesetzlicher Feiertag)", 1),
-    (date(2027, 1, 4), "Weihnachtsferien", 1),
-    (date(2027, 1, 5), "Weihnachtsferien", 1),
-    (date(2027, 1, 6), "Heilige Drei Könige (gesetzlicher Feiertag)", 1),
-]
+def serialize_time(value: time) -> str:
+    return value.strftime("%H:%M")
 
 
 def one_by_name(db: Session, model: type[ModelT], name: str) -> ModelT | None:
@@ -250,7 +69,7 @@ def one_by_name(db: Session, model: type[ModelT], name: str) -> ModelT | None:
 def require_by_name(db: Session, model: type[ModelT], name: str) -> ModelT:
     record = one_by_name(db, model, name)
     if record is None:
-        raise RuntimeError(f"Missing seeded {model.__name__}: {name}")
+        raise RuntimeError(f"Missing configured {model.__name__}: {name}")
     return record
 
 
@@ -285,9 +104,10 @@ def upsert_resource(
     reference_code: str,
     **values: object,
 ) -> ModelT:
+    reference_code = reference_code.strip()
     values = {
-        "reference_code": reference_code.strip(),
-        "normalized_reference_code": reference_code.strip().casefold(),
+        "reference_code": reference_code,
+        "normalized_reference_code": reference_code.casefold(),
         "is_active": True,
         **values,
     }
@@ -316,6 +136,50 @@ def ensure_eligibility(
         record = model(course_id=course_id, **{resource_field: resource_id})
         db.add(record)
     return record
+
+
+def sync_course_eligibility(
+    db: Session,
+    course: Course,
+    *,
+    lecturer_names: list[str],
+    room_names: list[str],
+) -> None:
+    lecturer_ids = {
+        require_by_name(db, Lecturer, lecturer_name).id for lecturer_name in lecturer_names
+    }
+    room_ids = {require_by_name(db, Room, room_name).id for room_name in room_names}
+
+    db.execute(
+        delete(CourseEligibleLecturer).where(
+            CourseEligibleLecturer.course_id == course.id,
+            CourseEligibleLecturer.lecturer_id.not_in(lecturer_ids or {-1}),
+        )
+    )
+    db.execute(
+        delete(CourseEligibleRoom).where(
+            CourseEligibleRoom.course_id == course.id,
+            CourseEligibleRoom.room_id.not_in(room_ids or {-1}),
+        )
+    )
+
+    for lecturer_id in lecturer_ids:
+        ensure_eligibility(
+            db,
+            CourseEligibleLecturer,
+            course_id=course.id,
+            resource_field="lecturer_id",
+            resource_id=lecturer_id,
+        )
+
+    for room_id in room_ids:
+        ensure_eligibility(
+            db,
+            CourseEligibleRoom,
+            course_id=course.id,
+            resource_field="room_id",
+            resource_id=room_id,
+        )
 
 
 def upsert_time_window(
@@ -376,54 +240,65 @@ def upsert_holiday(db: Session, holiday_date: date, name: str, revision: int) ->
     return record
 
 
-def database_target_label() -> str:
-    database = engine.url.database
-    if database is None:
-        return str(engine.url)
-    return str(Path(database).resolve())
+def load_seed_data(path: Path) -> JsonObject:
+    with path.open(encoding="utf-8") as data_file:
+        payload = json.load(data_file)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Seed data must be a JSON object: {path}")
+    if payload.get("version") != 1:
+        raise ValueError(f"Unsupported seed data version in {path}: {payload.get('version')!r}")
+    return payload
 
 
-def seed() -> None:
+def seed_from_data(data: JsonObject) -> dict[str, int]:
     initialize_database(engine)
 
     with Session(engine) as db:
-        for lecturer in LECTURERS:
+        for lecturer in data.get("lecturers", []):
             upsert_resource(db, Lecturer, **lecturer)
 
-        for room in ROOMS:
+        for room in data.get("rooms", []):
             upsert_resource(db, Room, **room)
 
-        for cohort in COHORTS:
+        for cohort in data.get("cohorts", []):
             upsert_named(db, Cohort, **cohort)
 
-        for semester in SEMESTERS:
-            upsert_named(db, Semester, **semester)
+        for semester in data.get("semesters", []):
+            upsert_named(
+                db,
+                Semester,
+                semester["name"],
+                start_date=parse_date(semester["start_date"]),
+                end_date=parse_date(semester["end_date"]),
+                is_active=semester.get("is_active", True),
+                revision=semester.get("revision", 1),
+            )
 
-        for study_type in STUDY_TYPES:
+        for study_type in data.get("study_types", []):
             upsert_named(db, StudyType, **study_type)
 
         db.flush()
 
-        for window in STUDY_TYPE_TIME_WINDOWS:
+        for window in data.get("study_type_time_windows", []):
             study_type = require_by_name(db, StudyType, window["study_type"])
             upsert_time_window(
                 db,
                 study_type,
                 weekday=window["weekday"],
-                start_time=window["start_time"],
-                end_time=window["end_time"],
-                sort_order=window["sort_order"],
-                is_active=window["is_active"],
-                revision=window["revision"],
+                start_time=parse_time(window["start_time"]),
+                end_time=parse_time(window["end_time"]),
+                sort_order=window.get("sort_order", 0),
+                is_active=window.get("is_active", True),
+                revision=window.get("revision", 1),
             )
 
         db.flush()
 
-        for course in COURSES:
+        for course in data.get("courses", []):
             cohort = require_by_name(db, Cohort, course["cohort"])
             study_type = require_by_name(db, StudyType, course["study_type"])
             semester = require_by_name(db, Semester, course["current_semester"])
-            upsert_named(
+            configured_course = upsert_named(
                 db,
                 Course,
                 course["name"],
@@ -433,47 +308,313 @@ def seed() -> None:
                 cohort_id=cohort.id,
                 study_type_id=study_type.id,
                 current_semester_id=semester.id,
-                revision=course["revision"],
+                is_active=course.get("is_active", True),
+                revision=course.get("revision", 1),
             )
-
-        db.flush()
-
-        for course_name, lecturer_name in ELIGIBLE_LECTURERS:
-            course = require_by_name(db, Course, course_name)
-            lecturer = require_by_name(db, Lecturer, lecturer_name)
-            ensure_eligibility(
+            db.flush()
+            sync_course_eligibility(
                 db,
-                CourseEligibleLecturer,
-                course_id=course.id,
-                resource_field="lecturer_id",
-                resource_id=lecturer.id,
+                configured_course,
+                lecturer_names=course.get("eligible_lecturers", []),
+                room_names=course.get("eligible_rooms", []),
             )
 
-        for course_name, room_name in ELIGIBLE_ROOMS:
-            course = require_by_name(db, Course, course_name)
-            room = require_by_name(db, Room, room_name)
-            ensure_eligibility(
+        for holiday in data.get("institution_holidays", []):
+            upsert_holiday(
                 db,
-                CourseEligibleRoom,
-                course_id=course.id,
-                resource_field="room_id",
-                resource_id=room.id,
+                parse_date(holiday["date"]),
+                holiday["name"],
+                holiday.get("revision", 1),
             )
 
-        for holiday_date, name, revision in INSTITUTION_HOLIDAYS:
-            upsert_holiday(db, holiday_date, name, revision)
+        if "resource_unavailability_periods" in data:
+            db.execute(delete(ResourceUnavailabilityPeriod))
+            db.flush()
+            for period in data["resource_unavailability_periods"]:
+                owner_type = period["owner_type"]
+                owner = require_by_name(
+                    db,
+                    Lecturer if owner_type == "lecturer" else Room,
+                    period["owner"],
+                )
+                configured_period = ResourceUnavailabilityPeriod(
+                    lecturer_id=owner.id if owner_type == "lecturer" else None,
+                    room_id=owner.id if owner_type == "room" else None,
+                    kind=period["kind"],
+                    start_date=parse_date(period.get("start_date")),
+                    end_date=parse_date(period.get("end_date")),
+                    start_time=parse_time(period["start_time"]),
+                    end_time=parse_time(period["end_time"]),
+                    revision=period.get("revision", 1),
+                )
+                configured_period.weekdays = [
+                    ResourceUnavailabilityWeekday(weekday=weekday)
+                    for weekday in period.get("weekdays", [])
+                ]
+                db.add(configured_period)
+
+        if "course_exam_configurations" in data:
+            db.execute(delete(CourseExamConfiguration))
+            db.flush()
+            for configuration in data["course_exam_configurations"]:
+                course = require_by_name(db, Course, configuration["course"])
+                semester = require_by_name(db, Semester, configuration["semester"])
+                responsible_lecturer = (
+                    require_by_name(db, Lecturer, configuration["responsible_lecturer"])
+                    if configuration.get("responsible_lecturer")
+                    else None
+                )
+                db.add(
+                    CourseExamConfiguration(
+                        course_id=course.id,
+                        semester_id=semester.id,
+                        enabled=configuration.get("enabled", False),
+                        identifier=configuration.get("identifier"),
+                        duration_minutes=configuration.get("duration_minutes"),
+                        recommended_start_override=parse_date(
+                            configuration.get("recommended_start_override")
+                        ),
+                        recommended_end_override=parse_date(
+                            configuration.get("recommended_end_override")
+                        ),
+                        required_capacity=configuration.get("required_capacity"),
+                        exam_type=configuration.get("exam_type"),
+                        responsible_lecturer_id=responsible_lecturer.id
+                        if responsible_lecturer
+                        else None,
+                        configuration_consumed=configuration.get(
+                            "configuration_consumed", False
+                        ),
+                        revision=configuration.get("revision", 1),
+                    )
+                )
 
         db.commit()
 
-    print(f"Seeded baseline planning configuration in {database_target_label()}:")
-    print(f"- Lecturers: {len(LECTURERS)}")
-    print(f"- Rooms: {len(ROOMS)}")
-    print(f"- Cohorts: {len(COHORTS)}")
-    print(f"- Semesters: {len(SEMESTERS)}")
-    print(f"- Study types: {len(STUDY_TYPES)}")
-    print(f"- Courses: {len(COURSES)}")
-    print(f"- Institution holidays: {len(INSTITUTION_HOLIDAYS)}")
+    return {
+        "lecturers": len(data.get("lecturers", [])),
+        "rooms": len(data.get("rooms", [])),
+        "cohorts": len(data.get("cohorts", [])),
+        "semesters": len(data.get("semesters", [])),
+        "study_types": len(data.get("study_types", [])),
+        "study_type_time_windows": len(data.get("study_type_time_windows", [])),
+        "courses": len(data.get("courses", [])),
+        "institution_holidays": len(data.get("institution_holidays", [])),
+        "resource_unavailability_periods": len(
+            data.get("resource_unavailability_periods", [])
+        ),
+        "course_exam_configurations": len(data.get("course_exam_configurations", [])),
+    }
+
+
+def export_current_configuration(path: Path) -> None:
+    initialize_database(engine)
+    with Session(engine) as db:
+        payload: JsonObject = {
+            "version": 1,
+            "lecturers": [
+                {
+                    "name": lecturer.name,
+                    "reference_code": lecturer.reference_code,
+                    "is_active": lecturer.is_active,
+                    "revision": lecturer.revision,
+                }
+                for lecturer in db.execute(select(Lecturer).order_by(Lecturer.name)).scalars()
+            ],
+            "rooms": [
+                {
+                    "name": room.name,
+                    "reference_code": room.reference_code,
+                    "capacity": room.capacity,
+                    "is_active": room.is_active,
+                    "revision": room.revision,
+                }
+                for room in db.execute(select(Room).order_by(Room.name)).scalars()
+            ],
+            "cohorts": [
+                {
+                    "name": cohort.name,
+                    "student_count": cohort.student_count,
+                    "is_active": cohort.is_active,
+                    "revision": cohort.revision,
+                }
+                for cohort in db.execute(select(Cohort).order_by(Cohort.name)).scalars()
+            ],
+            "semesters": [
+                {
+                    "name": semester.name,
+                    "start_date": serialize_date(semester.start_date),
+                    "end_date": serialize_date(semester.end_date),
+                    "is_active": semester.is_active,
+                    "revision": semester.revision,
+                }
+                for semester in db.execute(select(Semester).order_by(Semester.start_date)).scalars()
+            ],
+            "study_types": [
+                {
+                    "name": study_type.name,
+                    "is_active": study_type.is_active,
+                    "revision": study_type.revision,
+                }
+                for study_type in db.execute(select(StudyType).order_by(StudyType.name)).scalars()
+            ],
+            "study_type_time_windows": [
+                {
+                    "study_type": window.study_type.name,
+                    "weekday": window.weekday,
+                    "start_time": serialize_time(window.start_time),
+                    "end_time": serialize_time(window.end_time),
+                    "sort_order": window.sort_order,
+                    "is_active": window.is_active,
+                    "revision": window.revision,
+                }
+                for window in db.execute(
+                    select(StudyTypeTimeWindow).join(StudyType).order_by(
+                        StudyType.name,
+                        StudyTypeTimeWindow.sort_order,
+                        StudyTypeTimeWindow.weekday,
+                    )
+                ).scalars()
+            ],
+            "courses": [
+                {
+                    "name": course.name,
+                    "total_units": course.total_units,
+                    "min_session_units": course.min_session_units,
+                    "max_session_units": course.max_session_units,
+                    "cohort": course.cohort.name,
+                    "study_type": course.study_type.name,
+                    "current_semester": course.current_semester.name
+                    if course.current_semester
+                    else None,
+                    "eligible_lecturers": [
+                        item.lecturer.name for item in course.eligible_lecturers
+                    ],
+                    "eligible_rooms": [item.room.name for item in course.eligible_rooms],
+                    "is_active": course.is_active,
+                    "revision": course.revision,
+                }
+                for course in db.execute(select(Course).order_by(Course.name)).scalars()
+            ],
+            "institution_holidays": [
+                {
+                    "date": serialize_date(holiday.date),
+                    "name": holiday.name,
+                    "revision": holiday.revision,
+                }
+                for holiday in db.execute(
+                    select(InstitutionHoliday).order_by(InstitutionHoliday.date)
+                ).scalars()
+            ],
+            "resource_unavailability_periods": [
+                {
+                    "owner_type": "lecturer" if period.lecturer else "room",
+                    "owner": period.lecturer.name if period.lecturer else period.room.name,
+                    "kind": period.kind,
+                    "start_date": serialize_date(period.start_date),
+                    "end_date": serialize_date(period.end_date),
+                    "start_time": serialize_time(period.start_time),
+                    "end_time": serialize_time(period.end_time),
+                    "weekdays": [weekday.weekday for weekday in period.weekdays],
+                    "revision": period.revision,
+                }
+                for period in db.execute(
+                    select(ResourceUnavailabilityPeriod).order_by(
+                        ResourceUnavailabilityPeriod.kind,
+                        ResourceUnavailabilityPeriod.start_time,
+                    )
+                ).scalars()
+            ],
+            "course_exam_configurations": [
+                {
+                    "course": configuration.course.name,
+                    "semester": configuration.semester.name,
+                    "enabled": configuration.enabled,
+                    "identifier": configuration.identifier,
+                    "duration_minutes": configuration.duration_minutes,
+                    "recommended_start_override": serialize_date(
+                        configuration.recommended_start_override
+                    ),
+                    "recommended_end_override": serialize_date(
+                        configuration.recommended_end_override
+                    ),
+                    "required_capacity": configuration.required_capacity,
+                    "exam_type": configuration.exam_type,
+                    "responsible_lecturer": configuration.responsible_lecturer.name
+                    if configuration.responsible_lecturer
+                    else None,
+                    "configuration_consumed": configuration.configuration_consumed,
+                    "revision": configuration.revision,
+                }
+                for configuration in db.execute(
+                    select(CourseExamConfiguration).order_by(CourseExamConfiguration.id)
+                ).scalars()
+            ],
+        }
+
+        scheduling_counts = {
+            "draft_schedules": db.query(DraftSchedule).count(),
+            "draft_sessions": db.query(DraftSession).count(),
+            "exam_sessions": db.query(ExamSession).count(),
+            "generation_constraint_sets": db.query(GenerationConstraintSet).count(),
+        }
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Exported planning configuration to {path}")
+    print(
+        "Excluded scheduling data: "
+        + ", ".join(f"{name}={count}" for name, count in scheduling_counts.items())
+    )
+
+
+def database_target_label() -> str:
+    database = engine.url.database
+    if database is None:
+        return str(engine.url)
+    return str(Path(database).resolve())
+
+
+def seed(data_file: Path = DEFAULT_DATA_FILE) -> None:
+    data = load_seed_data(data_file)
+    counts = seed_from_data(data)
+
+    print(f"Seeded planning configuration from {data_file} in {database_target_label()}:")
+    print(f"- Lecturers: {counts['lecturers']}")
+    print(f"- Rooms: {counts['rooms']}")
+    print(f"- Cohorts: {counts['cohorts']}")
+    print(f"- Semesters: {counts['semesters']}")
+    print(f"- Study types: {counts['study_types']}")
+    print(f"- Time windows: {counts['study_type_time_windows']}")
+    print(f"- Courses: {counts['courses']}")
+    print(f"- Institution holidays: {counts['institution_holidays']}")
+    print(f"- Resource unavailability periods: {counts['resource_unavailability_periods']}")
+    print(f"- Course exam configurations: {counts['course_exam_configurations']}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Import or export editable planning setup data as JSON."
+    )
+    parser.add_argument(
+        "--data-file",
+        type=Path,
+        default=DEFAULT_DATA_FILE,
+        help="JSON planning setup file to import. Defaults to scripts/planning_baseline.json.",
+    )
+    parser.add_argument(
+        "--export-current",
+        type=Path,
+        default=None,
+        help="Write current non-scheduling setup data to this JSON file instead of importing.",
+    )
+    args = parser.parse_args()
+
+    if args.export_current:
+        export_current_configuration(args.export_current)
+    else:
+        seed(args.data_file)
 
 
 if __name__ == "__main__":
-    seed()
+    main()

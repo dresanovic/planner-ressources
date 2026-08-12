@@ -810,12 +810,13 @@ button:disabled[aria-busy='true'] {
 
 .session-row {
   display: grid;
-  grid-template-columns:
-    minmax(96px, 1fr)
-    minmax(110px, 1fr)
-    minmax(74px, 0.8fr)
-    repeat(5, minmax(96px, 1fr))
-    minmax(86px, 0.8fr);
+  --teaching-list-grid:
+    minmax(0, 1fr)
+    minmax(0, 1.1fr)
+    minmax(0, 0.8fr)
+    repeat(5, minmax(0, 1fr))
+    minmax(0, 0.9fr);
+  grid-template-columns: var(--teaching-list-grid);
   gap: 12px;
   padding: 12px 14px;
   border-top: 1px solid #edf0f5;
@@ -1065,15 +1066,38 @@ button:disabled[aria-busy='true'] {
   }
 
   .manual-time-grid { grid-template-columns: 1fr; }
-  .session-row { grid-template-columns: 1fr; }
+  .session-row,
+  .session-row.teaching-session-row { grid-template-columns: 1fr; }
   .session-row.session-header { display: none; }
   .session-table { width: 100%; min-width: 0; }
+  .teaching-session-row > span {
+    display: grid;
+    grid-template-columns: minmax(7rem, 0.35fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+  }
+  .teaching-session-row > span::before {
+    content: attr(data-label);
+    color: #526071;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .teaching-session-row .validation-alerts,
+  .teaching-session-row .session-actions {
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
 @media (max-width: 360px) {
   .workbench { padding: 12px; }
   .page-header h1 { font-size: 24px; }
   .metadata-pill { max-width: 100%; }
+  .teaching-session-row > span {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
 }
 .lifecycle-panel {
   border: 1px solid #d7dce5;
@@ -1837,6 +1861,10 @@ button:disabled[aria-busy='true'] {
   color: #465263;
 }
 
+.teaching-session-row {
+  grid-template-columns: var(--teaching-list-grid);
+}
+
 .review-feedback-clear-status {
   justify-self: start;
   margin: 0;
@@ -2034,7 +2062,7 @@ button:disabled[aria-busy='true'] {
   min-width: 0;
 }
 
-.schedule-occurrence-row {
+.schedule-occurrence-list .schedule-occurrence-row {
   display: grid;
   grid-template-columns: minmax(5.5rem, auto) minmax(10rem, 2fr) repeat(3, minmax(7rem, 1fr));
   gap: 0.75rem;
@@ -2128,7 +2156,7 @@ button:disabled[aria-busy='true'] {
     padding-inline: 0.5rem;
   }
 
-  .schedule-occurrence-row {
+  .schedule-occurrence-list .schedule-occurrence-row {
     grid-template-columns: 1fr;
   }
 

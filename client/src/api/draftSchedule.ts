@@ -65,7 +65,13 @@ export type GenerationConstraints = {
   isCustom: boolean
   revision?: number | null
   planningPeriod: PlanningPeriod
+  studyType: PlanningEntity
   allowedTeachingWindows: AllowedTeachingWindow[]
+}
+
+export type GenerationConstraintMutationResult = {
+  constraints: GenerationConstraints
+  draftSchedule: DraftSchedule | null
 }
 
 export type PlanningEntity = {
@@ -158,31 +164,6 @@ export type CreateManualDraftSessionRequest = {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
-export async function generateDraftSchedule(
-  courseId: number,
-  semesterId: number,
-  scheduleRevisionId: number,
-  planningPeriod: PlanningPeriod,
-  allowedTeachingWindows: AllowedTeachingWindow[],
-): Promise<DraftSchedule> {
-  const response = await request(
-    `${API_BASE}/api/courses/${courseId}/draft-schedule/generate`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ semesterId, scheduleRevisionId, planningPeriod, allowedTeachingWindows }),
-    },
-  )
-  if (response.status === 422 || response.status === 409) {
-    const payload = await response.json()
-    throw payload.errors as GenerationFailure[]
-  }
-  if (!response.ok) {
-    throw [{ code: 'REQUEST_FAILED', message: await response.text() }]
-  }
-  return response.json()
-}
-
 export async function getGenerationConstraints(
   courseId: number,
   semesterId: number,
@@ -196,14 +177,40 @@ export async function getGenerationConstraints(
   return response.json()
 }
 
-export async function clearGenerationConstraints(courseId: number, semesterId: number): Promise<void> {
+export async function saveGenerationConstraints(
+  courseId: number,
+  semesterId: number,
+  scheduleRevisionId: number,
+  expectedRevision: number | null,
+  planningPeriod: PlanningPeriod,
+): Promise<GenerationConstraintMutationResult> {
   const response = await request(
-    `${API_BASE}/api/courses/${courseId}/generation-constraints?semesterId=${semesterId}`,
+    `${API_BASE}/api/courses/${courseId}/generation-constraints`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ semesterId, scheduleRevisionId, expectedRevision, planningPeriod }),
+    },
+  )
+  return parseConstraintMutationResponse(response)
+}
+
+export async function clearGenerationConstraints(
+  courseId: number,
+  semesterId: number,
+  scheduleRevisionId: number,
+  expectedRevision: number,
+): Promise<GenerationConstraintMutationResult> {
+  const query = new URLSearchParams({
+    semesterId: String(semesterId),
+    scheduleRevisionId: String(scheduleRevisionId),
+    expectedRevision: String(expectedRevision),
+  })
+  const response = await request(
+    `${API_BASE}/api/courses/${courseId}/generation-constraints?${query}`,
     { method: 'DELETE' },
   )
-  if (!response.ok) {
-    throw [{ code: 'REQUEST_FAILED', message: 'Could not clear generation constraints.' }]
-  }
+  return parseConstraintMutationResponse(response)
 }
 
 export async function getDraftSchedule(courseId: number, semesterId: number): Promise<DraftSchedule> {
@@ -300,6 +307,18 @@ async function parseMutationResponse(response: Response): Promise<DraftScheduleM
     code: response.status === 404 ? 'NOT_FOUND' : 'REQUEST_FAILED',
     message: payload.detail ?? 'The requested Draft Schedule change could not be completed.',
   }] satisfies MutationFailure[]
+}
+
+async function parseConstraintMutationResponse(response: Response): Promise<GenerationConstraintMutationResult> {
+  if (response.ok) return response.json()
+  let payload: { errors?: MutationFailure[] } = {}
+  try {
+    payload = await response.json()
+  } catch {
+    // Use the stable fallback below when the backend did not return JSON.
+  }
+  if (payload.errors?.length) throw payload.errors
+  throw [{ code: 'REQUEST_FAILED', message: 'Generation constraints could not be saved.' }] satisfies MutationFailure[]
 }
 
 async function request(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {

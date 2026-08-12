@@ -23,6 +23,8 @@ REASON_MESSAGES = {
     "LECTURER_OCCUPIED": "Eligible lecturers are occupied by fixed semester sessions.",
     "ROOM_OCCUPIED": "Eligible rooms are occupied by fixed semester sessions.",
     "COHORT_OCCUPIED": "The cohort is occupied by fixed semester sessions.",
+    "ACTIVE_EXAM_BOUNDARY": "Teaching must end no later than the selected course's active exam begins.",
+    "STUDY_TYPE_WINDOW_UNAVAILABLE": "The current study type has no active teaching window long enough for the minimum session.",
     "LECTURER_UNAVAILABLE": "Eligible lecturers are unavailable in otherwise allowed slots.",
     "ROOM_UNAVAILABLE": "Eligible rooms are unavailable in otherwise allowed slots.",
     "NO_ELIGIBLE_LECTURER": "The course has no active eligible lecturer.",
@@ -53,6 +55,8 @@ class FixedSession:
     date: date
     start_time: time
     end_time: time
+    source_kind: str = field(default="teaching_session", kw_only=True)
+    source_id: int | None = field(default=None, kw_only=True)
 
 
 @dataclass(frozen=True)
@@ -76,6 +80,8 @@ class OptimizationCourse:
     lecturers: tuple[ResourceCandidatePlan, ...]
     rooms: tuple[ResourceCandidatePlan, ...]
     current_sessions: tuple[CurrentSession, ...] = ()
+    latest_teaching_end: datetime | None = None
+    latest_teaching_source_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -101,6 +107,8 @@ class BlockingEvidence:
     message: str
     holiday_date: date | None = None
     holiday_name: str | None = None
+    source_kind: str | None = None
+    source_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -167,6 +175,7 @@ def generate_candidates(
 ) -> CandidateSet:
     holidays = holidays or {}
     counts: Counter[str] = Counter()
+    protected_sources: Counter[tuple[str, str, int | None]] = Counter()
     holiday_counts: Counter[tuple[date, str]] = Counter()
     candidates: list[TemporalCandidate] = []
     active_lecturers = tuple(sorted((item for item in course.lecturers if item.active), key=lambda item: (item.normalized_code, item.id)))
@@ -183,9 +192,21 @@ def generate_candidates(
         counts["INVALID_PLANNING_INPUT"] += 1
     if course.planning_period.start_date > course.planning_period.end_date or not course.windows:
         counts["NO_ALLOWED_DATE_OR_WINDOW"] += 1
+    elif not any(
+        datetime.combine(date.min, window.end_time)
+        - datetime.combine(date.min, window.start_time)
+        >= timedelta(minutes=session_duration_minutes(course.min_session_units))
+        for window in course.windows
+    ):
+        counts["STUDY_TYPE_WINDOW_UNAVAILABLE"] += 1
 
-    if counts.get("INVALID_PLANNING_INPUT") or not active_lecturers or not capacity_rooms:
-        return CandidateSet((), _evidence(counts))
+    if (
+        counts.get("INVALID_PLANNING_INPUT")
+        or counts.get("STUDY_TYPE_WINDOW_UNAVAILABLE")
+        or not active_lecturers
+        or not capacity_rooms
+    ):
+        return CandidateSet((), _evidence(counts, protected_sources))
 
     ordered_windows = sorted(
         course.windows,
@@ -220,6 +241,15 @@ def generate_candidates(
                 if end_dt.date() != cursor or end_time > window.end_time:
                     counts["COURSE_CONSTRAINT"] += 1
                     continue
+                if course.latest_teaching_end is not None and end_dt > course.latest_teaching_end:
+                    counts["ACTIVE_EXAM_BOUNDARY"] += 1
+                    if course.latest_teaching_source_id is not None:
+                        protected_sources[(
+                            "ACTIVE_EXAM_BOUNDARY",
+                            "active_exam",
+                            course.latest_teaching_source_id,
+                        )] += 1
+                    continue
                 permitted_temporal_slot_found = True
                 cohort_blocked, lecturers, rooms = _candidate_resources(
                     course,
@@ -230,6 +260,7 @@ def generate_candidates(
                     active_lecturers,
                     capacity_rooms,
                     counts,
+                    protected_sources,
                 )
                 if not cohort_blocked and lecturers and rooms:
                     raw.append((cursor, window.start_time, end_time, units, window, lecturers, rooms))
@@ -263,7 +294,7 @@ def generate_candidates(
         )
         for (day, name), count in sorted(holiday_counts.items())
     )
-    return CandidateSet(tuple(candidates), (*_evidence(counts), *holiday_evidence))
+    return CandidateSet(tuple(candidates), (*_evidence(counts, protected_sources), *holiday_evidence))
 
 
 def _holiday_removes_feasible_candidate(
@@ -302,14 +333,20 @@ def _candidate_resources(
     active_lecturers: Sequence[ResourceCandidatePlan],
     capacity_rooms: Sequence[ResourceCandidatePlan],
     counts: Counter[str] | None = None,
+    protected_sources: Counter[tuple[str, str, int | None]] | None = None,
 ) -> tuple[bool, tuple[int, ...], tuple[int, ...]]:
-    cohort_blocked = any(
+    cohort_conflicts = [
+        fixed
+        for fixed in fixed_sessions
+        if (
         fixed.cohort_id == course.cohort_id
         and intervals_overlap(candidate_date, start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
-        for fixed in fixed_sessions
-    )
+        )
+    ]
+    cohort_blocked = bool(cohort_conflicts)
     if cohort_blocked and counts is not None:
         counts["COHORT_OCCUPIED"] += 1
+        _record_protected_sources(protected_sources, "COHORT_OCCUPIED", cohort_conflicts)
 
     lecturers = []
     for lecturer in active_lecturers:
@@ -317,13 +354,18 @@ def _candidate_resources(
             if counts is not None:
                 counts["LECTURER_UNAVAILABLE"] += 1
             continue
-        if any(
+        lecturer_conflicts = [
+            fixed
+            for fixed in fixed_sessions
+            if (
             fixed.lecturer_id == lecturer.id
             and intervals_overlap(candidate_date, start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
-            for fixed in fixed_sessions
-        ):
+            )
+        ]
+        if lecturer_conflicts:
             if counts is not None:
                 counts["LECTURER_OCCUPIED"] += 1
+                _record_protected_sources(protected_sources, "LECTURER_OCCUPIED", lecturer_conflicts)
             continue
         lecturers.append(lecturer.id)
 
@@ -333,25 +375,109 @@ def _candidate_resources(
             if counts is not None:
                 counts["ROOM_UNAVAILABLE"] += 1
             continue
-        if any(
+        room_conflicts = [
+            fixed
+            for fixed in fixed_sessions
+            if (
             fixed.room_id == room.id
             and intervals_overlap(candidate_date, start_time, end_time, fixed.date, fixed.start_time, fixed.end_time)
-            for fixed in fixed_sessions
-        ):
+            )
+        ]
+        if room_conflicts:
             if counts is not None:
                 counts["ROOM_OCCUPIED"] += 1
+                _record_protected_sources(protected_sources, "ROOM_OCCUPIED", room_conflicts)
             continue
         rooms.append(room.id)
 
     return cohort_blocked, tuple(lecturers), tuple(rooms)
 
 
-def _evidence(counts: Counter[str]) -> tuple[BlockingEvidence, ...]:
-    return tuple(
+def _record_protected_sources(
+    protected_sources: Counter[tuple[str, str, int | None]] | None,
+    code: str,
+    conflicts: Sequence[FixedSession],
+) -> None:
+    if protected_sources is None:
+        return
+    for fixed in conflicts:
+        protected_sources[(code, fixed.source_kind, fixed.source_id)] += 1
+
+
+def _evidence(
+    counts: Counter[str],
+    protected_sources: Counter[tuple[str, str, int | None]] | None = None,
+) -> tuple[BlockingEvidence, ...]:
+    sources = protected_sources or Counter()
+    sourced_codes = {code for code, _kind, source_id in sources if source_id is not None}
+    evidence = [
         BlockingEvidence(code, count, REASON_MESSAGES[code])
         for code, count in sorted(counts.items())
+        if count > 0 and code in REASON_MESSAGES and code not in sourced_codes
+    ]
+    evidence.extend(
+        BlockingEvidence(
+            code,
+            count,
+            REASON_MESSAGES[code],
+            source_kind=source_kind if source_id is not None else None,
+            source_id=source_id,
+        )
+        for (code, source_kind, source_id), count in sorted(
+            sources.items(), key=lambda item: (item[0][0], item[0][1], item[0][2] or 0)
+        )
         if count > 0 and code in REASON_MESSAGES
     )
+    return tuple(evidence)
+
+
+def _current_sessions_respect_hard_constraints(
+    course: OptimizationCourse,
+    unavailable_dates: frozenset[date],
+    holidays: Mapping[date, HolidayReference],
+) -> bool:
+    active_lecturers = {item.id: item for item in course.lecturers if item.active}
+    active_rooms = {
+        item.id: item
+        for item in course.rooms
+        if item.active and (item.capacity or 0) >= course.cohort_size
+    }
+    for session in course.current_sessions:
+        if not course.planning_period.start_date <= session.date <= course.planning_period.end_date:
+            return False
+        if session.date in unavailable_dates or session.date in holidays:
+            return False
+        if session.cohort_id != course.cohort_id:
+            return False
+        if not any(
+            window.weekday == session.date.weekday()
+            and window.start_time <= session.start_time
+            and session.end_time <= window.end_time
+            for window in course.windows
+        ):
+            return False
+        if (
+            course.latest_teaching_end is not None
+            and datetime.combine(session.date, session.end_time) > course.latest_teaching_end
+        ):
+            return False
+        lecturer = active_lecturers.get(session.lecturer_id)
+        if lecturer is None or resource_is_unavailable(
+            lecturer.unavailable_periods,
+            session.date,
+            session.start_time,
+            session.end_time,
+        ):
+            return False
+        room = active_rooms.get(session.room_id)
+        if room is None or resource_is_unavailable(
+            room.unavailable_periods,
+            session.date,
+            session.start_time,
+            session.end_time,
+        ):
+            return False
+    return True
 
 
 def optimize_semester(
@@ -408,7 +534,13 @@ def optimize_semester(
             if variables.temporal:
                 model.add(sum(variables.temporal.values()) <= len(variables.temporal) * (1 - retain))
             current_units = sum(session.units for session in course.current_sessions)
-            if current_units > course.total_units:
+            if not _current_sessions_respect_hard_constraints(
+                course,
+                unavailable,
+                holidays or {},
+            ):
+                model.add(retain == 0)
+            elif current_units > course.total_units:
                 model.add(retain == 1)
             else:
                 model.add(generated_units >= current_units * (1 - retain))
@@ -704,9 +836,9 @@ def _count_generated_changes(sessions: Sequence[GeneratedSession], field_name: s
 
 
 def _deduplicate_evidence(items: Sequence[BlockingEvidence]) -> list[BlockingEvidence]:
-    combined: dict[tuple[str, date | None], BlockingEvidence] = {}
+    combined: dict[tuple[str, date | None, str | None, int | None], BlockingEvidence] = {}
     for item in items:
-        key = (item.code, item.holiday_date)
+        key = (item.code, item.holiday_date, item.source_kind, item.source_id)
         existing = combined.get(key)
         combined[key] = BlockingEvidence(
             item.code,
@@ -714,5 +846,13 @@ def _deduplicate_evidence(items: Sequence[BlockingEvidence]) -> list[BlockingEvi
             item.message,
             item.holiday_date,
             item.holiday_name,
+            item.source_kind,
+            item.source_id,
         )
-    return [combined[key] for key in sorted(combined, key=lambda value: (value[0], value[1] or date.min))]
+    return [
+        combined[key]
+        for key in sorted(
+            combined,
+            key=lambda value: (value[0], value[1] or date.min, value[2] or "", value[3] or 0),
+        )
+    ]

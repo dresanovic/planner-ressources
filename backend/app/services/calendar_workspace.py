@@ -322,12 +322,9 @@ def _working_content(
                     "startTime": _clock(window.start_time),
                     "endTime": _clock(window.end_time),
                     "sortOrder": window.sort_order,
+                    "sourceTimeWindowId": window.id,
                 }
-                for window in (
-                    saved_constraint.windows
-                    if saved_constraint
-                    else study_windows.get(course.study_type_id, [])
-                )
+                for window in study_windows.get(course.study_type_id, [])
             ],
         }
         courses.append(
@@ -826,7 +823,6 @@ def derive_calendar_validation_findings(
                         profile["planningEndDate"]
                     ),
                     allowed_windows=windows,
-                    is_custom=bool(profile.get("isCustom", False)),
                 )
                 for issue_code in constraint_evaluation.issue_codes:
                     findings.append(

@@ -71,11 +71,15 @@ function renderPanel({
 function renderConstraintEditor({
   constraints = generationConstraintsFixture,
   onConstraintsChange = vi.fn(),
+  onSave = vi.fn(),
   onClear = vi.fn(),
+  onDirtyChange = vi.fn(),
 }: {
   constraints?: GenerationConstraints
   onConstraintsChange?: (constraints: GenerationConstraints) => void
+  onSave?: (planningPeriod: GenerationConstraints['planningPeriod']) => void
   onClear?: () => void
+  onDirtyChange?: (dirty: boolean) => void
 } = {}): Root {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
 
@@ -85,7 +89,9 @@ function renderConstraintEditor({
         constraints={constraints}
         isLoading={false}
         onChange={onConstraintsChange}
+        onSave={onSave}
         onClear={onClear}
+        onDirtyChange={onDirtyChange}
       />,
     )
   })
@@ -385,40 +391,30 @@ describe('DraftSchedulePanel', () => {
     )
   })
 
-  it('adds, removes, and submits weekly teaching window edits', () => {
-    const onConstraintsChange = vi.fn()
-    renderConstraintEditor({ onConstraintsChange })
+  it('keeps study-type windows read-only and explicitly saves changed dates', () => {
+    const onSave = vi.fn()
+    const onDirtyChange = vi.fn()
+    renderConstraintEditor({ onSave, onDirtyChange })
 
-    const addButton = [...document.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Zeitfenster hinzufügen',
-    )
+    expect(document.querySelector('.constraint-window-row select')).toBeNull()
+    expect(document.querySelector('.constraint-window-row input')).toBeNull()
+    expect(document.querySelector('.constraint-window-list')?.textContent).toContain('Montag')
+    expect(document.querySelector('.constraint-window-list')?.textContent).toContain('08:00 - 12:00')
 
+    const startInput = document.querySelector<HTMLInputElement>('input[inputmode="numeric"]')
     act(() => {
-      addButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      if (startInput) setInputValue(startInput, '14.09.2026')
     })
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true)
 
-    expect(onConstraintsChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        allowedTeachingWindows: expect.arrayContaining([
-          expect.objectContaining({ weekday: 0, startTime: '08:00', endTime: '12:00' }),
-        ]),
-      }),
+    const saveButton = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent === 'Datumsgrenzen speichern',
     )
-    onConstraintsChange.mockClear()
-
-    const weekdaySelect = document.querySelector<HTMLSelectElement>('.constraint-window-row select')
-
+    expect(saveButton?.hasAttribute('disabled')).toBe(false)
     act(() => {
-      if (weekdaySelect) {
-        setSelectValue(weekdaySelect, '3')
-      }
+      saveButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
-
-    expect(onConstraintsChange).toHaveBeenCalledWith(
-      expect.objectContaining({
-        allowedTeachingWindows: expect.arrayContaining([expect.objectContaining({ weekday: 3 })]),
-      }),
-    )
+    expect(onSave).toHaveBeenCalledWith({ startDate: '2026-09-14', endDate: '2026-12-20' })
   })
 
   it('clears the full saved constraint set without changing existing draft sessions', () => {
@@ -618,7 +614,7 @@ describe('DraftSchedulePanel', () => {
     const alert = document.querySelector<HTMLDetailsElement>('.validation-alert')
     const summary = alert?.querySelector('summary')
 
-    expect(summary?.textContent).toContain('zeitliche Überschneidung')
+    expect(summary?.textContent).toContain('Lehrendenkonflikt')
     expect(alert?.open).toBe(false)
 
     act(() => {
@@ -640,7 +636,7 @@ describe('DraftSchedulePanel', () => {
       }
     })
 
-    expect(document.body.textContent).toContain('zeitliche Überschneidung')
+    expect(document.body.textContent).toContain('Lehrendenkonflikt')
     expect(document.body.textContent).toContain('Scheduling 201')
     const rows = [...document.querySelectorAll('.session-row:not(.session-header)')]
     expect(rows.every((row) => row.textContent?.includes('Planning 101'))).toBe(true)
@@ -649,26 +645,96 @@ describe('DraftSchedulePanel', () => {
   it('shows multiple validation alert reasons on one session', () => {
     renderPanel({ schedules: [alertDraftScheduleFixture] })
 
-    expect(document.body.textContent).toContain('Kapazität reicht nicht aus')
-    expect(document.body.textContent).toContain('genaue Ursache ist nicht verfügbar')
+    expect(document.body.textContent).toContain('Raumkapazität reicht nicht aus')
+    expect(document.body.textContent).toContain('Studienart-Zeitfenster')
+    expect(document.body.textContent).toContain('außerhalb eines aktuell aktiven Zeitfensters')
+    expect(document.body.textContent).not.toContain('genaue Ursache ist nicht verfügbar')
+  })
+
+  it('distinguishes active date constraints from study-type window violations', () => {
+    const constrained = {
+      ...alertDraftScheduleFixture,
+      sessions: alertDraftScheduleFixture.sessions.map((session, index) => index === 1 ? {
+        ...session,
+        validationAlerts: [
+          {
+            code: 'GENERATION_CONSTRAINT_VIOLATION' as const,
+            message: 'Outside the active course dates.',
+            relatedSessions: [],
+          },
+          {
+            code: 'STUDY_TYPE_WINDOW_VIOLATION' as const,
+            message: 'Outside the mapped weekly window.',
+            relatedSessions: [],
+          },
+        ],
+      } : session),
+    }
+
+    renderPanel({ schedules: [constrained] })
+
+    expect(document.body.textContent).toContain('Datumsgrenzen verletzt')
+    expect(document.body.textContent).toContain('Studienart-Zeitfenster verletzt')
+    expect(document.querySelectorAll('.validation-alert')).toHaveLength(3)
+  })
+
+  it('renders distinct conflict categories once with named resources and related occurrence evidence', () => {
+    const related = alertDraftScheduleFixture.sessions[0].validationAlerts[0].relatedSessions
+    const categorized = {
+      ...alertDraftScheduleFixture,
+      sessions: alertDraftScheduleFixture.sessions.map((session, index) => index === 0 ? {
+        ...session,
+        validationAlerts: [
+          { code: 'LECTURER_OVERLAP' as const, message: 'Lecturer overlap.', relatedSessions: related },
+          { code: 'ROOM_OVERLAP' as const, message: 'Room overlap.', relatedSessions: related },
+          { code: 'ROOM_OVERLAP' as const, message: 'Duplicate room overlap.', relatedSessions: related },
+          { code: 'COHORT_OVERLAP' as const, message: 'Cohort overlap.', relatedSessions: related },
+        ],
+      } : session),
+    }
+
+    renderPanel({ schedules: [categorized] })
+
+    expect(document.body.textContent).toContain('Lehrendenkonflikt')
+    expect(document.body.textContent).toContain('Raumkonflikt')
+    expect(document.body.textContent).toContain('Kohortenkonflikt')
+    expect(document.body.textContent).toContain('Ada Lovelace · LEC-001')
+    expect(document.body.textContent).toContain('R1')
+    expect(document.body.textContent).toContain('AI 1')
+    expect(document.querySelector('.teaching-session-row:not(.session-header)')?.querySelectorAll('.validation-alert')).toHaveLength(3)
+    expect(document.body.textContent).toContain('Scheduling 201 | 07.09.2026 09:00-12:30')
+  })
+
+  it('keeps the exact nine-field teaching order and narrow labels with warnings inside Date', () => {
+    renderPanel({ schedules: [alertDraftScheduleFixture] })
+    const header = document.querySelector('.teaching-session-row.session-header')
+    expect([...header!.children].map((item) => item.textContent)).toEqual([
+      'Datum', 'Zeit', 'Dauer', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Studienart', 'Aktionen',
+    ])
+    const row = document.querySelector('.teaching-session-row:not(.session-header)')!
+    expect([...row.children].map((item) => item.getAttribute('data-label'))).toEqual([
+      'Datum', 'Zeit', 'Dauer', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Studienart', 'Aktionen',
+    ])
+    expect(row.children[0].querySelector('.validation-alerts')).not.toBeNull()
+    expect(row.children[8].querySelectorAll('button')).toHaveLength(2)
   })
 
   it('updates visible alert state after session update changes schedules', () => {
     const { rerender } = renderPanelWithRoot({ schedules: [draftScheduleFixture] })
 
-    expect(document.body.textContent).not.toContain('zeitliche Überschneidung')
+    expect(document.body.textContent).not.toContain('Lehrendenkonflikt')
 
     act(() => {
       rerender([alertDraftScheduleFixture])
     })
 
-    expect(document.body.textContent).toContain('zeitliche Überschneidung')
+    expect(document.body.textContent).toContain('Lehrendenkonflikt')
 
     act(() => {
       rerender([draftScheduleFixture])
     })
 
-    expect(document.body.textContent).not.toContain('zeitliche Überschneidung')
+    expect(document.body.textContent).not.toContain('Lehrendenkonflikt')
   })
 
   it('shows validation alerts in weekly mode', () => {
@@ -683,7 +749,7 @@ describe('DraftSchedulePanel', () => {
     })
 
     expect(document.querySelector('.weekly-review')).not.toBeNull()
-    expect(document.body.textContent).toContain('zeitliche Überschneidung')
+    expect(document.body.textContent).toContain('Lehrendenkonflikt')
   })
 
   it('renders a non-blocking named holiday alert only inside the affected session', () => {
@@ -723,7 +789,7 @@ describe('DraftSchedulePanel', () => {
       <DraftSchedulePanel resetKey={1} schedules={[alertDraftScheduleFixture, secondDraftScheduleFixture]} rooms={roomOptionsFixture} />,
     ))
     expect(document.querySelectorAll('.session-row:not(.session-header)')).toHaveLength(3)
-    expect(document.body.textContent).toContain('zeitliche Überschneidung')
+    expect(document.body.textContent).toContain('Lehrendenkonflikt')
   })
 })
 
