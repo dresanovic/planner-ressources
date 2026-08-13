@@ -597,6 +597,38 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(document.querySelector<HTMLElement>('#planning-inputs')?.hidden).toBe(false)
   })
 
+  it('separates focused course editing from unified generation without losing selection state', async () => {
+    await renderPage()
+
+    const courseTab = button('Kursdetails')
+    const generationTab = button('Plan erzeugen')
+    const coursePanel = document.querySelector<HTMLElement>('#planning-panel-course')
+    const generationPanel = document.querySelector<HTMLElement>('#planning-panel-generation')
+
+    expect(courseTab?.getAttribute('aria-selected')).toBe('true')
+    expect(coursePanel?.hidden).toBe(false)
+    expect(coursePanel?.textContent).toContain('Lehrveranstaltung bearbeiten')
+    expect(generationPanel?.hidden).toBe(true)
+
+    act(() => courseTab?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })))
+
+    expect(generationTab?.getAttribute('aria-selected')).toBe('true')
+    expect(coursePanel?.hidden).toBe(true)
+    expect(generationPanel?.hidden).toBe(false)
+    expect(generationPanel?.textContent).toContain('Stundenpläne erzeugen')
+    expect(document.querySelectorAll('.planning-selectors select')).toHaveLength(1)
+
+    act(() => document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
+    expect(generationPanel?.textContent).toContain('1 ausgewählt — Einzelplanung')
+
+    act(() => courseTab?.click())
+    expect(coursePanel?.hidden).toBe(false)
+    expect(generationPanel?.hidden).toBe(true)
+
+    act(() => generationTab?.click())
+    expect(document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.checked).toBe(true)
+  })
+
   it('identifies a retained course that is not assigned to the newly selected semester', async () => {
     mocks.getPlanningOptions.mockResolvedValue({
       ...options,
@@ -1429,10 +1461,10 @@ describe('CourseSchedulePage multi-course mode', () => {
       outcomes: [1, 2].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, status: 'complete', draftScheduleId: courseId, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] })),
     })
     await renderPage()
-    act(() => button('Mehrere Lehrveranstaltungen')?.click())
-    const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
+    act(() => button('Plan erzeugen')?.click())
+    const boxes = document.querySelectorAll<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click() })
-    const unavailableDates = document.querySelector<HTMLInputElement>('input[type="text"]')
+    const unavailableDates = document.querySelector<HTMLInputElement>('.multi-course-panel input[type="text"]')
     act(() => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(unavailableDates, '02.11.2026, 26.10.2026, 26.10.2026')
       unavailableDates?.dispatchEvent(new Event('input', { bubbles: true }))
@@ -1452,7 +1484,7 @@ describe('CourseSchedulePage multi-course mode', () => {
     mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
     await renderPage()
 
-    act(() => button('Mehrere Lehrveranstaltungen')?.click())
+    act(() => button('Plan erzeugen')?.click())
 
     const statuses = [...document.querySelectorAll('.course-draft-status')].map((status) => status.textContent)
     expect(statuses).toEqual(['Entwurf · 8/8 Lehreinheiten', 'Kein Entwurf'])
@@ -1468,8 +1500,8 @@ describe('CourseSchedulePage multi-course mode', () => {
       ],
     })
     await renderPage()
-    act(() => button('Mehrere Lehrveranstaltungen')?.click())
-    act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click())
+    act(() => button('Plan erzeugen')?.click())
+    act(() => document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
     expect(document.body.textContent).toContain('1 ausgewählt')
 
     const semesterSelect = document.querySelector<HTMLSelectElement>('.planning-selectors select')
@@ -1491,8 +1523,8 @@ describe('CourseSchedulePage multi-course mode', () => {
       ],
     })
     await renderPage()
-    act(() => button('Mehrere Lehrveranstaltungen')?.click())
-    const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
+    act(() => button('Plan erzeugen')?.click())
+    const boxes = document.querySelectorAll<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click() })
     await act(async () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
@@ -1625,8 +1657,8 @@ describe('CourseSchedulePage multi-course mode', () => {
         outcomes: [{ courseId: 1, courseName: 'Course 1', status: 'complete', draftScheduleId: 1, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] }],
       })
     await renderPage()
-    act(() => button('Mehrere Lehrveranstaltungen')?.click())
-    act(() => document.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click())
+    act(() => button('Plan erzeugen')?.click())
+    act(() => document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
     await act(async () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -1680,8 +1712,8 @@ describe('CourseSchedulePage multi-course mode', () => {
         outcomes: [1, 3].map((courseId) => ({ courseId, courseName: `Course ${courseId}`, status: 'complete', draftScheduleId: courseId + 10, draftRevision: 1, scheduledUnits: 8, remainingUnits: 0, saved: true, improvement: { addedUnits: 8, reducedConflicts: 0, reducedLecturerChanges: 0, reducedRoomChanges: 0 }, reasons: [], errors: [] })),
       })
     await renderPage()
-    act(() => button('Mehrere Lehrveranstaltungen')?.click())
-    const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
+    act(() => button('Plan erzeugen')?.click())
+    const boxes = document.querySelectorAll<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click(); boxes[2].click() })
     await act(async () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()

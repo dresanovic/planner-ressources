@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import {
   clearGenerationConstraints,
   clearCourseDraft,
@@ -153,6 +153,7 @@ export function CourseSchedulePage({
   const [generationConstraints, setGenerationConstraints] = useState<GenerationConstraints | null>(null)
   const [schedules, setSchedules] = useState<DraftSchedule[]>([])
   const [planningInputsVisible, setPlanningInputsVisible] = useState(true)
+  const [planningInputTab, setPlanningInputTab] = useState<'course' | 'generation'>('course')
   const [selectedBatchCourseIds, setSelectedBatchCourseIds] = useState<number[]>([])
   const [errors, setErrors] = useState<GenerationFailure[]>([])
   const [batchErrors, setBatchErrors] = useState<OptimizationError[]>([])
@@ -1344,6 +1345,18 @@ export function CourseSchedulePage({
     />
   }
 
+  function handlePlanningInputTabKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
+    const nextTab = event.key === 'ArrowLeft' || event.key === 'Home'
+      ? 'course'
+      : event.key === 'ArrowRight' || event.key === 'End'
+        ? 'generation'
+        : null
+    if (nextTab == null) return
+    event.preventDefault()
+    setPlanningInputTab(nextTab)
+    window.requestAnimationFrame(() => document.getElementById(`planning-tab-${nextTab}`)?.focus())
+  }
+
   return (
     <>
       <section className="workbench">
@@ -1390,14 +1403,46 @@ export function CourseSchedulePage({
             <h2 id="input-summary-title">Planungseingaben</h2>
             {planningOptions ? (
               <>
+                <div className="planning-input-tabs" role="tablist" aria-label="Planungseingaben">
+                  <button
+                    id="planning-tab-course"
+                    type="button"
+                    role="tab"
+                    aria-selected={planningInputTab === 'course'}
+                    aria-controls="planning-panel-course"
+                    tabIndex={planningInputTab === 'course' ? 0 : -1}
+                    className={planningInputTab === 'course' ? 'planning-input-tab active' : 'planning-input-tab'}
+                    onClick={() => setPlanningInputTab('course')}
+                    onKeyDown={handlePlanningInputTabKeyDown}
+                  >
+                    Kursdetails
+                  </button>
+                  <button
+                    id="planning-tab-generation"
+                    type="button"
+                    role="tab"
+                    aria-selected={planningInputTab === 'generation'}
+                    aria-controls="planning-panel-generation"
+                    tabIndex={planningInputTab === 'generation' ? 0 : -1}
+                    className={planningInputTab === 'generation' ? 'planning-input-tab active' : 'planning-input-tab'}
+                    onClick={() => setPlanningInputTab('generation')}
+                    onKeyDown={handlePlanningInputTabKeyDown}
+                  >
+                    Plan erzeugen
+                  </button>
+                </div>
                 <div className="planning-selectors">
-                  <SelectField label={`Fokussierte ${label('course.singular')}`} value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ' — nicht verfügbar' : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — dem ausgewählten Semester nicht zugeordnet' : ''}`} onChange={(value) => requestCourseChange(Number(value))} disabled={contextBusy} />
+                  {planningInputTab === 'course' && <SelectField label={`Fokussierte ${label('course.singular')}`} value={selectedCourseId ?? ''} options={selectableCourses} getLabel={(course) => `${course.name}${course.availability?.available === false ? ' — nicht verfügbar' : ''}${course.id === selectedCourseId && courseSelectionInvalid ? ' — dem ausgewählten Semester nicht zugeordnet' : ''}`} onChange={(value) => requestCourseChange(Number(value))} disabled={contextBusy} />}
                   <SelectField label="Semester" value={selectedSemesterId ?? ''} options={planningOptions.semesters} getLabel={(semester) => `${semester.name}${semester.id === selectedSemesterId && semesterSelectionMissing ? ' — nicht verfügbar' : ''}`} onChange={(value) => requestSemesterChange(Number(value))} disabled={contextBusy} />
                 </div>
-                <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading} busy={batchPreparing || batchExecuting} disabledReason={constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
-                {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
-                <section className="focused-course-planning" aria-label={`Details für ${label('course.singular')}`}>
-                    <h3>Details und Regeln der fokussierten {label('course.singular')}</h3>
+                <section
+                  id="planning-panel-course"
+                  className="planning-input-tab-panel focused-course-planning"
+                  role="tabpanel"
+                  aria-labelledby="planning-tab-course"
+                  hidden={planningInputTab !== 'course'}
+                >
+                    <h3>{label('course.singular')} bearbeiten</h3>
                     <PlanningSummary course={selectedCourse} semester={selectedSemester} progress={selectedProgress} progressUnavailableLabel={overviewRefreshError ? 'Nicht verfügbar' : 'Wird geladen…'} />
                     {selectedExamState && <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={examConfigurationBusy} saving={examBusy} onSave={handleExamConfiguration} />}
                     {selectedExamState?.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Prüfung manuell eintragen</button>}
@@ -1423,6 +1468,16 @@ export function CourseSchedulePage({
                     {progressAnnouncement && <p className="mutation-feedback" role="status" aria-live="polite">{progressAnnouncement}</p>}
                     {generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={constraintsLoading || batchPreparing || batchExecuting} onSave={handleSaveGenerationConstraints} onClear={handleClearGenerationConstraints} onDirtyChange={setConstraintsDirty} />}
                     {errors.length > 0 && <ErrorList errors={errors} />}
+                </section>
+                <section
+                  id="planning-panel-generation"
+                  className="planning-input-tab-panel"
+                  role="tabpanel"
+                  aria-labelledby="planning-tab-generation"
+                  hidden={planningInputTab !== 'generation'}
+                >
+                  <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading} busy={batchPreparing || batchExecuting} disabledReason={constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
+                  {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
                 </section>
               </>
             ) : <p className="empty-state">{optionsLoading ? 'Planungsoptionen werden geladen…' : 'Planungsoptionen sind nicht verfügbar.'}</p>}

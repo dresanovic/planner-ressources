@@ -326,6 +326,36 @@ dt,
   margin-top: 18px;
 }
 
+.planning-input-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 18px;
+  border-bottom: 1px solid #dfe4eb;
+  padding-bottom: 6px;
+}
+
+.planning-input-tab {
+  min-width: 0;
+  background: #edf2f8;
+  color: #314154;
+  overflow-wrap: anywhere;
+}
+
+.planning-input-tab.active {
+  background: #075fc4;
+  color: #ffffff;
+}
+
+.planning-input-tab:focus-visible {
+  outline: 3px solid #8bbcf2;
+  outline-offset: 2px;
+}
+
+.planning-input-tab-panel[hidden] {
+  display: none !important;
+}
+
 .selector-field {
   display: grid;
   gap: 4px;
