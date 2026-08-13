@@ -42,7 +42,7 @@ export function MultiCourseGenerationPanel({
   return (
     <section className="multi-course-panel" aria-labelledby="multi-course-title">
       <div className="section-heading">
-        <h3 id="multi-course-title">Konfliktfreie Semesteroptimierung</h3>
+        <h3 id="multi-course-title">Stundenpläne erzeugen</h3>
         <button type="button" className="secondary-button" onClick={() => onChange([])} disabled={disabled || count === 0}>
           Auswahl aufheben
         </button>
@@ -73,8 +73,8 @@ export function MultiCourseGenerationPanel({
           )
         })}
       </div>
-      <p className={valid ? 'selection-count' : 'selection-count selection-invalid'}>
-        {count} ausgewählt {valid ? '' : `— wählen Sie 1 bis 20 ${label('course.plural')}`}
+      <p className={valid ? 'selection-count' : 'selection-count selection-invalid'} aria-live="polite">
+        {count} ausgewählt {valid ? `— ${count === 1 ? 'Einzelplanung' : 'gemeinsame Planung'}` : `— wählen Sie 1 bis 20 ${label('course.plural')}`}
       </p>
       {onUnavailableDatesInputChange && (
         <label className="constraint-field">
