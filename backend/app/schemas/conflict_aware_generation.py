@@ -118,8 +118,8 @@ class PreparedOptimizationCourseInput(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     course_id: int = Field(alias="courseId", ge=1)
-    expected_draft_schedule_id: int | None = Field(alias="expectedDraftScheduleId")
-    expected_draft_revision: int | None = Field(alias="expectedDraftRevision", ge=1)
+    expected_draft_schedule_id: int | None = Field(default=None, alias="expectedDraftScheduleId")
+    expected_draft_revision: int | None = Field(default=None, alias="expectedDraftRevision", ge=1)
     input_snapshot_token: str = Field(alias="inputSnapshotToken", min_length=1)
 
     @model_validator(mode="after")
@@ -136,8 +136,55 @@ class OptimizationGenerationRequest(BaseModel):
     schedule_revision_id: int = Field(alias="scheduleRevisionId", ge=1)
     unavailable_dates: list[date] = Field(alias="unavailableDates")
     shared_snapshot_token: str = Field(alias="sharedSnapshotToken", min_length=1)
-    replacement_confirmed: bool = Field(alias="replacementConfirmed")
     courses: list[PreparedOptimizationCourseInput]
+
+
+class AcceptRegenerationRequest(OptimizationGenerationRequest):
+    candidate_fingerprint: str = Field(
+        alias="candidateFingerprint", pattern=r"^[0-9a-f]{64}$"
+    )
+
+
+class CoverageFacts(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    required_units: int = Field(alias="requiredUnits", ge=0)
+    scheduled_units: int = Field(alias="scheduledUnits", ge=0)
+    remaining_units: int = Field(alias="remainingUnits", ge=0)
+    status: Literal["complete", "partial"]
+
+
+class ResolvedWarning(BaseModel):
+    code: str
+    count: int = Field(ge=1)
+
+
+class CourseRegenerationComparison(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    course_id: int = Field(alias="courseId", ge=1)
+    course_name: str | None = Field(alias="courseName")
+    current: CoverageFacts
+    generated: CoverageFacts
+    resolved_current_warnings: list[ResolvedWarning] = Field(
+        alias="resolvedCurrentWarnings"
+    )
+    remaining_reasons: list[BlockingReason] = Field(alias="remainingReasons")
+
+
+class RegenerationComparison(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    selected_course_ids: list[int] = Field(alias="selectedCourseIds")
+    current: CoverageFacts
+    generated: CoverageFacts
+    courses: list[CourseRegenerationComparison]
+    replaces_all_selected_sessions: Literal[True] = Field(
+        default=True, alias="replacesAllSelectedSessions"
+    )
+    may_replace_planner_edits: Literal[True] = Field(
+        default=True, alias="mayReplacePlannerEdits"
+    )
 
 
 class CourseOptimizationOutcome(BaseModel):
@@ -174,17 +221,22 @@ class OptimizationSummary(BaseModel):
 class OptimizationGenerationResult(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
+    mode: Literal["direct_saved"] = "direct_saved"
     semester_id: int = Field(alias="semesterId")
     summary: OptimizationSummary
     outcomes: list[CourseOptimizationOutcome]
 
 
-class ReplacementConfirmationRequired(BaseModel):
+class OptimizationDecisionRequiredResult(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    code: Literal["REPLACEMENT_CONFIRMATION_REQUIRED"] = "REPLACEMENT_CONFIRMATION_REQUIRED"
-    message: str
-    replacement_course_ids: list[int] = Field(alias="replacementCourseIds")
+    mode: Literal["decision_required"] = "decision_required"
+    saved: Literal[False] = False
+    candidate_fingerprint: str = Field(
+        alias="candidateFingerprint", pattern=r"^[0-9a-f]{64}$"
+    )
+    prepared_evidence: OptimizationGenerationRequest = Field(alias="preparedEvidence")
+    comparison: RegenerationComparison
 
 
 class RequestFailureResponse(BaseModel):
@@ -196,6 +248,7 @@ class OptimizationOperationFailure(BaseModel):
         "OPTIMAL_RESULT_NOT_PROVEN",
         "OPTIMIZATION_MODEL_INVALID",
         "OPTIMIZATION_OPERATION_FAILED",
+        "NO_VALID_ALTERNATIVE",
     ]
     message: str
     saved: Literal[False] = False

@@ -1,4 +1,9 @@
-import type { OptimizationGenerationResult, OptimizationPreparation } from '../api/conflictAwareGeneration'
+import type {
+  OptimizationDecisionRequiredResult,
+  OptimizationGenerationResult,
+  OptimizationPreparation,
+  RegenerationComparison,
+} from '../api/conflictAwareGeneration'
 
 const effectiveConstraints = {
   courseId: 1,
@@ -24,6 +29,7 @@ export const optimizationPreparationFixture: OptimizationPreparation = {
 }
 
 export const optimizationResultFixture: OptimizationGenerationResult = {
+  mode: 'direct_saved',
   semesterId: 1,
   summary: { total: 2, complete: 1, improvedPartial: 1, unchanged: 0, failed: 0, stale: 0, scheduledUnits: 14, remainingUnits: 2, elapsedMilliseconds: 245, optimalForPreparedSnapshot: true },
   outcomes: [
@@ -41,4 +47,53 @@ export const mixedOptimizationResultFixture: OptimizationGenerationResult = {
     { courseId: 4, courseName: 'Security', status: 'failed', draftScheduleId: null, draftRevision: null, scheduledUnits: 0, remainingUnits: 4, saved: false, improvement: null, reasons: [], errors: [{ code: 'INVALID_PLANNING_INPUT', message: 'Course input is incomplete.' }] },
     { courseId: 5, courseName: 'Compilers', status: 'stale', draftScheduleId: 12, draftRevision: 5, scheduledUnits: 2, remainingUnits: 2, saved: false, improvement: null, reasons: [{ code: 'STALE_PLANNING_INPUT', message: 'Planning inputs changed.', relatedCount: 1 }], errors: [] },
   ],
+}
+
+export const regenerationComparisonFixture: RegenerationComparison = {
+  selectedCourseIds: [1, 2],
+  current: { requiredUnits: 16, scheduledUnits: 4, remainingUnits: 12, status: 'partial' },
+  generated: { requiredUnits: 16, scheduledUnits: 14, remainingUnits: 2, status: 'partial' },
+  replacesAllSelectedSessions: true,
+  mayReplacePlannerEdits: true,
+  courses: [
+    {
+      courseId: 1,
+      courseName: 'Algorithms',
+      current: { requiredUnits: 8, scheduledUnits: 0, remainingUnits: 8, status: 'partial' },
+      generated: { requiredUnits: 8, scheduledUnits: 8, remainingUnits: 0, status: 'complete' },
+      resolvedCurrentWarnings: [],
+      remainingReasons: [],
+    },
+    {
+      courseId: 2,
+      courseName: 'Databases',
+      current: { requiredUnits: 8, scheduledUnits: 4, remainingUnits: 4, status: 'partial' },
+      generated: { requiredUnits: 8, scheduledUnits: 6, remainingUnits: 2, status: 'partial' },
+      resolvedCurrentWarnings: [{ code: 'OUTSIDE_ALLOWED_WINDOW', count: 1 }],
+      remainingReasons: [{ code: 'ROOM_OCCUPIED', message: 'Geeignete Räume sind belegt.', relatedCount: 2 }],
+    },
+  ],
+}
+
+export const decisionRequiredGenerationFixture: OptimizationDecisionRequiredResult = {
+  mode: 'decision_required',
+  saved: false,
+  candidateFingerprint: 'a'.repeat(64),
+  preparedEvidence: {
+    semesterId: optimizationPreparationFixture.semesterId,
+    scheduleRevisionId: optimizationPreparationFixture.scheduleRevisionId,
+    unavailableDates: optimizationPreparationFixture.unavailableDates,
+    sharedSnapshotToken: optimizationPreparationFixture.sharedSnapshotToken,
+    courses: optimizationPreparationFixture.courses.map((course) => ({
+      courseId: course.courseId,
+      expectedDraftScheduleId: course.draftScheduleId,
+      expectedDraftRevision: course.draftRevision,
+      inputSnapshotToken: course.inputSnapshotToken,
+    })),
+  },
+  comparison: regenerationComparisonFixture,
+}
+
+export const directSavedGenerationFixture: OptimizationGenerationResult = {
+  ...optimizationResultFixture,
 }

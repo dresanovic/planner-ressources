@@ -19,7 +19,8 @@ describe('MultiCourseGenerationPanel', () => {
     const onDates = vi.fn()
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     act(() => root.render(<MultiCourseGenerationPanel courses={courses} selectedCourseIds={[1, 2]} unavailableDatesInput="" onUnavailableDatesInputChange={onDates} onChange={onChange} onGenerate={vi.fn()} />))
-    expect(document.body.textContent).toContain('2 ausgewählt')
+    expect(document.body.textContent).toContain('2 ausgewählt — gemeinsame Planung')
+    expect(document.body.textContent).toContain('Stundenpläne erzeugen')
     expect(document.body.textContent).toContain('Maximiert die geplanten Lehreinheiten')
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
     act(() => boxes[2].click())
@@ -79,6 +80,7 @@ describe('MultiCourseGenerationPanel', () => {
     }
 
     expect(input?.value).toBe('2026-10-26, 2026-11-02')
+    expect(document.body.textContent).toContain('1 ausgewählt — Einzelplanung')
   })
 
   it('explains a constraint-mutation guard without claiming generation is running', () => {

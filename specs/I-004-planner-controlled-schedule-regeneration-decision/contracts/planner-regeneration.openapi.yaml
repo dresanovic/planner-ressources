@@ -1,0 +1,554 @@
+openapi: 3.1.0
+info:
+  title: Planner-Controlled Schedule Regeneration Decision Contract
+  version: 1.0.0
+  description: >-
+    Stateless extension of unified teaching generation. Replacement selections
+    return an unsaved deterministic preview; approval revalidates and reproduces
+    that preview before atomically saving it. Wholly unplanned selections retain
+    direct save.
+servers:
+  - url: /
+paths:
+  /api/draft-schedules/optimization/prepare:
+    post:
+      summary: Prepare unified teaching generation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreparationRequest'
+      responses:
+        '200':
+          description: Canonical read-only prepared selection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preparation'
+        '409':
+          $ref: '#/components/responses/StaleOrLifecycleFailure'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+
+  /api/draft-schedules/optimization/generate:
+    post:
+      summary: Directly save or return an unsaved replacement preview
+      description: >-
+        Revalidates and solves the prepared selection. If no selected course has
+        saved teaching sessions, atomically saves the result. Otherwise returns
+        a generated-only comparison and fingerprint without changing schedules.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerationRequest'
+      responses:
+        '200':
+          description: Direct save or planner decision required
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/DirectSavedGeneration'
+                  - $ref: '#/components/schemas/DecisionRequiredGeneration'
+                discriminator:
+                  propertyName: mode
+        '409':
+          $ref: '#/components/responses/StaleOrLifecycleFailure'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+        '503':
+          description: No valid result was proven; nothing was saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationFailure'
+
+  /api/draft-schedules/optimization/accept:
+    post:
+      summary: Reproduce and atomically accept the compared joint result
+      description: >-
+        Revalidates the prepared snapshot, repeats the deterministic generated-only
+        solve, requires the canonical fingerprint to match, and atomically saves
+        every selected course result. The request never carries generated sessions.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptRegenerationRequest'
+      responses:
+        '200':
+          description: Complete selected result saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectSavedGeneration'
+        '409':
+          description: Planning state changed, fingerprint differs, or revision is not editable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '422':
+          $ref: '#/components/responses/ValidationFailure'
+        '503':
+          description: The compared result could not be reproduced; nothing was saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationFailure'
+
+components:
+  responses:
+    ValidationFailure:
+      description: Invalid selection or request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    StaleOrLifecycleFailure:
+      description: Prepared state is stale or revision is not active/editable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+  schemas:
+    PreparationRequest:
+      type: object
+      additionalProperties: false
+      required: [semesterId, scheduleRevisionId, courseIds, unavailableDates]
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        scheduleRevisionId:
+          type: integer
+          minimum: 1
+        courseIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+        unavailableDates:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            format: date
+
+    Preparation:
+      type: object
+      required:
+        - semesterId
+        - scheduleRevisionId
+        - unavailableDates
+        - sharedSnapshotToken
+        - courses
+        - replacementCourseIds
+      properties:
+        semesterId:
+          type: integer
+        scheduleRevisionId:
+          type: integer
+        unavailableDates:
+          type: array
+          items:
+            type: string
+            format: date
+        sharedSnapshotToken:
+          type: string
+          minLength: 1
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PreparedCourse'
+        replacementCourseIds:
+          description: Selected courses with at least one saved teaching session
+          type: array
+          uniqueItems: true
+          items:
+            type: integer
+
+    PreparedCourse:
+      type: object
+      required:
+        - courseId
+        - courseName
+        - draftScheduleId
+        - draftRevision
+        - scheduledUnits
+        - remainingUnits
+        - replacementRequired
+        - inputSnapshotToken
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          type: [string, 'null']
+        draftScheduleId:
+          type: [integer, 'null']
+        draftRevision:
+          type: [integer, 'null']
+        scheduledUnits:
+          type: integer
+          minimum: 0
+        remainingUnits:
+          type: integer
+          minimum: 0
+        replacementRequired:
+          type: boolean
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+
+    PreparedCourseInput:
+      type: object
+      additionalProperties: false
+      required:
+        - courseId
+        - inputSnapshotToken
+      properties:
+        courseId:
+          type: integer
+          minimum: 1
+        expectedDraftScheduleId:
+          type: [integer, 'null']
+        expectedDraftRevision:
+          type: [integer, 'null']
+        inputSnapshotToken:
+          type: string
+          minLength: 1
+
+    GenerationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - scheduleRevisionId
+        - unavailableDates
+        - sharedSnapshotToken
+        - courses
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        scheduleRevisionId:
+          type: integer
+          minimum: 1
+        unavailableDates:
+          type: array
+          items:
+            type: string
+            format: date
+        sharedSnapshotToken:
+          type: string
+          minLength: 1
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PreparedCourseInput'
+
+    AcceptRegenerationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - semesterId
+        - scheduleRevisionId
+        - unavailableDates
+        - sharedSnapshotToken
+        - courses
+        - candidateFingerprint
+      properties:
+        semesterId:
+          type: integer
+          minimum: 1
+        scheduleRevisionId:
+          type: integer
+          minimum: 1
+        unavailableDates:
+          type: array
+          items:
+            type: string
+            format: date
+        sharedSnapshotToken:
+          type: string
+          minLength: 1
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/PreparedCourseInput'
+        candidateFingerprint:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+
+    DirectSavedGeneration:
+      allOf:
+        - type: object
+          required: [mode]
+          properties:
+            mode:
+              const: direct_saved
+        - $ref: '#/components/schemas/SavedGenerationResult'
+
+    DecisionRequiredGeneration:
+      type: object
+      required:
+        - mode
+        - saved
+        - candidateFingerprint
+        - preparedEvidence
+        - comparison
+      properties:
+        mode:
+          const: decision_required
+        saved:
+          const: false
+        candidateFingerprint:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+        preparedEvidence:
+          $ref: '#/components/schemas/GenerationRequest'
+        comparison:
+          $ref: '#/components/schemas/RegenerationComparison'
+
+    RegenerationComparison:
+      type: object
+      required:
+        - selectedCourseIds
+        - current
+        - generated
+        - courses
+        - replacesAllSelectedSessions
+        - mayReplacePlannerEdits
+      properties:
+        selectedCourseIds:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: integer
+        current:
+          $ref: '#/components/schemas/CoverageFacts'
+        generated:
+          $ref: '#/components/schemas/CoverageFacts'
+        courses:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/CourseComparison'
+        replacesAllSelectedSessions:
+          const: true
+        mayReplacePlannerEdits:
+          const: true
+
+    CourseComparison:
+      type: object
+      required:
+        - courseId
+        - courseName
+        - current
+        - generated
+        - resolvedCurrentWarnings
+        - remainingReasons
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          type: [string, 'null']
+        current:
+          $ref: '#/components/schemas/CoverageFacts'
+        generated:
+          $ref: '#/components/schemas/CoverageFacts'
+        resolvedCurrentWarnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResolvedWarning'
+        remainingReasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlockingReason'
+
+    CoverageFacts:
+      type: object
+      required: [requiredUnits, scheduledUnits, remainingUnits, status]
+      properties:
+        requiredUnits:
+          type: integer
+          minimum: 0
+        scheduledUnits:
+          type: integer
+          minimum: 0
+        remainingUnits:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [complete, partial]
+
+    ResolvedWarning:
+      type: object
+      required: [code, count]
+      properties:
+        code:
+          type: string
+        count:
+          type: integer
+          minimum: 1
+
+    BlockingReason:
+      type: object
+      required: [code, message, relatedCount]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        relatedCount:
+          type: integer
+          minimum: 1
+        holidayDate:
+          type: string
+          format: date
+        holidayName:
+          type: string
+        sourceKind:
+          type: string
+          enum: [teaching_session, active_exam]
+        sourceId:
+          type: integer
+          minimum: 1
+
+    SavedGenerationResult:
+      type: object
+      required: [semesterId, summary, outcomes]
+      properties:
+        semesterId:
+          type: integer
+        summary:
+          $ref: '#/components/schemas/GenerationSummary'
+        outcomes:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: '#/components/schemas/SavedCourseOutcome'
+
+    GenerationSummary:
+      type: object
+      required:
+        - total
+        - complete
+        - improvedPartial
+        - unchanged
+        - failed
+        - stale
+        - scheduledUnits
+        - remainingUnits
+        - elapsedMilliseconds
+        - optimalForPreparedSnapshot
+      properties:
+        total:
+          type: integer
+        complete:
+          type: integer
+        improvedPartial:
+          type: integer
+        unchanged:
+          type: integer
+        failed:
+          type: integer
+        stale:
+          type: integer
+        scheduledUnits:
+          type: integer
+        remainingUnits:
+          type: integer
+        elapsedMilliseconds:
+          type: integer
+        optimalForPreparedSnapshot:
+          type: boolean
+
+    SavedCourseOutcome:
+      type: object
+      required:
+        - courseId
+        - courseName
+        - status
+        - draftScheduleId
+        - draftRevision
+        - scheduledUnits
+        - remainingUnits
+        - saved
+        - reasons
+        - errors
+      properties:
+        courseId:
+          type: integer
+        courseName:
+          type: [string, 'null']
+        status:
+          type: string
+          enum: [complete, improved_partial, unchanged, failed, stale]
+        draftScheduleId:
+          type: [integer, 'null']
+        draftRevision:
+          type: [integer, 'null']
+        scheduledUnits:
+          type: integer
+        remainingUnits:
+          type: integer
+        saved:
+          type: boolean
+        reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlockingReason'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Problem'
+
+    GenerationFailure:
+      type: object
+      required: [code, message, saved]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        saved:
+          const: false
+
+    ErrorEnvelope:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Problem'
+
+    Problem:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

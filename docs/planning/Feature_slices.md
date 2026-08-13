@@ -34,11 +34,19 @@ as `OUTSIDE RECOMMENDED WINDOW` omit the applicable range and next action. The
 next selected increment addresses this usability baseline before the remaining
 lecturer collaboration extensions and the substantially broader authentication
 and role-management scope in FS-016.
+Subsequent schedule-regeneration testing also exposed a decision gap: an
+automatic non-worsening rule can retain a complete but constraint-violating
+current schedule instead of offering a valid partial alternative. Planners need
+to see that trade-off and own the final atomic replacement decision.
 
 ### Product-level success
 
 - Planner users can create and maintain maximally complete semester schedules,
   understand conflicts and gaps, and retain publication control.
+- When regeneration produces an alternative to existing teaching schedules,
+  the planner can compare current and generated outcomes and explicitly accept
+  the complete generated selection or leave the complete current selection
+  unchanged.
 - A lecturer can use a secure temporary link to see every assigned teaching and
   exam session in one semester revision without seeing another lecturer's data.
 - A lecturer can provide session feedback, import a complete static schedule
@@ -88,6 +96,8 @@ releases.
 
 - Maintain the academic and resource data needed for scheduling without developer intervention.
 - Generate complete or maximally complete semester schedules for one or several courses.
+- Compare a valid regenerated alternative with the current selected schedules
+  and make the final operation-wide replacement decision.
 - Avoid lecturer, room, and cohort conflicts while respecting availability and capacity.
 - Understand remaining unscheduled units and why they could not be placed.
 - Correct schedules manually without losing saved generation constraints.
@@ -116,6 +126,8 @@ releases.
 - Manual Draft Session creation and deletion, complete course-schedule deletion, and remaining-unit tracking.
 - Global conflict-aware generation that maximizes scheduled units across the selected courses.
 - Persisted partial plans with understandable unscheduled-unit reasons.
+- Post-generation comparison and planner-controlled atomic replacement when at
+  least one selected course already has teaching sessions.
 - Institution-wide holiday avoidance.
 - Conflict-aware exam generation for explicitly enabled courses.
 - Versioned `Draft → Ready for review → Published` lifecycle controlled by the planner.
@@ -143,6 +155,8 @@ releases.
 - Allowing lecturers to edit schedules directly.
 - Requiring lecturer approval before a planner may publish.
 - Silently replacing an existing schedule with a worse result.
+- Combining independently accepted and rejected courses from one jointly
+  optimized multi-course alternative.
 - Automatically deleting or moving manually created sessions merely to improve optimization.
 - Treating publication as an irreversible final state.
 - Provider-specific integration behavior before a provider is selected.
@@ -253,6 +267,12 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
   known, and a concrete next action. Internal codes, stack traces, secret values,
   and raw infrastructure details are not user-facing explanations.
 - The existing FastAPI, SQLAlchemy, React, and Vite technology standards and the project constitution remain binding for later specification and implementation.
+- A regenerated alternative is never persisted over existing selected
+  schedules before the planner explicitly accepts it. Cancelling or dismissing
+  the comparison retains the complete current selection.
+- A generated alternative must satisfy every currently active hard scheduling
+  constraint. Planner authority permits retaining an older warned schedule; it
+  does not permit the generator to offer a newly invalid candidate.
 
 ## Slice map
 
@@ -275,11 +295,12 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented             |
 | 16 | FS-019 | Streamlined Schedule Workspace | Use focused Schedule destinations and in-pane session correction | FS-013, FS-014, FS-018 | Implemented — manual acceptance evidence pending |
 | 17 | FS-022 | Consistent Labels, European Dates, and Actionable Messages | Understand interface wording, dates, warnings, and failures consistently | FS-019 | Specified — tasks complete; ready for implementation |
-| 18 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Ready for specification — implemented baseline retained |
-| 19 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Ready for specification |
-| 20 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
-| 21 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015, FS-020, FS-021 | Proposed — later release |
-| 22 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
+| 18 | FS-023 | Planner-Controlled Schedule Regeneration Decision | Compare and atomically accept or reject a valid regenerated alternative | FS-010 through FS-013, FS-019, FS-022 | Ready for specification |
+| 19 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Ready for specification — implemented baseline retained |
+| 20 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Ready for specification |
+| 21 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
+| 22 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015, FS-020, FS-021 | Proposed — later release |
+| 23 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
 **Recommended first slice:** `FS-022 – Consistent Labels, European Dates, and Actionable Messages` (initiative artifact directory: `specs/I-002/`)
 
@@ -1136,8 +1157,13 @@ This is the primary next scheduling outcome and replaces request-order-only inde
 - Maximize the total number of scheduled units across the selected courses.
 - Save valid partial plans when complete plans are impossible.
 - Report remaining units and understandable blocking reasons by course.
-- Preserve an existing schedule when a candidate would schedule fewer units.
-- Allow equal-unit replacement only when it reduces conflicts or improves preference compliance; otherwise keep the current schedule.
+- Preserve an existing schedule when a candidate would schedule fewer units in
+  the implemented automatic-replacement baseline. FS-023 supersedes this
+  automatic persistence decision with explicit planner comparison and choice.
+- Allow equal-unit automatic replacement only when it reduces conflicts or
+  improves preference compliance in the implemented baseline; FS-023 requires
+  planner acceptance before any regenerated alternative replaces existing
+  selected schedules.
 - Retain explicit same-semester replacement confirmation and stale-data safeguards.
 - Expose a future unavailable-date input so holidays can be added without redesigning the optimizer.
 
@@ -1147,7 +1173,13 @@ This is the primary next scheduling outcome and replaces request-order-only inde
 
 #### Main workflow
 
-The planner selects courses and a semester, reviews replacement implications, and starts conflict-aware generation. The system evaluates selected courses together against existing schedules and availability, saves complete or partial improvements, preserves non-improvements, and reports scheduled and remaining units with reasons.
+The planner selects courses and a semester, reviews replacement implications,
+and starts conflict-aware generation. The implemented baseline evaluates
+selected courses together against existing schedules and availability, saves
+complete or partial improvements, preserves non-improvements, and reports
+scheduled and remaining units with reasons. FS-023 changes only the final
+replacement decision for regenerated alternatives: the planner compares and
+accepts the joint result before it is persisted over existing selected work.
 
 #### Business rules
 
@@ -1155,7 +1187,9 @@ The planner selects courses and a semester, reviews replacement implications, an
 - Capacity, semester, and active-window rules remain applicable.
 - Existing unselected and manual sessions are constraints, not automatically movable items.
 - The primary objective is greatest total scheduled units across the selection.
-- Preference improvement never justifies scheduling fewer units.
+- Preference improvement never justifies automatically replacing a schedule
+  with fewer units. Under FS-023, the planner may explicitly accept a valid
+  partial alternative after seeing the completeness and constraint trade-off.
 - Course results must distinguish complete, improved partial, unchanged, and failed/stale outcomes.
 
 #### Data inputs and outputs
@@ -1181,7 +1215,10 @@ Existing multi-course preparation/results and the remaining-hours concepts in th
 
 #### Completion outcome
 
-The planner receives a conflict-aware semester result that maximizes scheduled units, retains valid partial work, explains gaps, and never silently worsens an existing course schedule.
+The planner receives a conflict-aware semester result that maximizes scheduled
+units, retains valid partial work, explains gaps, and never silently worsens an
+existing course schedule. After FS-023, any replacement of existing selected
+work additionally requires the planner's explicit post-generation acceptance.
 
 #### Open clarification topics
 
@@ -1202,9 +1239,9 @@ Use $speckit-specify to create the specification for FS-010: Conflict-Aware Seme
 Product context: FS-006 generates selected courses independently. The next scheduling outcome must reason globally across a semester and save useful partial work.
 Outcome: Maximize scheduled teaching units across selected courses without generating lecturer, room, or cohort overlaps.
 Actors: Planner user.
-In scope: Global selected-course optimization; existing selected/unselected/manual sessions as fixed occupancy; lecturer/room availability; multiple eligible resources; contiguous lecturer and same-room preferences; complete and partial saved plans; remaining units and reasons; non-worsening replacement; equal-unit replacement only for a better arrangement; confirmation/stale protection; future unavailable-date input.
+In scope: Global selected-course optimization; existing selected/unselected/manual sessions as fixed occupancy; lecturer/room availability; multiple eligible resources; contiguous lecturer and same-room preferences; complete and partial saved plans; remaining units and reasons; the implemented automatic non-worsening replacement baseline; confirmation/stale protection; future unavailable-date input. FS-023 separately owns the post-generation planner decision that supersedes automatic replacement when existing selected schedules are present.
 Out of scope: Holiday data, exams, automatic deletion/movement of existing sessions, and unexplained schedule worsening.
-Rules: Maximize total scheduled units; generated candidates are conflict-free; fewer-unit candidates never replace existing schedules; unchanged outcomes preserve data.
+Rules: Maximize total scheduled units; generated candidates are conflict-free; in the implemented FS-010 baseline fewer-unit candidates never replace existing schedules; unchanged outcomes preserve data. After FS-023, a valid fewer-unit candidate may replace existing selected schedules only through explicit planner acceptance of the complete joint result.
 Dependencies: FS-008 and FS-009.
 Completion: The planner gets a measurable conflict-aware result, understandable gaps, and no silent regression of existing plans.
 Clarification topics: Fairness guardrails, deterministic tie-breaking, zero-placement representation, and performance/selection limits.
@@ -2782,6 +2819,192 @@ functional requirements, accessibility behavior, edge cases, assumptions, and
 measurable success criteria without implementation details or scope expansion.
 ```
 
+### FS-023: Planner-Controlled Schedule Regeneration Decision
+
+#### User or business outcome
+
+A planner can compare the complete current selection with a valid jointly
+regenerated alternative and make the final atomic decision to accept the new
+plan or retain everything currently saved.
+
+#### Rationale for this slice boundary
+
+The implemented optimizer's automatic non-worsening rule treats scheduled-unit
+coverage as the dominant replacement criterion. That can preserve a complete
+but constraint-violating current schedule when a valid partial alternative is
+operationally preferable. Candidate generation and planner replacement
+authority form one independently valuable decision workflow without changing
+manual editing, publication, or the underlying hard-constraint definitions.
+
+#### Primary actors
+
+- Planner user.
+
+#### Preconditions
+
+- FS-010 through FS-012 provide conflict-aware teaching generation, holiday
+  avoidance, exam occupancy, and understandable partial outcomes.
+- FS-013 provides the active Working revision and stale-write protection.
+- FS-019 provides the Schedule workspace and generation controls.
+- FS-022 provides actionable German message conventions.
+
+#### In scope
+
+- Use the same unified conflict-aware generator for a selection of one or
+  several courses.
+- Treat all current active course constraints, study-type time windows, course
+  date boundaries, semester boundaries, holidays, resource eligibility and
+  availability, room capacity, unselected teaching sessions, and active exams
+  as authoritative hard generation inputs.
+- Never offer a generated alternative containing a hard-constraint violation,
+  including a lecturer, room, or cohort overlap.
+- When at least one selected course has existing teaching sessions, keep the
+  generated alternative uncommitted and show one post-generation comparison
+  before replacing anything.
+- Explain why a planner decision is required and compare current versus
+  generated results for the complete selection, including per-course scheduled
+  and required teaching units, complete or partial status, remaining units and
+  reasons, and current hard-constraint warnings resolved by the alternative.
+- Show the same comparison even when the generated result appears objectively
+  better, so the replacement rule and planner control remain consistent.
+- Offer exactly the decision actions `Neu erzeugten Stundenplan übernehmen`
+  and `Abbrechen`. No written justification or separate keep-current button is
+  required.
+- Make `Abbrechen`, dialog dismissal, or leaving the unresolved comparison
+  discard the complete generated alternative and leave the complete current
+  selection unchanged.
+- Make acceptance replace existing schedules and create schedules for
+  previously unplanned courses in the selected set as one atomic operation.
+- Permit explicit acceptance of a valid partial alternative with fewer
+  scheduled units than the current schedule when the planner judges resolved
+  violations more important than completeness.
+- Revalidate revision and relevant planning state before acceptance; stale
+  state prevents replacement and directs the planner to regenerate.
+- When none of the selected courses has an existing teaching schedule, retain
+  the established direct-save generation behavior because there is no current
+  alternative to compare.
+- When no valid generated alternative can be produced, preserve the current
+  selection and report the blocking reasons without presenting a misleading
+  replacement choice.
+
+#### Out of scope
+
+- Per-course accept/reject choices inside one jointly optimized operation.
+- Combining current sessions from rejected courses with generated sessions
+  from accepted courses.
+- Offering or accepting a newly generated candidate with hard conflicts.
+- Requiring a comment, reason, approval signature, or decision-history entry.
+- Automatically repairing, deleting, or moving the retained current schedule
+  after cancellation.
+- Changing manual session-editing permissions, lifecycle transitions, or
+  publication authority.
+
+#### Main workflow
+
+The planner selects one or several courses and starts generation. The system
+optimizes the complete selection against active constraints and fixed semester
+occupancy without changing saved sessions. If existing selected sessions are
+present and a valid alternative is available, a simple comparison explains the
+coverage and constraint trade-off. The planner chooses `Neu erzeugten
+Stundenplan übernehmen` to atomically replace the complete selected result, or
+chooses `Abbrechen` or dismisses the dialog to discard the candidate and keep
+the complete current result.
+
+#### Business rules
+
+- The planner, not an automatic coverage or preference tie-break, makes every
+  replacement decision after a regenerated alternative exists.
+- One multi-course solve produces one indivisible acceptance decision.
+- Acceptance is all-or-nothing across the selected course set.
+- Cancellation is non-mutating and implies retention of the current schedules.
+- Generated validity is not negotiable: planner choice can retain an older
+  warned schedule but cannot authorize a newly invalid candidate.
+- Completeness and validity are separate comparison dimensions. Fewer scheduled
+  units do not disqualify a valid candidate from explicit planner acceptance.
+- The comparison must not label either result simply as better when the result
+  has competing advantages; it presents concrete counts, warnings, and effects.
+- Existing selected manual sessions are part of the current result and are
+  replaced only if the planner accepts the complete generated alternative; the
+  comparison must state that consequence.
+- A stale candidate never replaces newer schedule or constraint state.
+
+#### Data inputs and outputs
+
+Inputs are the selected courses, active Working revision, current selected and
+unselected teaching sessions, active exams, holidays, current course and
+study-type constraints, resources and availability, and the planner's binary
+decision. Outputs are either one atomically persisted generated selection or
+the unchanged current selection, plus an understandable generation/comparison
+summary. A cancelled candidate creates no schedule or decision-history record.
+
+#### Integrations
+
+None.
+
+#### UI references
+
+- Reuse the implemented `Stundenpläne erzeugen` selection and generation
+  surface in `CourseSchedulePage`.
+- Replace the pre-generation replacement implication as the authoritative
+  decision point with one simple post-generation comparison dialog.
+- Reuse the precise conflict and actionable-message conventions established by
+  FS-022; do not introduce another schedule-generation workflow.
+
+#### Constraints and assumptions
+
+- Consistent operation-wide acceptance is deliberately preferred over
+  per-course decisions because independently mixing a joint optimizer's output
+  can invalidate its conflict guarantees.
+- Showing the dialog for every regeneration with existing selected sessions is
+  deliberately preferred over conditional dialog rules.
+- The planner needs decision evidence, not a mandatory textual justification.
+- The generated alternative remains provisional until acceptance and must not
+  become visible as the saved Working revision in other views.
+
+#### Dependencies
+
+- FS-010 through FS-013, FS-019, and FS-022.
+
+#### Completion outcome
+
+A planner can intentionally retain a complete but warned current plan or accept
+a valid partial regenerated plan after seeing the concrete trade-off, and a
+multi-course decision can never leave a partially applied or newly conflicting
+schedule.
+
+#### Open clarification topics
+
+None. Candidate transport and temporary representation are implementation
+decisions as long as provisional data is not persisted as the current Working
+revision before acceptance.
+
+#### Specification status
+
+Ready for specification.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for FS-023: Planner-Controlled Schedule Regeneration Decision.
+
+Product context: The conflict-aware optimizer currently applies an automatic non-worsening replacement rule. A complete current schedule with hard-constraint warnings can therefore be retained instead of a valid partial alternative. The planner must see the trade-off and make the final decision without weakening generated-schedule validity or multi-course conflict guarantees.
+Product-level success: Whenever regeneration proposes replacing existing selected teaching sessions, the planner compares the complete current selection with one valid jointly generated alternative and atomically accepts the new result or leaves all current work unchanged.
+User or business outcome: Give the planner final authority over whether a valid regenerated alternative replaces existing selected schedules.
+Primary actors: Planner user.
+In scope: The unified one-course/multi-course conflict-aware generator; every current active course, study-type, semester, holiday, resource, capacity, availability, fixed unselected teaching-session, and active-exam constraint; hard-valid generated candidates only; provisional generation when at least one selected course has existing sessions; one post-generation operation-wide and per-course comparison of scheduled/required units, complete/partial status, remaining reasons, and resolved current violations; the same dialog for every such regeneration; exactly `Neu erzeugten Stundenplan übernehmen` and `Abbrechen`; dismissal as cancellation; atomic acceptance across existing and previously unplanned selected courses; explicit acceptance of a valid fewer-unit result; stale-state rejection; direct save when no selected course has an existing schedule; preservation plus reasons when no valid candidate exists.
+Out of scope: Per-course choices within one solve; mixing accepted generated and rejected current course results; generated hard conflicts; mandatory comments or decision history; automatic repair after cancellation; manual-editing, lifecycle, or publication changes.
+Main workflow: Select courses and generate without mutating saved sessions. If current selected sessions and a valid candidate exist, compare both complete outcomes. Accept the generated selection atomically or cancel/dismiss to discard it and retain everything current.
+Business rules: The planner makes every replacement decision; a joint solve has one indivisible decision; cancellation never mutates; generated candidates always satisfy active hard constraints; an older warned plan may be retained; a valid partial candidate remains selectable even with fewer units; comparisons present facts rather than declaring a winner; accepting replaces selected manual sessions too; stale candidates cannot commit.
+Data inputs and outputs: Selected courses, Working revision, current semester teaching and exam occupancy, holidays, active constraints, resources, availability, and the binary planner choice produce either one atomically saved generated selection or no schedule change, with an actionable comparison/result summary.
+External systems and integrations: None.
+UI references: Reuse `Stundenpläne erzeugen` in CourseSchedulePage and FS-022 actionable German message patterns. The simple post-generation comparison is the authoritative replacement decision; do not build another generator.
+Dependencies and assumptions: FS-010 through FS-013, FS-019, and FS-022. Operation-wide acceptance and an always-shown comparison for regeneration with existing selected sessions are confirmed. No written justification is required.
+Completion outcome: A planner can choose between a complete warned current plan and a valid partial alternative without any partial multi-course application, silent replacement, or generated hard conflict.
+Known clarification topics: None. Candidate transport and temporary representation remain implementation decisions, provided provisional data is not exposed as the saved Working revision.
+
+Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define independently testable scenarios, functional requirements, edge cases, atomicity and stale-state behavior, accessibility expectations, and measurable success criteria without choosing an algorithm or persistence mechanism.
+```
+
 ## Deferred scope
 
 - **Automated email delivery**: FS-015 and FS-021 deliberately use
@@ -2821,12 +3044,15 @@ measurable success criteria without implementation details or scope expansion.
   continue to expose the exported schedule after link expiry or revocation.
 - Planner-entered or planner-approved availability remains authoritative until
   FS-017 defines ownership for synchronized fields.
-- Optimization fairness and deterministic tie-breaking can be clarified within FS-010 without changing its global-maximization boundary.
+- Optimization fairness and deterministic candidate tie-breaking can be
+  clarified within FS-010 without changing its global-maximization boundary;
+  FS-023 owns the later planner-controlled persistence decision.
 
 ## Change history
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-08-12 | New slice and product-level scheduling decision change | FS-023, FS-010 | Added a post-generation comparison that lets the planner atomically accept one valid joint regenerated result or cancel to retain the complete current selection; documented that this supersedes FS-010's automatic non-worsening persistence rule without weakening hard-constraint validation. | A complete current schedule can contain active-window or other hard-constraint warnings while a valid partial alternative is operationally preferable; completeness alone must not silently decide the replacement, and per-course acceptance would break joint conflict guarantees. |
 | 2026-08-10 | New, specified, and clarified slice; product-level usability scope change; reordered slice | FS-022, FS-015, FS-020, FS-021, FS-016, FS-017 | Added and clarified German application wording with deployment-time customer terminology overrides, European date display and entry, and actionable German messages as the selected initiative, with detailed artifacts in `specs/I-002/`; shifted the remaining not-yet-specified slices later without changing their IDs or dependencies. | Resolve demonstrated cross-workflow comprehension problems before extending more workflows, while keeping runtime language switching, full translation management, machine contracts, and business rules outside the slice. |
 | 2026-07-31 | Product-level scope change, updated slice, new slices, scope reconciliation, reordered later slice | FS-015, FS-016, FS-019, FS-020, FS-021 | Added the missing implemented FS-019 workspace with its pending manual acceptance status; broadened FS-015 into the shared lecturer calendar/list and Lecturer coordination experience; added static iCalendar export and whole-day lecturer unavailability submissions; made FS-016 reuse the completed accountless workflows. | Complete the accountless lecturer collaboration loop through reused components before introducing authentication, while preserving planner authority and separating review, export, and pre-planning availability into coherent vertical outcomes. |
 | 2026-07-31 | Status correction | FS-009–FS-012, FS-014, FS-018 | Aligned detailed-section statuses with the existing implemented statuses in the slice map. | Remove pre-existing internal contradictions without changing the confirmed slice outcomes. |

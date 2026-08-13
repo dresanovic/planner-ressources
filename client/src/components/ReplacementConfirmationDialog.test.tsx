@@ -3,80 +3,90 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ReplacementConfirmationDialog } from './ReplacementConfirmationDialog'
-import { optimizationPreparationFixture } from '../test/optimizationFixtures'
+import { decisionRequiredGenerationFixture } from '../test/optimizationFixtures'
 
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('ReplacementConfirmationDialog', () => {
-  it('identifies affected courses, explains protection, and supports cancellation', () => {
+  it('shows factual aggregate and per-course comparison with only the atomic actions', () => {
     const cancel = vi.fn()
     const root = createRoot(document.body.appendChild(document.createElement('div')))
-    act(() => root.render(<ReplacementConfirmationDialog preparation={optimizationPreparationFixture} onConfirm={vi.fn()} onCancel={cancel} />))
+    act(() => root.render(
+      <ReplacementConfirmationDialog
+        preview={decisionRequiredGenerationFixture}
+        onAccept={vi.fn()}
+        onCancel={cancel}
+      />,
+    ))
+
+    expect(document.body.textContent).toContain('Aktueller Stundenplan')
+    expect(document.body.textContent).toContain('Neu erzeugter Stundenplan')
+    expect(document.body.textContent).toContain('Algorithms')
     expect(document.body.textContent).toContain('Databases')
-    expect(document.body.textContent).not.toContain('Algorithms')
-    expect(document.body.textContent).toContain('manuelle Terminänderungen')
-    expect(document.body.textContent).toContain('Lehreinheiten nicht abnehmen')
-    const button = [...document.querySelectorAll('button')].find((item) => item.textContent === 'Abbrechen')
-    act(() => button?.click())
+    expect(document.body.textContent).toContain('16')
+    expect(document.body.textContent).toContain('Aktuelle Regelverletzung: OUTSIDE_ALLOWED_WINDOW')
+    expect(document.body.textContent).toContain('Geeignete Räume sind belegt.')
+    expect(document.body.textContent).toContain('plannerseitig erstellter oder bearbeiteter Termine')
+    expect(document.body.textContent).not.toContain('besser')
+    expect(document.body.textContent).not.toContain('Optimierung bestätigen')
+    const labels = [...document.querySelectorAll('button')].map((button) => button.textContent)
+    expect(labels).toContain('Neu erzeugten Stundenplan übernehmen')
+    expect(labels).toContain('Abbrechen')
+    act(() => [...document.querySelectorAll('button')].find((item) => item.textContent === 'Abbrechen')?.click())
     expect(cancel).toHaveBeenCalledOnce()
   })
 
-  it('moves focus into the modal and supports Escape cancellation', () => {
+  it('keeps a lower-unit partial candidate selectable', () => {
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    act(() => root.render(
+      <ReplacementConfirmationDialog
+        preview={decisionRequiredGenerationFixture}
+        onAccept={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    ))
+    const accept = [...document.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent === 'Neu erzeugten Stundenplan übernehmen')
+    expect(accept?.disabled).toBe(false)
+  })
+
+  it('moves focus into the modal, traps Tab, and supports Escape cancellation', () => {
     const cancel = vi.fn()
     const opener = document.body.appendChild(document.createElement('button'))
     opener.focus()
     const root = createRoot(document.body.appendChild(document.createElement('div')))
-    act(() => root.render(<ReplacementConfirmationDialog preparation={optimizationPreparationFixture} onConfirm={vi.fn()} onCancel={cancel} />))
+    act(() => root.render(
+      <ReplacementConfirmationDialog
+        preview={decisionRequiredGenerationFixture}
+        onAccept={vi.fn()}
+        onCancel={cancel}
+      />,
+    ))
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]')
+    const controls = [...(dialog?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? [])]
     expect(document.activeElement).toBe(dialog)
+    act(() => dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true })))
+    expect(document.activeElement).toBe(controls.at(-1))
+    act(() => controls.at(-1)?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })))
+    expect(document.activeElement).toBe(controls[0])
     act(() => dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
     expect(cancel).toHaveBeenCalledOnce()
   })
 
-  it('contains reverse and forward tab navigation from the initial dialog focus', () => {
-    const root = createRoot(document.body.appendChild(document.createElement('div')))
-    act(() => root.render(<ReplacementConfirmationDialog preparation={optimizationPreparationFixture} onConfirm={vi.fn()} onCancel={vi.fn()} />))
-    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')
-    const controls = [...(dialog?.querySelectorAll<HTMLButtonElement>('button') ?? [])]
-    expect(document.activeElement).toBe(dialog)
-
-    act(() => dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true })))
-    expect(document.activeElement).toBe(controls[1])
-
-    act(() => controls[1]?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })))
-    expect(document.activeElement).toBe(controls[0])
-  })
-
-  it('keeps focus in the dialog while its controls are disabled', () => {
-    const onConfirm = vi.fn()
-    const onCancel = vi.fn()
+  it('keeps focus in the dialog and disables every action while acceptance is in flight', () => {
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     act(() => root.render(
       <ReplacementConfirmationDialog
-        preparation={optimizationPreparationFixture}
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-      />,
-    ))
-    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')
-    const confirmButton = [...document.querySelectorAll<HTMLButtonElement>('button')]
-      .find((button) => button.textContent === 'Optimierung bestätigen')
-    act(() => confirmButton?.focus())
-    expect(document.activeElement).toBe(confirmButton)
-
-    act(() => root.render(
-      <ReplacementConfirmationDialog
-        preparation={optimizationPreparationFixture}
+        preview={decisionRequiredGenerationFixture}
         disabled
-        onConfirm={onConfirm}
-        onCancel={onCancel}
+        onAccept={vi.fn()}
+        onCancel={vi.fn()}
       />,
     ))
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')
+    expect([...document.querySelectorAll<HTMLButtonElement>('button')].every((button) => button.disabled)).toBe(true)
     expect(document.activeElement).toBe(dialog)
-
     act(() => dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })))
-    expect(document.activeElement).toBe(dialog)
-    act(() => dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true })))
     expect(document.activeElement).toBe(dialog)
   })
 })
