@@ -3,7 +3,9 @@ from datetime import date, datetime, time
 
 from app.services.schedule_generation import PlanningPeriodPlan, ResourceCandidatePlan, TimeWindowPlan
 from app.services.holiday_calendar import HolidayReference
-from app.services.semester_optimization import CurrentSession, FixedSession, generate_candidates, optimize_semester
+import pytest
+
+from app.services.semester_optimization import CurrentSession, FixedSession, NoGeneratedAlternative, generate_candidates, optimize_semester
 from tests.optimization_fixtures import SEMESTER_START, optimization_course
 
 
@@ -260,3 +262,56 @@ def test_too_short_study_type_windows_are_reported_precisely():
     assert {item.code for item in candidates.evidence} == {
         "STUDY_TYPE_WINDOW_UNAVAILABLE"
     }
+
+
+def test_generated_only_mode_never_retains_current_or_enforces_its_unit_floor():
+    current = CurrentSession(
+        1, 1, 1, 1, SEMESTER_START, time(8), time(11, 30), 4, 1, 0
+    )
+    course = replace(
+        optimization_course(1, total_units=4, min_units=2, max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START),
+        windows=(TimeWindowPlan(1, 0, time(8), time(10)),),
+        current_sessions=(current,),
+    )
+
+    result = optimize_semester(
+        [course], [], deadline_seconds=10, generated_only=True
+    )
+
+    assert result.total_units == 2
+    assert result.courses[0].retained_current is False
+    assert [item.units for item in result.courses[0].sessions] == [2]
+
+
+def test_generated_only_mode_allows_zero_for_one_course_in_nonempty_joint_result():
+    blocked = replace(
+        optimization_course(1, total_units=2, min_units=2, max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START),
+    )
+    available = replace(
+        optimization_course(2, total_units=2, min_units=2, max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START),
+    )
+    fixed = FixedSession(99, 1, 1, 1, SEMESTER_START, time(8), time(12))
+
+    result = optimize_semester(
+        [blocked, available], [fixed], deadline_seconds=10, generated_only=True
+    )
+
+    by_course = {item.course_id: item for item in result.courses}
+    assert by_course[1].scheduled_units == 0
+    assert by_course[2].scheduled_units == 2
+
+
+def test_generated_only_mode_rejects_an_all_zero_joint_result():
+    course = replace(
+        optimization_course(1, total_units=2, min_units=2, max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START),
+    )
+    fixed = FixedSession(99, 1, 1, 1, SEMESTER_START, time(8), time(12))
+
+    with pytest.raises(NoGeneratedAlternative):
+        optimize_semester(
+            [course], [fixed], deadline_seconds=10, generated_only=True
+        )
