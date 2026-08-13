@@ -61,6 +61,7 @@ export type CourseOptimizationOutcome = {
 }
 
 export type OptimizationGenerationResult = {
+  mode: 'direct_saved'
   semesterId: number
   summary: {
     total: number
@@ -76,6 +77,58 @@ export type OptimizationGenerationResult = {
   }
   outcomes: CourseOptimizationOutcome[]
 }
+
+export type CoverageFacts = {
+  requiredUnits: number
+  scheduledUnits: number
+  remainingUnits: number
+  status: 'complete' | 'partial'
+}
+
+export type ResolvedWarning = { code: string; count: number }
+
+export type CourseRegenerationComparison = {
+  courseId: number
+  courseName: string | null
+  current: CoverageFacts
+  generated: CoverageFacts
+  resolvedCurrentWarnings: ResolvedWarning[]
+  remainingReasons: BlockingReason[]
+}
+
+export type RegenerationComparison = {
+  selectedCourseIds: number[]
+  current: CoverageFacts
+  generated: CoverageFacts
+  courses: CourseRegenerationComparison[]
+  replacesAllSelectedSessions: true
+  mayReplacePlannerEdits: true
+}
+
+export type PreparedGenerationEvidence = {
+  semesterId: number
+  scheduleRevisionId: number
+  unavailableDates: string[]
+  sharedSnapshotToken: string
+  courses: {
+    courseId: number
+    expectedDraftScheduleId?: number | null
+    expectedDraftRevision?: number | null
+    inputSnapshotToken: string
+  }[]
+}
+
+export type OptimizationDecisionRequiredResult = {
+  mode: 'decision_required'
+  saved: false
+  candidateFingerprint: string
+  preparedEvidence: PreparedGenerationEvidence
+  comparison: RegenerationComparison
+}
+
+export type OptimizationGenerationResponse =
+  | OptimizationGenerationResult
+  | OptimizationDecisionRequiredResult
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -97,8 +150,7 @@ export async function prepareConflictAwareGeneration(
 
 export async function generateConflictAwareSchedules(
   preparation: OptimizationPreparation,
-  replacementConfirmed: boolean,
-): Promise<OptimizationGenerationResult> {
+): Promise<OptimizationGenerationResponse> {
   validateSelection(preparation.courses.map((course) => course.courseId))
   const response = await request(`${API_BASE}/api/draft-schedules/optimization/generate`, {
     method: 'POST',
@@ -108,13 +160,29 @@ export async function generateConflictAwareSchedules(
       scheduleRevisionId: preparation.scheduleRevisionId,
       unavailableDates: preparation.unavailableDates,
       sharedSnapshotToken: preparation.sharedSnapshotToken,
-      replacementConfirmed,
       courses: preparation.courses.map((course) => ({
         courseId: course.courseId,
         expectedDraftScheduleId: course.draftScheduleId,
         expectedDraftRevision: course.draftRevision,
         inputSnapshotToken: course.inputSnapshotToken,
       })),
+    }),
+  })
+  if (!response.ok) throw await parseOptimizationError(response)
+  return response.json()
+}
+
+export async function acceptConflictAwareSchedules(
+  preview: OptimizationDecisionRequiredResult,
+): Promise<OptimizationGenerationResult> {
+  const evidence = preview.preparedEvidence
+  validateSelection(evidence.courses.map((course) => course.courseId))
+  const response = await request(`${API_BASE}/api/draft-schedules/optimization/accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...evidence,
+      candidateFingerprint: preview.candidateFingerprint,
     }),
   })
   if (!response.ok) throw await parseOptimizationError(response)

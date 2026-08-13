@@ -16,8 +16,10 @@ import {
   updateDraftSession,
 } from '../api/draftSchedule'
 import {
+  acceptConflictAwareSchedules,
   generateConflictAwareSchedules,
   prepareConflictAwareGeneration,
+  type OptimizationDecisionRequiredResult,
   type OptimizationError,
   type OptimizationGenerationResult,
   type OptimizationPreparation,
@@ -157,7 +159,7 @@ export function CourseSchedulePage({
   const [selectedBatchCourseIds, setSelectedBatchCourseIds] = useState<number[]>([])
   const [errors, setErrors] = useState<GenerationFailure[]>([])
   const [batchErrors, setBatchErrors] = useState<OptimizationError[]>([])
-  const [batchPreparation, setBatchPreparation] = useState<OptimizationPreparation | null>(null)
+  const [batchPreview, setBatchPreview] = useState<OptimizationDecisionRequiredResult | null>(null)
   const [batchResult, setBatchResult] = useState<OptimizationGenerationResult | null>(null)
   const [unavailableDatesInput, setUnavailableDatesInput] = useState('')
   const [optionsLoading, setOptionsLoading] = useState(true)
@@ -229,6 +231,12 @@ export function CourseSchedulePage({
   useEffect(() => { selectedSemesterIdRef.current = selectedSemesterId }, [selectedSemesterId])
 
   useEffect(() => {
+    if (active && destination === 'calendar') return
+    const discardPreview = window.setTimeout(() => setBatchPreview(null), 0)
+    return () => window.clearTimeout(discardPreview)
+  }, [active, destination])
+
+  useEffect(() => {
     if (!calendarNavigationStatus) return
     const focusResults = () => {
       document
@@ -296,8 +304,8 @@ export function CourseSchedulePage({
   }, [selectedLifecycleRevision?.revisionId])
   const mutationBusy = batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
   const contextBusy = mutationBusy || overviewLoading || examBusy
-  const writeBusy = contextBusy || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
-  const examConfigurationBusy = contextBusy || overviewRefreshError || examRefreshError
+  const writeBusy = contextBusy || batchPreview != null || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
+  const examConfigurationBusy = contextBusy || batchPreview != null || overviewRefreshError || examRefreshError
   const currentExamOverview = examOverview?.semesterId === selectedSemesterId ? examOverview : null
   const selectedExamState = useMemo(() => currentExamOverview?.courses.find((course) => course.courseId === selectedCourseId) ?? null, [currentExamOverview, selectedCourseId])
   const selectedCourseResources = useMemo(() => planningOptions?.courseResources.find((item) => item.courseId === selectedCourseId), [planningOptions, selectedCourseId])
@@ -829,16 +837,12 @@ export function CourseSchedulePage({
   }
 
   async function startBatch(courseIds = selectedBatchCourseIds) {
-    if (!selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty) return
+    if (!selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty || batchPreview) return
     setBatchPreparing(true)
     setBatchErrors([])
     try {
       const prepared = await prepareConflictAwareGeneration(selectedSemesterId, activeScheduleRevisionId, courseIds, unavailableDates)
-      if (prepared.replacementCourseIds.length > 0) {
-        setBatchPreparation(prepared)
-      } else {
-        await executeBatch(prepared, false)
-      }
+      await executeBatch(prepared)
     } catch (error) {
       setBatchErrors(toBatchErrors(error))
     } finally {
@@ -846,21 +850,44 @@ export function CourseSchedulePage({
     }
   }
 
-  async function executeBatch(preparation: OptimizationPreparation, confirmed: boolean) {
+  async function executeBatch(preparation: OptimizationPreparation) {
     if (constraintsLoading || constraintsDirty) return
     setBatchExecuting(true)
     setBatchErrors([])
     try {
-      const result = await generateConflictAwareSchedules(preparation, confirmed)
+      const result = await generateConflictAwareSchedules(preparation)
+      if (result.mode === 'decision_required') {
+        setBatchPreview(result)
+        return
+      }
       setBatchResult(result)
-      setBatchPreparation(null)
       if (selectedSemesterId !== result.semesterId) setSelectedSemesterId(result.semesterId)
       await refreshOverview(result.semesterId, false)
     } catch (error) {
       const failures = toBatchErrors(error)
       setBatchErrors(failures)
-      if (failures.some((failure) => failure.code.toUpperCase().includes('STALE'))) {
-        setBatchPreparation(null)
+    } finally {
+      setBatchExecuting(false)
+    }
+  }
+
+  async function acceptBatchPreview() {
+    if (!batchPreview || batchExecuting || constraintsLoading || constraintsDirty) return
+    const preview = batchPreview
+    setBatchExecuting(true)
+    setBatchErrors([])
+    try {
+      const result = await acceptConflictAwareSchedules(preview)
+      setBatchPreview(null)
+      setBatchResult(result)
+      if (selectedSemesterId !== result.semesterId) setSelectedSemesterId(result.semesterId)
+      await refreshOverview(result.semesterId, false)
+    } catch (error) {
+      const failures = toBatchErrors(error)
+      setBatchErrors(failures)
+      if (failures.some((failure) => isStaleGenerationFailure(failure.code))) {
+        setBatchPreview(null)
+        await refreshOverview(preview.preparedEvidence.semesterId, false)
       }
     } finally {
       setBatchExecuting(false)
@@ -882,8 +909,7 @@ export function CourseSchedulePage({
     try {
       if (!activeScheduleRevisionId) return
       const prepared = await prepareConflictAwareGeneration(semesterId, activeScheduleRevisionId, courseIds, unavailableDates)
-      if (prepared.replacementCourseIds.length > 0) setBatchPreparation(prepared)
-      else await executeBatch(prepared, false)
+      await executeBatch(prepared)
     } catch (error) {
       setBatchErrors(toBatchErrors(error))
     } finally {
@@ -895,7 +921,7 @@ export function CourseSchedulePage({
     if (batchPreparing || batchExecuting || constraintsLoading || !selectedCourseId || !selectedSemesterId || !activeScheduleRevisionId || !generationConstraints?.revision) return
     setConstraintsLoading(true)
     setErrors([])
-    setBatchPreparation(null)
+    setBatchPreview(null)
     setBatchResult(null)
     try {
       const result = await clearGenerationConstraints(selectedCourseId, selectedSemesterId, activeScheduleRevisionId, generationConstraints.revision)
@@ -923,7 +949,7 @@ export function CourseSchedulePage({
       )
       setGenerationConstraints(result.constraints)
       setConstraintsDirty(false)
-      setBatchPreparation(null)
+      setBatchPreview(null)
       setBatchResult(null)
       await refreshOverview(selectedSemesterId, false)
     } catch (error) {
@@ -1127,6 +1153,7 @@ export function CourseSchedulePage({
         setLecturerReviewBusy(false)
         setLecturerReviewError('')
         setSemesterSelectionMissing(false)
+        setBatchPreview(null)
         setSelectedSemesterId(semesterId)
         setSelectedBatchCourseIds([])
       },
@@ -1143,6 +1170,7 @@ export function CourseSchedulePage({
         selectedLifecycleRevisionIdRef.current = revisionId
         setLecturerReviewBusy(false)
         setLecturerReviewError('')
+        setBatchPreview(null)
         setSelectedLifecycleRevisionId(revisionId)
       },
       focusAfterCommit: () => scheduleContextHeadingRef.current?.focus({ preventScroll: true }),
@@ -1466,7 +1494,7 @@ export function CourseSchedulePage({
                     )}
                     <button type="button" className="destructive-button clear-course-draft" onClick={beginCourseDeletion} disabled={writeBusy || !selectedDraft}>{label('course.singular')}-Entwurf leeren</button>
                     {progressAnnouncement && <p className="mutation-feedback" role="status" aria-live="polite">{progressAnnouncement}</p>}
-                    {generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={constraintsLoading || batchPreparing || batchExecuting} onSave={handleSaveGenerationConstraints} onClear={handleClearGenerationConstraints} onDirtyChange={setConstraintsDirty} />}
+                    {generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={constraintsLoading || batchPreparing || batchExecuting || batchPreview != null} onSave={handleSaveGenerationConstraints} onClear={handleClearGenerationConstraints} onDirtyChange={setConstraintsDirty} />}
                     {errors.length > 0 && <ErrorList errors={errors} />}
                 </section>
                 <section
@@ -1476,7 +1504,7 @@ export function CourseSchedulePage({
                   aria-labelledby="planning-tab-generation"
                   hidden={planningInputTab !== 'generation'}
                 >
-                  <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading} busy={batchPreparing || batchExecuting} disabledReason={constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
+                  <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading || batchPreview != null} busy={batchPreparing || batchExecuting} disabledReason={batchPreview ? 'Entscheiden oder verwerfen Sie zuerst den geöffneten Vergleich.' : constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
                   {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
                 </section>
               </>
@@ -1596,12 +1624,12 @@ export function CourseSchedulePage({
         </div>
       </section>
 
-      {batchPreparation && (
+      {batchPreview && active && destination === 'calendar' && (
         <ReplacementConfirmationDialog
-          preparation={batchPreparation}
+          preview={batchPreview}
           disabled={batchExecuting || constraintsLoading || constraintsDirty}
-          onCancel={() => setBatchPreparation(null)}
-          onConfirm={() => void executeBatch(batchPreparation, true)}
+          onCancel={() => setBatchPreview(null)}
+          onAccept={() => void acceptBatchPreview()}
         />
       )}
       {sessionDeletion && (
@@ -1643,8 +1671,16 @@ export function CourseSchedulePage({
   )
 }
 
-function safeGenerationFailure(error: { code: string; field?: string }): string {
-  if (error.code.includes('STALE') || error.code.includes('REVISION')) return 'Die angezeigten Daten sind nicht mehr aktuell. Laden Sie den aktuellen Stand neu, prüfen Sie die Werte und wiederholen Sie die Aktion danach.'
+function isStaleGenerationFailure(code: string): boolean {
+  const normalizedCode = code.toUpperCase()
+  return normalizedCode.includes('STALE')
+    || normalizedCode.includes('REVISION')
+    || normalizedCode === 'CANDIDATE_NOT_REPRODUCIBLE'
+}
+
+function safeGenerationFailure(error: { code: string; message?: string; field?: string }): string {
+  if (isStaleGenerationFailure(error.code)) return 'Die angezeigten Daten sind nicht mehr aktuell. Laden Sie den aktuellen Stand neu, prüfen Sie die Werte und wiederholen Sie die Aktion danach.'
+  if (error.code === 'NO_VALID_ALTERNATIVE') return `Keine gültige Alternative konnte erzeugt werden. ${error.message ?? 'Prüfen Sie die angezeigten Planungsgrenzen und Ressourcen.'}`
   if (error.code.includes('CAPACITY')) return 'Die Raumkapazität reicht für die betroffene Kohorte nicht aus. Wählen Sie einen ausreichend großen Raum.'
   if (error.code.includes('CONFLICT')) return 'Der Termin überschneidet sich mit einer bestehenden Zuordnung. Prüfen und ändern Sie einen der betroffenen Termine.'
   if (error.field) return `Feld „${error.field}“ muss korrigiert werden. Prüfen Sie den erwarteten Wert; Ihre übrigen Eingaben bleiben erhalten.`

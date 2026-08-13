@@ -14,7 +14,7 @@ from app.models.planning import (
     StudyTypeTimeWindow,
 )
 from app.services.schedule_generation import PlanningPeriodPlan, ResourceCandidatePlan, TimeWindowPlan
-from app.services.semester_optimization import FixedSession, OptimizationCourse
+from app.services.semester_optimization import CurrentSession, FixedSession, OptimizationCourse
 
 
 SEMESTER_START = date(2026, 9, 7)
@@ -40,6 +40,7 @@ def optimization_course(
     lecturer_ids: tuple[int, ...] | None = None,
     room_ids: tuple[int, ...] | None = None,
     windows: tuple[TimeWindowPlan, ...] | None = None,
+    current_sessions: tuple[CurrentSession, ...] = (),
 ):
     lecturers = lecturer_ids or (course_id,)
     rooms = room_ids or (course_id,)
@@ -55,6 +56,30 @@ def optimization_course(
         windows=windows or (window(),),
         lecturers=tuple(resource(item, f"LEC-{item:03}") for item in lecturers),
         rooms=tuple(resource(item, f"ROOM-{item:03}", capacity=40) for item in rooms),
+        current_sessions=current_sessions,
+    )
+
+
+def current_session(
+    course_id: int = 1,
+    *,
+    cohort_id: int | None = None,
+    lecturer_id: int | None = None,
+    room_id: int | None = None,
+    session_date: date = SEMESTER_START,
+    start: time = time(8),
+    end: time = time(10),
+    units: int = 2,
+):
+    return CurrentSession(
+        course_id=course_id,
+        cohort_id=cohort_id or course_id,
+        lecturer_id=lecturer_id or course_id,
+        room_id=room_id or course_id,
+        date=session_date,
+        start_time=start,
+        end_time=end,
+        units=units,
     )
 
 

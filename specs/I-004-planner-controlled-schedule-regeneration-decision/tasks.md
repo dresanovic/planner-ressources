@@ -10,7 +10,7 @@
 
 **Purpose**: Establish an isolated implementation baseline and prepare reusable test data for the new response modes and mixed selections without changing application behavior.
 
-- [ ] T001 Before any test or production edit, verify implementation is on an isolated feature branch/worktree with no unrelated changes in planned files, record the branch and baseline status in `specs/I-004-planner-controlled-schedule-regeneration-decision/quickstart.md`, then add reusable fixtures for direct-saved results, decision-required previews, comparison facts, mixed selections, and prepared evidence in `backend/tests/optimization_fixtures.py` and `client/src/test/optimizationFixtures.ts`
+- [X] T001 Before any test or production edit, verify implementation is on an isolated feature branch/worktree with no unrelated changes in planned files, record the branch and baseline status in `specs/I-004-planner-controlled-schedule-regeneration-decision/quickstart.md`, then add reusable fixtures for direct-saved results, decision-required previews, comparison facts, mixed selections, and prepared evidence in `backend/tests/optimization_fixtures.py` and `client/src/test/optimizationFixtures.ts`
 
 ---
 
@@ -18,8 +18,8 @@
 
 **Purpose**: Establish the shared deterministic identity and lifecycle freshness evidence used by preview and acceptance.
 
-- [ ] T002 Add failing tests for canonical candidate fingerprints and active Working-revision state/row-version freshness in `backend/tests/services/test_conflict_aware_generation.py`
-- [ ] T003 Implement canonical ordered candidate fingerprinting and include active Working-revision state and row version in shared snapshot evidence in `backend/app/services/conflict_aware_generation.py`
+- [X] T002 Add failing tests for canonical candidate fingerprints and active Working-revision state/row-version freshness in `backend/tests/services/test_conflict_aware_generation.py`
+- [X] T003 Implement canonical ordered candidate fingerprinting and include active Working-revision state and row version in shared snapshot evidence in `backend/app/services/conflict_aware_generation.py`
 
 **Checkpoint**: Preview and acceptance can share one deterministic candidate identity and reject lifecycle changes.
 
@@ -33,17 +33,17 @@
 
 ### Tests for User Story 1
 
-- [ ] T004 [P] [US1] Add failing optimizer tests proving generated-only replacement mode cannot retain selected current sessions, permits a valid lower-unit partial result and a zero-session course within a non-empty joint result, and rejects an all-zero result in `backend/tests/services/test_semester_optimization.py`
-- [ ] T005 [P] [US1] Add failing service/API tests for non-mutating preview generation, hard-validity, comparison facts, resolved warnings, prepared evidence, fingerprint output, and removal of the pre-generation confirmation gate, plus workflow-level performance cases for preview, direct-save, and actionable no-result outcomes against the 95%-within-30-seconds criterion in `backend/tests/services/test_conflict_aware_generation.py`, `backend/tests/api/test_conflict_aware_generation.py`, and `backend/tests/performance/test_semester_optimization_performance.py`
-- [ ] T006 [P] [US1] Add failing client tests for discriminated preview responses, post-generation dialog timing, exact current/generated facts, valid lower-coverage selection, replacement consequences, exact German actions, and accessible focus/zoom structure in `client/src/api/conflictAwareGeneration.test.ts`, `client/src/components/ReplacementConfirmationDialog.test.tsx`, and `client/src/pages/CourseSchedulePage.test.tsx`
+- [X] T004 [P] [US1] Add failing optimizer tests proving generated-only replacement mode cannot retain selected current sessions, permits a valid lower-unit partial result and a zero-session course within a non-empty joint result, and rejects an all-zero result in `backend/tests/services/test_semester_optimization.py`
+- [X] T005 [P] [US1] Add failing service/API tests for non-mutating preview generation, hard-validity, comparison facts, resolved warnings, prepared evidence, fingerprint output, and removal of the pre-generation confirmation gate, plus workflow-level performance cases for preview, direct-save, and actionable no-result outcomes against the 95%-within-30-seconds criterion in `backend/tests/services/test_conflict_aware_generation.py`, `backend/tests/api/test_conflict_aware_generation.py`, and `backend/tests/performance/test_semester_optimization_performance.py`
+- [X] T006 [P] [US1] Add failing client tests for discriminated preview responses, post-generation dialog timing, exact current/generated facts, valid lower-coverage selection, replacement consequences, exact German actions, and accessible focus/zoom structure in `client/src/api/conflictAwareGeneration.test.ts`, `client/src/components/ReplacementConfirmationDialog.test.tsx`, and `client/src/pages/CourseSchedulePage.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Add generated-only replacement mode to the unified optimizer, disabling current-session retention and the non-worsening unit floor while preserving every active hard constraint and fixed occupancy rule in `backend/app/services/semester_optimization.py`
-- [ ] T008 [US1] Split generation from persistence for replacement selections, build aggregate/per-course comparison facts from the exact snapshot and candidate, suppress provisional PlanningOutcome writes, and preserve no-result diagnostics in `backend/app/services/conflict_aware_generation.py` and `backend/app/services/draft_schedule_validation.py`
-- [ ] T009 [US1] Replace `replacementConfirmed` with discriminated direct-saved/decision-required generate contracts and expose the non-mutating preview branch in `backend/app/schemas/conflict_aware_generation.py` and `backend/app/api/conflict_aware_generation.py`
-- [ ] T010 [US1] Model the discriminated generate response and evolve the existing confirmation dialog into the accessible factual comparison, including responsive current/generated sections and only the approved actions in `client/src/api/conflictAwareGeneration.ts`, `client/src/components/ReplacementConfirmationDialog.tsx`, and `client/src/App.css`
-- [ ] T011 [US1] Move replacement handling from pre-generation confirmation to post-generation preview state without inserting the candidate into saved schedules in `client/src/pages/CourseSchedulePage.tsx`
+- [X] T007 [US1] Add generated-only replacement mode to the unified optimizer, disabling current-session retention and the non-worsening unit floor while preserving every active hard constraint and fixed occupancy rule in `backend/app/services/semester_optimization.py`
+- [X] T008 [US1] Split generation from persistence for replacement selections, build aggregate/per-course comparison facts from the exact snapshot and candidate, suppress provisional PlanningOutcome writes, and preserve no-result diagnostics in `backend/app/services/conflict_aware_generation.py` and `backend/app/services/draft_schedule_validation.py`
+- [X] T009 [US1] Replace `replacementConfirmed` with discriminated direct-saved/decision-required generate contracts and expose the non-mutating preview branch in `backend/app/schemas/conflict_aware_generation.py` and `backend/app/api/conflict_aware_generation.py`
+- [X] T010 [US1] Model the discriminated generate response and evolve the existing confirmation dialog into the accessible factual comparison, including responsive current/generated sections and only the approved actions in `client/src/api/conflictAwareGeneration.ts`, `client/src/components/ReplacementConfirmationDialog.tsx`, and `client/src/App.css`
+- [X] T011 [US1] Move replacement handling from pre-generation confirmation to post-generation preview state without inserting the candidate into saved schedules in `client/src/pages/CourseSchedulePage.tsx`
 
 **Checkpoint**: Replacement selections produce a visible, non-mutating, hard-valid comparison; no approval action is implemented yet.
 
@@ -57,15 +57,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T012 [P] [US2] Add failing one-course and multi-course backend acceptance tests that verify active course/study-type windows, course/semester boundaries, holidays, eligibility, availability, capacity, fixed teaching, active exams, same-course exam boundaries, and lecturer/room/cohort non-overlap, together with exact-fingerprint acceptance, mixed-selection atomic save, valid lower-coverage acceptance, zero-session clear/no-empty-draft behavior, successful-only PlanningOutcome retention, rollback, and repeated acceptance rejection in `backend/tests/services/test_conflict_aware_generation.py` and `backend/tests/api/test_conflict_aware_generation.py`
-- [ ] T013 [P] [US2] Add failing simultaneous-accept tests proving at most one request commits and the losing request changes nothing in `backend/tests/services/test_conflict_aware_generation_concurrency.py`
-- [ ] T014 [P] [US2] Add failing client tests proving accept is sent once, both actions disable in flight, success refreshes authoritative schedules, and button/Escape/close/navigation cancellation clears the whole local candidate without an API call in `client/src/api/conflictAwareGeneration.test.ts`, `client/src/components/ReplacementConfirmationDialog.test.tsx`, and `client/src/pages/CourseSchedulePage.test.tsx`
+- [X] T012 [P] [US2] Add failing one-course and multi-course backend acceptance tests that verify active course/study-type windows, course/semester boundaries, holidays, eligibility, availability, capacity, fixed teaching, active exams, same-course exam boundaries, and lecturer/room/cohort non-overlap, together with exact-fingerprint acceptance, mixed-selection atomic save, valid lower-coverage acceptance, zero-session clear/no-empty-draft behavior, successful-only PlanningOutcome retention, rollback, and repeated acceptance rejection in `backend/tests/services/test_conflict_aware_generation.py` and `backend/tests/api/test_conflict_aware_generation.py`
+- [X] T013 [P] [US2] Add failing simultaneous-accept tests proving at most one request commits and the losing request changes nothing in `backend/tests/services/test_conflict_aware_generation_concurrency.py`
+- [X] T014 [P] [US2] Add failing client tests proving accept is sent once, both actions disable in flight, success refreshes authoritative schedules, and button/Escape/close/navigation cancellation clears the whole local candidate without an API call in `client/src/api/conflictAwareGeneration.test.ts`, `client/src/components/ReplacementConfirmationDialog.test.tsx`, and `client/src/pages/CourseSchedulePage.test.tsx`
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Implement deterministic re-solve and fingerprint verification followed by one existing atomic save plan for all selected courses, including explicit zero-session delete/no-op handling, rollback, and successful outcome retention in `backend/app/services/conflict_aware_generation.py` and `backend/app/services/draft_schedule_repository.py`
-- [ ] T016 [US2] Add the accept request/response schema and `POST /optimization/accept` route with no client-supplied sessions, per-course choice, written reason, or cancel endpoint in `backend/app/schemas/conflict_aware_generation.py` and `backend/app/api/conflict_aware_generation.py`
-- [ ] T017 [US2] Add the accept API call and wire atomic accept, busy-state protection, refresh-after-success, and local-only discard semantics into the comparison workflow in `client/src/api/conflictAwareGeneration.ts`, `client/src/components/ReplacementConfirmationDialog.tsx`, and `client/src/pages/CourseSchedulePage.tsx`
+- [X] T015 [US2] Implement deterministic re-solve and fingerprint verification followed by one existing atomic save plan for all selected courses, including explicit zero-session delete/no-op handling, rollback, and successful outcome retention in `backend/app/services/conflict_aware_generation.py` and `backend/app/services/draft_schedule_repository.py`
+- [X] T016 [US2] Add the accept request/response schema and `POST /optimization/accept` route with no client-supplied sessions, per-course choice, written reason, or cancel endpoint in `backend/app/schemas/conflict_aware_generation.py` and `backend/app/api/conflict_aware_generation.py`
+- [X] T017 [US2] Add the accept API call and wire atomic accept, busy-state protection, refresh-after-success, and local-only discard semantics into the comparison workflow in `client/src/api/conflictAwareGeneration.ts`, `client/src/components/ReplacementConfirmationDialog.tsx`, and `client/src/pages/CourseSchedulePage.tsx`
 
 **Checkpoint**: The complete mixed selection is accepted once or discarded without mutation; no partial decision path exists.
 
@@ -79,13 +79,13 @@
 
 ### Tests for User Story 3
 
-- [ ] T018 [P] [US3] Add failing parameterized tests for lifecycle, selected draft/session, protected teaching, active exam, course/constraint, holiday/unavailable-date, resource/availability/eligibility/capacity staleness, fingerprint mismatch, and past-exam non-staleness in `backend/tests/services/test_conflict_aware_generation.py` and `backend/tests/api/test_conflict_aware_generation.py`
-- [ ] T019 [P] [US3] Add failing client tests for stale/non-reproducible acceptance responses clearing preview evidence, preserving course selection, avoiding automatic retry, and presenting actionable German regeneration guidance in `client/src/api/conflictAwareGeneration.test.ts` and `client/src/pages/CourseSchedulePage.test.tsx`
+- [X] T018 [P] [US3] Add failing parameterized tests for lifecycle, selected draft/session, protected teaching, active exam, course/constraint, holiday/unavailable-date, resource/availability/eligibility/capacity staleness, fingerprint mismatch, and past-exam non-staleness in `backend/tests/services/test_conflict_aware_generation.py` and `backend/tests/api/test_conflict_aware_generation.py`
+- [X] T019 [P] [US3] Add failing client tests for stale/non-reproducible acceptance responses clearing preview evidence, preserving course selection, avoiding automatic retry, and presenting actionable German regeneration guidance in `client/src/api/conflictAwareGeneration.test.ts` and `client/src/pages/CourseSchedulePage.test.tsx`
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Revalidate all shared/per-course I-003 snapshot evidence and the active Working revision immediately before persistence, reject non-reproduced fingerprints, and return non-mutating stale/non-reproducible errors in `backend/app/services/conflict_aware_generation.py` and `backend/app/api/conflict_aware_generation.py`
-- [ ] T021 [US3] Map stale and fingerprint-mismatch responses to candidate disposal, retained selection, and explicit regenerate guidance without retrying acceptance in `client/src/api/conflictAwareGeneration.ts` and `client/src/pages/CourseSchedulePage.tsx`
+- [X] T020 [US3] Revalidate all shared/per-course I-003 snapshot evidence and the active Working revision immediately before persistence, reject non-reproduced fingerprints, and return non-mutating stale/non-reproducible errors in `backend/app/services/conflict_aware_generation.py` and `backend/app/api/conflict_aware_generation.py`
+- [X] T021 [US3] Map stale and fingerprint-mismatch responses to candidate disposal, retained selection, and explicit regenerate guidance without retrying acceptance in `client/src/api/conflictAwareGeneration.ts` and `client/src/pages/CourseSchedulePage.tsx`
 
 **Checkpoint**: Only the exact still-current result the planner saw can be committed.
 
@@ -99,12 +99,12 @@
 
 ### Tests for User Story 4
 
-- [ ] T022 [P] [US4] Add failing backend regression tests for authoritative saved-session detection, direct atomic save of complete/partial wholly unplanned selections, and non-mutating all-zero/no-result diagnostics in `backend/tests/services/test_conflict_aware_generation.py` and `backend/tests/api/test_conflict_aware_generation.py`
-- [ ] T023 [P] [US4] Add failing client regression tests proving direct-saved responses bypass the comparison and retain the established saved-result/no-result presentation in `client/src/api/conflictAwareGeneration.test.ts` and `client/src/pages/CourseSchedulePage.test.tsx`
+- [X] T022 [P] [US4] Add failing backend regression tests for authoritative saved-session detection, direct atomic save of complete/partial wholly unplanned selections, and non-mutating all-zero/no-result diagnostics in `backend/tests/services/test_conflict_aware_generation.py` and `backend/tests/api/test_conflict_aware_generation.py`
+- [X] T023 [P] [US4] Add failing client regression tests proving direct-saved responses bypass the comparison and retain the established saved-result/no-result presentation in `client/src/api/conflictAwareGeneration.test.ts` and `client/src/pages/CourseSchedulePage.test.tsx`
 
 ### Implementation for User Story 4
 
-- [ ] T024 [US4] Preserve the existing solve-and-save branch and saved-result UI for selections with no saved sessions while routing only replacement selections through preview/accept in `backend/app/services/conflict_aware_generation.py`, `backend/app/api/conflict_aware_generation.py`, and `client/src/pages/CourseSchedulePage.tsx`
+- [X] T024 [US4] Preserve the existing solve-and-save branch and saved-result UI for selections with no saved sessions while routing only replacement selections through preview/accept in `backend/app/services/conflict_aware_generation.py`, `backend/app/api/conflict_aware_generation.py`, and `client/src/pages/CourseSchedulePage.tsx`
 
 **Checkpoint**: Existing generation remains unchanged for wholly unplanned selections.
 
@@ -114,7 +114,7 @@
 
 **Purpose**: Verify the narrow change across the unified initiative and capture final evidence.
 
-- [ ] T025 Run the focused backend service/API/concurrency tests, the workflow-level 95%-within-30-seconds performance test, focused client API/dialog/page tests, complete backend/client suites, lint, and build; record results and any required command adjustments in `specs/I-004-planner-controlled-schedule-regeneration-decision/quickstart.md`
+- [X] T025 Run the focused backend service/API/concurrency tests, the workflow-level 95%-within-30-seconds performance test, focused client API/dialog/page tests, complete backend/client suites, lint, and build; record results and any required command adjustments in `specs/I-004-planner-controlled-schedule-regeneration-decision/quickstart.md`
 - [ ] T026 Coordinate with the FS-023 product owner to perform the quickstart mixed-selection, cancellation, stale, atomicity, direct-save, keyboard, narrow-layout, 200%-zoom, and five-planner usability checks; treat the SC-008 threshold as a release-readiness gate and record only anonymized evidence in `specs/I-004-planner-controlled-schedule-regeneration-decision/quickstart.md`
 
 ---

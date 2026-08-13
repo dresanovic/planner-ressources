@@ -235,6 +235,15 @@ unplanned direct generation remain green.
 
 ## Evidence record
 
+Implementation baseline:
+
+- branch: `codex/I-004-planner-controlled-schedule-regeneration-decision`;
+- base commit: `bbc6d6e`;
+- implementation started from a clean isolated checkout of the feature branch;
+- baseline status contained only the approved `.specify/feature.json` pointer and
+  untracked FS-023 specification artifacts;
+  no unrelated production-file changes were present.
+
 Before commit, record:
 
 - branch and commit under test;
@@ -246,3 +255,35 @@ Before commit, record:
 - usability-review participant count, pass rate, and median time;
 - any unrun check with exact reason, affected requirement/success criterion, and
   residual risk.
+
+## Automated implementation evidence — 2026-08-12
+
+- Branch/base: `codex/I-004-planner-controlled-schedule-regeneration-decision`
+  at `bbc6d6e`.
+- Database: disposable in-memory and file-backed SQLite; the file-backed
+  simultaneous-accept test committed exactly one request and rejected the
+  competing request as stale.
+- Focused backend service/API/concurrency suite after final no-result diagnostics:
+  92 passed.
+- Acceptance concurrency suite: 1 passed.
+- Workflow performance cases for direct save, replacement preview, and
+  actionable no-result: 3 passed; each used 20 fresh measured runs across
+  repeated 1-, 5-, 10-, 15-, and 20-course workloads, and at least 19/20 runs
+  completed within 30 seconds. Together with the 20-course optimizer reference,
+  the corrected performance suite passed 4 tests in 269.70 seconds.
+- Complete backend suite: 470 passed in 239.70 seconds. Existing deprecation
+  warnings remain unrelated to FS-023.
+- Complete client suite: 383 passed; focused page suite after the final
+  navigation-discard and no-result guidance adjustments: 53 passed.
+- Review-correction client API/page suite: 63 passed.
+- Consolidated-branch verification after merging the Schedule workspace tab
+  separation with FS-023: 92 focused backend tests and 387 complete client tests
+  passed; client lint and production build also passed.
+- Client lint: passed. Client production build: passed.
+- Command adjustment: backend tests were run from `backend/` with
+  `..\.venv\Scripts\python.exe -m pytest ...` so the local `app` package was on
+  the import path. Client tests used `npm run test -- --run ...`.
+- Not run: the product-owner five-planner usability study, manual browser
+  keyboard/200%-zoom/narrow-layout review, and anonymized SC-008 evidence
+  collection. These remain the T026 release-readiness gate; automated
+  implementation completion does not claim that gate has passed.

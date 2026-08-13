@@ -148,8 +148,7 @@ def test_course_resource_configuration_includes_unavailability_and_course_sessio
             "scheduleRevisionId": prepared["scheduleRevisionId"],
             "unavailableDates": prepared["unavailableDates"],
             "sharedSnapshotToken": prepared["sharedSnapshotToken"],
-            "replacementConfirmed": False,
-            "courses": [{
+                "courses": [{
                 "courseId": item["courseId"],
                 "expectedDraftScheduleId": item["draftScheduleId"],
                 "expectedDraftRevision": item["draftRevision"],

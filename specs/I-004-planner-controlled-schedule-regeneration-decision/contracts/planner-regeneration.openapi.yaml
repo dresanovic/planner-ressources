@@ -85,7 +85,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SavedGenerationResult'
+                $ref: '#/components/schemas/DirectSavedGeneration'
         '409':
           description: Planning state changed, fingerprint differs, or revision is not editable
           content:
@@ -215,8 +215,6 @@ components:
       additionalProperties: false
       required:
         - courseId
-        - expectedDraftScheduleId
-        - expectedDraftRevision
         - inputSnapshotToken
       properties:
         courseId:
