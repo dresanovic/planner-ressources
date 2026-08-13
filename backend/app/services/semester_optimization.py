@@ -46,6 +46,10 @@ class OptimizationModelInvalid(RuntimeError):
     pass
 
 
+class NoGeneratedAlternative(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class FixedSession:
     course_id: int
@@ -487,6 +491,7 @@ def optimize_semester(
     *,
     holidays: Mapping[date, HolidayReference] | None = None,
     deadline_seconds: float = 60.0,
+    generated_only: bool = False,
 ) -> SemesterOptimizationResult:
     started = monotonic()
     unavailable = frozenset(unavailable_dates)
@@ -528,7 +533,7 @@ def optimize_semester(
             for candidate in candidate_set.candidates
         )
         model.add(generated_units <= course.total_units)
-        if course.current_sessions:
+        if course.current_sessions and not generated_only:
             retain = model.new_bool_var(f"course_{course.course_id}_retain_current")
             variables.retain = retain
             if variables.temporal:
@@ -706,6 +711,17 @@ def optimize_semester(
         results[index] = replace(
             course_result,
             evidence=tuple(_deduplicate_evidence(evidence)),
+        )
+    if generated_only and objective_values[0] <= 0:
+        course_details = []
+        for course_result in results:
+            course = course_vars[course_result.course_id].course
+            name = course.course_name or f"Course {course.course_id}"
+            reasons = ", ".join(item.message for item in course_result.evidence)
+            course_details.append(f"{name}: {reasons}")
+        raise NoGeneratedAlternative(
+            "No non-empty valid generated alternative exists. "
+            + "; ".join(course_details)
         )
     return SemesterOptimizationResult(
         courses=tuple(results),

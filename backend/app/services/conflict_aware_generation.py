@@ -3,25 +3,41 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, replace
+from collections import Counter
 from datetime import date, datetime, timedelta
 from time import monotonic
 
 from sqlalchemy import select, update
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
-from app.models.planning import Course, DraftSchedule, ExamSession, Semester
+from app.models.planning import (
+    Course,
+    DraftSchedule,
+    ExamSession,
+    Lecturer,
+    ResourceUnavailabilityPeriod,
+    Room,
+    ScheduleRevision,
+    Semester,
+)
 from app.schemas.conflict_aware_generation import (
     ArrangementImprovement,
     BlockingReason,
     BlockingReasonCode,
+    CourseRegenerationComparison,
     CourseOptimizationOutcome,
+    CoverageFacts,
     OperationError,
+    OptimizationDecisionRequiredResult,
+    OptimizationGenerationRequest,
     OptimizationGenerationResult,
     OptimizationPreparationResponse,
     OptimizationStatus,
     OptimizationSummary,
     PreparedOptimizationCourse,
     PreparedOptimizationCourseInput,
+    RegenerationComparison,
+    ResolvedWarning,
 )
 from app.services.academic_catalog import planning_eligibility_reasons
 from app.services.draft_schedule_repository import (
@@ -31,8 +47,10 @@ from app.services.draft_schedule_repository import (
     load_course_plan,
     load_generation_constraints,
     load_semester_plan,
+    load_time_windows,
     replace_draft_schedule,
 )
+from app.services.draft_schedule_validation import collect_validation_alerts
 from app.services.schedule_generation import CoursePlan, SemesterPlan
 from app.services.schedule_generation import session_duration_minutes
 from app.services.exam_scheduling import institution_today
@@ -41,6 +59,7 @@ from app.services.semester_optimization import (
     CourseOptimization,
     CurrentSession,
     FixedSession,
+    NoGeneratedAlternative,
     OptimalResultNotProven,
     OptimizationCourse,
     SemesterOptimizationResult,
@@ -63,6 +82,14 @@ class InvalidOptimizationSelection(ValueError):
         super().__init__(message)
         self.code = code
         self.message = message
+
+
+class StaleOptimizationCandidate(RuntimeError):
+    pass
+
+
+class CandidateNotReproducible(RuntimeError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -119,7 +146,7 @@ def prepare_optimization(
     replacement_ids = []
     for item in loaded.courses:
         scheduled = sum(session.units for session in item.draft.sessions) if item.draft else 0
-        replacement = item.draft is not None
+        replacement = item.draft is not None and bool(item.draft.sessions)
         if replacement:
             replacement_ids.append(item.course.id)
         window_unavailable = not _windows_host_minimum_session(item)
@@ -161,7 +188,50 @@ def generate_optimization(
     unavailable_dates,
     shared_snapshot_token: str,
     schedule_revision_id: int | None = None,
+) -> OptimizationGenerationResult | OptimizationDecisionRequiredResult:
+    return _execute_optimization(
+        db,
+        semester_id,
+        prepared_courses,
+        unavailable_dates,
+        shared_snapshot_token,
+        schedule_revision_id,
+    )
+
+
+def accept_optimization(
+    db: Session,
+    semester_id: int,
+    prepared_courses: list[PreparedOptimizationCourseInput],
+    unavailable_dates,
+    shared_snapshot_token: str,
+    schedule_revision_id: int,
+    expected_candidate_fingerprint: str,
 ) -> OptimizationGenerationResult:
+    result = _execute_optimization(
+        db,
+        semester_id,
+        prepared_courses,
+        unavailable_dates,
+        shared_snapshot_token,
+        schedule_revision_id,
+        expected_candidate_fingerprint=expected_candidate_fingerprint,
+    )
+    if not isinstance(result, OptimizationGenerationResult):
+        raise RuntimeError("Acceptance must produce a saved generation result.")
+    return result
+
+
+def _execute_optimization(
+    db: Session,
+    semester_id: int,
+    prepared_courses: list[PreparedOptimizationCourseInput],
+    unavailable_dates,
+    shared_snapshot_token: str,
+    schedule_revision_id: int | None = None,
+    *,
+    expected_candidate_fingerprint: str | None = None,
+) -> OptimizationGenerationResult | OptimizationDecisionRequiredResult:
     started = monotonic()
     deadline = started + OPERATION_DEADLINE_SECONDS
     course_ids = [item.course_id for item in prepared_courses]
@@ -169,6 +239,20 @@ def generate_optimization(
     loaded = load_operation(
         db, semester_id, course_ids, unavailable_dates, schedule_revision_id
     )
+    decision_required = any(
+        item.draft is not None and bool(item.draft.sessions)
+        for item in loaded.courses
+    )
+    accepting = expected_candidate_fingerprint is not None
+    if accepting and not decision_required:
+        raise StaleOptimizationCandidate(
+            "The selected schedules no longer require the compared replacement. Generate again."
+        )
+    if decision_required and schedule_revision_id is None:
+        raise InvalidOptimizationSelection(
+            "WORKING_REVISION_REQUIRED",
+            "Regeneration comparison requires the active Working revision.",
+        )
     supplied = {item.course_id: item for item in prepared_courses}
     stale_ids: set[int] = set()
     for item in loaded.courses:
@@ -185,6 +269,10 @@ def generate_optimization(
     # Require a fresh operation rather than silently optimizing refreshed input.
     if stale_ids or shared_snapshot_token != loaded.shared_snapshot_token:
         stale_ids.update(course_ids)
+    if decision_required and stale_ids:
+        raise StaleOptimizationCandidate(
+            "Planning inputs changed after preparation. Generate a new alternative."
+        )
 
     availability = {
         item.course.id: (
@@ -225,9 +313,50 @@ def generate_optimization(
             loaded.unavailable_dates,
             holidays=loaded.holidays,
             deadline_seconds=remaining_seconds,
+            generated_only=decision_required,
         )
         optimal_for_prepared_snapshot = True
     solved = {item.course_id: item for item in solution.courses}
+
+    if decision_required and not accepting:
+        _require_time_remaining(
+            deadline,
+            "The optimization deadline elapsed before final preview validation.",
+        )
+        db.expire_all()
+        refreshed = load_operation(
+            db, semester_id, course_ids, unavailable_dates, schedule_revision_id
+        )
+        refreshed_by_id = {item.course.id: item for item in refreshed.courses}
+        if (
+            refreshed.shared_snapshot_token != loaded.shared_snapshot_token
+            or any(
+                refreshed_by_id[item.course.id].input_snapshot_token
+                != item.input_snapshot_token
+                for item in loaded.courses
+            )
+        ):
+            raise StaleOptimizationCandidate(
+                "Planning inputs changed while generating the alternative. Generate again."
+            )
+        return _decision_required_result(
+            db,
+            loaded,
+            solution,
+            prepared_courses,
+            shared_snapshot_token,
+            schedule_revision_id,
+        )
+
+    if accepting:
+        reproduced_fingerprint = candidate_fingerprint(
+            solution,
+            {item.course.id: item.course.cohort_id for item in loaded.courses},
+        )
+        if reproduced_fingerprint != expected_candidate_fingerprint:
+            raise CandidateNotReproducible(
+                "The compared generated result could not be reproduced. Generate a new alternative."
+            )
 
     if eligible:
         _require_time_remaining(deadline, "The optimization deadline elapsed before final input validation.")
@@ -259,12 +388,19 @@ def generate_optimization(
         # be persisted or described as optimal for that snapshot.
         stale_ids.update(course_ids)
         optimal_for_prepared_snapshot = False
+        if accepting:
+            raise StaleOptimizationCandidate(
+                "Planning inputs changed before acceptance. Generate a new alternative."
+            )
     unavailable_ids.difference_update(stale_ids)
 
     improvements: dict[int, ArrangementImprovement] = {}
     planned_save_ids: set[int] = set()
     for course_id, course_solution in solved.items():
         if course_id in stale_ids or course_id in unavailable_ids:
+            continue
+        if accepting:
+            planned_save_ids.add(course_id)
             continue
         improvement = _candidate_improvement(original_by_id[course_id], course_solution, loaded)
         if improvement is not None:
@@ -317,14 +453,18 @@ def generate_optimization(
                 _require_time_remaining(deadline, "The optimization deadline elapsed before all result groups could be saved.")
                 for course_id in sorted(component):
                     item = refreshed_by_id[course_id]
-                    replace_draft_schedule(
-                        db,
-                        item.plan,
-                        semester_id,
-                        list(solved[course_id].sessions),
-                        existing_draft=item.draft,
-                        reload=False,
-                    )
+                    if accepting and not solved[course_id].sessions:
+                        if item.draft is not None:
+                            db.delete(item.draft)
+                    else:
+                        replace_draft_schedule(
+                            db,
+                            item.plan,
+                            semester_id,
+                            list(solved[course_id].sessions),
+                            existing_draft=item.draft,
+                            reload=False,
+                        )
                 db.flush()
                 saved_ids.update(component)
                 pending_components.remove(component_id)
@@ -358,7 +498,13 @@ def generate_optimization(
             else OptimizationStatus.UNCHANGED
         )
         improvement = improvements.get(item.course.id) if saved else None
-        scheduled = sum(session.units for session in final_draft.sessions) if saved and final_draft is not None else baseline_units
+        scheduled = (
+            course_solution.scheduled_units
+            if accepting and saved
+            else sum(session.units for session in final_draft.sessions)
+            if saved and final_draft is not None
+            else baseline_units
+        )
         outcomes.append(CourseOptimizationOutcome(
             courseId=item.course.id,
             courseName=item.course.name,
@@ -420,6 +566,16 @@ def load_operation(
     if semester_record is None:
         raise SemesterNotFoundError("Semester not found.")
     semester = load_semester_plan(db, semester_id)
+    schedule_revision = (
+        db.get(ScheduleRevision, schedule_revision_id)
+        if schedule_revision_id is not None
+        else None
+    )
+    lifecycle_payload = [
+        schedule_revision_id,
+        schedule_revision.state if schedule_revision is not None else None,
+        schedule_revision.row_version if schedule_revision is not None else None,
+    ]
     canonical_dates = canonical_unavailable_dates(unavailable_dates)
     holidays = holiday_snapshot(db, semester.start_date, semester.end_date)
     drafts = list_draft_schedules_by_semester(db, semester_id)
@@ -520,7 +676,7 @@ def load_operation(
             or session.room_id in {room.id for room in plan.room_candidates}
         ]
         token = _fingerprint({
-            "scheduleRevisionId": schedule_revision_id,
+            "scheduleRevision": lifecycle_payload,
             "course": _course_payload(course, plan, constraints),
             "draft": _draft_payload(draft),
             "occupancy": [_fixed_payload(item) for item in sorted(relevant_fixed, key=_fixed_sort_key)],
@@ -540,7 +696,7 @@ def load_operation(
     ]
     semester_token = _fingerprint(semester_payload)
     shared_token = _fingerprint({
-        "scheduleRevisionId": schedule_revision_id,
+        "scheduleRevision": lifecycle_payload,
         "semester": semester_payload,
         "unavailableDates": [value.isoformat() for value in canonical_dates],
         "institutionHolidays": [
@@ -558,6 +714,161 @@ def load_operation(
         tuple(loaded_courses),
         fixed_sessions,
     )
+
+
+def _decision_required_result(
+    db: Session,
+    loaded: LoadedOperation,
+    solution: SemesterOptimizationResult,
+    prepared_courses: list[PreparedOptimizationCourseInput],
+    shared_snapshot_token: str,
+    schedule_revision_id: int,
+) -> OptimizationDecisionRequiredResult:
+    solved = {item.course_id: item for item in solution.courses}
+    warning_counts = _current_warning_counts(db, loaded)
+    course_comparisons: list[CourseRegenerationComparison] = []
+    current_total = 0
+    generated_total = 0
+    required_total = 0
+    for item in loaded.courses:
+        course_solution = solved[item.course.id]
+        required = item.course.total_units
+        current_units = (
+            sum(session.units for session in item.draft.sessions)
+            if item.draft is not None
+            else 0
+        )
+        generated_units = course_solution.scheduled_units
+        required_total += required
+        current_total += current_units
+        generated_total += generated_units
+        course_comparisons.append(
+            CourseRegenerationComparison(
+                courseId=item.course.id,
+                courseName=item.course.name,
+                current=_coverage(required, current_units),
+                generated=_coverage(required, generated_units),
+                resolvedCurrentWarnings=warning_counts.get(item.course.id, []),
+                remainingReasons=[
+                    BlockingReason(
+                        code=BlockingReasonCode(reason.code),
+                        message=reason.message,
+                        relatedCount=reason.count,
+                        holidayDate=reason.holiday_date,
+                        holidayName=reason.holiday_name,
+                        sourceKind=reason.source_kind,
+                        sourceId=reason.source_id,
+                    )
+                    for reason in course_solution.evidence
+                    if generated_units < required
+                ],
+            )
+        )
+    return OptimizationDecisionRequiredResult(
+        candidateFingerprint=candidate_fingerprint(
+            solution,
+            {item.course.id: item.course.cohort_id for item in loaded.courses},
+        ),
+        preparedEvidence=OptimizationGenerationRequest(
+            semesterId=loaded.semester.id,
+            scheduleRevisionId=schedule_revision_id,
+            unavailableDates=list(loaded.unavailable_dates),
+            sharedSnapshotToken=shared_snapshot_token,
+            courses=prepared_courses,
+        ),
+        comparison=RegenerationComparison(
+            selectedCourseIds=[item.course.id for item in loaded.courses],
+            current=_coverage(required_total, current_total),
+            generated=_coverage(required_total, generated_total),
+            courses=course_comparisons,
+        ),
+    )
+
+
+def _coverage(required_units: int, scheduled_units: int) -> CoverageFacts:
+    return CoverageFacts(
+        requiredUnits=required_units,
+        scheduledUnits=scheduled_units,
+        remainingUnits=max(required_units - scheduled_units, 0),
+        status="complete" if scheduled_units >= required_units else "partial",
+    )
+
+
+def _current_warning_counts(
+    db: Session,
+    loaded: LoadedOperation,
+) -> dict[int, list[ResolvedWarning]]:
+    drafts = list_draft_schedules_by_semester(db, loaded.semester.id)
+    if not drafts:
+        return {}
+    rooms_by_id = {item.id: item for item in db.scalars(select(Room))}
+    lecturers_by_id = {item.id: item for item in db.scalars(select(Lecturer))}
+    periods = db.scalars(
+        select(ResourceUnavailabilityPeriod).options(
+            selectinload(ResourceUnavailabilityPeriod.weekdays)
+        )
+    )
+    unavailability_by_resource = {}
+    for period in periods:
+        key = (
+            ("lecturer", period.lecturer_id)
+            if period.lecturer_id is not None
+            else ("room", period.room_id)
+        )
+        unavailability_by_resource.setdefault(key, []).append(period)
+    constraints_by_course_id = {
+        item.course.id: item.constraints for item in loaded.courses
+    }
+    study_windows_by_study_type_id = {
+        draft.study_type_id_snapshot: load_time_windows(
+            db, draft.study_type_id_snapshot
+        )
+        for draft in drafts
+    }
+    alerts = collect_validation_alerts(
+        drafts,
+        rooms_by_id=rooms_by_id,
+        lecturers_by_id=lecturers_by_id,
+        constraints_by_course_id=constraints_by_course_id,
+        study_windows_by_study_type_id=study_windows_by_study_type_id,
+        unavailability_by_resource=unavailability_by_resource,
+        eligible_lecturer_ids_by_course={
+            draft.course_id: {
+                link.lecturer_id for link in draft.course.eligible_lecturers
+            }
+            for draft in drafts
+        },
+        eligible_room_ids_by_course={
+            draft.course_id: {link.room_id for link in draft.course.eligible_rooms}
+            for draft in drafts
+        },
+        active_lecturer_ids={
+            item.id for item in lecturers_by_id.values() if item.is_active
+        },
+        active_room_ids={item.id for item in rooms_by_id.values() if item.is_active},
+        current_cohort_sizes_by_course={
+            draft.course_id: draft.course.cohort.student_count for draft in drafts
+        },
+        holidays_by_date=loaded.holidays,
+    )
+    selected_ids = {item.course.id for item in loaded.courses}
+    counts: dict[int, Counter[str]] = {
+        course_id: Counter() for course_id in selected_ids
+    }
+    for draft in drafts:
+        if draft.course_id not in selected_ids:
+            continue
+        for session in draft.sessions:
+            counts[draft.course_id].update(
+                alert.code.value for alert in alerts.get(session.id, [])
+            )
+    return {
+        course_id: [
+            ResolvedWarning(code=code, count=count)
+            for code, count in sorted(course_counts.items())
+        ]
+        for course_id, course_counts in counts.items()
+    }
 
 
 def _validate_selection(course_ids: list[int]) -> None:
@@ -784,6 +1095,44 @@ def _require_time_remaining(deadline: float, message: str) -> None:
 def _fingerprint(payload) -> str:
     serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def candidate_fingerprint(
+    solution: SemesterOptimizationResult,
+    cohort_ids: dict[int, int],
+) -> str:
+    """Identify only the exact generated joint sessions shown to the planner."""
+    payload = []
+    for course in sorted(solution.courses, key=lambda item: item.course_id):
+        cohort_id = cohort_ids[course.course_id]
+        sessions = [
+            [
+                session.date.isoformat(),
+                session.start_time.isoformat(),
+                session.end_time.isoformat(),
+                session.units,
+                session.lecturer_id,
+                session.room_id,
+                cohort_id,
+                session.time_window_id,
+                session.constraint_window_index,
+            ]
+            for session in sorted(
+                course.sessions,
+                key=lambda item: (
+                    item.date,
+                    item.start_time,
+                    item.end_time,
+                    item.units,
+                    item.lecturer_id or -1,
+                    item.room_id or -1,
+                    item.time_window_id or -1,
+                    item.constraint_window_index,
+                ),
+            )
+        ]
+        payload.append([course.course_id, sessions])
+    return _fingerprint(payload)
 
 
 def _course_payload(course, plan, constraints):
