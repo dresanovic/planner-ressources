@@ -29,6 +29,7 @@ type LecturerReviewManagementProps = {
 }
 
 type CoordinationFilters = {
+  status: 'open' | 'resolved' | 'all'
   lecturerId?: number
   courseSourceId?: number
   sessionKind?: 'revision' | 'teaching' | 'exam'
@@ -55,8 +56,10 @@ export function LecturerReviewManagement({
     () => new Set(),
   )
   const [feedbackFilters, setFeedbackFilters] =
-    useState<CoordinationFilters>({})
+    useState<CoordinationFilters>({ status: 'open' })
   const [notPossibleOnly, setNotPossibleOnly] = useState(false)
+  const [activeWorkflow, setActiveWorkflow] =
+    useState<'feedback' | 'links'>('feedback')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const previousRevision = useRef(overview.revision.id)
@@ -76,8 +79,9 @@ export function LecturerReviewManagement({
       setStatus('')
       setError('')
       setUncertainLinkIds(new Set())
-      setFeedbackFilters({})
+      setFeedbackFilters({ status: 'open' })
       setNotPossibleOnly(false)
+      setActiveWorkflow('feedback')
     }
   }, [overview])
 
@@ -103,7 +107,16 @@ export function LecturerReviewManagement({
   )
   const isOpenImpossible = (item: (typeof feedbackRows)[number]['item']) =>
     item.kind === 'impossible_session' && item.sessionStatus === 'current'
+  const isResolved = (item: (typeof feedbackRows)[number]['item']) =>
+    item.sessionStatus === 'changed' || item.sessionStatus === 'unavailable'
+  const openFeedbackCount = feedbackRows.filter(
+    ({ item }) => !isResolved(item),
+  ).length
   const itemFilteredRows = feedbackRows.filter(({ group, item }) => (
+    (feedbackFilters.status === 'all' ||
+      (feedbackFilters.status === 'resolved'
+        ? isResolved(item)
+        : !isResolved(item))) &&
     (feedbackFilters.lecturerId === undefined ||
       item.intendedLecturerId === feedbackFilters.lecturerId) &&
     (feedbackFilters.courseSourceId === undefined ||
@@ -137,8 +150,8 @@ export function LecturerReviewManagement({
       }
     })
     .filter((group) => group.items.length > 0)
-  const activeFeedbackFilterCount = Object.values(feedbackFilters).filter(
-    (value) => value !== undefined,
+  const activeFeedbackFilterCount = Object.entries(feedbackFilters).filter(
+    ([key, value]) => key === 'status' ? value !== 'open' : value !== undefined,
   ).length + (notPossibleOnly ? 1 : 0)
   const prominentImpossibleCount = itemFilteredRows.filter(
     ({ item }) => isOpenImpossible(item),
@@ -286,6 +299,38 @@ export function LecturerReviewManagement({
         </p>
       </header>
 
+      <div className="review-workflow-tabs" role="tablist" aria-label="Abstimmung mit Lehrenden">
+        <button
+          id="review-workflow-tab-feedback"
+          type="button"
+          role="tab"
+          aria-selected={activeWorkflow === 'feedback'}
+          aria-controls="review-workflow-panel-feedback"
+          className={activeWorkflow === 'feedback' ? 'active' : undefined}
+          onClick={() => setActiveWorkflow('feedback')}
+        >
+          Rückmeldungen ({openFeedbackCount} offen)
+        </button>
+        <button
+          id="review-workflow-tab-links"
+          type="button"
+          role="tab"
+          aria-selected={activeWorkflow === 'links'}
+          aria-controls="review-workflow-panel-links"
+          className={activeWorkflow === 'links' ? 'active' : undefined}
+          onClick={() => setActiveWorkflow('links')}
+        >
+          Zugangslinks
+        </button>
+      </div>
+
+      <div
+        id="review-workflow-panel-feedback"
+        className="review-workflow-panel"
+        role="tabpanel"
+        aria-labelledby="review-workflow-tab-feedback"
+        hidden={activeWorkflow !== 'feedback'}
+      >
       <section
         className="review-feedback-area"
         aria-labelledby="review-feedback-heading"
@@ -333,6 +378,22 @@ export function LecturerReviewManagement({
           )}
         </div>
         <div className="coordination-filters" aria-label={`Filter für Rückmeldungen der ${label('lecturer.plural')}`}>
+          <label>
+            <span>Status</span>
+            <select
+              value={feedbackFilters.status}
+              onChange={(event) =>
+                setFeedbackFilters((current) => ({
+                  ...current,
+                  status: event.target.value as CoordinationFilters['status'],
+                }))
+              }
+            >
+              <option value="open">Offen</option>
+              <option value="resolved">Erledigt</option>
+              <option value="all">Alle</option>
+            </select>
+          </label>
           <label>
             <span>Rückmeldung von {label('lecturer.singular')}</span>
             <select
@@ -411,7 +472,7 @@ export function LecturerReviewManagement({
             type="button"
             disabled={activeFeedbackFilterCount === 0}
             onClick={() => {
-              setFeedbackFilters({})
+              setFeedbackFilters({ status: 'open' })
               setNotPossibleOnly(false)
               queueMicrotask(() => feedbackHeadingRef.current?.focus())
             }}
@@ -560,7 +621,15 @@ export function LecturerReviewManagement({
           </div>
         )}
       </section>
+      </div>
 
+      <div
+        id="review-workflow-panel-links"
+        className="review-workflow-panel"
+        role="tabpanel"
+        aria-labelledby="review-workflow-tab-links"
+        hidden={activeWorkflow !== 'links'}
+      >
       <div className="review-issue-controls">
         <label htmlFor="lecturer-review-lecturer">{label('lecturer.singular')}</label>
         <select
@@ -732,6 +801,7 @@ export function LecturerReviewManagement({
 
       {status && <p role="status">{status}</p>}
       {error && <p role="alert">{error}</p>}
+      </div>
     </section>
   )
 }

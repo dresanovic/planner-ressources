@@ -733,14 +733,33 @@ describe('LecturerReviewManagement link ending and replacement', () => {
 })
 
 describe('LecturerReviewManagement planner feedback filter', () => {
+  it('separates feedback from access-link management while showing the open count', async () => {
+    await renderManagement({ currentOverview: feedbackOverview() })
+
+    const feedbackTab = button('Rückmeldungen (5 offen)')!
+    const linksTab = button('Zugangslinks')!
+    const feedbackPanel = document.querySelector<HTMLElement>('#review-workflow-panel-feedback')!
+    const linksPanel = document.querySelector<HTMLElement>('#review-workflow-panel-links')!
+
+    expect(feedbackTab.getAttribute('aria-selected')).toBe('true')
+    expect(feedbackPanel.hidden).toBe(false)
+    expect(linksPanel.hidden).toBe(true)
+
+    await click(linksTab)
+
+    expect(linksTab.getAttribute('aria-selected')).toBe('true')
+    expect(feedbackPanel.hidden).toBe(true)
+    expect(linksPanel.hidden).toBe(false)
+  })
+
   it('filters immutable items before regrouping and derives all four counters from the same scope', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
     const counters = document.querySelector('.coordination-counters')!
 
-    expect(counters.textContent).toMatch(/6.*Einträge/i)
+    expect(counters.textContent).toMatch(/5.*Einträge/i)
     expect(counters.textContent).toMatch(/2.*Kommentare/i)
     expect(counters.textContent).toMatch(/3.*offen nicht möglich/i)
-    expect(counters.textContent).toMatch(/3.*betroffene Termine/i)
+    expect(counters.textContent).toMatch(/2.*betroffene Termine/i)
 
     await change(
       labelledControl<HTMLSelectElement>('Art der Rückmeldung')!,
@@ -761,7 +780,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     expect(document.querySelectorAll('.review-feedback-group')).toHaveLength(1)
 
     await click(button('Rückmeldungsfilter zurücksetzen'))
-    expect(counters.textContent).toMatch(/6.*Einträge/i)
+    expect(counters.textContent).toMatch(/5.*Einträge/i)
     expect(document.body.textContent).toContain(
       'Tuesday and Thursday are generally preferable.',
     )
@@ -775,9 +794,9 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     )
     const counters = document.querySelector('.coordination-counters')!
 
-    expect(counters.textContent).toMatch(/4.*Einträge/i)
+    expect(counters.textContent).toMatch(/3.*Einträge/i)
     expect(counters.textContent).toMatch(/3.*offen nicht möglich/i)
-    expect(counters.textContent).toMatch(/3.*betroffene Termine/i)
+    expect(counters.textContent).toMatch(/2.*betroffene Termine/i)
     expect(document.body.textContent).not.toContain(
       'Could this session start at 10:00?',
     )
@@ -873,11 +892,12 @@ describe('LecturerReviewManagement planner feedback filter', () => {
 
     expect(notPossibleFilter()?.getAttribute('aria-pressed')).toBe('false')
     expect(labelledControl<HTMLSelectElement>('Lehrveranstaltung')?.value).toBe('')
-    expect(counters.textContent).toMatch(/6.*Einträge/i)
+    expect(counters.textContent).toMatch(/5.*Einträge/i)
   })
 
   it('uses visible non-color kind labels and retains historical session context without a guessed action', async () => {
     await renderManagement({ currentOverview: feedbackOverview() })
+    await change(labelledControl<HTMLSelectElement>('Status')!, 'resolved')
     const historical = feedbackGroup('Computer Networks')!
 
     expect(historical.textContent).toContain('Nicht möglich')
@@ -1016,6 +1036,10 @@ describe('LecturerReviewManagement planner feedback filter', () => {
     expect(notPossibleFilter()).toBeUndefined()
     expect(document.querySelector('.coordination-counters')?.textContent)
       .toMatch(/0.*offen nicht möglich/i)
+    expect(document.body.textContent).not.toContain('Erledigt durch Terminänderung')
+
+    await change(labelledControl<HTMLSelectElement>('Status')!, 'resolved')
+
     expect(document.body.textContent).toContain('Erledigt durch Terminänderung')
     expect(document.body.textContent).toContain(LECTURER_REVIEW_COMMENT_CANARY)
   })
