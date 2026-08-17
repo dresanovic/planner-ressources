@@ -60,7 +60,7 @@ and atomic save plan. The first successful accept changes the captured state, so
 repeated or concurrent losing requests become stale.
 
 **Rationale**: These mechanisms already cover the planning inputs named by
-FS-023 and close the validation-to-write race without another lock or idempotency
+I-004 and close the validation-to-write race without another lock or idempotency
 store.
 
 **Alternatives considered**:
@@ -104,7 +104,7 @@ cleanup job, or audit row would add behavior without value.
 existing generation operation continues to solve and save atomically without a
 comparison.
 
-**Rationale**: This is explicitly confirmed and limits FS-023 to replacement
+**Rationale**: This is explicitly confirmed and limits I-004 to replacement
 authority.
 
 **Alternatives considered**:

@@ -1,6 +1,6 @@
-# Data Model: FS-022 Consistent Labels, European Dates, and Actionable Messages
+# Data Model: I-002 Consistent Labels, European Dates, and Actionable Messages
 
-FS-022 adds no persisted business entity and no database migration. The models below are deployment configuration or transient presentation values derived from existing records and API responses.
+I-002 adds no persisted business entity and no database migration. The models below are deployment configuration or transient presentation values derived from existing records and API responses.
 
 ## German Terminology Default Catalog
 
@@ -182,7 +182,7 @@ The problem mapper does not recalculate the recommendation window or change whet
 
 The existing public finding response shape remains unchanged:
 
-| Existing field | FS-022 behavior |
+| Existing field | I-002 behavior |
 |---|---|
 | `findingRef` | Existing stable privacy-safe derived reference |
 | `category` | Existing allowlisted public category or `other` |

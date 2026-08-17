@@ -1,0 +1,166 @@
+openapi: 3.1.0
+info:
+  title: FS-020 Lecturer Calendar Export
+  version: 1.0.0
+  description: >-
+    Static, bearer-scoped iCalendar download for the complete current FS-015
+    lecturer/revision projection. This contract adds no subscription or
+    calendar-provider integration.
+paths:
+  /api/public/lecturer-review/calendar:
+    get:
+      operationId: downloadPublicLecturerCalendar
+      summary: Download the complete authorized lecturer schedule as iCalendar
+      description: >-
+        Reauthorizes and rebuilds the complete projection at request time. The
+        request accepts no filter, visible-period, selection, lecturer,
+        revision, filename, or event-list input.
+      security:
+        - lecturerReviewBearer: []
+      parameters: []
+      responses:
+        "200":
+          description: One complete deterministic calendar attachment.
+          headers:
+            Content-Disposition:
+              required: true
+              description: >-
+                Attachment disposition with the fixed ASCII fallback
+                resource-planner-calendar.ics and RFC 5987/6266 UTF-8
+                filename* carrying the authoritative deterministic Unicode
+                name. Neither contains a lecturer name or bearer secret.
+              schema:
+                type: string
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                const: no-store
+            Pragma:
+              required: true
+              schema:
+                type: string
+                const: no-cache
+            Referrer-Policy:
+              required: true
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+                const: noindex,nofollow
+            X-Content-Type-Options:
+              required: true
+              schema:
+                type: string
+                const: nosniff
+          content:
+            text/calendar:
+              schema:
+                type: string
+                contentMediaType: text/calendar
+                contentEncoding: binary
+              examples:
+                calendarEnvelope:
+                  summary: Shape only; full event profile is normative elsewhere
+                  value: "BEGIN:VCALENDAR\r\nVERSION:2.0\r\n...\r\nEND:VCALENDAR\r\n"
+        "404":
+          description: >-
+            Malformed, unknown, expired, revoked, replaced, abandoned,
+            superseded, or inaccessible scope. These authorization/lifecycle
+            cases are intentionally indistinguishable.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                const: no-store
+            Pragma:
+              required: true
+              schema:
+                type: string
+                const: no-cache
+            Referrer-Policy:
+              required: true
+              schema:
+                type: string
+                const: no-referrer
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+                const: noindex,nofollow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicError"
+              examples:
+                unavailable:
+                  value:
+                    code: REVIEW_UNAVAILABLE
+                    message: This review is unavailable.
+        "429":
+          description: Existing public-review abuse control is active.
+          headers:
+            Retry-After:
+              required: true
+              schema:
+                type: integer
+                minimum: 1
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicError"
+              examples:
+                throttled:
+                  value:
+                    code: REVIEW_TEMPORARILY_UNAVAILABLE
+                    message: This review is temporarily unavailable. Try again later.
+        "503":
+          description: >-
+            The current projection could not be proven complete, or a retryable
+            server-side serialization/delivery failure occurred before a
+            complete file could be returned. No calendar bytes are returned.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicError"
+              examples:
+                exportUnavailable:
+                  value:
+                    code: CALENDAR_EXPORT_UNAVAILABLE
+                    message: Calendar download is temporarily unavailable. Try again.
+components:
+  securitySchemes:
+    lecturerReviewBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque-review-secret
+      description: >-
+        The FS-015 fragment secret is sent only in the Authorization header. It
+        must not appear in a URL, query, body, cookie, filename, response, or log.
+  schemas:
+    PublicError:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string

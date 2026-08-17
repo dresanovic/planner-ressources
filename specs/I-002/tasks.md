@@ -1,4 +1,4 @@
-# Tasks: FS-022 Consistent Labels, European Dates, and Actionable Messages
+# Tasks: I-002 Consistent Labels, European Dates, and Actionable Messages
 
 **Input**: Design documents from `specs/I-002/`
 
@@ -141,7 +141,7 @@
 - [ ] T053 [P] Execute the pointer, keyboard, latest-stable Edge/Chrome/Firefox on Windows, 320px, 200%-zoom, long-text, accessibility-tree, and NVDA/Firefox scenarios from `specs/I-002/quickstart.md` and record exact versions, focus/announcement results, screenshots, and defects in `specs/I-002/validation/manual-accessibility.md`
 - [ ] T054 [P] Run the uncoached outside-window comprehension exercise with at least 10 representative planners/designated reviewers and record actual completion times and whether at least 9 of 10 meet SC-006 in `specs/I-002/validation/usability.md`
 - [ ] T055 Resolve every in-scope defect recorded by T050-T054, record each exact production/test path and the affected automated/manual checks rerun to passing in `specs/I-002/validation/remediation.md`, and leave any genuinely unresolved item open rather than proceeding to release readiness
-- [ ] T056 Reconcile all FR/TR/SC evidence, record any justified manual-only coverage, and update FS-022 status/history only when every required outcome is genuinely met in `specs/I-002/validation/release-readiness.md` and `docs/planning/Feature_slices.md`
+- [ ] T056 Reconcile all FR/TR/SC evidence, record any justified manual-only coverage, and update I-002 status/history only when every required outcome is genuinely met in `specs/I-002/validation/release-readiness.md` and `docs/planning/Feature_slices.md`
 
 ---
 

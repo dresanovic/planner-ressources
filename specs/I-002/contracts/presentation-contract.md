@@ -39,7 +39,7 @@ This contract governs human-visible presentation in every current planner and ac
 - While visible text is invalid, the previous valid ISO value is not retained as a submittable value.
 - Button-driven actions and form submission both block on invalid dates, focus the first affected date field, and show a German field-specific correction.
 - A placeholder may repeat the format but never replaces the persistent label/help text.
-- No calendar picker is required in FS-022.
+- No calendar picker is required in I-002.
 
 ### Machine-boundary exclusions
 
@@ -112,7 +112,7 @@ The fallback is fixed German copy populated only with caller-known safe context.
 - avoid direct mutation retry when the server outcome is ambiguous;
 - never include stack traces, raw exception/backend message text, bearer values, URL fragments, database details, host names, private tokens, or infrastructure identifiers.
 
-Optional diagnostic reference identifiers are not part of FS-022.
+Optional diagnostic reference identifiers are not part of I-002.
 
 ## Accessibility behavior
 
@@ -135,7 +135,7 @@ Optional diagnostic reference identifiers are not part of FS-022.
 
 ## Regression contract
 
-FS-022 changes presentation only. Tests must demonstrate no change to:
+I-002 changes presentation only. Tests must demonstrate no change to:
 
 - validation/business outcomes and warning severity;
 - successful, failed, stale, and partial-save semantics;

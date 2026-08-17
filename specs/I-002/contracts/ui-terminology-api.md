@@ -97,4 +97,4 @@ Automated contract tests compare the property set in `terminology-overrides.sche
 
 ## Compatibility
 
-This is one additive public read endpoint for FS-022. All existing domain endpoints, request/response fields, status codes, ISO date fields, and accountless lecturer response shape remain unchanged.
+This is one additive public read endpoint for I-002. All existing domain endpoints, request/response fields, status codes, ISO date fields, and accountless lecturer response shape remain unchanged.

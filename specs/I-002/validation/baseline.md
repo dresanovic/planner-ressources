@@ -1,4 +1,4 @@
-# FS-022 implementation baseline
+# I-002 implementation baseline
 
 Recorded on 10.08.2026 before production changes.
 
@@ -28,4 +28,4 @@ The first client test attempt inside the restricted Windows sandbox failed befor
 
 After pytest reported success and exit code 0, the Windows process emitted an existing fatal `0xc0000139` diagnostic while importing `pyarrow` through pandas/OR-Tools. The successful test result and this post-run environment diagnostic are both retained for later comparison.
 
-Existing React tests also emit several `act(...)` warnings while passing. FS-022 must not introduce new failures; these baseline warnings are not attributed to the slice.
+Existing React tests also emit several `act(...)` warnings while passing. I-002 must not introduce new failures; these baseline warnings are not attributed to the slice.

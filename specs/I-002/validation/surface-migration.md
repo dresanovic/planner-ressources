@@ -1,4 +1,4 @@
-# FS-022 surface migration control
+# I-002 surface migration control
 
 This matrix turns `contracts/surface-inventory.md` into the implementation and verification control. Rows may be refined as exact occurrences are migrated, but no row may be removed without a machine-boundary or fixed-copy justification.
 

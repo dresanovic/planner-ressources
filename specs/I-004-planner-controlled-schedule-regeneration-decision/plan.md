@@ -63,7 +63,7 @@ backend/client tests
 
 *GATE: Passed before Phase 0 research and passed again after Phase 1 design.*
 
-- **Spec-first — PASS**: The validated FS-023 specification and checklist exist
+- **Spec-first — PASS**: The validated I-004 specification and checklist exist
   before implementation.
 - **Acceptance criteria — PASS**: Four independently testable stories and their
   Given/When/Then scenarios cover comparison, atomic decision, stale protection,
@@ -87,7 +87,7 @@ backend/client tests
 ### Post-design re-check
 
 The simplified design introduces no constitution violation. The only new public
-operation is the confirmed accept action required by FS-023. It reuses the
+operation is the confirmed accept action required by I-004. It reuses the
 existing optimizer rather than persisting a temporary candidate or implementing
 a second exact-session validator. The extra deterministic solve is an explicit
 simplicity/performance trade-off: it keeps the design stateless while ensuring
@@ -284,7 +284,7 @@ Expected evidence:
   keyboard/focus behavior, 200% zoom structure, and no per-course decision.
 - Complete suites preserve manual editing, exams, lifecycle/publication,
   Calendar, resources, academic data, and I-003 behavior.
-- The FS-023 product owner owns recruitment and evidence collection for the
+- The I-004 product owner owns recruitment and evidence collection for the
   five-planner SC-008 review. Automated implementation may complete first, but
   the feature is not release-ready until the SC-008 threshold passes.
 

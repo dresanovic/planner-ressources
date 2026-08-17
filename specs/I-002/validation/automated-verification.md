@@ -1,4 +1,4 @@
-# FS-022 automated verification
+# I-002 automated verification
 
 Date: 10.08.2026
 
@@ -16,7 +16,7 @@ Date: 10.08.2026
 
 The pytest process still prints the baseline Windows `0xc0000139` pyarrow/NumPy
 shutdown diagnostic after reporting exit code 0. This was present in the T001
-baseline and is not introduced by FS-022.
+baseline and is not introduced by I-002.
 
 Date transport, public lecturer privacy/shape, catalog validation/startup,
 schedule domain behavior, lint and production compilation are green. T052-T054

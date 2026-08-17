@@ -1,4 +1,4 @@
-# Research: FS-022 Consistent Labels, European Dates, and Actionable Messages
+# Research: I-002 Consistent Labels, European Dates, and Actionable Messages
 
 ## Decision 1: Load customer terminology in FastAPI at startup
 

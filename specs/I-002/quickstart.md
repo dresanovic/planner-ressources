@@ -1,4 +1,4 @@
-# Quickstart: Validate FS-022 Consistent Labels, European Dates, and Actionable Messages
+# Quickstart: Validate I-002 Consistent Labels, European Dates, and Actionable Messages
 
 ## Purpose
 
@@ -221,7 +221,7 @@ Expected:
 
 Present the motivating warning to at least 10 representative planners or designated acceptance reviewers without coaching. Ask each person to state what happened, whether the schedule remains usable/saved, the recommended interval, and one valid next action. Record time to a correct answer.
 
-Expected: at least 9 of 10 answer correctly within 30 seconds. Implementation may be technically complete before this session, but FS-022 cannot be declared fully accepted until real results are recorded; do not fabricate participants or outcomes.
+Expected: at least 9 of 10 answer correctly within 30 seconds. Implementation may be technically complete before this session, but I-002 cannot be declared fully accepted until real results are recorded; do not fabricate participants or outcomes.
 
 ## Evidence to retain
 

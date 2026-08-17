@@ -2,7 +2,7 @@
 
 ## Summary
 
-The user manual was updated on 11.08.2026 to reflect the current verified Resource Planner, including the implemented container distribution, the implemented portions of FS-022, and the accountless lecturer-review workflow now present in the application.
+The user manual was updated on 11.08.2026 to reflect the current verified Resource Planner, including the implemented container distribution, the implemented portions of I-002, and the accountless lecturer-review workflow now present in the application.
 
 Outputs:
 
@@ -15,7 +15,7 @@ The manual now uses the shipped German UI terminology, explains European date di
 
 - `docs/planning/Feature_slices.md`
 - existing user manual and report
-- FS-022 specification, plan, tasks, contracts, quickstart, and validation artifacts under `specs/I-002/`
+- I-002 specification, plan, tasks, contracts, quickstart, and validation artifacts under `specs/I-002/`
 - current terminology catalog, deployment configuration, loader, client bootstrap, and terminology tests
 - current date-presentation utilities, `EuropeanDateField`, API boundary tests, and consuming surface tests
 - current problem model, actionable-problem rendering, warning/failure mappers, and owning surface tests
@@ -64,7 +64,7 @@ The backend process again emitted the existing Windows `pyarrow`/native-extensio
 | FS-019 Streamlined Schedule Workspace | Implemented | Planner | Planung > Kalender/Versionen/Prüfungen | Use focused destinations, in-pane correction, pinning, and collapsible inputs | Manual acceptance evidence remains pending | Include Quick Start and Detailed Guide |
 | FS-020 Lecturer iCalendar Export | Not implemented | Lecturer | None | None | Specification not implemented | Exclude |
 | FS-021 Lecturer Unavailability Submission | Not implemented | Planner/Lecturer | None | None | Specification not implemented | Exclude |
-| FS-022 Consistent Labels, Dates, Messages | Partially implemented | Planner/Lecturer/operator | All current UI; deployment terminology file | Use German/customer labels, `DD.MM.YYYY`, and contextual problem items | Final inventory audit, deployment matrix, browser/NVDA, and 10-user study remain open | Include verified behavior with limitation |
+| I-002 Consistent Labels, Dates, Messages | Partially implemented | Planner/Lecturer/operator | All current UI; deployment terminology file | Use German/customer labels, `DD.MM.YYYY`, and contextual problem items | Final inventory audit, deployment matrix, browser/NVDA, and 10-user study remain open | Include verified behavior with limitation |
 | I-001 Containerized Application Distribution | Implemented | Deployment operator | Docker Desktop, `compose.yaml`, or container runtime | Run one complete application image, persist data, seed an optional catalog, and create a verified backup | Single application container with SQLite; registry access and production URL are installation-specific | Include Quick Start and Detailed Guide |
 
 ## Slice coverage
@@ -90,9 +90,9 @@ The backend process again emitted the existing Windows `pyarrow`/native-extensio
 
 ## Conflicts and resolutions
 
-### FS-022 scope status is stale
+### I-002 scope status is reconciled
 
-`Feature_slices.md` still labels FS-022 as ready for implementation, while current implementation and 372/482 passing tests prove substantial delivered behavior. The task and validation artifacts still leave the final source audit, deployment/container matrix, manual browser/accessibility checks, and representative-user study open. The report therefore classifies FS-022 as partially implemented and documents only verified behavior.
+`Feature_slices.md` now labels I-002 as partially implemented, consistent with the substantial delivered behavior and remaining final source audit, deployment/container matrix, manual browser/accessibility checks, and representative-user study. This report documents only verified behavior.
 
 ### FS-015 status understates current behavior
 
@@ -119,10 +119,10 @@ Published schedule content remains immutable while current validation may reflec
 
 ## Documentation and verification gaps
 
-- FS-022 T050/T057–T061 remain open or partial: the complete source/surface inventory and representative override matrix are not fully reconciled.
-- FS-022 T052 has no recorded built-container matrix for default, valid partial, and every invalid override class.
-- FS-022 T053 has no complete Edge/Chrome/Firefox, 320px, 200% zoom, accessibility-tree, and NVDA/Firefox record.
-- FS-022 T054 has no 10-participant outside-window comprehension study; SC-006 is therefore unverified.
+- I-002 T050/T057–T061 remain open or partial: the complete source/surface inventory and representative override matrix are not fully reconciled.
+- I-002 T052 has no recorded built-container matrix for default, valid partial, and every invalid override class.
+- I-002 T053 has no complete Edge/Chrome/Firefox, 320px, 200% zoom, accessibility-tree, and NVDA/Firefox record.
+- I-002 T054 has no 10-participant outside-window comprehension study; SC-006 is therefore unverified.
 - FS-015 and FS-019 scope/status text is behind current verified implementation.
 - No new verified screenshots were embedded.
 - The recurring post-test Windows native-extension diagnostic remains unresolved.
@@ -140,9 +140,9 @@ Published schedule content remains immutable while current validation may reflec
 
 1. Have a first-time planner complete the Quick Start using only shipped German labels.
 2. Repeat representative flows with a long Unicode customer terminology override and verify no stored data changes.
-3. Execute the FS-022 browser, keyboard, 320px, 200%-zoom, and NVDA/Firefox matrix.
+3. Execute the I-002 browser, keyboard, 320px, 200%-zoom, and NVDA/Firefox matrix.
 4. Run the outside-recommended-period comprehension exercise with ten representative users.
 5. Have one planner issue a temporary review link and one lecturer complete both session and revision feedback without coaching.
-6. Reconcile the FS-015 and FS-022 status text through the product scope workflow.
+6. Reconcile the remaining FS-015 status text through the product scope workflow.
 7. Investigate the Windows native-extension diagnostic in a clean Python environment if it recurs.
 8. Have a first-time Windows operator install and run the application through Docker Desktop using only the new manual section, then record the Docker Desktop version, exact image tag, health result, persistence check, and backup result.

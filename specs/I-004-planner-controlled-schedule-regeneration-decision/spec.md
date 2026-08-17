@@ -4,9 +4,9 @@
 
 **Created**: 2026-08-12
 
-**Status**: Draft
+**Status**: Implemented — manual acceptance evidence pending
 
-**Input**: User description: "Create FS-023 so a planner can compare one valid, provisional, jointly regenerated teaching-schedule alternative with the complete current selected result and atomically accept the generated result or retain all saved schedules."
+**Input**: User description: "Create I-004 so a planner can compare one valid, provisional, jointly regenerated teaching-schedule alternative with the complete current selected result and atomically accept the generated result or retain all saved schedules."
 
 **Constitution Requirements**: This spec MUST be updated before production
 implementation. All user stories require clear acceptance criteria and
@@ -232,10 +232,10 @@ directly without showing the replacement comparison.
 - Candidate transport, temporary storage, and expiration mechanics are planning
   decisions, provided candidates remain provisional, cannot be exposed as the
   saved Working revision, and cannot be accepted after relevant state changes.
-- FS-010 through FS-013 provide conflict-aware generation, holidays, exam
-  occupancy, partial outcomes, Working-revision lifecycle, and stale-write
-  protection. FS-019 provides the Schedule workspace and generation controls;
-  FS-022 provides actionable German wording conventions.
+- I-003 provides unified conflict-aware generation, holidays, exam occupancy,
+  and partial outcomes. FS-013 provides the Working-revision lifecycle and
+  stale-write protection. FS-019 provides the Schedule workspace and generation
+  controls; I-002 provides actionable German wording conventions.
 - Per-course decisions, mixed current/generated application, changes to manual
   editing or publication authority, mandatory decision comments or history,
   and automatic repair after cancellation remain outside this feature.

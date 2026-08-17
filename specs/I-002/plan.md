@@ -1,4 +1,4 @@
-# Implementation Plan: FS-022 Consistent Labels, European Dates, and Actionable Messages
+# Implementation Plan: I-002 Consistent Labels, European Dates, and Actionable Messages
 
 **Working Branch**: `master` | **Date**: 2026-08-10 | **Spec**: [spec.md](spec.md)
 
@@ -56,7 +56,7 @@ Phase 1 introduces no constitution violation. Startup loading is necessary to va
 2. **Necessary abstractions**: A startup terminology loader plus typed client accessor is required for one runtime-selected catalog across both entry paths. Pure calendar helpers and `EuropeanDateField` are required because date rendering and entry are currently repeated broadly and native controls cannot guarantee the visible format. `UserProblem` plus `ActionableProblemList` is required to keep multiple problems distinct and provide consistent accessible semantics while domain mappers supply context-specific facts.
 3. **Deliberately excluded**: Translation/i18n libraries, multiple languages, runtime locale switching, per-user catalogs, database-backed settings, terminology administration, automatic German inflection, template-token substitution in prose, a date or calendar-picker dependency, masked typing, three-part date inputs, global regex replacement, a universal backend error envelope, a global recovery/action registry, automatic mutation retry, new notification/support systems, diagnostic reference identifiers, API/storage/export date changes, and business-rule or severity changes.
 
-Implementation MUST NOT begin until all three answers remain consistent with the approved FS-022 vertical slice.
+Implementation MUST NOT begin until all three answers remain consistent with the approved I-002 vertical slice.
 
 ## Project Structure
 

@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-11
 
-**Status**: Draft
+**Status**: Implemented — validation and acceptance follow-ups open
 
 **Input**: User description: "Create the unified teaching schedule generation feature described in docs/architecture/unified-teaching-schedule-generation.md. Replace the separate single-course and multi-course generation behavior with one conflict-aware workflow, include existing teaching sessions and exams as fixed occupancy, preserve transactional custom constraints, correct the List table grid, and render precise lecturer, room, and cohort conflict warnings."
 

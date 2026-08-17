@@ -115,7 +115,7 @@
 **Purpose**: Verify the narrow change across the unified initiative and capture final evidence.
 
 - [X] T025 Run the focused backend service/API/concurrency tests, the workflow-level 95%-within-30-seconds performance test, focused client API/dialog/page tests, complete backend/client suites, lint, and build; record results and any required command adjustments in `specs/I-004-planner-controlled-schedule-regeneration-decision/quickstart.md`
-- [ ] T026 Coordinate with the FS-023 product owner to perform the quickstart mixed-selection, cancellation, stale, atomicity, direct-save, keyboard, narrow-layout, 200%-zoom, and five-planner usability checks; treat the SC-008 threshold as a release-readiness gate and record only anonymized evidence in `specs/I-004-planner-controlled-schedule-regeneration-decision/quickstart.md`
+- [ ] T026 Coordinate with the I-004 product owner to perform the quickstart mixed-selection, cancellation, stale, atomicity, direct-save, keyboard, narrow-layout, 200%-zoom, and five-planner usability checks; treat the SC-008 threshold as a release-readiness gate and record only anonymized evidence in `specs/I-004-planner-controlled-schedule-regeneration-decision/quickstart.md`
 
 ---
 
@@ -189,4 +189,4 @@ Complete Phases 1-4 (US1 and US2). US1 alone is independently demonstrable as a 
 
 ### Simplicity Guardrail
 
-If implementation appears to require a candidate table, token expiry, cleanup job, backend cancel route, signed client session payload, second generator, or decision-history model, stop and reconcile the work with `plan.md`; none is part of FS-023.
+If implementation appears to require a candidate table, token expiry, cleanup job, backend cancel route, signed client session payload, second generator, or decision-history model, stop and reconcile the work with `plan.md`; none is part of I-004.

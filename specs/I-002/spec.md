@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-10
 
-**Status**: Specified
+**Status**: Partially implemented — validation and acceptance follow-ups open
 
 **Input**: User description: "Provide one simple customer-configurable catalog
 for selected German application terms and labels, display calendar dates

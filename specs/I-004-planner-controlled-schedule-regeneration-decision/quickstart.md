@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Use this guide after implementation to prove the FS-023 workflow end to end. It
+Use this guide after implementation to prove the I-004 workflow end to end. It
 validates provisional generation, factual comparison, atomic acceptance,
 non-mutating cancellation, stale/one-time protection, direct save, accessibility,
 and regression boundaries. It does not replace the automated test suites.
@@ -16,7 +16,7 @@ Relevant design artifacts:
 
 ## Prerequisites
 
-- Implementation and validation run from an isolated FS-023 feature
+- Implementation and validation run from an isolated I-004 feature
   branch/worktree with no unrelated changes in files named by `tasks.md`.
   Record the branch name, commit, and baseline `git status --short` before TDD
   work begins.
@@ -205,12 +205,12 @@ Expected:
 - Course and side association remains clear without color and when facts stack.
 - No horizontal page overflow hides content; both actions remain reachable.
 
-The FS-023 product owner owns recruitment and evidence collection for the SC-008
+The I-004 product owner owns recruitment and evidence collection for the SC-008
 review with at least five representative planner users. At least 90% must
 identify the validity/coverage trade-off and complete their intended decision
 unaided in under two minutes on the first attempt. Record anonymized task
 completion, duration, errors, and result only; do not add product decision
-history. Automated implementation may complete before this review, but FS-023
+history. Automated implementation may complete before this review, but I-004
 is not release-ready until the threshold passes.
 
 ## 9. Run complete regression suites
@@ -241,7 +241,7 @@ Implementation baseline:
 - base commit: `bbc6d6e`;
 - implementation started from a clean isolated checkout of the feature branch;
 - baseline status contained only the approved `.specify/feature.json` pointer and
-  untracked FS-023 specification artifacts;
+  untracked I-004 specification artifacts;
   no unrelated production-file changes were present.
 
 Before commit, record:
@@ -272,12 +272,12 @@ Before commit, record:
   completed within 30 seconds. Together with the 20-course optimizer reference,
   the corrected performance suite passed 4 tests in 269.70 seconds.
 - Complete backend suite: 470 passed in 239.70 seconds. Existing deprecation
-  warnings remain unrelated to FS-023.
+  warnings remain unrelated to I-004.
 - Complete client suite: 383 passed; focused page suite after the final
   navigation-discard and no-result guidance adjustments: 53 passed.
 - Review-correction client API/page suite: 63 passed.
 - Consolidated-branch verification after merging the Schedule workspace tab
-  separation with FS-023: 92 focused backend tests and 387 complete client tests
+  separation with I-004: 92 focused backend tests and 387 complete client tests
   passed; client lint and production build also passed.
 - Client lint: passed. Client production build: passed.
 - Command adjustment: backend tests were run from `backend/` with

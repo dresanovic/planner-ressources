@@ -32,7 +32,7 @@
 ## Notes
 
 - Validation iteration 1 completed on 2026-08-12: all 16 checklist items pass.
-- No clarification markers remain. The confirmed FS-023 decisions and the
+- No clarification markers remain. The confirmed I-004 decisions and the
   established I-003 unified-generation terminology provide sufficient detail
   for planning.
 - The specification is intentionally limited to the post-generation comparison
