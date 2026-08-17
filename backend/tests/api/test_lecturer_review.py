@@ -215,7 +215,7 @@ def test_planner_overview_and_issue_reveal_secret_once_without_persisting_it(
     assert overview["links"][0]["id"] == issued["issuedLink"]["id"]
 
 
-def test_public_contract_has_exactly_two_operations_and_uses_bearer_header(
+def test_public_contract_has_exactly_three_operations_and_uses_bearer_header(
     client_and_db,
 ):
     client, db = client_and_db
@@ -230,6 +230,7 @@ def test_public_contract_has_exactly_two_operations_and_uses_bearer_header(
     }
     assert public_paths == {
         "/api/public/lecturer-review": ["get"],
+        "/api/public/lecturer-review/calendar": ["get"],
         "/api/public/lecturer-review/feedback": ["post"],
     }
 
@@ -434,6 +435,59 @@ def test_valid_long_key_is_accepted_without_exposing_it(monkeypatch):
     assert isinstance(configured, bytes)
     assert len(configured) >= 32
     assert SOURCE_FINGERPRINT_KEY not in repr(configured)
+
+
+def test_institution_timezone_defaults_to_vienna(monkeypatch):
+    monkeypatch.delenv("INSTITUTION_TIMEZONE", raising=False)
+    service = importlib.import_module("app.services.lecturer_review")
+
+    assert service.institution_timezone_from_environment() == "Europe/Vienna"
+
+
+@pytest.mark.parametrize("configured", ["", "Not/A-Time-Zone", "../Vienna"])
+def test_institution_timezone_rejects_invalid_tzids(monkeypatch, configured):
+    monkeypatch.setenv("INSTITUTION_TIMEZONE", configured)
+    service = importlib.import_module("app.services.lecturer_review")
+
+    with pytest.raises(RuntimeError, match="INSTITUTION_TIMEZONE"):
+        service.institution_timezone_from_environment()
+
+
+def test_application_startup_validates_institution_timezone(monkeypatch):
+    monkeypatch.setenv(
+        "LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY", SOURCE_FINGERPRINT_KEY
+    )
+    monkeypatch.setenv("INSTITUTION_TIMEZONE", "Invalid/Startup-Zone")
+
+    async def start_application() -> None:
+        async with app_main.lifespan(app_main.app):
+            pass
+
+    with pytest.raises(RuntimeError, match="INSTITUTION_TIMEZONE"):
+        asyncio.run(start_application())
+
+
+def test_public_projection_uses_configured_institution_timezone(
+    client_and_db, monkeypatch
+):
+    client, db = client_and_db
+    monkeypatch.setenv("INSTITUTION_TIMEZONE", "Europe/Paris")
+    seed_lecturer_review_fixture(db)
+    issued = _issue_link(client)
+
+    response = client.get(
+        "/api/public/lecturer-review",
+        headers={"Authorization": f"Bearer {issued['secret']}"},
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["timeZone"] == "Europe/Paris"
+    assert {
+        session["timeZone"]
+        for course in payload["courses"]
+        for session in course["sessions"]
+    } == {"Europe/Paris"}
 
 
 @pytest.mark.parametrize(

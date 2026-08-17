@@ -1,0 +1,57 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Resource Planner//Lecturer Calendar Export 1.0//EN
+CALSCALE:GREGORIAN
+NAME:Terminplanung – Wintersemester 2026 – Revision 2
+X-WR-CALNAME:Terminplanung – Wintersemester 2026 – Revision 2
+BEGIN:VTIMEZONE
+TZID:Europe/Vienna
+COMMENT:This timezone only works from 2025-09-01 to 2027-09-01.
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:20250901T000000
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:20251026T030000
+RDATE:20261025T030000
+END:STANDARD
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:20260329T030000
+RDATE:20270328T030000
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:f87ff873bfc238cdcbcfad4ee5eef2e72417e6f0a51af2da62d14074b90812e4@resou
+ rce-planner.invalid
+DTSTAMP:20260203T102030Z
+DTSTART;TZID=Europe/Vienna:20261008T090000
+DTEND;TZID=Europe/Vienna:20261008T103000
+SUMMARY:COURSE-3 – Beispiellehrveranstaltung – Prüfung
+LOCATION:Raum A
+DESCRIPTION:Terminart: Prüfung\nLehrveranstaltung: COURSE-3 – Beispiell
+ ehrveranstaltung\nKohorte: CS-26\nStudienart: Vollzeit\nPrüfungsdauer: 90
+  Minuten\nSemester: Wintersemester 2026\nRevision: Revision 2
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:657ac6c0535d9b411a6c0ecf1218721c412ec03dfa4cf9667c47ff073aa854a5@resou
+ rce-planner.invalid
+DTSTAMP:20260203T102030Z
+DTSTART;TZID=Europe/Vienna:20261009T090000
+DTEND;TZID=Europe/Vienna:20261009T103000
+SUMMARY:COURSE-4 – Beispiellehrveranstaltung – Prüfung
+LOCATION:Raum A
+DESCRIPTION:Terminart: Prüfung\nLehrveranstaltung: COURSE-4 – Beispiell
+ ehrveranstaltung\nKohorte: CS-26\nStudienart: Vollzeit\nPrüfungsdauer: 90
+  Minuten\nSemester: Wintersemester 2026\nRevision: Revision 2
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR

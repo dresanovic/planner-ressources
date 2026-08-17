@@ -125,6 +125,9 @@ def test_public_operations_are_the_only_stored_secret_allowlist(client_and_db):
     headers = {"Authorization": f"Bearer {issued['secret']}"}
 
     review = client.get("/api/public/lecturer-review", headers=headers)
+    calendar = client.get(
+        "/api/public/lecturer-review/calendar", headers=headers
+    )
     invalid_feedback = client.post(
         "/api/public/lecturer-review/feedback",
         headers=headers,
@@ -134,7 +137,21 @@ def test_public_operations_are_the_only_stored_secret_allowlist(client_and_db):
         "/api/public/lecturer-review/feedback",
         headers=headers,
     )
+    trailing_calendar = client.get(
+        "/api/public/lecturer-review/calendar/", headers=headers
+    )
+    wrong_method_calendar = client.post(
+        "/api/public/lecturer-review/calendar", headers=headers
+    )
+    cookie_only_calendar = client.get(
+        "/api/public/lecturer-review/calendar",
+        cookies={"lecturer_review": issued["secret"]},
+    )
 
     assert review.status_code == 200
+    assert calendar.status_code == 200
     assert invalid_feedback.status_code == 422
     assert near_miss.status_code == 403
+    assert trailing_calendar.status_code == 403
+    assert wrong_method_calendar.status_code == 403
+    assert cookie_only_calendar.status_code == 404

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   buildLecturerReviewUrl,
+  downloadPublicLecturerCalendar,
   getLecturerReviewOverview,
   getPublicLecturerReview,
   issueLecturerReviewLink,
@@ -10,6 +11,7 @@ import {
 } from './lecturerReview'
 import {
   issuedLecturerReviewLinkFixture,
+  lecturerCalendarDownloadFixture,
   LECTURER_REVIEW_SECRET_CANARY,
   lecturerReviewFeedbackInputFixtures,
   lecturerReviewLinkFixture,
@@ -91,6 +93,124 @@ describe('lecturer review API', () => {
       }),
     )
     expect(options.body).toBeUndefined()
+  })
+
+  it('downloads calendar bytes through the fixed bearer-only path', async () => {
+    const download = lecturerCalendarDownloadFixture()
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          'Content-Disposition': `attachment; filename="resource-planner-calendar.ics"; filename*=UTF-8''${encodeURIComponent(download.filename)}`,
+        },
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await downloadPublicLecturerCalendar(
+      LECTURER_REVIEW_SECRET_CANARY,
+    )
+
+    expect(result.filename).toBe(download.filename)
+    expect(await blobText(result.blob)).toContain('BEGIN:VCALENDAR')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [path, options] = fetchMock.mock.calls[0]
+    expect(path).toBe('/api/public/lecturer-review/calendar')
+    expect(path).not.toContain(LECTURER_REVIEW_SECRET_CANARY)
+    expect(options).toEqual(
+      expect.objectContaining({
+        method: 'GET',
+        credentials: 'omit',
+        headers: {
+          Authorization: `Bearer ${LECTURER_REVIEW_SECRET_CANARY}`,
+          Accept: 'text/calendar',
+        },
+      }),
+    )
+    expect(options.body).toBeUndefined()
+  })
+
+  it('accepts a contracted filename with supplementary-plane Unicode letters', async () => {
+    const filename = `${'𐐀'.repeat(130)}-S-R.ics`
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          'Content-Disposition': `attachment; filename="resource-planner-calendar.ics"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+        },
+      }),
+    ))
+
+    const result = await downloadPublicLecturerCalendar(
+      LECTURER_REVIEW_SECRET_CANARY,
+    )
+
+    expect(Array.from(result.filename.slice(0, -4))).toHaveLength(134)
+    expect(result.filename).toBe(filename)
+  })
+
+  it.each([
+    ['wrong media', { 'Content-Type': 'application/octet-stream', 'Content-Disposition': `attachment; filename*=UTF-8''safe.ics` }],
+    ['missing filename', { 'Content-Type': 'text/calendar; charset=utf-8' }],
+    ['path filename', { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': `attachment; filename*=UTF-8''..%2Fsecret.ics` }],
+    ['control filename', { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': `attachment; filename*=UTF-8''bad%0Aname.ics` }],
+    ['wrong extension', { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': `attachment; filename*=UTF-8''calendar.txt` }],
+  ])('rejects retryably mapped unsafe calendar metadata: %s', async (_name, headers) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response('BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n', { status: 200, headers }),
+    ))
+
+    await expect(
+      downloadPublicLecturerCalendar(LECTURER_REVIEW_SECRET_CANARY),
+    ).rejects.toMatchObject({
+      status: 502,
+      retryable: true,
+      code: 'CALENDAR_EXPORT_UNAVAILABLE',
+      message: 'The calendar response is invalid.',
+    })
+  })
+
+  it.each([
+    [404, false, 'REVIEW_UNAVAILABLE'],
+    [429, true, 'CALENDAR_EXPORT_UNAVAILABLE'],
+    [503, true, 'CALENDAR_EXPORT_UNAVAILABLE'],
+  ])('maps calendar HTTP %s without exposing its body', async (status, retryable, code) => {
+    const rawCanary = `raw-${LECTURER_REVIEW_SECRET_CANARY}`
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(rawCanary, {
+        status,
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(rawCanary)}.ics`,
+        },
+      }),
+    ))
+
+    let failure: unknown
+    try {
+      await downloadPublicLecturerCalendar(LECTURER_REVIEW_SECRET_CANARY)
+    } catch (reason) {
+      failure = reason
+    }
+    expect(failure).toMatchObject({ status, retryable, code })
+    expect(String(failure)).not.toContain(rawCanary)
+    expect(String(failure)).not.toContain(LECTURER_REVIEW_SECRET_CANARY)
+  })
+
+  it('maps a raw network exception to one safe retryable failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(
+      new Error(`socket failed ${LECTURER_REVIEW_SECRET_CANARY}`),
+    ))
+
+    await expect(
+      downloadPublicLecturerCalendar(LECTURER_REVIEW_SECRET_CANARY),
+    ).rejects.toMatchObject({
+      status: 0,
+      retryable: true,
+      message: 'The calendar could not be reached. Try again.',
+    })
   })
 
   it('constructs the public fragment URL on the client from an explicit origin', () => {
@@ -431,6 +551,15 @@ async function captureError(action: () => Promise<unknown>) {
     return error
   }
   throw new Error('Expected the lecturer review request to fail.')
+}
+
+function blobText(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.addEventListener('load', () => resolve(String(reader.result)))
+    reader.addEventListener('error', () => reject(reader.error))
+    reader.readAsText(blob)
+  })
 }
 
 

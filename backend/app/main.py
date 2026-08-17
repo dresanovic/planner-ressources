@@ -34,6 +34,7 @@ from app.db.session import SessionLocal, engine, get_db
 from app.frontend import mount_frontend
 from app.services.lecturer_review import (
     cleanup_invalid_source_states,
+    institution_timezone_from_environment,
     is_stored_lecturer_review_secret,
     source_fingerprint_key_from_environment,
 )
@@ -45,6 +46,7 @@ async def lifespan(_app: FastAPI):
     _app.state.ui_terminology = load_terminology_from_environment()
     production = os.getenv("APP_ENV", "").casefold() == "production"
     source_fingerprint_key_from_environment(production=production)
+    institution_timezone_from_environment()
     uses_default_database = get_db not in _app.dependency_overrides
     if uses_default_database:
         initialize_database(engine)
@@ -94,6 +96,7 @@ app.add_middleware(
 
 _LECTURER_PUBLIC_OPERATIONS = {
     ("GET", "/api/public/lecturer-review"),
+    ("GET", "/api/public/lecturer-review/calendar"),
     ("POST", "/api/public/lecturer-review/feedback"),
     ("GET", "/api/public/ui-terminology"),
 }

@@ -190,6 +190,59 @@ export function publicLecturerReviewFixture() {
   }
 }
 
+export function mixedPublicLecturerReviewFixture() {
+  return publicLecturerReviewFixture()
+}
+
+export function emptyPublicLecturerReviewFixture() {
+  const value = publicLecturerReviewFixture()
+  value.courses = []
+  value.validationFindings = []
+  value.submittedFeedback = []
+  value.filterFacets = {
+    courses: [],
+    cohorts: [],
+    rooms: [],
+    studyTypes: [],
+    sessionTypes: [],
+    lifecycleContexts: value.filterFacets.lifecycleContexts,
+    validationCategories: [],
+  }
+  return value
+}
+
+export function lecturerCalendarDownloadFixture() {
+  return {
+    blob: new Blob(
+      [
+        'BEGIN:VCALENDAR\r\n',
+        'VERSION:2.0\r\n',
+        'PRODID:-//Resource Planner//Lecturer Calendar Export 1.0//EN\r\n',
+        'END:VCALENDAR\r\n',
+      ],
+      { type: 'text/calendar;charset=utf-8' },
+    ),
+    filename: 'Terminplan-Wintersemester-2026-Working-R2.ics',
+  }
+}
+
+export const lecturerCalendarDownloadErrorFixtures = {
+  terminal: {
+    status: 404,
+    code: 'REVIEW_UNAVAILABLE',
+  },
+  throttled: {
+    status: 429,
+    code: 'REVIEW_TEMPORARILY_UNAVAILABLE',
+  },
+  retryable: {
+    status: 503,
+    code: 'CALENDAR_EXPORT_UNAVAILABLE',
+  },
+  unsafeFilename: 'Ada/secret.ics',
+  wrongMediaType: 'application/json',
+} as const
+
 export function longLabelPublicLecturerReviewFixture() {
   const value = publicLecturerReviewFixture()
   value.intendedLecturer =

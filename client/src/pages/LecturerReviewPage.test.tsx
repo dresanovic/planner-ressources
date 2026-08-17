@@ -5,18 +5,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   LECTURER_REVIEW_COMMENT_CANARY,
   LECTURER_REVIEW_SECRET_CANARY,
+  lecturerCalendarDownloadFixture,
   lecturerReviewFeedbackResultFixture,
   longLabelPublicLecturerReviewFixture,
   publicLecturerReviewFixture,
 } from '../test/lecturerReviewFixtures'
 
 const api = vi.hoisted(() => ({
+  downloadPublicLecturerCalendar: vi.fn(),
   getPublicLecturerReview: vi.fn(),
   submitPublicLecturerFeedback: vi.fn(),
 }))
 
 vi.mock('../api/lecturerReview', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../api/lecturerReview')>()),
+  downloadPublicLecturerCalendar: api.downloadPublicLecturerCalendar,
   getPublicLecturerReview: api.getPublicLecturerReview,
   submitPublicLecturerFeedback: api.submitPublicLecturerFeedback,
 }))
@@ -98,17 +101,118 @@ afterEach(() => {
     value: 1024,
     configurable: true,
   })
+  vi.unstubAllGlobals()
 })
 
 beforeEach(() => {
   vi.clearAllMocks()
   api.getPublicLecturerReview.mockResolvedValue(publicLecturerReviewFixture())
+  api.downloadPublicLecturerCalendar.mockResolvedValue(
+    lecturerCalendarDownloadFixture(),
+  )
   api.submitPublicLecturerFeedback.mockResolvedValue(
     lecturerReviewFeedbackResultFixture(),
   )
 })
 
 describe('LecturerReviewPage shared restricted workspace', () => {
+  it('gates one complete-schedule browser handoff behind explicit confirmation', async () => {
+    const createObjectURL = vi.fn(() => 'blob:fs020-calendar')
+    const revokeObjectURL = vi.fn()
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL })
+    const anchorClick = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined)
+    await renderPage()
+    const sessionType = labelledControl<HTMLSelectElement>('Terminart')!
+    await change(sessionType, 'exam')
+    await click(button('Liste'))
+
+    const opener = button('Kalender herunterladen')!
+    await click(opener)
+
+    expect(api.downloadPublicLecturerCalendar).not.toHaveBeenCalled()
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain('2')
+    await click(button('Download fortsetzen'))
+
+    expect(api.downloadPublicLecturerCalendar).toHaveBeenCalledOnce()
+    expect(api.downloadPublicLecturerCalendar).toHaveBeenCalledWith(
+      LECTURER_REVIEW_SECRET_CANARY,
+    )
+    expect(createObjectURL).toHaveBeenCalledOnce()
+    expect(anchorClick).toHaveBeenCalledOnce()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:fs020-calendar')
+    expect(sessionType.value).toBe('exam')
+    expect(button('Liste')?.getAttribute('aria-pressed')).toBe('true')
+    const statusText = document.querySelector('[role="status"][aria-live="polite"]')?.textContent ?? ''
+    expect(statusText).not.toMatch(/Outlook.*aktualisiert|Dubletten|synchronisiert/i)
+  })
+
+  it('cancels without a request and preserves mode, revision draft, and opener focus', async () => {
+    await renderPage()
+    await click(button('Liste'))
+    const revisionDraft = document.querySelector<HTMLTextAreaElement>('#lecturer-review-revision-comment')!
+    await typeIn(revisionDraft, 'Ungesendeter Kalender-Kontext.')
+    const opener = button('Kalender herunterladen')!
+    await click(opener)
+    await click(button('Abbrechen'))
+
+    expect(api.downloadPublicLecturerCalendar).not.toHaveBeenCalled()
+    expect(button('Liste')?.getAttribute('aria-pressed')).toBe('true')
+    expect(revisionDraft.value).toBe('Ungesendeter Kalender-Kontext.')
+    expect(document.activeElement).toBe(opener)
+  })
+
+  it('keeps a retryable failure in the dialog and retries once per confirmation', async () => {
+    const createObjectURL = vi.fn(() => 'blob:fs020-calendar-retry')
+    const revokeObjectURL = vi.fn()
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    api.downloadPublicLecturerCalendar
+      .mockRejectedValueOnce(new LecturerReviewApiError(503, 'raw hidden', true))
+      .mockResolvedValueOnce(lecturerCalendarDownloadFixture())
+    await renderPage()
+    await click(button('Kalender herunterladen'))
+
+    await click(button('Download fortsetzen'))
+    expect(api.downloadPublicLecturerCalendar).toHaveBeenCalledTimes(1)
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain('vorübergehend')
+    expect(document.body.textContent).not.toContain('raw hidden')
+
+    await click(button('Download fortsetzen'))
+    expect(api.downloadPublicLecturerCalendar).toHaveBeenCalledTimes(2)
+    expect(document.querySelector('.lecturer-calendar-download-dialog')).toBeNull()
+    expect(createObjectURL).toHaveBeenCalledOnce()
+    expect(revokeObjectURL).toHaveBeenCalledOnce()
+  })
+
+  it('clears protected DOM on a terminal calendar result', async () => {
+    api.downloadPublicLecturerCalendar.mockRejectedValueOnce(
+      new LecturerReviewApiError(404, 'This review is unavailable.', false, 'REVIEW_UNAVAILABLE'),
+    )
+    await renderPage()
+    const revisionDraft = document.querySelector<HTMLTextAreaElement>('#lecturer-review-revision-comment')!
+    await typeIn(revisionDraft, 'Protected calendar draft.')
+    await click(button('Kalender herunterladen'))
+    await click(button('Download fortsetzen'))
+
+    expect(document.body.textContent).toContain('nicht verfügbar')
+    expect(document.body.textContent).not.toContain('Dr Ada Lecturer')
+    expect(document.body.textContent).not.toContain('Protected calendar draft.')
+    expect(document.querySelector('.calendar-workspace')).toBeNull()
+  })
+
+  it('shows zero as the informational count for an authoritative empty review', async () => {
+    const empty = publicLecturerReviewFixture()
+    empty.courses = []
+    api.getPublicLecturerReview.mockResolvedValueOnce(empty)
+    await renderPage()
+    await click(button('Kalender herunterladen'))
+
+    expect(document.querySelector('.lecturer-calendar-download-dialog')?.textContent).toContain('0 Termine')
+    expect(api.downloadPublicLecturerCalendar).not.toHaveBeenCalled()
+  })
+
   it('shows complete fixed-context teaching and exam scope in all established modes', async () => {
     await renderPage()
 
@@ -237,6 +341,22 @@ describe('LecturerReviewPage shared restricted workspace', () => {
     expect(sessionType.value).toBe('exam')
     expect(document.querySelector('.session-pane')).toBeNull()
     expect(document.body.textContent).toContain('1 aktive Filterbedingung')
+  })
+
+  it('does not compose the calendar notice over an existing discard decision', async () => {
+    await renderPage()
+    await click(document.querySelector('[data-occurrence-ref="teaching:101"]'))
+    const draft = document.querySelector<HTMLTextAreaElement>(
+      '#session-comment-teaching-101',
+    )!
+    await typeIn(draft, 'Keep one modal only.')
+    await change(labelledControl<HTMLSelectElement>('Terminart')!, 'exam')
+
+    const download = button('Kalender herunterladen')!
+    expect(download.disabled).toBe(true)
+    await click(download)
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(1)
+    expect(api.downloadPublicLecturerCalendar).not.toHaveBeenCalled()
   })
 
   it('appends accepted feedback locally and performs no projection GET', async () => {

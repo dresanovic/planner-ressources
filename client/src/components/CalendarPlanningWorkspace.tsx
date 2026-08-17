@@ -45,6 +45,7 @@ type Props = {
   ) => ReactNode
   accessProfile?: 'planner' | 'lecturer-review'
   fixedContext?: ReactNode
+  contextActions?: ReactNode
   onRequestTargetHidingFilter?: (commitFilter: () => void) => void
 }
 
@@ -161,6 +162,7 @@ function CalendarPlanningWorkspaceContent({
   renderSessionPane,
   accessProfile = 'planner',
   fixedContext,
+  contextActions,
   onRequestTargetHidingFilter,
   mode,
   anchor,
@@ -370,6 +372,9 @@ function CalendarPlanningWorkspaceContent({
           {!restricted && workspace.selectedRevision.readOnly && <p className="read-only-note">Veröffentlichte Inhalte sind schreibgeschützt. Hinweise werden anhand der aktuellen Planungsdaten neu berechnet, ohne die Veröffentlichung zu ändern.</p>}
           {restricted && fixedContext}
         </div>
+        {restricted && contextActions && (
+          <div className="calendar-context-actions">{contextActions}</div>
+        )}
         {!restricted && <div className="revision-context-switch" aria-label="Planungsrevision">
           {workspace.availableContexts.activeWorking && <button type="button" aria-pressed={workspace.selectedRevision.designation === 'active_working'} onClick={() => onSelectRevision?.(workspace.availableContexts.activeWorking!.revisionId)}>Arbeitsrevision R{workspace.availableContexts.activeWorking.revisionNumber}</button>}
           {workspace.availableContexts.currentPublished && <button type="button" aria-pressed={workspace.selectedRevision.designation === 'current_published'} onClick={() => onSelectRevision?.(workspace.availableContexts.currentPublished!.revisionId)}>Veröffentlichung R{workspace.availableContexts.currentPublished.revisionNumber}</button>}

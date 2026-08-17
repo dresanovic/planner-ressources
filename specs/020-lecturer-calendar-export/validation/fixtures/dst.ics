@@ -1,0 +1,57 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Resource Planner//Lecturer Calendar Export 1.0//EN
+CALSCALE:GREGORIAN
+NAME:Terminplanung – Wintersemester 2026 – Revision 2
+X-WR-CALNAME:Terminplanung – Wintersemester 2026 – Revision 2
+BEGIN:VTIMEZONE
+TZID:Europe/Vienna
+COMMENT:This timezone only works from 2025-09-01 to 2027-09-01.
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:20250901T000000
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:20251026T030000
+RDATE:20261025T030000
+END:STANDARD
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:20260329T030000
+RDATE:20270328T030000
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:f61ffbcb46da6b6a12d441458455c91d1aa12ae0d8478ab6a31a0ede328ff56d@resou
+ rce-planner.invalid
+DTSTAMP:20260203T102030Z
+DTSTART;TZID=Europe/Vienna:20260115T090000
+DTEND;TZID=Europe/Vienna:20260115T103000
+SUMMARY:COURSE-9 – Beispiellehrveranstaltung – Lehrtermin
+LOCATION:Raum A
+DESCRIPTION:Terminart: Lehrtermin\nLehrveranstaltung: COURSE-9 – Beispie
+ llehrveranstaltung\nKohorte: CS-26\nStudienart: Vollzeit\nLehreinheiten: 2
+ \nSemester: Wintersemester 2026\nRevision: Revision 2
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:a2754e3aa1de9c02246dd2ffbdbae3caa0f0e441bd9ea987988d9b6c6545e943@resou
+ rce-planner.invalid
+DTSTAMP:20260203T102030Z
+DTSTART;TZID=Europe/Vienna:20260715T090000
+DTEND;TZID=Europe/Vienna:20260715T103000
+SUMMARY:COURSE-10 – Beispiellehrveranstaltung – Lehrtermin
+LOCATION:Raum A
+DESCRIPTION:Terminart: Lehrtermin\nLehrveranstaltung: COURSE-10 – Beispi
+ ellehrveranstaltung\nKohorte: CS-26\nStudienart: Vollzeit\nLehreinheiten: 
+ 2\nSemester: Wintersemester 2026\nRevision: Revision 2
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR

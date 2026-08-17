@@ -11,6 +11,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 .pytest_cache/
+pytest-cache-files-*/
 # Custom pytest base-temp/output directories used by local verification runs.
 backend/.pytest-*/
 backend/.pytest_*/
@@ -71,6 +72,7 @@ Thumbs.db
 # Temporary
 # -----------------------------------------------------
 tmp/
+.tmp/
 temp/
 .cache/
 

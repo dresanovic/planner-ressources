@@ -1,0 +1,83 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Resource Planner//Lecturer Calendar Export 1.0//EN
+CALSCALE:GREGORIAN
+NAME:Terminplanung – Wintersemester 2026 – Revision 2
+X-WR-CALNAME:Terminplanung – Wintersemester 2026 – Revision 2
+BEGIN:VTIMEZONE
+TZID:Europe/Vienna
+COMMENT:This timezone only works from 2025-09-01 to 2027-09-01.
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:20250901T000000
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:20251026T030000
+RDATE:20261025T030000
+END:STANDARD
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:20260329T030000
+RDATE:20270328T030000
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:223a460f4909415dc7bec8e960888870160586707ebae0082383b95f10fd7cc2@resou
+ rce-planner.invalid
+DTSTAMP:20260203T102030Z
+DTSTART;TZID=Europe/Vienna:20261010T090000
+DTEND;TZID=Europe/Vienna:20261010T103000
+SUMMARY:COURSE-5 – Beispiellehrveranstaltung – Lehrtermin
+LOCATION:Raum A
+DESCRIPTION:Terminart: Lehrtermin\nLehrveranstaltung: COURSE-5 – Beispie
+ llehrveranstaltung\nKohorte: CS-26\nStudienart: Vollzeit\nLehreinheiten: 2
+ \nSemester: Wintersemester 2026\nRevision: Revision 2
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:7fefb2d716bfa7dfa61d76e63be5e71fb9dfef6a89d1a967a1a939a503f7da23@resou
+ rce-planner.invalid
+DTSTAMP:20260203T102030Z
+DTSTART;TZID=Europe/Vienna:20261011T090000
+DTEND;TZID=Europe/Vienna:20261011T103000
+SUMMARY:COURSE-6 – Beispiellehrveranstaltung – Prüfung
+LOCATION:Raum A
+DESCRIPTION:Terminart: Prüfung\nLehrveranstaltung: COURSE-6 – Beispiell
+ ehrveranstaltung\nKohorte: CS-26\nStudienart: Vollzeit\nPrüfungsdauer: 90
+  Minuten\nSemester: Wintersemester 2026\nRevision: Revision 2
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:e6b19f5d675d2122546861f70d63e27729881de41c8cd646259277c1843e7d79@resou
+ rce-planner.invalid
+DTSTAMP:20260203T102030Z
+DTSTART;TZID=Europe/Vienna:20261012T090000
+DTEND;TZID=Europe/Vienna:20261012T103000
+SUMMARY:COURSE-7 – Beispiellehrveranstaltung – Lehrtermin
+LOCATION:Raum A
+DESCRIPTION:Terminart: Lehrtermin\nLehrveranstaltung: COURSE-7 – Beispie
+ llehrveranstaltung\nKohorte: CS-26\nStudienart: Vollzeit\nLehreinheiten: 2
+ \nSemester: Wintersemester 2026\nRevision: Revision 2
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:603fc5becc889cc084a47ca63d54cafdf90a4c8a2cb4268a3e07daaa6321f19e@resou
+ rce-planner.invalid
+DTSTAMP:20260203T102030Z
+DTSTART;TZID=Europe/Vienna:20261013T090000
+DTEND;TZID=Europe/Vienna:20261013T103000
+SUMMARY:COURSE-8 – Beispiellehrveranstaltung – Prüfung
+LOCATION:Raum A
+DESCRIPTION:Terminart: Prüfung\nLehrveranstaltung: COURSE-8 – Beispiell
+ ehrveranstaltung\nKohorte: CS-26\nStudienart: Vollzeit\nPrüfungsdauer: 90
+  Minuten\nSemester: Wintersemester 2026\nRevision: Revision 2
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR

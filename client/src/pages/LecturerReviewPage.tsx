@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
+  downloadPublicLecturerCalendar,
   getPublicLecturerReview,
   LecturerReviewApiError,
   submitPublicLecturerFeedback,
@@ -9,6 +10,7 @@ import {
 } from '../api/lecturerReview'
 import { CalendarPlanningWorkspace } from '../components/CalendarPlanningWorkspace'
 import { DiscardChangesDialog } from '../components/DiscardChangesDialog'
+import { LecturerCalendarDownloadDialog } from '../components/LecturerCalendarDownloadDialog'
 import { ScheduleOccurrenceList } from '../components/ScheduleOccurrenceList'
 import { SessionPane } from '../components/SessionPane'
 import { adaptLecturerReviewToWorkspace } from '../components/calendarWorkspaceUtils'
@@ -45,6 +47,12 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
   const [pendingKey, setPendingKey] = useState<string | null>(null)
   const [feedbackStatus, setFeedbackStatus] = useState('')
   const [feedbackError, setFeedbackError] = useState('')
+  const [calendarDialogOpen, setCalendarDialogOpen] = useState(false)
+  const [calendarDownloadBusy, setCalendarDownloadBusy] = useState(false)
+  const [calendarDownloadError, setCalendarDownloadError] = useState<string | null>(null)
+  const [calendarDownloadStatus, setCalendarDownloadStatus] = useState('')
+  const [calendarDownloadRestoreFocusTo, setCalendarDownloadRestoreFocusTo] =
+    useState<HTMLElement | null>(null)
   const loadGeneration = useRef(0)
   const selectedRefValue = useRef<string | null>(null)
 
@@ -72,6 +80,11 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
     setPendingKey(null)
     setFeedbackStatus('')
     setFeedbackError('')
+    setCalendarDialogOpen(false)
+    setCalendarDownloadBusy(false)
+    setCalendarDownloadError(null)
+    setCalendarDownloadStatus('')
+    setCalendarDownloadRestoreFocusTo(null)
   }, [])
 
   const load = useCallback(async () => {
@@ -310,6 +323,46 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
     }
   }
 
+  async function downloadCalendar() {
+    if (secret === null || calendarDownloadBusy) return
+    setCalendarDownloadBusy(true)
+    setCalendarDownloadError(null)
+    setCalendarDownloadStatus('Der Kalender wird erstellt.')
+    try {
+      const download = await downloadPublicLecturerCalendar(secret)
+      const objectUrl = URL.createObjectURL(download.blob)
+      try {
+        const anchor = document.createElement('a')
+        anchor.href = objectUrl
+        anchor.download = download.filename
+        anchor.hidden = true
+        document.body.append(anchor)
+        anchor.click()
+        anchor.remove()
+      } finally {
+        URL.revokeObjectURL(objectUrl)
+      }
+      setCalendarDialogOpen(false)
+      setCalendarDownloadStatus('Der Kalender wurde zum Download bereitgestellt.')
+    } catch (reason) {
+      if (reason instanceof LecturerReviewApiError && reason.status === 404) {
+        loadGeneration.current += 1
+        clearProtectedReview()
+        setTemporaryError(null)
+        setUnavailable(true)
+        return
+      }
+      setCalendarDownloadStatus('')
+      setCalendarDownloadError(
+        reason instanceof LecturerReviewApiError && reason.retryable
+          ? 'Der Kalender konnte vorübergehend nicht erstellt werden. Versuchen Sie den Download erneut.'
+          : 'Der Kalender konnte nicht heruntergeladen werden. Öffnen Sie den Prüfungslink erneut und prüfen Sie den aktuellen Stand.',
+      )
+    } finally {
+      setCalendarDownloadBusy(false)
+    }
+  }
+
   if (unavailable) {
     return (
       <main className="lecturer-review-public lecturer-review-safe-state">
@@ -395,6 +448,19 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
             <span>{review.intendedLecturer}</span>
             <small>Durch diesen Prüfungslink festgelegt</small>
           </div>
+        )}
+        contextActions={(
+          <button
+            type="button"
+            disabled={pendingSelection !== null || calendarDialogOpen}
+            onClick={(event) => {
+              setCalendarDownloadRestoreFocusTo(event.currentTarget)
+              setCalendarDownloadError(null)
+              setCalendarDialogOpen(true)
+            }}
+          >
+            Kalender herunterladen
+          </button>
         )}
         intendedContext={`${review.revision.semesterName} · ${review.revision.label}`}
         selectedOccurrenceRef={selectedRef}
@@ -562,7 +628,7 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
       </section>
 
       <p className="sr-only" role="status" aria-live="polite">
-        {feedbackStatus}
+        {feedbackStatus || calendarDownloadStatus}
       </p>
       {feedbackError && selectedRef === null && (
         <p className="review-card" role="alert">{feedbackError}</p>
@@ -577,6 +643,22 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
           restoreFocusTo={pendingSelection.restoreFocusTo}
           onKeepEditing={() => setPendingSelection(null)}
           onDiscard={discardAndContinue}
+        />
+      )}
+      {calendarDialogOpen && (
+        <LecturerCalendarDownloadDialog
+          eventCount={review.courses.reduce(
+            (count, course) => count + course.sessions.length,
+            0,
+          )}
+          busy={calendarDownloadBusy}
+          error={calendarDownloadError}
+          restoreFocusTo={calendarDownloadRestoreFocusTo}
+          onCancel={() => {
+            setCalendarDownloadError(null)
+            setCalendarDialogOpen(false)
+          }}
+          onConfirm={() => void downloadCalendar()}
         />
       )}
     </main>

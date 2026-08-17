@@ -193,6 +193,10 @@ export type LecturerReviewFeedbackResult = {
   outcome: 'created' | 'already_accepted'
   item: PublicReviewFeedbackItem
 }
+export type LecturerCalendarDownload = {
+  blob: Blob
+  filename: string
+}
 
 export class LecturerReviewApiError extends Error {
   status: number
@@ -217,6 +221,7 @@ const SECRET_SHAPE = /^[A-Za-z0-9_-]{43}$/
 const SESSION_REF = /^(teaching|exam):[1-9][0-9]*$/
 const OFFSET_TIMESTAMP = /(?:Z|[+-]\d{2}:\d{2})$/
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+const MAX_CALENDAR_DISPOSITION_LENGTH = 4096
 const REVIEW_STATES = new Set([
   'draft',
   'ready_for_review',
@@ -342,6 +347,65 @@ export async function getPublicLecturerReview(
   }
   validatePublicReview(payload)
   return payload
+}
+
+export async function downloadPublicLecturerCalendar(
+  secret: string,
+): Promise<LecturerCalendarDownload> {
+  if (!SECRET_SHAPE.test(secret)) {
+    throw new LecturerReviewApiError(
+      404,
+      'This review is unavailable.',
+      false,
+      'REVIEW_UNAVAILABLE',
+    )
+  }
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}/api/public/lecturer-review/calendar`, {
+      method: 'GET',
+      credentials: 'omit',
+      headers: {
+        Authorization: `Bearer ${secret}`,
+        Accept: 'text/calendar',
+      },
+    })
+  } catch {
+    throw new LecturerReviewApiError(
+      0,
+      'The calendar could not be reached. Try again.',
+      true,
+    )
+  }
+  if (!response.ok) {
+    const retryable = response.status === 429 || response.status >= 500
+    throw new LecturerReviewApiError(
+      response.status,
+      retryable
+        ? 'The calendar is temporarily unavailable. Try again.'
+        : 'This review is unavailable.',
+      retryable,
+      response.status === 404
+        ? 'REVIEW_UNAVAILABLE'
+        : 'CALENDAR_EXPORT_UNAVAILABLE',
+    )
+  }
+  if (!/^text\/calendar\s*;\s*charset=utf-8$/i.test(
+    response.headers.get('Content-Type')?.trim() ?? '',
+  )) {
+    throw new LecturerReviewApiError(
+      502,
+      'The calendar response is invalid.',
+      true,
+      'CALENDAR_EXPORT_UNAVAILABLE',
+    )
+  }
+  const filename = calendarFilename(response.headers.get('Content-Disposition'))
+  const blob = await response.blob().catch(() => {
+    invalidCalendarResponse()
+  })
+  if (blob.size === 0) invalidCalendarResponse()
+  return { blob, filename }
 }
 
 export async function submitPublicLecturerFeedback(
@@ -993,4 +1057,49 @@ function publicErrorForStatus(status: number) {
     code: 'REVIEW_UNAVAILABLE',
     message: 'This review is unavailable.',
   }
+}
+
+function calendarFilename(contentDisposition: string | null): string {
+  if (
+    contentDisposition === null
+    || contentDisposition.length > MAX_CALENDAR_DISPOSITION_LENGTH
+    || !/^attachment\s*;/i.test(contentDisposition)
+  ) invalidCalendarResponse()
+  const matches = [...contentDisposition.matchAll(
+    /(?:^|;)\s*filename\*=UTF-8''([^;]+)(?=;|$)/gi,
+  )]
+  if (matches.length !== 1) invalidCalendarResponse()
+  let filename: string
+  try {
+    filename = decodeURIComponent(matches[0][1].trim())
+  } catch {
+    invalidCalendarResponse()
+  }
+  const stem = filename.slice(0, -4)
+  if (
+    filename.length < 5
+    || !filename.endsWith('.ics')
+    || filename !== filename.normalize('NFC')
+    || Array.from(stem).length > 180
+    || !/^[\p{L}\p{N}._-]+$/u.test(stem)
+    || /^[._-]|[._-]$/u.test(stem)
+    || /[\\/]/u.test(filename)
+    || Array.from(filename).some((character) => {
+      const code = character.codePointAt(0) ?? 0
+      return code <= 31 || code === 127
+    })
+    || /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i.test(stem)
+  ) {
+    invalidCalendarResponse()
+  }
+  return filename
+}
+
+function invalidCalendarResponse(): never {
+  throw new LecturerReviewApiError(
+    502,
+    'The calendar response is invalid.',
+    true,
+    'CALENDAR_EXPORT_UNAVAILABLE',
+  )
 }
