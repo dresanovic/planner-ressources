@@ -195,6 +195,32 @@ def test_calendar_success_has_exact_media_attachment_and_privacy_headers(client_
     assert response.headers["x-content-type-options"] == "nosniff"
 
 
+def test_calendar_success_exposes_filename_to_allowed_cross_origin_client(
+    client_and_db,
+):
+    client, db = client_and_db
+    seed_lecturer_calendar_fixture(db)
+    issued = _issue(client)
+
+    response = client.get(
+        "/api/public/lecturer-review/calendar",
+        headers={
+            "Authorization": f"Bearer {issued['secret']}",
+            "Origin": "http://localhost:5173",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == (
+        "http://localhost:5173"
+    )
+    exposed_headers = {
+        value.strip().lower()
+        for value in response.headers["access-control-expose-headers"].split(",")
+    }
+    assert "content-disposition" in exposed_headers
+
+
 @pytest.mark.parametrize("authorization", [None, "Bearer malformed", "Basic abc"])
 def test_calendar_failure_never_returns_calendar_bytes_or_attachment_metadata(
     client_and_db, authorization
