@@ -22,6 +22,10 @@ through individual components, calendar dates are frequently shown in the
 machine-oriented ISO form, and some alerts expose only a generic category or
 failure statement. This makes otherwise valid planning information harder to
 interpret and leaves users unsure what happened or what to do next.
+The planner application also does not currently identify or authenticate the
+people who can reach its planner pages and APIs. Network reachability therefore
+permits powerful planning and accountless-link management actions without an
+application-level planner access decision.
 
 ### Why now
 
@@ -32,12 +36,15 @@ clarity gap: the visible date format is unfamiliar to the intended European
 users, terminology cannot be changed consistently in one place, and alerts such
 as `OUTSIDE RECOMMENDED WINDOW` omit the applicable range and next action. The
 next selected increment addresses this usability baseline before the remaining
-lecturer collaboration extensions and the substantially broader authentication
-and role-management scope in FS-016.
+lecturer collaboration extensions.
 Subsequent schedule-regeneration testing also exposed a decision gap: an
 automatic non-worsening rule can retain a complete but constraint-violating
 current schedule instead of offering a valid partial alternative. Planners need
 to see that trade-off and own the final atomic replacement decision.
+With the scheduling baseline and accountless lecturer-review surface now
+implemented, planner access itself is the next selected security boundary: the
+application must protect planner work even when no VPN or institutional SSO is
+available.
 
 ### Product-level success
 
@@ -63,6 +70,9 @@ to see that trade-off and own the final atomic replacement decision.
 - Selected German domain and workflow terminology can be changed consistently
   for one customer installation through a deployment-supplied override file,
   without rebuilding the application or editing individual screens.
+- Only active named planner accounts can reach planner pages and APIs; exactly
+  one system administrator manages planner access, while accountless lecturer
+  links retain their existing minimum capabilities.
 
 ### Product goal
 
@@ -80,12 +90,23 @@ The implemented baseline, FS-001 through FS-006, allows a planner user to genera
 The planner-only MVP is complete when it additionally allows the planner to maintain planning data and availability, use multiple eligible resources, add or delete sessions, produce conflict-aware partial or complete semester plans, avoid institution-wide holidays, schedule exams, manage versioned publication states, and operate through a calendar-centered planning workspace.
 
 Accountless lecturer collaboration follows the completed planner-only MVP.
-Authenticated role separation and external data synchronization remain later
-releases.
+Named planner authentication and administrator-controlled planner access are
+the next selected release. Authenticated lecturer access and external data
+synchronization remain later releases.
 
 ### Target users and actors
 
-- **Planner user**: The primary actor. Earlier specifications use both “admin” and “office staff”; both terms mean this same planner-user role. The planner manages planning data, generation, manual corrections, review states, and publication.
+- **Planner user**: The primary actor. Earlier specifications use both “admin”
+  and “office staff” for this planning authority. A named active planner
+  manages planning data, generation, manual corrections, review states, and
+  publication but cannot manage other planner accounts.
+- **System administrator**: Exactly one active named planner with the additional
+  authority to create, disable, reactivate, reset, and transfer planner access.
+  The administrator has no broader scheduling authority than another planner.
+- **Infrastructure operator**: Supplies the one-time initial bootstrap
+  credential and, only when the sole administrator is locked out, a one-time
+  administrator-recovery credential. Operating the deployment does not create
+  an application account.
 - **Lecturer**: An accountless collaboration actor for the current extension. A
   lecturer may inspect assigned sessions, comment, flag impossible sessions,
   export the scoped schedule, and submit whole-day unavailable dates, but
@@ -111,7 +132,10 @@ releases.
 - Let lecturers import their complete assigned schedule into Outlook through a
   static iCalendar file.
 - Collect whole-day pre-planning lecturer unavailability for planner approval.
-- Later, provide authenticated access and import or synchronize planning data.
+- Protect all planner work with named local accounts and administrator-managed
+  access without depending on a VPN or identity provider.
+- Later, provide authenticated lecturer access and import or synchronize
+  planning data.
 
 ## Product scope
 
@@ -149,6 +173,16 @@ releases.
 - Contextual, actionable warning and error messages that identify the affected
   item, explain the applicable condition when known, and state the available
   recovery or next action.
+- Named local planner accounts, password authentication, one active
+  browser-session-bound session per account, logout and expiry, and server-side
+  default denial of planner pages and APIs.
+- Exactly one system administrator who can create inactive planner accounts,
+  manually share one-time setup or reset access, disable or reactivate accounts,
+  and atomically transfer administrator authority.
+- One-time startup bootstrap of the first administrator and one-time
+  operator-assisted recovery when that administrator is locked out.
+- Minimal account lifecycle visibility limited to current status plus creation,
+  disablement, and reactivation timestamps.
 
 ### Out of scope
 
@@ -161,6 +195,11 @@ releases.
 - Treating publication as an irreversible final state.
 - Provider-specific integration behavior before a provider is selected.
 - Automated email delivery or institutional SSO in the confirmed slice sequence.
+- VPN-dependent authentication, external identity-provider dependence,
+  multifactor authentication, passkeys, self-service forgotten-password flows,
+  multiple concurrent planner sessions, session-management UI, general role
+  management, detailed authentication audit history, and attribution of
+  schedule or academic-data changes to a planner.
 - Live calendar subscriptions, Outlook synchronization, or an Outlook API
   integration.
 - Partial-day, recurring, or date-range lecturer-submitted availability.
@@ -173,7 +212,8 @@ releases.
 
 ### Possible later scope
 
-- Authenticated planner and lecturer accounts with role-based access.
+- Authenticated lecturer accounts that reuse the accountless collaboration
+  workflows under a later-confirmed identity model.
 - Provider-neutral import and synchronization of planning data.
 - Automated review-email delivery, institutional SSO, and multi-lecturer token-review workflows.
 - Live calendar subscriptions or calendar-provider synchronization.
@@ -186,6 +226,14 @@ releases.
 ### Current planner-only MVP
 
 No external system is required. Planner users maintain all planning records manually in the product. Existing local or seeded records may support development and migration, but are not the intended long-term data-entry workflow.
+
+### Planner authentication
+
+FS-016 uses self-contained named local planner accounts and does not exchange
+identity or credentials with a VPN, institutional SSO, email provider, or other
+external system. A VPN may remain an optional deployment layer, but application
+access decisions behave identically without it. Setup and reset links are
+copied and delivered manually by the system administrator.
 
 ### Lecturer review link
 
@@ -228,13 +276,23 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 - `docs/architecture/availability-link-validity.md` records the accepted fixed
   72-hour availability-link rule.
 - The user-provided Courses overview screenshot from 2026-08-10 is the
-  motivating example for FS-022: it shows ISO dates and an `Affected record`
+  motivating example for I-002: it shows ISO dates and an `Affected record`
   alert containing `OUTSIDE RECOMMENDED WINDOW` without the actual recommended
   period or an available next action.
+- No authentication or account-administration mockup is available. FS-016 must
+  reuse the existing application visual language for login, setup, and the
+  administrator-only `Planner accounts` page.
 
 ## Product-level constraints and assumptions
 
-- The planner-only MVP remains a planner-user product and does not require authentication or role separation.
+- The implemented planner-only MVP predates authentication. FS-016 changes the
+  current product boundary so planner pages and APIs require an active named
+  local account.
+- Planner authentication is self-contained and must not depend on VPN
+  availability, VPN identity, institutional SSO, or email delivery.
+- Authorization has only two fixed access levels: planner and exactly one
+  system administrator. The only additional administrator authority is planner
+  account management.
 - One teaching unit is 45 minutes, and the implemented break and preferred-session-size rules remain authoritative unless a later specification explicitly changes them.
 - A course may have multiple eligible lecturers and rooms; one Draft Session has exactly one lecturer and one room.
 - Multi-lecturer teaching should use contiguous lecturer blocks instead of repeatedly alternating lecturers.
@@ -294,15 +352,20 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented             |
 | 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented             |
 | 16 | FS-019 | Streamlined Schedule Workspace | Use focused Schedule destinations and in-pane session correction | FS-013, FS-014, FS-018 | Implemented — manual acceptance evidence pending |
-| 17 | FS-022 | Consistent Labels, European Dates, and Actionable Messages | Understand interface wording, dates, warnings, and failures consistently | FS-019 | Specified — tasks complete; ready for implementation |
-| 18 | FS-023 | Planner-Controlled Schedule Regeneration Decision | Compare and atomically accept or reject a valid regenerated alternative | FS-010 through FS-013, FS-019, FS-022 | Ready for specification |
-| 19 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Ready for specification — implemented baseline retained |
-| 20 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Ready for specification |
-| 21 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
-| 22 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015, FS-020, FS-021 | Proposed — later release |
-| 23 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
+| 17 | I-001 | Containerized Application Distribution | Run the complete application as one versioned container image | Implemented application baseline | Implemented |
+| 18 | I-002 | Consistent Labels, European Dates, and Actionable Messages | Understand interface wording, dates, warnings, and failures consistently | FS-019 | Partially implemented — implementation, validation, and acceptance follow-ups remain open |
+| 19 | I-003 | Unified Teaching Schedule Generation | Generate one or several courses through one conflict-aware workflow | FS-010 through FS-013, FS-019 | Implemented |
+| 20 | I-004 | Planner-Controlled Schedule Regeneration Decision | Compare and atomically accept or reject a valid regenerated alternative | I-003, FS-013, FS-019, I-002 | Implemented — manual acceptance evidence pending |
+| 21 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Implemented — manual/deployment acceptance evidence pending |
+| 22 | FS-016 | Authenticated Planner Access and Account Administration | Protect planner work with named accounts and administrator-managed access | I-001, FS-015, FS-019 | Ready for specification |
+| 23 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Implemented — release acceptance evidence pending |
+| 24 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
+| 25 | FS-022 | Authenticated Lecturer Access | Reuse lecturer collaboration through ongoing authenticated identity | FS-015, FS-016, FS-020, FS-021 | Deferred |
+| 26 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 
-**Recommended first slice:** `FS-022 – Consistent Labels, European Dates, and Actionable Messages` (initiative artifact directory: `specs/I-002/`)
+**Improvement sequence:** `I-001` through `I-004`, with detailed artifacts in their matching `specs/I-.../` directories.
+
+**Recommended next slice:** `FS-016 – Authenticated Planner Access and Account Administration`.
 
 ## Development slices
 
@@ -1158,10 +1221,10 @@ This is the primary next scheduling outcome and replaces request-order-only inde
 - Save valid partial plans when complete plans are impossible.
 - Report remaining units and understandable blocking reasons by course.
 - Preserve an existing schedule when a candidate would schedule fewer units in
-  the implemented automatic-replacement baseline. FS-023 supersedes this
+  the implemented automatic-replacement baseline. I-004 supersedes this
   automatic persistence decision with explicit planner comparison and choice.
 - Allow equal-unit automatic replacement only when it reduces conflicts or
-  improves preference compliance in the implemented baseline; FS-023 requires
+  improves preference compliance in the implemented baseline; I-004 requires
   planner acceptance before any regenerated alternative replaces existing
   selected schedules.
 - Retain explicit same-semester replacement confirmation and stale-data safeguards.
@@ -1177,7 +1240,7 @@ The planner selects courses and a semester, reviews replacement implications,
 and starts conflict-aware generation. The implemented baseline evaluates
 selected courses together against existing schedules and availability, saves
 complete or partial improvements, preserves non-improvements, and reports
-scheduled and remaining units with reasons. FS-023 changes only the final
+scheduled and remaining units with reasons. I-004 changes only the final
 replacement decision for regenerated alternatives: the planner compares and
 accepts the joint result before it is persisted over existing selected work.
 
@@ -1188,7 +1251,7 @@ accepts the joint result before it is persisted over existing selected work.
 - Existing unselected and manual sessions are constraints, not automatically movable items.
 - The primary objective is greatest total scheduled units across the selection.
 - Preference improvement never justifies automatically replacing a schedule
-  with fewer units. Under FS-023, the planner may explicitly accept a valid
+  with fewer units. Under I-004, the planner may explicitly accept a valid
   partial alternative after seeing the completeness and constraint trade-off.
 - Course results must distinguish complete, improved partial, unchanged, and failed/stale outcomes.
 
@@ -1217,7 +1280,7 @@ Existing multi-course preparation/results and the remaining-hours concepts in th
 
 The planner receives a conflict-aware semester result that maximizes scheduled
 units, retains valid partial work, explains gaps, and never silently worsens an
-existing course schedule. After FS-023, any replacement of existing selected
+existing course schedule. After I-004, any replacement of existing selected
 work additionally requires the planner's explicit post-generation acceptance.
 
 #### Open clarification topics
@@ -1239,9 +1302,9 @@ Use $speckit-specify to create the specification for FS-010: Conflict-Aware Seme
 Product context: FS-006 generates selected courses independently. The next scheduling outcome must reason globally across a semester and save useful partial work.
 Outcome: Maximize scheduled teaching units across selected courses without generating lecturer, room, or cohort overlaps.
 Actors: Planner user.
-In scope: Global selected-course optimization; existing selected/unselected/manual sessions as fixed occupancy; lecturer/room availability; multiple eligible resources; contiguous lecturer and same-room preferences; complete and partial saved plans; remaining units and reasons; the implemented automatic non-worsening replacement baseline; confirmation/stale protection; future unavailable-date input. FS-023 separately owns the post-generation planner decision that supersedes automatic replacement when existing selected schedules are present.
+In scope: Global selected-course optimization; existing selected/unselected/manual sessions as fixed occupancy; lecturer/room availability; multiple eligible resources; contiguous lecturer and same-room preferences; complete and partial saved plans; remaining units and reasons; the implemented automatic non-worsening replacement baseline; confirmation/stale protection; future unavailable-date input. I-004 separately owns the post-generation planner decision that supersedes automatic replacement when existing selected schedules are present.
 Out of scope: Holiday data, exams, automatic deletion/movement of existing sessions, and unexplained schedule worsening.
-Rules: Maximize total scheduled units; generated candidates are conflict-free; in the implemented FS-010 baseline fewer-unit candidates never replace existing schedules; unchanged outcomes preserve data. After FS-023, a valid fewer-unit candidate may replace existing selected schedules only through explicit planner acceptance of the complete joint result.
+Rules: Maximize total scheduled units; generated candidates are conflict-free; in the implemented FS-010 baseline fewer-unit candidates never replace existing schedules; unchanged outcomes preserve data. After I-004, a valid fewer-unit candidate may replace existing selected schedules only through explicit planner acceptance of the complete joint result.
 Dependencies: FS-008 and FS-009.
 Completion: The planner gets a measurable conflict-aware result, understandable gaps, and no silent regression of existing plans.
 Clarification topics: Fairness guardrails, deterministic tie-breaking, zero-placement representation, and performance/selection limits.
@@ -1763,8 +1826,7 @@ authority.
 
 #### Specification status
 
-Ready for specification — implemented secure-link and feedback baseline
-retained; workspace and Lecturer coordination extension pending.
+Implemented — manual/deployment acceptance evidence pending.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1788,119 +1850,289 @@ Known clarification topics: Fixed-context presentation, empty/filter states afte
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define user scenarios, functional requirements, edge cases, assumptions, security and accessibility requirements, and measurable success criteria. Preserve the implemented FS-015 baseline and do not introduce unrelated implementation or product scope.
 ```
 
-### FS-016: Authenticated Lecturer Access and Role Management
+### FS-016: Authenticated Planner Access and Account Administration
 
 #### User or business outcome
 
-Planner users and lecturers can use ongoing authenticated access with permissions appropriate to their responsibilities.
+Only active named planners can reach planner work, and exactly one system
+administrator can grant, remove, recover, or transfer that access without
+depending on a VPN, institutional SSO, or email delivery.
 
 #### Rationale for this slice boundary
 
-Persistent identity and authorization are a distinct later-release outcome.
-They are intentionally deferred until accountless schedule review, calendar
-export, and pre-planning availability submission are validated as reusable
-lecturer workflows.
+Planner authentication, first-administrator bootstrap, and the minimal account
+lifecycle form one end-to-end access-control outcome. Authenticated lecturer
+access is independently valuable, depends on additional lecturer workflows,
+and is therefore split into deferred FS-022.
 
 #### Primary actors
 
 - Planner user.
-- Lecturer.
-- Planner user acting as account administrator in the first version.
+- System administrator, who is also a planner.
+- Infrastructure operator for initial bootstrap and emergency administrator
+  recovery only.
+- Accountless lecturer, whose existing token-scoped access must remain intact.
 
 #### Preconditions
 
-- FS-015, FS-020, and FS-021 have established lecturer review, export,
-  feedback, and availability semantics.
+- I-001 provides the supported startup and container deployment boundary.
+- FS-019 provides the current planner application shell and navigation.
+- FS-015 provides the anonymous lecturer-review boundary that authentication
+  must preserve.
 
 #### In scope
 
-- Authenticated planner and lecturer accounts.
-- Manual account creation, maintenance, deactivation, and role assignment by authorized planner users.
-- Planner access to the complete institution planning scope.
-- Lecturer access only to courses, schedule revisions, and sessions assigned to that lecturer.
-- Authenticated reuse of the lecturer calendar/list workspace, comments,
-  impossible-session feedback, static iCalendar export, and personal
-  unavailable-date submission.
-- Authenticated lecturer navigation using `My schedule` and `My unavailable
-  dates`, while planners retain Lecturer coordination.
-- Safe handling of removed assignments and deactivated accounts.
+- Named local planner accounts with a login name, display identity, password,
+  active state, and one fixed planner or system-administrator access level.
+- Server-side protection of every planner page, planner API read, and planner API
+  mutation; anonymous access remains limited to the existing explicit lecturer
+  capabilities.
+- One-time startup bootstrap credential that can establish the first named
+  system administrator only while none exists.
+- Exactly one active system administrator with ordinary planner authority plus
+  account creation, reset, disablement, reactivation, and administrator
+  transfer.
+- Administrator creation of an inactive planner and manual delivery of a
+  one-time, expiring setup link or code so the planner chooses a password.
+- A simple administrator-issued reset-access action that invalidates the old
+  password and session and provides a fresh one-time setup link or code; no
+  self-service forgotten-password workflow.
+- Planner login, logout, and authenticated password change.
+- Exactly one active browser-session-bound session per account. Closing the
+  browser ends it, a new login replaces it, and inactivity plus absolute
+  lifetime limits apply.
+- Immediate loss of access after account disablement, password change/reset,
+  session replacement, expiry, or operator-assisted administrator recovery.
+- Atomic transfer of system-administrator authority to one active planner; the
+  prior administrator remains an ordinary planner and the product never has
+  zero or multiple active administrators after bootstrap.
+- One-time startup recovery credential for an infrastructure operator to let a
+  locked-out administrator choose a new password and invalidate the prior
+  administrator session.
+- One administrator-only `Planner accounts` page showing account identity,
+  current state, and creation, disablement, and reactivation timestamps.
 
 #### Out of scope
 
-- Institutional SSO, automated identity provisioning, broad organizational roles, lecturer schedule editing, and changing planner publication authority.
+- Authenticated lecturer accounts or changes to accountless lecturer-review and
+  availability behavior.
+- Institutional SSO, VPN-derived identity, email delivery, automated identity
+  provisioning, multifactor authentication, and passkeys.
+- Self-service forgotten-password recovery, administrator visibility or direct
+  assignment of another user's password, and permanent bootstrap or recovery
+  credentials.
+- Multiple concurrent sessions, session lists or device management, general
+  roles or permissions, and more than one system administrator.
+- Login or password-event history, general security-event auditing, and
+  attribution of schedule, publication, or academic-data changes to a planner.
 
 #### Main workflow
 
-An authorized planner manages accounts. Users authenticate and receive
-role-appropriate navigation and data. Lecturers reuse the validated accountless
-workflows under authenticated identity for assigned schedules, export,
-feedback, and personal availability; planners retain full planning,
-availability-approval, and publication control.
+On the first deployment, the operator supplies a one-time startup credential.
+The first administrator redeems it, chooses a named login and password, and
+thereafter signs in like every planner. The administrator creates an inactive
+planner, manually shares the generated setup access, and the planner chooses a
+password and signs in. The planner performs existing work, changes their own
+password when needed, and logs out or is signed out by expiry or session
+replacement. The administrator can reset, disable, reactivate, or transfer
+access. If the sole administrator is locked out, the operator supplies a
+one-time startup recovery credential so that administrator can reset access.
 
 #### Business rules
 
-- Authorization is enforced on every protected action and data read, not only through hidden UI controls.
-- Lecturers never gain schedule mutation or publication rights.
-- Deactivation prevents new access without destroying historical feedback attribution.
-- Assignment changes must not expose unrelated schedule data.
+- Planner authorization is enforced by the backend for every protected read and
+  action; hiding navigation or controls is never sufficient.
+- Bootstrap works only while no administrator exists and is unusable after the
+  first administrator is established.
+- Setup and reset access is single-use and expires; successful redemption makes
+  the account active and invalidates the setup credential.
+- Disabled accounts cannot authenticate or use an existing session.
+- Reactivation requires fresh administrator-issued setup access and a new
+  password.
+- Password change/reset, account disablement, a replacing login, and
+  administrator recovery invalidate the account's current session.
+- Closing the browser, inactivity expiry, absolute expiry, or logout ends the
+  single active session.
+- Only the system administrator can manage accounts, and administrator transfer
+  changes the extra authority immediately and atomically.
+- Accountless lecturer credentials never become planner credentials and retain
+  only their existing scoped public capabilities.
+- Only current account state plus creation, disablement, and reactivation
+  timestamps are exposed; no broader audit history is introduced.
 
 #### Data inputs and outputs
 
-Inputs include account identity, role, status, lecturer association,
-course/session assignments, and personal availability submissions. Outputs are
-authenticated sessions, authorized views/actions, attributable feedback,
-calendar exports, and planner-controlled availability decisions.
+Inputs include the one-time bootstrap or recovery credential, planner login and
+display identity, password setup/change values, account lifecycle actions, and
+administrator transfer choice. Outputs are active or inactive named planner
+accounts, one-time setup/reset access, one current server-side session per
+account, current account status and lifecycle timestamps, and clear access or
+recovery outcomes.
 
 #### Integrations
 
-No external identity provider. Institutional SSO is possible later scope.
+None. Authentication is application-owned. A VPN may add network protection but
+is neither required nor trusted for identity. Setup and reset access is copied
+and delivered manually without an email provider.
 
 #### UI references
 
-Planner account administration plus the existing Lecturer coordination and
-restricted lecturer workspace modes; detailed identity UI has no confirmed
-mockup.
+No authentication mockup exists. Login, first setup, reset setup, expiry, access
+failure, and the administrator-only `Planner accounts` page must reuse the
+existing application's visual language, responsive behavior, terminology, and
+accessibility patterns.
 
 #### Constraints and assumptions
 
-- Account-security, session-management, password/recovery, audit, and privacy requirements require focused clarification before this slice is ready.
+- Local password authentication and server-side opaque sessions are confirmed.
+- Production credential and session exchange must be protected in transit.
+- The application remains one FastAPI/React/SQLite deployment and follows the
+  project constitution's simplicity requirement.
+- Exact password rules, setup/reset validity, inactivity timeout, absolute
+  session lifetime, and user-facing wording can be resolved without changing
+  the slice boundary.
 
 #### Dependencies
 
-- FS-015, FS-020, and FS-021.
+- I-001, FS-015, and FS-019.
 
 #### Completion outcome
 
-Authenticated users can safely perform only their role-authorized workflows,
-and lecturers can reuse schedule review, export, feedback, and personal
-availability behavior without token delivery.
+An unauthenticated person cannot use the planner application; active named
+planners can complete all existing planner workflows; only the sole system
+administrator can control planner access; and first setup, ordinary reset, and
+administrator recovery work without an external identity or email system while
+accountless lecturer access remains unchanged.
 
 #### Open clarification topics
 
-- Credential creation, password reset, multifactor requirements, session lifetime, and account-recovery process.
-- Whether planner administration requires a distinct administrator permission.
-- Migration or coexistence rules for token review after accounts exist.
-- Whether authenticated availability submission retains the one-submission
-  session model or becomes an ongoing personal workflow.
+- Exact password acceptance rules and retry limits.
+- Exact one-time setup/reset validity period.
+- Exact inactivity and absolute session lifetimes.
+- Final German labels and safe generic authentication-failure wording.
 
 #### Specification status
 
-Proposed — later release.
+Implemented — release acceptance evidence pending.
 
 #### Ready-to-copy Spec Kit prompt
 
 ```text
-Use $speckit-specify to create the specification for FS-016: Authenticated Lecturer Access and Role Management.
+Use $speckit-specify to create the specification for the following development
+slice.
 
-Outcome: Provide authenticated planner and lecturer access with least-privilege permissions.
-In scope: Manually managed accounts; role/status maintenance; planner-wide access; lecturer access only to assigned courses/sessions/revisions; authenticated reuse of the FS-015 lecturer workspace and feedback, FS-020 static iCalendar export, and FS-021 personal unavailable-date submission; role-appropriate navigation; deactivation and historical attribution.
-Out of scope: SSO, automated provisioning, lecturer schedule editing, lecturer publication rights, and broad organization-role design.
-Rules: Authorization applies to every protected read/action; deactivation preserves required attribution; assignment changes must not leak data; planners retain scheduling, availability-approval, and publication authority.
-Dependencies: FS-015, FS-020, and FS-021.
-Completion: Planner and lecturer users can perform only permitted workflows, and authenticated lecturers reuse the validated accountless collaboration outcomes without receiving links.
-Clarification topics: Credentials, password reset, MFA, session lifetime, recovery, administrator permission, token/account coexistence, and authenticated availability-session behavior.
+Slice ID: FS-016
+Slice name: Authenticated Planner Access and Account Administration
 
-Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Include explicit authentication, authorization, privacy, misuse, audit, and measurable security requirements without choosing implementation details prematurely.
+Product context:
+The Resource Planner's scheduling and accountless lecturer-review workflows are
+implemented, but anyone who can reach the application can currently use planner
+pages and APIs. The application must protect planner work independently of VPN
+or institutional SSO while preserving existing minimum-scope lecturer links.
+
+Product-level success:
+Only active named planners can use planner functionality; exactly one system
+administrator manages planner access; first setup and recovery work without an
+identity or email provider; and existing accountless lecturer capabilities
+remain unchanged.
+
+User or business outcome:
+Protect all planner work with named local accounts and let exactly one system
+administrator create, disable, reactivate, reset, recover, and transfer planner
+access through a simple workflow.
+
+Primary actors:
+Planner user; system administrator who is also a planner; infrastructure
+operator for initial bootstrap and emergency administrator recovery;
+accountless lecturer whose existing scoped access must remain available.
+
+In scope:
+Named local planner accounts; password setup and login; backend default denial
+of planner pages and API reads/mutations; explicit preservation of existing
+anonymous lecturer capabilities; one-time startup bootstrap of the first named
+administrator; exactly one administrator with only the additional planner-
+account-management authority; inactive-account creation; manually delivered
+one-time expiring setup and reset links/codes; self-service password change;
+login and logout; one active browser-session-bound server-side session per
+account; replacement of an earlier session by a new login; browser-close,
+inactivity, and absolute expiry; disablement and reactivation; atomic
+administrator transfer; one-time operator-assisted startup recovery of a
+locked-out administrator; and an administrator-only Planner accounts page with
+current state plus creation, disablement, and reactivation timestamps.
+
+Out of scope:
+Authenticated lecturers; changes to existing lecturer-token behavior; SSO; VPN
+identity or dependency; email delivery; automated provisioning; MFA; passkeys;
+self-service forgotten-password recovery; administrator access to or direct
+assignment of another user's password; permanent bootstrap/recovery secrets;
+multiple concurrent sessions; session/device-management UI; broad roles;
+multiple administrators; detailed login/password/security audit history; and
+planner attribution on schedule, publication, or academic-data mutations.
+
+Main workflow:
+The operator supplies a one-time startup credential. While no administrator
+exists, the first administrator redeems it and chooses a named login and
+password. The administrator then signs in normally, creates an inactive planner,
+and manually shares one-time setup access. The planner chooses a password and
+uses all existing planner workflows. The administrator may reset, disable,
+reactivate, or transfer access. A reset or reactivation uses fresh one-time
+access rather than email or a Forgot password workflow. If the sole
+administrator is locked out, the operator supplies a one-time startup recovery
+credential that permits a password reset and invalidates the prior session.
+
+Business rules:
+Backend authorization protects every planner read and action; bootstrap works
+only before the first administrator exists; setup/reset access is single-use and
+expiring; disabled accounts and invalid sessions expose no planner data; exactly
+one active administrator exists after bootstrap; administrator transfer is
+atomic; one account has at most one current session; new login, logout,
+browser-close, expiry, password change/reset, disablement, and administrator
+recovery invalidate the applicable session; lecturers' capability credentials
+cannot grant planner access; and visible lifecycle history is limited to account
+creation, disablement, and reactivation.
+
+Data inputs and outputs:
+Bootstrap/recovery credential, planner identity, password setup/change values,
+account actions, and transfer choice produce named account state, one-time
+setup/reset access, one current session, lifecycle timestamps, and clear access
+or recovery outcomes. Raw passwords and usable credential/session secrets must
+never appear in account listings or user-facing diagnostics.
+
+External systems and integrations:
+None. Authentication is application-owned. VPN is optional defense in depth,
+not a dependency or identity source. Setup/reset access is manually delivered;
+there is no email or external identity provider.
+
+UI references:
+No authentication mockup exists. Reuse the existing application's visual
+language, responsive behavior, terminology, navigation, and accessibility
+patterns for login, setup, failure/expiry states, and the administrator-only
+Planner accounts page.
+
+Dependencies and assumptions:
+I-001, FS-015, and FS-019 are implemented. Local password authentication,
+server-side opaque sessions, exactly one administrator, and one active session
+per account are confirmed. Production credential/session exchange is protected
+in transit. Exact password rules, link validity, session timeouts, and German
+wording remain clarification topics.
+
+Completion outcome:
+Anonymous users cannot use planner functionality; active planners can complete
+all existing planner workflows; only the sole administrator can manage access;
+bootstrap and both ordinary and emergency recovery work without external
+services; and accountless lecturer access continues unchanged.
+
+Known clarification topics:
+Password acceptance and retry rules; setup/reset validity; inactivity and
+absolute session lifetimes; and final German authentication wording.
+
+Keep the specification strictly limited to this slice and consistent with
+docs/planning/Feature_slices.md. Define independently testable user scenarios,
+functional requirements, authorization and privacy requirements, edge cases,
+assumptions, accessibility behavior, and measurable success criteria. Do not
+introduce authenticated lecturer accounts, external identity integration,
+general role management, broad auditing, implementation details, or unrelated
+product scope.
 ```
 
 ### FS-017: Provider-Neutral Planning Data Import and Synchronization
@@ -2537,7 +2769,185 @@ Known clarification topics: Existing-duplicate behavior, per-date batch ergonomi
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define independently testable scenarios, requirements, security and privacy behavior, edge cases, assumptions, and measurable success criteria without merging the two token capabilities or designing authentication.
 ```
 
-### FS-022: Consistent Labels, European Dates, and Actionable Messages
+### FS-022: Authenticated Lecturer Access
+
+#### User or business outcome
+
+A lecturer can later use one ongoing authenticated identity to reach only their
+own schedule-review, calendar-export, feedback, and unavailable-date workflows
+without receiving a new accountless link for each capability.
+
+#### Rationale for this slice boundary
+
+Authenticated lecturer collaboration is independently valuable but is not
+needed to protect planner work. It depends on the accountless lecturer
+workflows being complete and on FS-016 establishing the planner authentication
+boundary, so it is split from FS-016 and deliberately deferred.
+
+#### Primary actors
+
+- Lecturer.
+- System administrator or another later-confirmed lecturer-account operator.
+- Planner user handling feedback and availability decisions.
+
+#### Preconditions
+
+- FS-015 provides lecturer schedule review and feedback semantics.
+- FS-020 provides static iCalendar export semantics.
+- FS-021 provides lecturer unavailable-date submission semantics.
+- FS-016 provides protected planner access and an application authentication
+  boundary that may inform, but does not predetermine, lecturer identity.
+
+#### In scope
+
+- A later-confirmed ongoing identity and account lifecycle for lecturers.
+- Lecturer access limited to personally assigned courses, revisions, teaching
+  sessions, exams, feedback, export, and unavailable-date workflows.
+- Authenticated reuse of the established lecturer calendar/list workspace,
+  feedback, static iCalendar export, and personal unavailable-date behavior.
+- Lecturer-appropriate navigation and safe handling of removed assignments or
+  deactivated lecturer access.
+- Coexistence or migration rules for existing accountless links.
+
+#### Out of scope
+
+- Lecturer schedule editing, publication rights, planner account management,
+  access to another lecturer's assignments, or expansion of existing lecturer
+  collaboration outcomes.
+- Selection of SSO, local passwords, passkeys, MFA, automated provisioning, or
+  another identity mechanism before the slice is activated and clarified.
+
+#### Main workflow
+
+After a later identity model is confirmed, a lecturer authenticates, opens the
+personal lecturer workspace, reviews assigned teaching and exam sessions,
+provides feedback, downloads the complete personal calendar export, and manages
+personal unavailable-date submissions within the permissions already defined by
+FS-015, FS-020, and FS-021. Planners retain scheduling, availability approval,
+and publication authority.
+
+#### Business rules
+
+- A lecturer can read and act only within their own current assignment scope.
+- Authentication never grants planner mutation, publication, or account-
+  administration authority.
+- Assignment removal and account deactivation prevent future unrelated access
+  without corrupting required historical attribution.
+- Existing accountless capabilities are not removed until explicit coexistence
+  or migration behavior is approved.
+
+#### Data inputs and outputs
+
+Inputs include later-confirmed lecturer identity, account status, lecturer
+association, current assignments, feedback, export requests, and availability
+submissions. Outputs are authenticated lecturer sessions, scoped personal
+views/actions, feedback, static exports, and planner-controlled availability
+decisions.
+
+#### Integrations
+
+No identity provider is selected. External identity, provisioning, or delivery
+integration remains an unresolved later decision.
+
+#### UI references
+
+Reuse the established accountless lecturer workspace and lecturer navigation
+patterns. No separate authenticated-lecturer mockup is confirmed.
+
+#### Constraints and assumptions
+
+- This slice must not reopen the business rules of FS-015, FS-020, or FS-021.
+- Its identity model and token/account coexistence boundary require a later
+  requirements update before specification.
+
+#### Dependencies
+
+- FS-015, FS-016, FS-020, and FS-021.
+
+#### Completion outcome
+
+Once activated, a lecturer can use an ongoing authenticated identity for only
+their established collaboration workflows while planner authority and other
+lecturers' data remain protected.
+
+#### Open clarification topics
+
+- Identity provider or local credential model, provisioning, recovery, and MFA.
+- Who may create or deactivate lecturer access.
+- Accountless-token coexistence, migration, and retirement behavior.
+- Whether authenticated availability becomes an ongoing workflow or retains
+  the one-submission boundary.
+
+#### Specification status
+
+Deferred — identity and coexistence decisions are intentionally unresolved.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for FS-022: Authenticated
+Lecturer Access only after its identity, provisioning, recovery, and
+accountless-token coexistence decisions have been confirmed in
+docs/planning/Feature_slices.md.
+
+Product context: Accountless lecturer schedule review, feedback, calendar
+export, and unavailable-date submission are defined by FS-015, FS-020, and
+FS-021. FS-016 separately protects planner work. This deferred slice may later
+let lecturers reuse only their established personal workflows through an
+ongoing authenticated identity.
+Outcome: Give a lecturer ongoing authenticated access to only personally
+assigned collaboration data and actions without granting planner authority.
+Actors: Lecturer, planner user, and a later-confirmed lecturer-account operator.
+In scope: Confirmed lecturer identity/account lifecycle; access limited to
+personal assignments; reuse of schedule review, feedback, static export, and
+unavailable-date workflows; lecturer navigation; deactivation and assignment-
+removal handling; approved token/account coexistence or migration.
+Out of scope: Schedule editing, publication, planner account management, other
+lecturers' data, new collaboration outcomes, and any unconfirmed identity or
+provisioning mechanism.
+Rules: Authorization applies to every read and action; lecturers retain only the
+permissions established by FS-015, FS-020, and FS-021; deactivation and removed
+assignments prevent future unrelated access; accountless links remain until an
+explicit migration decision is approved.
+Dependencies: FS-015, FS-016, FS-020, and FS-021 plus confirmed identity and
+coexistence decisions.
+Completion: An authenticated lecturer can safely reuse the established personal
+collaboration workflows without receiving planner authority or seeing another
+lecturer's data.
+Clarification topics: Identity method, provisioning, recovery, MFA, account
+operator, token coexistence/migration, and authenticated availability behavior.
+
+Keep the specification strictly limited to this slice and consistent with
+docs/planning/Feature_slices.md. Do not start specification while the listed
+product-level identity and coexistence decisions remain unresolved, and do not
+introduce implementation details or expand lecturer authority.
+```
+
+### I-001: Containerized Application Distribution
+
+#### User or business outcome
+
+A deployment operator can pull and run one versioned application image through
+one port while preserving planning data outside the replaceable container.
+
+#### Scope and relationship to earlier slices
+
+- Package the existing frontend and backend as one non-root application image.
+- Provide persistent SQLite storage, health checks, versioned release tags,
+  multi-architecture publication, backup guidance, and simple deployment files.
+- Preserve all existing scheduling behavior; this improvement changes
+  distribution rather than product workflows.
+
+#### Dependencies
+
+- The implemented application baseline.
+
+#### Specification status
+
+Implemented. Detailed artifacts are in
+`specs/I-001-containerized-distribution/`.
+
+### I-002: Consistent Labels, European Dates, and Actionable Messages
 
 #### User or business outcome
 
@@ -2711,18 +3121,19 @@ rules.
 
 #### Specification status
 
-Specified with planning and task generation complete; ready for implementation.
+Partially implemented — implementation, validation, and acceptance follow-ups
+remain open.
 The initiative's detailed Spec Kit artifacts use the exact directory
 `specs/I-002/`.
 
-#### Ready-to-copy Spec Kit prompt
+#### Original Spec Kit prompt
 
 ```text
 Use $speckit-specify to create the specification for the following development
 slice. Store all generated specification artifacts in the exact initiative
 directory specs/I-002/; do not create a differently named feature directory.
 
-Slice ID: FS-022
+Slice ID: I-002
 Slice name: Consistent Labels, European Dates, and Actionable Messages
 
 Product context:
@@ -2819,7 +3230,35 @@ functional requirements, accessibility behavior, edge cases, assumptions, and
 measurable success criteria without implementation details or scope expansion.
 ```
 
-### FS-023: Planner-Controlled Schedule Regeneration Decision
+### I-003: Unified Teaching Schedule Generation
+
+#### User or business outcome
+
+A planner generates one or several selected courses through one conflict-aware
+teaching workflow that protects unselected teaching sessions and active exams.
+
+#### Scope and relationship to earlier slices
+
+- Use one generation workflow and one placement decision process for one to
+  twenty selected courses.
+- Use active constraints, holidays, resources, unselected teaching sessions,
+  and active exams as authoritative generation inputs.
+- Retire the legacy single-course and independent batch generation operations.
+- Provide precise lecturer, room, and cohort warnings and an aligned responsive
+  teaching list.
+- Supersede the supported generation behavior from FS-001, FS-006, and FS-010
+  without renumbering or removing those historical baseline slices.
+
+#### Dependencies
+
+- FS-010 through FS-013 and FS-019.
+
+#### Specification status
+
+Implemented with validation and acceptance follow-ups open. Detailed artifacts
+are in `specs/I-003-unified-schedule-generation/`.
+
+### I-004: Planner-Controlled Schedule Regeneration Decision
 
 #### User or business outcome
 
@@ -2842,11 +3281,11 @@ manual editing, publication, or the underlying hard-constraint definitions.
 
 #### Preconditions
 
-- FS-010 through FS-012 provide conflict-aware teaching generation, holiday
-  avoidance, exam occupancy, and understandable partial outcomes.
+- I-003 provides unified conflict-aware teaching generation, holiday avoidance,
+  exam occupancy, and understandable partial outcomes.
 - FS-013 provides the active Working revision and stale-write protection.
 - FS-019 provides the Schedule workspace and generation controls.
-- FS-022 provides actionable German message conventions.
+- I-002 provides actionable German message conventions.
 
 #### In scope
 
@@ -2948,7 +3387,7 @@ None.
 - Replace the pre-generation replacement implication as the authoritative
   decision point with one simple post-generation comparison dialog.
 - Reuse the precise conflict and actionable-message conventions established by
-  FS-022; do not introduce another schedule-generation workflow.
+  I-002; do not introduce another schedule-generation workflow.
 
 #### Constraints and assumptions
 
@@ -2963,7 +3402,7 @@ None.
 
 #### Dependencies
 
-- FS-010 through FS-013, FS-019, and FS-022.
+- I-003, FS-013, FS-019, and I-002.
 
 #### Completion outcome
 
@@ -2980,12 +3419,12 @@ revision before acceptance.
 
 #### Specification status
 
-Ready for specification.
+Implemented — manual acceptance evidence pending.
 
-#### Ready-to-copy Spec Kit prompt
+#### Original Spec Kit prompt
 
 ```text
-Use $speckit-specify to create the specification for FS-023: Planner-Controlled Schedule Regeneration Decision.
+Use $speckit-specify to create the specification for I-004: Planner-Controlled Schedule Regeneration Decision.
 
 Product context: The conflict-aware optimizer currently applies an automatic non-worsening replacement rule. A complete current schedule with hard-constraint warnings can therefore be retained instead of a valid partial alternative. The planner must see the trade-off and make the final decision without weakening generated-schedule validity or multi-course conflict guarantees.
 Product-level success: Whenever regeneration proposes replacing existing selected teaching sessions, the planner compares the complete current selection with one valid jointly generated alternative and atomically accepts the new result or leaves all current work unchanged.
@@ -2997,8 +3436,8 @@ Main workflow: Select courses and generate without mutating saved sessions. If c
 Business rules: The planner makes every replacement decision; a joint solve has one indivisible decision; cancellation never mutates; generated candidates always satisfy active hard constraints; an older warned plan may be retained; a valid partial candidate remains selectable even with fewer units; comparisons present facts rather than declaring a winner; accepting replaces selected manual sessions too; stale candidates cannot commit.
 Data inputs and outputs: Selected courses, Working revision, current semester teaching and exam occupancy, holidays, active constraints, resources, availability, and the binary planner choice produce either one atomically saved generated selection or no schedule change, with an actionable comparison/result summary.
 External systems and integrations: None.
-UI references: Reuse `Stundenpläne erzeugen` in CourseSchedulePage and FS-022 actionable German message patterns. The simple post-generation comparison is the authoritative replacement decision; do not build another generator.
-Dependencies and assumptions: FS-010 through FS-013, FS-019, and FS-022. Operation-wide acceptance and an always-shown comparison for regeneration with existing selected sessions are confirmed. No written justification is required.
+UI references: Reuse `Stundenpläne erzeugen` in CourseSchedulePage and I-002 actionable German message patterns. The simple post-generation comparison is the authoritative replacement decision; do not build another generator.
+Dependencies and assumptions: I-003, FS-013, FS-019, and I-002. Operation-wide acceptance and an always-shown comparison for regeneration with existing selected sessions are confirmed. No written justification is required.
 Completion outcome: A planner can choose between a complete warned current plan and a valid partial alternative without any partial multi-course application, silent replacement, or generated hard conflict.
 Known clarification topics: None. Candidate transport and temporary representation remain implementation decisions, provided provisional data is not exposed as the saved Working revision.
 
@@ -3010,6 +3449,9 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 - **Automated email delivery**: FS-015 and FS-021 deliberately use
   planner-copied links; an email provider is not yet selected or required.
 - **Institutional SSO and automated provisioning**: Deferred until authenticated collaboration is validated and an identity provider is known.
+- **Authenticated lecturer access (FS-022)**: Ongoing lecturer identity remains
+  desirable but is deferred until FS-020 and FS-021 are complete and identity,
+  provisioning, recovery, and accountless-token coexistence are confirmed.
 - **Multi-lecturer token scope**: Each accountless link intentionally represents
   one lecturer even though FS-015 includes all of that lecturer's assigned
   courses. Combined multi-lecturer access may be reconsidered only through a
@@ -3024,7 +3466,7 @@ Keep the specification strictly limited to this slice and consistent with docs/p
   Lecturer coordination. A cross-product, role-aware queue is deferred until
   authenticated roles demonstrate a need beyond existing calendar operational
   summaries.
-- **Full internationalization and runtime terminology administration**: FS-022
+- **Full internationalization and runtime terminology administration**: I-002
   keeps the application German and allows only deployment-time overrides of
   selected terminology. Additional languages, locale selection, translation
   workflows, and administrator-edited wording remain deferred until there is a
@@ -3038,22 +3480,27 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 
 ## Product-level open assumptions
 
-- The planner-only MVP may operate without authentication; current lecturer
-  collaboration remains accountless and capability-scoped until FS-016.
+- The historical planner-only MVP was implemented without authentication;
+  FS-016 now owns the selected transition to required named planner access.
+- Current lecturer collaboration remains accountless and capability-scoped;
+  FS-022 cannot advance from Deferred until its identity and coexistence model
+  is confirmed.
 - A downloaded FS-020 calendar file remains outside product control and may
   continue to expose the exported schedule after link expiry or revocation.
 - Planner-entered or planner-approved availability remains authoritative until
   FS-017 defines ownership for synchronized fields.
 - Optimization fairness and deterministic candidate tie-breaking can be
   clarified within FS-010 without changing its global-maximization boundary;
-  FS-023 owns the later planner-controlled persistence decision.
+  I-004 owns the later planner-controlled persistence decision.
 
 ## Change history
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
-| 2026-08-12 | New slice and product-level scheduling decision change | FS-023, FS-010 | Added a post-generation comparison that lets the planner atomically accept one valid joint regenerated result or cancel to retain the complete current selection; documented that this supersedes FS-010's automatic non-worsening persistence rule without weakening hard-constraint validation. | A complete current schedule can contain active-window or other hard-constraint warnings while a valid partial alternative is operationally preferable; completeness alone must not silently decide the replacement, and per-course acceptance would break joint conflict guarantees. |
-| 2026-08-10 | New, specified, and clarified slice; product-level usability scope change; reordered slice | FS-022, FS-015, FS-020, FS-021, FS-016, FS-017 | Added and clarified German application wording with deployment-time customer terminology overrides, European date display and entry, and actionable German messages as the selected initiative, with detailed artifacts in `specs/I-002/`; shifted the remaining not-yet-specified slices later without changing their IDs or dependencies. | Resolve demonstrated cross-workflow comprehension problems before extending more workflows, while keeping runtime language switching, full translation management, machine contracts, and business rules outside the slice. |
+| 2026-08-14 | Split slice, new deferred slice, reordered slice, product-scope and authentication-boundary change | FS-016, FS-022, FS-020, FS-021, FS-017 | Narrowed FS-016 to self-contained named planner authentication with exactly one account administrator, one active session per account, one-time startup bootstrap and recovery, manually delivered setup/reset access, and minimal account lifecycle visibility; moved authenticated lecturer access to new deferred FS-022; made FS-016 the recommended next slice. | Protect powerful planner work without depending on VPN, SSO, or email while keeping the first implementation simple and preserving existing accountless lecturer capabilities. |
+| 2026-08-14 | Identifier and status reconciliation | I-001 through I-004, FS-001, FS-006, FS-010 | Added the missing I-001 and I-003 map entries, corrected the former FS-022 and FS-023 labels to I-002 and I-004, aligned direct dependencies, and reconciled statuses with remaining validation work. | Make the slice map mirror the improvement specification directories while retaining earlier FS slices as historical baselines. |
+| 2026-08-12 | New improvement and product-level scheduling decision change | I-004, FS-010 | Added a post-generation comparison that lets the planner atomically accept one valid joint regenerated result or cancel to retain the complete current selection; documented that this supersedes FS-010's automatic non-worsening persistence rule without weakening hard-constraint validation. | A complete current schedule can contain active-window or other hard-constraint warnings while a valid partial alternative is operationally preferable; completeness alone must not silently decide the replacement, and per-course acceptance would break joint conflict guarantees. |
+| 2026-08-10 | New, specified, and clarified improvement; product-level usability scope change; reordered slice | I-002, FS-015, FS-020, FS-021, FS-016, FS-017 | Added and clarified German application wording with deployment-time customer terminology overrides, European date display and entry, and actionable German messages as the selected initiative, with detailed artifacts in `specs/I-002/`; shifted the remaining not-yet-specified slices later without changing their IDs or dependencies. | Resolve demonstrated cross-workflow comprehension problems before extending more workflows, while keeping runtime language switching, full translation management, machine contracts, and business rules outside the slice. |
 | 2026-07-31 | Product-level scope change, updated slice, new slices, scope reconciliation, reordered later slice | FS-015, FS-016, FS-019, FS-020, FS-021 | Added the missing implemented FS-019 workspace with its pending manual acceptance status; broadened FS-015 into the shared lecturer calendar/list and Lecturer coordination experience; added static iCalendar export and whole-day lecturer unavailability submissions; made FS-016 reuse the completed accountless workflows. | Complete the accountless lecturer collaboration loop through reused components before introducing authentication, while preserving planner authority and separating review, export, and pre-planning availability into coherent vertical outcomes. |
 | 2026-07-31 | Status correction | FS-009–FS-012, FS-014, FS-018 | Aligned detailed-section statuses with the existing implemented statuses in the slice map. | Remove pre-existing internal contradictions without changing the confirmed slice outcomes. |
 | 2026-07-23 | Status update | FS-013, FS-014 | Marked FS-013 implemented and advanced FS-014 to Ready for specification as the recommended next slice. | Reflect completion of the versioned publication lifecycle and open the calendar workspace for specification. |
