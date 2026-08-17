@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.db.schema import initialize_database
 from app.models.planning import (
     DraftSession,
+    LecturerReviewActivityEvent,
     LecturerReviewFeedback,
     LecturerReviewLink,
     Semester,
@@ -21,12 +22,14 @@ from app.models.planning import (
 from app.schemas.lecturer_review import FeedbackInput
 from app.services.lecturer_review import (
     LecturerReviewFailure,
+    get_lecturer_calendar_projection,
     get_public_lecturer_review,
     issue_lecturer_review_link,
     replace_lecturer_review_link,
     revoke_lecturer_review_link,
     submit_lecturer_review_feedback,
 )
+from app.services.lecturer_calendar_export import build_lecturer_calendar
 from app.services.schedule_lifecycle import (
     get_lifecycle_overview,
     prepare_publication,
@@ -546,6 +549,102 @@ def test_supersession_waiting_feedback_fails_closed_and_terminalizes_old_link(
             )
         )
         assert (old.status, old.end_reason) == ("revision_ended", "superseded")
+        assert db.query(LecturerReviewFeedback).count() == 0
+
+
+def test_calendar_export_waiting_on_assignment_change_returns_one_coherent_new_snapshot(
+    tmp_path: Path,
+):
+    database = tmp_path / "lecturer-calendar-assignment-race.db"
+    engine, fixture, secret = _seed_issued_database(database)
+    assignment_claimed = Event()
+    export_attempting = Event()
+
+    def change_assignment():
+        with Session(engine) as db:
+            db.execute(
+                update(Semester)
+                .where(Semester.id == fixture.semester_id)
+                .values(id=Semester.id)
+            )
+            reassign_session(
+                db,
+                "teaching",
+                fixture.primary_teaching_session_ids[0],
+                fixture.second_lecturer_id,
+            )
+            assignment_claimed.set()
+            assert export_attempting.wait(timeout=5)
+            db.commit()
+
+    def export():
+        assert assignment_claimed.wait(timeout=5)
+        with Session(engine) as db:
+            export_attempting.set()
+            projection = get_lecturer_calendar_projection(
+                db, secret, clock=DeterministicUtcClock()
+            )
+            snapshot = build_lecturer_calendar(
+                projection,
+                terminology={"schedule.heading": "Terminplanung"},
+                uid_base_key=b"c" * 32,
+            )
+            db.rollback()
+            return _session_refs(_json(projection.review)), snapshot
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        change_future = pool.submit(change_assignment)
+        export_future = pool.submit(export)
+        change_future.result(timeout=10)
+        visible_refs, snapshot = export_future.result(timeout=10)
+
+    assert f"teaching:{fixture.primary_teaching_session_ids[0]}" not in visible_refs
+    assert snapshot.event_count == len(visible_refs)
+    assert snapshot.content.count(b"BEGIN:VEVENT") == len(visible_refs)
+    with Session(engine) as db:
+        link = db.scalar(select(LecturerReviewLink))
+        assert link is not None and link.status == "active"
+        assert db.query(LecturerReviewActivityEvent).count() == 1
+
+
+def test_calendar_export_waiting_on_revocation_returns_no_snapshot_and_no_export_mutation(
+    tmp_path: Path,
+):
+    database = tmp_path / "lecturer-calendar-revoke-race.db"
+    engine, _fixture, secret = _seed_issued_database(database)
+    revoke_claimed = Event()
+    export_attempting = Event()
+
+    def revoke():
+        with Session(engine) as db:
+            link = db.scalar(select(LecturerReviewLink))
+            assert link is not None
+            revoke_lecturer_review_link(db, link.id, clock=DeterministicUtcClock())
+            revoke_claimed.set()
+            assert export_attempting.wait(timeout=5)
+            db.commit()
+
+    def export():
+        assert revoke_claimed.wait(timeout=5)
+        with Session(engine) as db:
+            export_attempting.set()
+            try:
+                get_lecturer_calendar_projection(
+                    db, secret, clock=DeterministicUtcClock()
+                )
+            except LecturerReviewFailure as exc:
+                db.rollback()
+                return exc.status_code
+            raise AssertionError("Revoked export unexpectedly produced a projection.")
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        revoke_future = pool.submit(revoke)
+        export_future = pool.submit(export)
+        revoke_future.result(timeout=10)
+        assert export_future.result(timeout=10) == 404
+    with Session(engine) as db:
+        link = db.scalar(select(LecturerReviewLink))
+        assert link is not None and link.status == "revoked"
         assert db.query(LecturerReviewFeedback).count() == 0
 
 

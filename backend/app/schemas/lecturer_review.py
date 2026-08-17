@@ -356,6 +356,13 @@ class PublicUnavailableError(LecturerReviewModel):
     ] = "This review is unavailable. Contact the planner for a new link."
 
 
+class PublicCalendarUnavailableError(LecturerReviewModel):
+    code: Literal["REVIEW_UNAVAILABLE"] = "REVIEW_UNAVAILABLE"
+    message: Literal[
+        "This review is unavailable."
+    ] = "This review is unavailable."
+
+
 class PublicThrottledError(LecturerReviewModel):
     code: Literal[
         "REVIEW_TEMPORARILY_UNAVAILABLE"
@@ -363,6 +370,13 @@ class PublicThrottledError(LecturerReviewModel):
     message: Literal[
         "This review is temporarily unavailable. Try again later."
     ] = "This review is temporarily unavailable. Try again later."
+
+
+class PublicCalendarExportUnavailableError(LecturerReviewModel):
+    code: Literal["CALENDAR_EXPORT_UNAVAILABLE"] = "CALENDAR_EXPORT_UNAVAILABLE"
+    message: Literal[
+        "Calendar download is temporarily unavailable. Try again."
+    ] = "Calendar download is temporarily unavailable. Try again."
 
 
 class PublicRefreshRequiredError(LecturerReviewModel):

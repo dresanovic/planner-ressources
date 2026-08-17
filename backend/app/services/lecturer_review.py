@@ -8,13 +8,16 @@ import os
 import re
 import secrets
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
+from pydantic import ValidationError
 
 from app.models.planning import (
     Cohort,
@@ -46,7 +49,8 @@ from app.services.calendar_workspace import (
 
 UTCClock = Callable[[], datetime]
 TOKEN_SHAPE = re.compile(r"^[A-Za-z0-9_-]{43}$")
-TIME_ZONE = "Europe/Vienna"
+DEFAULT_INSTITUTION_TIME_ZONE = "Europe/Vienna"
+INSTITUTION_TIME_ZONE_ENV = "INSTITUTION_TIMEZONE"
 SOURCE_KEY_ENV = "LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY"
 WORKING_STATES = {"draft", "ready_for_review"}
 PUBLIC_STATES = {"draft", "ready_for_review", "published"}
@@ -68,6 +72,17 @@ class LecturerReviewFailure(RuntimeError):
         self.retry_after = retry_after
 
 
+class LecturerCalendarProjectionIncomplete(RuntimeError):
+    """The authorized projection cannot be proven complete for export."""
+
+
+@dataclass(frozen=True)
+class LecturerCalendarProjection:
+    review: PublicReview
+    revision_id: int
+    revision_created_at: datetime
+
+
 def source_fingerprint_key_from_environment(*, production: bool) -> bytes:
     configured = os.getenv(SOURCE_KEY_ENV)
     if configured is None or len(configured.encode("utf-8")) < 32:
@@ -77,6 +92,23 @@ def source_fingerprint_key_from_environment(*, production: bool) -> bytes:
             )
         configured = "local-development-only-source-key-" + ("0" * 32)
     return hashlib.sha256(configured.encode("utf-8")).digest()
+
+
+def institution_timezone_from_environment() -> str:
+    configured = os.getenv(
+        INSTITUTION_TIME_ZONE_ENV, DEFAULT_INSTITUTION_TIME_ZONE
+    )
+    if not configured or configured != configured.strip():
+        raise RuntimeError(
+            f"{INSTITUTION_TIME_ZONE_ENV} must be a valid IANA time-zone identifier."
+        )
+    try:
+        zone = ZoneInfo(configured)
+    except (ValueError, ZoneInfoNotFoundError) as exc:
+        raise RuntimeError(
+            f"{INSTITUTION_TIME_ZONE_ENV} must be a valid IANA time-zone identifier."
+        ) from exc
+    return zone.key
 
 
 def issue_lecturer_review_link(
@@ -499,6 +531,54 @@ def get_public_lecturer_review(
     return PublicReview.model_validate(payload)
 
 
+def get_lecturer_calendar_projection(
+    db: Session,
+    secret: str,
+    *,
+    clock: UTCClock | Any | None = None,
+) -> LecturerCalendarProjection:
+    """Return one freshly authorized FS-015 projection without access mutation."""
+
+    now = _now(clock)
+    link = _resolve_link(db, secret)
+    if link is None:
+        raise _public_unavailable()
+
+    _claim_semester(db, link.schedule_revision.semester_id)
+    db.expire_all()
+    link = db.scalar(
+        select(LecturerReviewLink).where(
+            LecturerReviewLink.secret_digest == _secret_digest(secret)
+        )
+    )
+    if link is None or not _link_is_usable_for_export(db, link, now):
+        raise _public_unavailable()
+    if _known_view_limited(db, link, now):
+        raise LecturerReviewFailure(
+            429,
+            "REVIEW_TEMPORARILY_UNAVAILABLE",
+            "This review is temporarily unavailable. Try again later.",
+            retry_after=300,
+        )
+
+    if link.schedule_revision.state == "published":
+        _validate_published_calendar_snapshot(
+            link.schedule_revision.snapshot_document,
+            link.lecturer_id,
+        )
+    try:
+        review = PublicReview.model_validate(_public_projection(db, link))
+    except (LecturerReviewFailure, ValidationError, KeyError, TypeError, ValueError) as exc:
+        raise LecturerCalendarProjectionIncomplete(
+            "The calendar projection is incomplete."
+        ) from exc
+    return LecturerCalendarProjection(
+        review=review,
+        revision_id=link.schedule_revision.id,
+        revision_created_at=_as_utc(link.schedule_revision.created_at),
+    )
+
+
 def submit_lecturer_review_feedback(
     db: Session,
     secret: str,
@@ -794,7 +874,7 @@ def _public_projection(db: Session, link: LecturerReviewLink) -> dict[str, Any]:
         ),
         "revision": _revision_summary(revision),
         "accessExpiresAt": _iso(link.expires_at),
-        "timeZone": TIME_ZONE,
+        "timeZone": institution_timezone_from_environment(),
         "semesterStartDate": semester.start_date.isoformat(),
         "semesterEndDate": semester.end_date.isoformat(),
         "validationAvailability": validation_availability,
@@ -857,7 +937,7 @@ def _live_public_courses(
                 "date": session.date.isoformat(),
                 "startTime": _clock_text(session.start_time),
                 "endTime": _clock_text(session.end_time),
-                "timeZone": TIME_ZONE,
+                "timeZone": institution_timezone_from_environment(),
                 "roomName": room.name,
                 "roomRef": f"room:{room.id}",
                 "cohortName": cohort.name,
@@ -883,7 +963,7 @@ def _live_public_courses(
                 "date": session.exam_date.isoformat(),
                 "startTime": _clock_text(session.start_time),
                 "endTime": _clock_text(session.end_time),
-                "timeZone": TIME_ZONE,
+                "timeZone": institution_timezone_from_environment(),
                 "roomName": room.name,
                 "roomRef": f"room:{room.id}",
                 "cohortName": cohort.name,
@@ -943,7 +1023,7 @@ def _published_public_courses(
                     "date": session["date"],
                     "startTime": _clock_text(session["startTime"]),
                     "endTime": _clock_text(session["endTime"]),
-                    "timeZone": TIME_ZONE,
+                    "timeZone": institution_timezone_from_environment(),
                     "roomName": room.get("name"),
                     "roomRef": f"room:{room.get('sourceId')}",
                     "cohortName": cohort.get("name"),
@@ -984,7 +1064,7 @@ def _published_public_courses(
                 "date": exam["examDate"],
                 "startTime": _clock_text(exam["startTime"]),
                 "endTime": _clock_text(exam["endTime"]),
-                "timeZone": TIME_ZONE,
+                "timeZone": institution_timezone_from_environment(),
                 "roomName": exam.get("room", {}).get("name"),
                 "roomRef": f"room:{exam.get('room', {}).get('sourceId')}",
                 "cohortName": exam.get("cohort", {}).get("name"),
@@ -1024,6 +1104,87 @@ def _published_public_courses(
             raise _public_unavailable()
         course["sessions"].sort(key=lambda item: (item["date"], item["startTime"]))
     return [grouped[key] for key in sorted(grouped)]
+
+
+def _validate_published_calendar_snapshot(snapshot: Any, lecturer_id: int) -> None:
+    if not isinstance(snapshot, dict):
+        raise LecturerCalendarProjectionIncomplete(
+            "The published calendar projection is missing."
+        )
+    courses = snapshot.get("courses")
+    exams = snapshot.get("examSessions")
+    if not isinstance(courses, list) or not isinstance(exams, list):
+        raise LecturerCalendarProjectionIncomplete(
+            "The published calendar projection is incomplete."
+        )
+    scoped_exam_course_ids = {
+        course_id
+        for exam in exams
+        if isinstance(exam, dict)
+        and isinstance(exam.get("lecturer"), dict)
+        and exam["lecturer"].get("sourceId") == lecturer_id
+        and isinstance(exam.get("course"), dict)
+        and isinstance(course_id := exam["course"].get("sourceId"), int)
+    }
+    for course in courses:
+        if not isinstance(course, dict):
+            raise LecturerCalendarProjectionIncomplete(
+                "The published calendar projection is incomplete."
+            )
+        course_metadata_is_invalid = (
+            not isinstance(course.get("cohort", {}), dict)
+            or not isinstance(course.get("studyType", {}), dict)
+        )
+        if (
+            course.get("sourceCourseId") in scoped_exam_course_ids
+            and course_metadata_is_invalid
+        ):
+            raise LecturerCalendarProjectionIncomplete(
+                "The published calendar projection is incomplete."
+            )
+        teaching_sessions = course.get("teachingSessions")
+        if not isinstance(teaching_sessions, list):
+            raise LecturerCalendarProjectionIncomplete(
+                "The published calendar projection is incomplete."
+            )
+        for session in teaching_sessions:
+            if not isinstance(session, dict):
+                raise LecturerCalendarProjectionIncomplete(
+                    "The published calendar projection is incomplete."
+                )
+            lecturer = session.get("lecturer")
+            if not isinstance(lecturer, dict) or not isinstance(
+                lecturer.get("sourceId"), int
+            ):
+                raise LecturerCalendarProjectionIncomplete(
+                    "The published calendar projection is incomplete."
+                )
+            if lecturer["sourceId"] == lecturer_id and (
+                course_metadata_is_invalid
+                or not isinstance(session.get("room", {}), dict)
+            ):
+                raise LecturerCalendarProjectionIncomplete(
+                    "The published calendar projection is incomplete."
+                )
+    for exam in exams:
+        if not isinstance(exam, dict):
+            raise LecturerCalendarProjectionIncomplete(
+                "The published calendar projection is incomplete."
+            )
+        lecturer = exam.get("lecturer")
+        if not isinstance(lecturer, dict) or not isinstance(
+            lecturer.get("sourceId"), int
+        ):
+            raise LecturerCalendarProjectionIncomplete(
+                "The published calendar projection is incomplete."
+            )
+        if lecturer["sourceId"] == lecturer_id and any(
+            not isinstance(exam.get(field, {}), dict)
+            for field in ("course", "cohort", "room")
+        ):
+            raise LecturerCalendarProjectionIncomplete(
+                "The published calendar projection is incomplete."
+            )
 
 
 def _published_study_type(
@@ -1273,6 +1434,31 @@ def _link_is_usable(db: Session, link: LecturerReviewLink, now: datetime) -> boo
     return True
 
 
+def _link_is_usable_for_export(
+    db: Session, link: LecturerReviewLink, now: datetime
+) -> bool:
+    if link.status != "active" or now >= _as_utc(link.expires_at):
+        return False
+    revision = link.schedule_revision
+    if revision.state not in PUBLIC_STATES:
+        return False
+    if revision.state in WORKING_STATES:
+        active_id = db.scalar(
+            select(ScheduleRevision.id).where(
+                ScheduleRevision.semester_id == revision.semester_id,
+                ScheduleRevision.state.in_(WORKING_STATES),
+            )
+        )
+        return active_id == revision.id
+    published_id = db.scalar(
+        select(ScheduleRevision.id).where(
+            ScheduleRevision.semester_id == revision.semester_id,
+            ScheduleRevision.state == "published",
+        )
+    )
+    return published_id == revision.id
+
+
 def _known_view_limited(
     db: Session, link: LecturerReviewLink, now: datetime
 ) -> bool:
@@ -1376,7 +1562,7 @@ def _current_session_context(
             "date": date_value.isoformat(),
             "startTime": _clock_text(session.start_time),
             "endTime": _clock_text(session.end_time),
-            "timeZone": TIME_ZONE,
+            "timeZone": institution_timezone_from_environment(),
             "roomName": room.name,
             "cohortName": cohort.name,
             "studyType": course.study_type.name,
@@ -1680,7 +1866,7 @@ def _link_summary(link: LecturerReviewLink, now: datetime) -> dict[str, Any]:
         "durationDays": link.duration_days,
         "issuedAt": _iso(link.issued_at),
         "expiresAt": _iso(link.expires_at),
-        "timeZone": TIME_ZONE,
+        "timeZone": institution_timezone_from_environment(),
         "status": effective_status,
         "endedAt": _iso(link.ended_at) if link.ended_at is not None else None,
         "replaceAllowed": (
@@ -1766,7 +1952,7 @@ def _planner_feedback_groups(
                 "sessionContext": item.session_context,
                 "sessionStatus": session_status(item),
                 "submittedAt": _iso(item.submitted_at),
-                "timeZone": TIME_ZONE,
+                "timeZone": institution_timezone_from_environment(),
             }
             for item in items
         ]
@@ -1832,7 +2018,7 @@ def _public_feedback(item: LecturerReviewFeedback) -> dict[str, Any]:
         ),
         "comment": item.comment_text,
         "submittedAt": _iso(item.submitted_at),
-        "timeZone": TIME_ZONE,
+        "timeZone": institution_timezone_from_environment(),
     }
 
 

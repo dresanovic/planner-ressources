@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "timeZone": "Europe/Vienna",
+  "cases": [
+    {"id": "teaching-only", "eventCount": 2, "features": ["teaching"]},
+    {"id": "exam-only", "eventCount": 2, "features": ["exam"]},
+    {"id": "mixed-multi-course", "eventCount": 4, "features": ["teaching", "exam", "multiple-courses"]},
+    {"id": "empty", "eventCount": 0, "features": ["explicit-complete-empty"]},
+    {"id": "dst", "eventCount": 2, "features": ["standard-time", "daylight-time"]},
+    {"id": "cross-midnight", "eventCount": 1, "features": ["explicit-following-day-end"]},
+    {"id": "missing-location", "eventCount": 1, "features": ["location-omitted"]},
+    {"id": "identical-display", "eventCount": 2, "features": ["distinct-uids"]},
+    {"id": "one-hundred-events", "eventCount": 100, "features": ["performance"]},
+    {"id": "unicode-reserved", "eventCount": 1, "features": ["unicode", "comma", "semicolon", "backslash"]},
+    {"id": "embedded-newline", "eventCount": 1, "features": ["escaped-newline"]},
+    {"id": "long-line", "eventCount": 1, "features": ["utf8-octet-folding"]}
+  ]
+}

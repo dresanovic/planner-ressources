@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, Header, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -12,6 +14,8 @@ from app.schemas.lecturer_review import (
     IssuedLinkResult,
     PlannerError,
     PlannerReviewOverview,
+    PublicCalendarExportUnavailableError,
+    PublicCalendarUnavailableError,
     PublicRefreshRequiredError,
     PublicReview,
     PublicThrottledError,
@@ -20,15 +24,21 @@ from app.schemas.lecturer_review import (
     ReplaceLinkInput,
 )
 from app.services.lecturer_review import (
+    LecturerCalendarProjectionIncomplete,
     LecturerReviewFailure,
     get_lecturer_review_overview,
     get_public_lecturer_review,
+    get_lecturer_calendar_projection,
     issue_lecturer_review_link,
     replace_lecturer_review_link,
     reject_invalid_feedback_attempt,
     revoke_lecturer_review_link,
     source_fingerprint_key_from_environment,
     submit_lecturer_review_feedback,
+)
+from app.services.lecturer_calendar_export import (
+    ASCII_FILENAME,
+    build_lecturer_calendar,
 )
 
 
@@ -67,6 +77,13 @@ async def _parse_feedback_payload(request: Request) -> FeedbackInput | None:
         return FeedbackInput.model_validate(await request.json())
     except ValueError:
         return None
+
+
+async def _request_has_body(request: Request) -> bool:
+    async for chunk in request.stream():
+        if chunk:
+            return True
+    return False
 
 
 @router.post(
@@ -204,6 +221,97 @@ def read_public_lecturer_review(
             status_code=exc.status_code,
             content=content,
             headers=headers,
+        )
+
+
+@router.get(
+    "/api/public/lecturer-review/calendar",
+    responses={
+        200: {"content": {"text/calendar": {}}},
+        404: {"model": PublicCalendarUnavailableError},
+        429: {"model": PublicThrottledError},
+        503: {"model": PublicCalendarExportUnavailableError},
+    },
+)
+def download_public_lecturer_calendar(
+    request: Request,
+    authorization: str | None = Header(default=None),
+    request_has_body: bool = Depends(_request_has_body),
+    db: Session = Depends(get_db),
+):
+    if request.query_params or request_has_body:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "code": "REVIEW_UNAVAILABLE",
+                "message": "This review is unavailable.",
+            },
+            headers=PUBLIC_RESPONSE_HEADERS,
+        )
+    secret = _bearer_secret(authorization)
+    try:
+        projection = get_lecturer_calendar_projection(db, secret)
+        snapshot = build_lecturer_calendar(
+            projection,
+            terminology=request.app.state.ui_terminology,
+            uid_base_key=source_fingerprint_key_from_environment(production=False),
+        )
+        db.rollback()
+        headers = {
+            **PUBLIC_RESPONSE_HEADERS,
+            "Content-Disposition": (
+                f'attachment; filename="{ASCII_FILENAME}"; '
+                f"filename*=UTF-8''{quote(snapshot.filename, safe='')}"
+            ),
+            "Content-Type": "text/calendar; charset=utf-8",
+            "X-Content-Type-Options": "nosniff",
+        }
+        return Response(
+            content=snapshot.content,
+            status_code=200,
+            headers=headers,
+        )
+    except LecturerReviewFailure as exc:
+        db.rollback()
+        headers = dict(PUBLIC_RESPONSE_HEADERS)
+        if exc.retry_after is not None:
+            headers["Retry-After"] = str(exc.retry_after)
+        status_code = 429 if exc.status_code == 429 else 404
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "code": (
+                    "REVIEW_TEMPORARILY_UNAVAILABLE"
+                    if status_code == 429
+                    else "REVIEW_UNAVAILABLE"
+                ),
+                "message": (
+                    "This review is temporarily unavailable. Try again later."
+                    if status_code == 429
+                    else "This review is unavailable."
+                ),
+            },
+            headers=headers,
+        )
+    except LecturerCalendarProjectionIncomplete:
+        db.rollback()
+        return JSONResponse(
+            status_code=503,
+            content={
+                "code": "CALENDAR_EXPORT_UNAVAILABLE",
+                "message": "Calendar download is temporarily unavailable. Try again.",
+            },
+            headers=PUBLIC_RESPONSE_HEADERS,
+        )
+    except (KeyError, TypeError, ValueError):
+        db.rollback()
+        return JSONResponse(
+            status_code=503,
+            content={
+                "code": "CALENDAR_EXPORT_UNAVAILABLE",
+                "message": "Calendar download is temporarily unavailable. Try again.",
+            },
+            headers=PUBLIC_RESPONSE_HEADERS,
         )
 
 

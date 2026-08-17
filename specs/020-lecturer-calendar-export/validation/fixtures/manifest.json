@@ -1,0 +1,2096 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "backend/tests/fixtures/lecturer_calendar/generate.py",
+  "serializer": {
+    "icalendar": "7.2.2",
+    "tzdata": "2026.3"
+  },
+  "timeZone": "Europe/Vienna",
+  "timezoneRange": {
+    "start": "2025-09-01",
+    "end": "2027-09-01"
+  },
+  "fixtures": [
+    {
+      "id": "teaching-only",
+      "file": "teaching-only.ics",
+      "eventCount": 2,
+      "sha256": "a88afeb5d0b280d83c434a15bed9de7aa557c12ea9c19c3095f878ac3cea4e67",
+      "events": [
+        {
+          "uid": "8bf4702a580122657c8ee5f9d4630888bf713e33790ee15302e3bbc988f5cf41@resource-planner.invalid",
+          "summary": "COURSE-1 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2026-10-06T09:00:00+02:00",
+          "end": "2026-10-06T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "04ee92953447a737de8d45fdd562b9a76c52138c60319e4168b563729a386b95@resource-planner.invalid",
+          "summary": "COURSE-2 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2026-10-07T09:00:00+02:00",
+          "end": "2026-10-07T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-2 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "exam-only",
+      "file": "exam-only.ics",
+      "eventCount": 2,
+      "sha256": "e7d55332271acae5f1a26395c5bbd9f419865a500ce0a76d706e4d7b38ed314c",
+      "events": [
+        {
+          "uid": "f87ff873bfc238cdcbcfad4ee5eef2e72417e6f0a51af2da62d14074b90812e4@resource-planner.invalid",
+          "summary": "COURSE-3 – Beispiellehrveranstaltung – Prüfung",
+          "start": "2026-10-08T09:00:00+02:00",
+          "end": "2026-10-08T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Prüfung",
+            "Lehrveranstaltung: COURSE-3 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Prüfungsdauer: 90 Minuten",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "657ac6c0535d9b411a6c0ecf1218721c412ec03dfa4cf9667c47ff073aa854a5@resource-planner.invalid",
+          "summary": "COURSE-4 – Beispiellehrveranstaltung – Prüfung",
+          "start": "2026-10-09T09:00:00+02:00",
+          "end": "2026-10-09T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Prüfung",
+            "Lehrveranstaltung: COURSE-4 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Prüfungsdauer: 90 Minuten",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "mixed-multi-course",
+      "file": "mixed-multi-course.ics",
+      "eventCount": 4,
+      "sha256": "f155ee265891de87183080839216443f6f5adeae304e7bf395019eceb5f503a3",
+      "events": [
+        {
+          "uid": "223a460f4909415dc7bec8e960888870160586707ebae0082383b95f10fd7cc2@resource-planner.invalid",
+          "summary": "COURSE-5 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2026-10-10T09:00:00+02:00",
+          "end": "2026-10-10T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-5 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "7fefb2d716bfa7dfa61d76e63be5e71fb9dfef6a89d1a967a1a939a503f7da23@resource-planner.invalid",
+          "summary": "COURSE-6 – Beispiellehrveranstaltung – Prüfung",
+          "start": "2026-10-11T09:00:00+02:00",
+          "end": "2026-10-11T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Prüfung",
+            "Lehrveranstaltung: COURSE-6 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Prüfungsdauer: 90 Minuten",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "e6b19f5d675d2122546861f70d63e27729881de41c8cd646259277c1843e7d79@resource-planner.invalid",
+          "summary": "COURSE-7 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2026-10-12T09:00:00+02:00",
+          "end": "2026-10-12T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-7 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "603fc5becc889cc084a47ca63d54cafdf90a4c8a2cb4268a3e07daaa6321f19e@resource-planner.invalid",
+          "summary": "COURSE-8 – Beispiellehrveranstaltung – Prüfung",
+          "start": "2026-10-13T09:00:00+02:00",
+          "end": "2026-10-13T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Prüfung",
+            "Lehrveranstaltung: COURSE-8 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Prüfungsdauer: 90 Minuten",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "empty",
+      "file": "empty.ics",
+      "eventCount": 0,
+      "sha256": "1e67c1dc9b36a1610272b1fbeeca17b8e5aec144faa3be8a41659dcefe9ef182",
+      "events": []
+    },
+    {
+      "id": "dst",
+      "file": "dst.ics",
+      "eventCount": 2,
+      "sha256": "c0cdb3b458560910e1fb96f74a7dba292e33304cd914ba11fbd80e6c420755f2",
+      "events": [
+        {
+          "uid": "f61ffbcb46da6b6a12d441458455c91d1aa12ae0d8478ab6a31a0ede328ff56d@resource-planner.invalid",
+          "summary": "COURSE-9 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2026-01-15T09:00:00+01:00",
+          "end": "2026-01-15T10:30:00+01:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-9 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "a2754e3aa1de9c02246dd2ffbdbae3caa0f0e441bd9ea987988d9b6c6545e943@resource-planner.invalid",
+          "summary": "COURSE-10 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2026-07-15T09:00:00+02:00",
+          "end": "2026-07-15T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-10 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "cross-midnight",
+      "file": "cross-midnight.ics",
+      "eventCount": 1,
+      "sha256": "bf69e8a269960050d983595a5a6ca6c95bd0101181b6146aa1910c03db734e19",
+      "events": [
+        {
+          "uid": "c6e254abb4694ed53841a44990bd852be080f5e2d04530f4be882cce8fb5a80d@resource-planner.invalid",
+          "summary": "COURSE-11 – Beispiellehrveranstaltung – Prüfung",
+          "start": "2026-10-24T23:30:00+02:00",
+          "end": "2026-10-25T01:15:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Prüfung",
+            "Lehrveranstaltung: COURSE-11 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Prüfungsdauer: 90 Minuten",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "missing-location",
+      "file": "missing-location.ics",
+      "eventCount": 1,
+      "sha256": "1473a600e3d6557aab756b41f99a6ac366ec50e4459cea4ccf4922b27e213eb5",
+      "events": [
+        {
+          "uid": "cce4c8e05f5086add74ea96ecd3cdd715e4d87e45420bcb8e7f36a8e6b26d54c@resource-planner.invalid",
+          "summary": "COURSE-12 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2026-10-17T09:00:00+02:00",
+          "end": "2026-10-17T10:30:00+02:00",
+          "location": null,
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-12 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "identical-display",
+      "file": "identical-display.ics",
+      "eventCount": 2,
+      "sha256": "eb24092f839826e9754f0c78f8c447ae2022866dc644924063ac6c2d5f0c444c",
+      "events": [
+        {
+          "uid": "0eb3e8850fb8507f9c9893e077bc383f2ae5a1ba1d8d1ad2762b3b2f23d95db6@resource-planner.invalid",
+          "summary": "CS101 – Grundlagen – Lehrtermin",
+          "start": "2026-12-14T09:00:00+01:00",
+          "end": "2026-12-14T10:30:00+01:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-71 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "967e27d478ccbbf6e12006bb9b772393794944d1372256d61159dfb4a6d3b32f@resource-planner.invalid",
+          "summary": "CS101 – Grundlagen – Lehrtermin",
+          "start": "2026-12-14T09:00:00+01:00",
+          "end": "2026-12-14T10:30:00+01:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-70 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "one-hundred-events",
+      "file": "one-hundred-events.ics",
+      "eventCount": 100,
+      "sha256": "7cd5e8eb17e1a0d7e6f9ac62657231d6904bd383899e856280e1a6afe5310763",
+      "events": [
+        {
+          "uid": "2deb8a8965aa4326a875c4ac6c832f1605afa2f8e8c8a51f44340515fced2b87@resource-planner.invalid",
+          "summary": "COURSE-1000 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-01T09:00:00+02:00",
+          "end": "2029-07-01T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1000 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "3f4a53110e345e15872e246027e39316105cbe88a1763a18b89b9e5e951cdde0@resource-planner.invalid",
+          "summary": "COURSE-1001 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-02T09:00:00+02:00",
+          "end": "2029-07-02T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1001 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "c70ba259812d10485422d5b2f61a721e83269efc9b784fba54a751961f21dc22@resource-planner.invalid",
+          "summary": "COURSE-1002 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-03T09:00:00+02:00",
+          "end": "2029-07-03T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1002 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5d529517564a86d38aeb3b66c210e6548a34153180de534b893197f766be11cd@resource-planner.invalid",
+          "summary": "COURSE-1003 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-04T09:00:00+02:00",
+          "end": "2029-07-04T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1003 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "ca1025d39eb1e2849ce75a464290feeceac52bb7e137e98f20e5f935e16411a5@resource-planner.invalid",
+          "summary": "COURSE-1004 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-05T09:00:00+02:00",
+          "end": "2029-07-05T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1004 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "3aca6214073ead12b530e5a7cda5e8327a93ab0eec65694bf311f43c9a8222b0@resource-planner.invalid",
+          "summary": "COURSE-1005 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-06T09:00:00+02:00",
+          "end": "2029-07-06T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1005 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "19564923be2f8ebd743030b7eced0a91a26b11a228e1d10af53d7785c6a99e60@resource-planner.invalid",
+          "summary": "COURSE-1006 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-07T09:00:00+02:00",
+          "end": "2029-07-07T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1006 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "a20255227515411b04e499e720496e6128fcb7c3ae61cb75212e91ee62ba9ca3@resource-planner.invalid",
+          "summary": "COURSE-1007 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-08T09:00:00+02:00",
+          "end": "2029-07-08T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1007 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "7098e5b6934934b577c6f4b76e4177b875733deeeb850bcc5824515774b25a40@resource-planner.invalid",
+          "summary": "COURSE-1008 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-09T09:00:00+02:00",
+          "end": "2029-07-09T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1008 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "4438f53181233c042e6c85228b9889f7f12481dac063f85a56851c055c0dd298@resource-planner.invalid",
+          "summary": "COURSE-1009 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-10T09:00:00+02:00",
+          "end": "2029-07-10T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1009 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "3b13b979c67713ebccafa7411fb9d3ff18ca3b0a5d25024ae39908f93a2bfc5f@resource-planner.invalid",
+          "summary": "COURSE-1010 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-11T09:00:00+02:00",
+          "end": "2029-07-11T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1010 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5856704cb2b62c8fc41313d983e918d5f1f3ba6815f90823adc473906d2d9580@resource-planner.invalid",
+          "summary": "COURSE-1011 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-12T09:00:00+02:00",
+          "end": "2029-07-12T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1011 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "cfb1ec1ad403ceca7f25428215ba972b5f0855ba673e0af6760a12408b746a38@resource-planner.invalid",
+          "summary": "COURSE-1012 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-13T09:00:00+02:00",
+          "end": "2029-07-13T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1012 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "c0fac9243d9b3b0a8f9968b932a0e017c0fdc65c6842c1de1adcc046de5ea1d7@resource-planner.invalid",
+          "summary": "COURSE-1013 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-14T09:00:00+02:00",
+          "end": "2029-07-14T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1013 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "91abd4f9cdd58a47ef239571f9c42a8ab1043244599b42a9a36e8e7539a73f02@resource-planner.invalid",
+          "summary": "COURSE-1014 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-15T09:00:00+02:00",
+          "end": "2029-07-15T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1014 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "a2595ae48d3f3a33575c400bf0ff124a4eea6e747c28ba87d957f47dcee8aa3b@resource-planner.invalid",
+          "summary": "COURSE-1015 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-16T09:00:00+02:00",
+          "end": "2029-07-16T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1015 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "9caa00cc3e21ea0f5801ca2dc1209808e4dd54778c5eee3f1b8b6e806622e3bd@resource-planner.invalid",
+          "summary": "COURSE-1016 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-17T09:00:00+02:00",
+          "end": "2029-07-17T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1016 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "91a0853be85aee297e6c2630d22b7eb7374b00f9de8fd373e5e89ad953109405@resource-planner.invalid",
+          "summary": "COURSE-1017 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-18T09:00:00+02:00",
+          "end": "2029-07-18T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1017 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "9b27140ef6c390c774136e117eb2ac1c6e2e4f7209a29726a55d5371a7c26199@resource-planner.invalid",
+          "summary": "COURSE-1018 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-19T09:00:00+02:00",
+          "end": "2029-07-19T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1018 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "da7fbf472ffe27aabd1af3e3a8c177936e4834c0f4b53e45d733fc0c0ab271b9@resource-planner.invalid",
+          "summary": "COURSE-1019 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-20T09:00:00+02:00",
+          "end": "2029-07-20T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1019 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "00adba89dfe385d73a03db736815f7e410b320428e6f144273c81bb0017332c4@resource-planner.invalid",
+          "summary": "COURSE-1020 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-21T09:00:00+02:00",
+          "end": "2029-07-21T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1020 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "317ca830dc3ac7c150e0976764ab692647c50058446d6530998c8b2a0930259d@resource-planner.invalid",
+          "summary": "COURSE-1021 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-22T09:00:00+02:00",
+          "end": "2029-07-22T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1021 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "06303ab3c24e027fc71a9403ec9c6c72d7cf3571d7ec6fee30d6fdcb04c2f6aa@resource-planner.invalid",
+          "summary": "COURSE-1022 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-23T09:00:00+02:00",
+          "end": "2029-07-23T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1022 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "429564beca623645e508f700ccaeb996f2f3a02de948867342692a55b75fb8f8@resource-planner.invalid",
+          "summary": "COURSE-1023 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-24T09:00:00+02:00",
+          "end": "2029-07-24T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1023 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "bc50bef3aa62409be46b67cbff723263cfe129a16138edc2683b3fc264a8a396@resource-planner.invalid",
+          "summary": "COURSE-1024 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-25T09:00:00+02:00",
+          "end": "2029-07-25T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1024 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "8e24d0cb00356c09a1b3f62bdd6678a57fbf5469908dc865ede5010d1b9b40fb@resource-planner.invalid",
+          "summary": "COURSE-1025 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-26T09:00:00+02:00",
+          "end": "2029-07-26T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1025 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "dcb3e2bafa40259cb08dedc4f194a0c90748c8f266383afb31f6090b159ccd04@resource-planner.invalid",
+          "summary": "COURSE-1026 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-27T09:00:00+02:00",
+          "end": "2029-07-27T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1026 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5e77545f0c8a9a5e96799604fea4895da45fdb97f0157131b559c0a2fd3c9968@resource-planner.invalid",
+          "summary": "COURSE-1027 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-28T09:00:00+02:00",
+          "end": "2029-07-28T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1027 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "ecd35e0fb32ebf7670c495eef75129b3744257d80c710227901998e4d89254b0@resource-planner.invalid",
+          "summary": "COURSE-1028 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-29T09:00:00+02:00",
+          "end": "2029-07-29T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1028 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5ccb1e44617eb7dc5d84a19a913157afd10311f02e6665eba36e413e4d8a0c97@resource-planner.invalid",
+          "summary": "COURSE-1029 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-30T09:00:00+02:00",
+          "end": "2029-07-30T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1029 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "95cf9b2d3127cfc095559d2011e2b016fa939cc014a5ad857e4763b3020a82e0@resource-planner.invalid",
+          "summary": "COURSE-1030 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-07-31T09:00:00+02:00",
+          "end": "2029-07-31T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1030 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "14fc348ea4263a389e5d148a65d9752a2fb2f4f93b8350eb071c31d892ce2c70@resource-planner.invalid",
+          "summary": "COURSE-1031 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-01T09:00:00+02:00",
+          "end": "2029-08-01T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1031 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "0b146f583f6046d42c8ed91f38c060e16e3c2056207b55b7cd215671c7cfca02@resource-planner.invalid",
+          "summary": "COURSE-1032 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-02T09:00:00+02:00",
+          "end": "2029-08-02T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1032 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "f200a39fd5a7cc956416a44909675f0c1b5098ea1904bd1a2e19aed2ec596407@resource-planner.invalid",
+          "summary": "COURSE-1033 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-03T09:00:00+02:00",
+          "end": "2029-08-03T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1033 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "e580813415f0262838665f277aac575cd8bb9b72b742a13b8340fdcd79f832a6@resource-planner.invalid",
+          "summary": "COURSE-1034 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-04T09:00:00+02:00",
+          "end": "2029-08-04T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1034 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "6db765d8160a8387ba992ede53e444c99c1c142511e944c92a5e975ce8e740b2@resource-planner.invalid",
+          "summary": "COURSE-1035 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-05T09:00:00+02:00",
+          "end": "2029-08-05T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1035 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "174a832cfb38613eb0ecb4bea437f8b1ac09ececc90a2450e8a61603cc5e3a7c@resource-planner.invalid",
+          "summary": "COURSE-1036 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-06T09:00:00+02:00",
+          "end": "2029-08-06T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1036 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "915bebc60387e870c6954695f823e6ee31a586b504e3166c1209f4afe9bca3af@resource-planner.invalid",
+          "summary": "COURSE-1037 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-07T09:00:00+02:00",
+          "end": "2029-08-07T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1037 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "c992e2b4d31b7b6e1c03dd879724e265d23442472820ede763fa9d9a7e9ba98e@resource-planner.invalid",
+          "summary": "COURSE-1038 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-08T09:00:00+02:00",
+          "end": "2029-08-08T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1038 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "473e83c572646b3959c024dd4f0a348e35b5603bc5b526a889c46641d5baca65@resource-planner.invalid",
+          "summary": "COURSE-1039 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-09T09:00:00+02:00",
+          "end": "2029-08-09T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1039 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "7efa11218ad8baf0d5a8d2d2fd16cb5548cb0825d191482bbd2b66270c202943@resource-planner.invalid",
+          "summary": "COURSE-1040 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-10T09:00:00+02:00",
+          "end": "2029-08-10T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1040 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "e931b7b0636215c1cfaaf484ec1a1577e0e1f316257b43fb12e156faf12c61ad@resource-planner.invalid",
+          "summary": "COURSE-1041 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-11T09:00:00+02:00",
+          "end": "2029-08-11T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1041 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "9f5caef2f056730b0f89b1efd536619cbde5ee6a77280145709b1bb99f9f02ef@resource-planner.invalid",
+          "summary": "COURSE-1042 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-12T09:00:00+02:00",
+          "end": "2029-08-12T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1042 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5495acb51f8441d3248e1aaac59948081c784c4549bd98874a7a876004d310c2@resource-planner.invalid",
+          "summary": "COURSE-1043 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-13T09:00:00+02:00",
+          "end": "2029-08-13T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1043 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "c3fc81a4e0cec3478ac4f0d1ab8e38ab24c147d8774a4d28799015711f637ef6@resource-planner.invalid",
+          "summary": "COURSE-1044 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-14T09:00:00+02:00",
+          "end": "2029-08-14T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1044 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "e39d9e0d4ed89ce03dacb32348af77bfa26739abb3ee625988f943fd0ba79dda@resource-planner.invalid",
+          "summary": "COURSE-1045 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-15T09:00:00+02:00",
+          "end": "2029-08-15T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1045 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5ff135975a7b4b28d4b400dd4272b7a2972ce2ab1dd5d9f6b39fdbeca37ab4a2@resource-planner.invalid",
+          "summary": "COURSE-1046 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-16T09:00:00+02:00",
+          "end": "2029-08-16T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1046 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "0df306c293d2c4c7e117345289ee8709fcff995ea129d95d051b351919f661c6@resource-planner.invalid",
+          "summary": "COURSE-1047 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-17T09:00:00+02:00",
+          "end": "2029-08-17T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1047 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5eef197c7c5cb530ac49c69d17f2fe5293c2d0c9292b2494bedded7551b58ad6@resource-planner.invalid",
+          "summary": "COURSE-1048 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-18T09:00:00+02:00",
+          "end": "2029-08-18T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1048 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "0f99c8e3c59f43b18bb42384dc26914a38214704ea56ddc22186ccf17273af3b@resource-planner.invalid",
+          "summary": "COURSE-1049 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-19T09:00:00+02:00",
+          "end": "2029-08-19T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1049 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "1947e37bd79614b131ed0e35ad4657606a87d399dc7d09f4a8b2d30e1d08f3e5@resource-planner.invalid",
+          "summary": "COURSE-1050 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-20T09:00:00+02:00",
+          "end": "2029-08-20T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1050 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "df68265671ea65499547d5f52adc89a97399a12a09596ef579feac5c5b095600@resource-planner.invalid",
+          "summary": "COURSE-1051 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-21T09:00:00+02:00",
+          "end": "2029-08-21T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1051 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "ef04264d314c7bb374122a1bd96e394a0a579da8130634c0f879e8727cbe0e75@resource-planner.invalid",
+          "summary": "COURSE-1052 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-22T09:00:00+02:00",
+          "end": "2029-08-22T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1052 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "a1f65f2a2a0796ade273c1257c77ed053503a93da47089faf4f5b2a23ee0dbd0@resource-planner.invalid",
+          "summary": "COURSE-1053 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-23T09:00:00+02:00",
+          "end": "2029-08-23T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1053 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "dea23a5b555659c0d42bafb9398590b7b87f078c7b9dec32f6bcc469a6c9c0bd@resource-planner.invalid",
+          "summary": "COURSE-1054 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-24T09:00:00+02:00",
+          "end": "2029-08-24T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1054 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "983a2274c9efc93c5cdd35ecbe40064c40e20328f51128793b013547eda22e32@resource-planner.invalid",
+          "summary": "COURSE-1055 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-25T09:00:00+02:00",
+          "end": "2029-08-25T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1055 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "e249572de126b72eab5171d4d04dc064844c9f00f37763243851f0e84e665daa@resource-planner.invalid",
+          "summary": "COURSE-1056 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-26T09:00:00+02:00",
+          "end": "2029-08-26T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1056 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "9c5c1639aa3843be55fb01381410063ceea3f845a4d269e1bce2896b4f22ac03@resource-planner.invalid",
+          "summary": "COURSE-1057 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-27T09:00:00+02:00",
+          "end": "2029-08-27T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1057 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "73a7ca7e57772524720e8841ebabb3bbb2346d6d5a7fcb7014b300e41378123e@resource-planner.invalid",
+          "summary": "COURSE-1058 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-28T09:00:00+02:00",
+          "end": "2029-08-28T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1058 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "84458f034ff76948df82e3e0791ecfcec9de5cf41e8c0e7e28cb806bb0596c51@resource-planner.invalid",
+          "summary": "COURSE-1059 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-29T09:00:00+02:00",
+          "end": "2029-08-29T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1059 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "40cfc000b6c59d1620af3213410ad71465bdd2141dd369dfa4dd93d3721534ee@resource-planner.invalid",
+          "summary": "COURSE-1060 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-30T09:00:00+02:00",
+          "end": "2029-08-30T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1060 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "d138d5271ab4f14ee949692167be55d96298d9da9d79d732346d3d9eb6f34f7b@resource-planner.invalid",
+          "summary": "COURSE-1061 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-08-31T09:00:00+02:00",
+          "end": "2029-08-31T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1061 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "6041fefe325225a1741a42ec7fd5601978ba9e3da9a67adb458fd760d77ff1cd@resource-planner.invalid",
+          "summary": "COURSE-1062 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-01T09:00:00+02:00",
+          "end": "2029-09-01T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1062 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "1cf356755720a8ccb70183d27580c79275504c6bbcc41e25e910adad7e67878b@resource-planner.invalid",
+          "summary": "COURSE-1063 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-02T09:00:00+02:00",
+          "end": "2029-09-02T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1063 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "132c7393d916737abae104e010aebf02859c7b4ca4752061c4b25f9c76538151@resource-planner.invalid",
+          "summary": "COURSE-1064 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-03T09:00:00+02:00",
+          "end": "2029-09-03T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1064 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "bad8b42ad572df1a1f3ca43370b28629b72c0d75dbd02830056baefae39fa61a@resource-planner.invalid",
+          "summary": "COURSE-1065 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-04T09:00:00+02:00",
+          "end": "2029-09-04T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1065 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "6cbe96c892c749eadcc4c16bc2997550a330485167e2c7984dce7860f0666d61@resource-planner.invalid",
+          "summary": "COURSE-1066 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-05T09:00:00+02:00",
+          "end": "2029-09-05T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1066 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "d1ba32897e3d2ea28619f26b18eed5c78bcc771a98bdbd7f597e5dfe559a20e5@resource-planner.invalid",
+          "summary": "COURSE-1067 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-06T09:00:00+02:00",
+          "end": "2029-09-06T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1067 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "45484972b044c71a419eb97e9cf7d38a3796c0e2c7353c4b71e8c946cae6408d@resource-planner.invalid",
+          "summary": "COURSE-1068 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-07T09:00:00+02:00",
+          "end": "2029-09-07T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1068 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "2b65c193cd22584b28f2dda7586cf90faa832e0c751dd1a853e0115d6ea12892@resource-planner.invalid",
+          "summary": "COURSE-1069 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-08T09:00:00+02:00",
+          "end": "2029-09-08T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1069 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "cbff4f8c1ade14f464cac2c67bab0e9a9ce5c39aadbb472026fdcf267977f8a4@resource-planner.invalid",
+          "summary": "COURSE-1070 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-09T09:00:00+02:00",
+          "end": "2029-09-09T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1070 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "267a783ff48d9c0f05fcd6641dac7fdafe708a86b02b6b78849755868684fb56@resource-planner.invalid",
+          "summary": "COURSE-1071 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-10T09:00:00+02:00",
+          "end": "2029-09-10T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1071 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "6a6c816f369700f14cf42e5c94d5bb502b1300e1216b7817617b40f1cc447858@resource-planner.invalid",
+          "summary": "COURSE-1072 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-11T09:00:00+02:00",
+          "end": "2029-09-11T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1072 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "a98ad79d3c4f65773664bf7d26916ae819c4e7ce954bbe994ae7a4779bc8afbf@resource-planner.invalid",
+          "summary": "COURSE-1073 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-12T09:00:00+02:00",
+          "end": "2029-09-12T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1073 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "db04b335ca4579501aa4c73659a3ac2a5af5f352cfef980214e4395506c5565b@resource-planner.invalid",
+          "summary": "COURSE-1074 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-13T09:00:00+02:00",
+          "end": "2029-09-13T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1074 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "33f348fcffa5f2c1686fed2e1e5cc61d669df6765cddd8f1acea5aa44d10abd6@resource-planner.invalid",
+          "summary": "COURSE-1075 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-14T09:00:00+02:00",
+          "end": "2029-09-14T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1075 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "6a68c7b163a3fd6552b9aea8d7d81e69c56999c0dd4188ed9b06c4c1453234be@resource-planner.invalid",
+          "summary": "COURSE-1076 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-15T09:00:00+02:00",
+          "end": "2029-09-15T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1076 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "53325f3d8e620a1b9a21f339c5ea7ca16730e56e13bd4162046c5399e8e62e1e@resource-planner.invalid",
+          "summary": "COURSE-1077 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-16T09:00:00+02:00",
+          "end": "2029-09-16T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1077 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "87eb45e6b27a65545bbcdaca878406e2f54dcf69fc006857ede31edca3718eb5@resource-planner.invalid",
+          "summary": "COURSE-1078 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-17T09:00:00+02:00",
+          "end": "2029-09-17T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1078 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "0e73a4fa0a61c7b95f5ae5063eb9ebe2ab2e3a99d3a43ef865e7f6468df00378@resource-planner.invalid",
+          "summary": "COURSE-1079 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-18T09:00:00+02:00",
+          "end": "2029-09-18T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1079 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "4c62cd5e804d8be77e894d6b78363068407d8081a511d7ba88845fd2c4464aee@resource-planner.invalid",
+          "summary": "COURSE-1080 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-19T09:00:00+02:00",
+          "end": "2029-09-19T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1080 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "9c35e4b56af8bcd3eaf49be41fc15c6a18427ce813abd842d79f5758ff3b7745@resource-planner.invalid",
+          "summary": "COURSE-1081 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-20T09:00:00+02:00",
+          "end": "2029-09-20T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1081 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5874f8620f67144ad91271d60d87dd70529c705ad59f94e76b8b68e182db038f@resource-planner.invalid",
+          "summary": "COURSE-1082 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-21T09:00:00+02:00",
+          "end": "2029-09-21T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1082 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "9db9b52c3c8909b604a47ad7ae76bfcf3225c26b5947181184622d7cf9e47968@resource-planner.invalid",
+          "summary": "COURSE-1083 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-22T09:00:00+02:00",
+          "end": "2029-09-22T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1083 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "271d72df7fb443783d4254083c2dea87690fcbfd29c47e071d1470427627de4c@resource-planner.invalid",
+          "summary": "COURSE-1084 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-23T09:00:00+02:00",
+          "end": "2029-09-23T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1084 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "bc6ba4342cd30b3b261d68b30c6e3ec6d215ea2d1b2b63cffd3f3fdeebe93a61@resource-planner.invalid",
+          "summary": "COURSE-1085 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-24T09:00:00+02:00",
+          "end": "2029-09-24T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1085 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "98b3f7973445fdcb299609c0a24f711423bfb201f3d2e64689d6ee546a1aad8d@resource-planner.invalid",
+          "summary": "COURSE-1086 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-25T09:00:00+02:00",
+          "end": "2029-09-25T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1086 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "3c552ea43534931559da41ae243f6efc8e5406279b8ae08491803a0a28bf19e5@resource-planner.invalid",
+          "summary": "COURSE-1087 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-26T09:00:00+02:00",
+          "end": "2029-09-26T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1087 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "c484fee36e2017e5138f5505e613a4de571826e80d942f60d19bfe9006b22e34@resource-planner.invalid",
+          "summary": "COURSE-1088 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-27T09:00:00+02:00",
+          "end": "2029-09-27T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1088 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "bccfa7c15381e7af48ace815455b81d4c9c6d3d02c182b3e7bba760db9d62cc1@resource-planner.invalid",
+          "summary": "COURSE-1089 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-28T09:00:00+02:00",
+          "end": "2029-09-28T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1089 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "bab5202fd062934d323b97fe0368a10a63c1a028f3a6b913d4a1d8ffb6470f3c@resource-planner.invalid",
+          "summary": "COURSE-1090 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-29T09:00:00+02:00",
+          "end": "2029-09-29T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1090 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "f43b82a3de2aac0e1a9c2a8aa9adc3203f860f66878b9e4c3486b58f587f1d12@resource-planner.invalid",
+          "summary": "COURSE-1091 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-09-30T09:00:00+02:00",
+          "end": "2029-09-30T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1091 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "a2fe7b8b455038c54717f97e9c63bfac40a8ab5dcdb1f58b7afed8a4b38a724b@resource-planner.invalid",
+          "summary": "COURSE-1092 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-10-01T09:00:00+02:00",
+          "end": "2029-10-01T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1092 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "7aafd5e9c8a39b92eecf87f9a558e58c52d08baefb0193010ad41ac5f71c9e57@resource-planner.invalid",
+          "summary": "COURSE-1093 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-10-02T09:00:00+02:00",
+          "end": "2029-10-02T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1093 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "c1dfc40823c82d1473783f3b866c4b102958dbaa2c7f2efd3159267faa8a6632@resource-planner.invalid",
+          "summary": "COURSE-1094 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-10-03T09:00:00+02:00",
+          "end": "2029-10-03T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1094 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "a1a50b8467e2e6053a590d7b6266ac42c64cf9ee0a8e05c0d955b0048b775a46@resource-planner.invalid",
+          "summary": "COURSE-1095 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-10-04T09:00:00+02:00",
+          "end": "2029-10-04T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1095 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "7399149307a4d16811c38106aa16ffd513ff6263c82a937372379eff938bfcec@resource-planner.invalid",
+          "summary": "COURSE-1096 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-10-05T09:00:00+02:00",
+          "end": "2029-10-05T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1096 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "5e4d634a4b6d04feafadad7425f9835e7c6a01cb479f44f72fcea6b2d467eeae@resource-planner.invalid",
+          "summary": "COURSE-1097 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-10-06T09:00:00+02:00",
+          "end": "2029-10-06T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1097 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "098ca8d9dbd311c95833d060385b1144cf228a901b560b31cdc9cd32c14bd463@resource-planner.invalid",
+          "summary": "COURSE-1098 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-10-07T09:00:00+02:00",
+          "end": "2029-10-07T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1098 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        },
+        {
+          "uid": "6bb06a198fcfbb449f5e0c9a486257cef4919020a5d74af5185fe95d06e9f6f2@resource-planner.invalid",
+          "summary": "COURSE-1099 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2029-10-08T09:00:00+02:00",
+          "end": "2029-10-08T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-1099 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "unicode-reserved",
+      "file": "unicode-reserved.ics",
+      "eventCount": 1,
+      "sha256": "4ebeae1a9a7886e7b53336c11d81179f487aa6d1b4b32b321e05f84f0db24ecf",
+      "events": [
+        {
+          "uid": "d68af337c20142438b5f7d906c2bb34e4fa61716a454dd0c9e9b3a7b4c62b509@resource-planner.invalid",
+          "summary": "Ästhetik, Recht; Pfad \\ – Prüfung",
+          "start": "2026-10-18T09:00:00+02:00",
+          "end": "2026-10-18T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-13 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "embedded-newline",
+      "file": "embedded-newline.ics",
+      "eventCount": 1,
+      "sha256": "fb85057fe16d3ff6959098b87ee1474683fdb832cd892269710c6c800b68d64c",
+      "events": [
+        {
+          "uid": "9e06edb740c0500c0577331e3fd7ed47954adeb61cefdb0ea96cf2f3daa6cddc@resource-planner.invalid",
+          "summary": "COURSE-14 – Beispiellehrveranstaltung – Lehrtermin",
+          "start": "2026-10-19T09:00:00+02:00",
+          "end": "2026-10-19T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Kontext: erste Zeile\nzweite Zeile",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    },
+    {
+      "id": "long-line",
+      "file": "long-line.ics",
+      "eventCount": 1,
+      "sha256": "e03b9472553cca1a1fd53ebf5024c3eaeeee901d0dcc7fe6e1aab56109bda1f0",
+      "events": [
+        {
+          "uid": "467e31b2462ded364d25724da9df28caee4697e0846099e0096f26a1507c6ab6@resource-planner.invalid",
+          "summary": "Überlange Lehrveranstaltung – ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ÄÖÜ abcdef ",
+          "start": "2026-10-20T09:00:00+02:00",
+          "end": "2026-10-20T10:30:00+02:00",
+          "location": "Raum A",
+          "descriptionLines": [
+            "Terminart: Lehrtermin",
+            "Lehrveranstaltung: COURSE-15 – Beispiellehrveranstaltung",
+            "Kohorte: CS-26",
+            "Studienart: Vollzeit",
+            "Lehreinheiten: 2",
+            "Semester: Wintersemester 2026",
+            "Revision: Revision 2"
+          ],
+          "transparency": "OPAQUE"
+        }
+      ]
+    }
+  ]
+}

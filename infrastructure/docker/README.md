@@ -90,6 +90,13 @@ $rng.Dispose()
 Keep the resulting value private and unchanged across upgrades. No other
 environment variable is required for the default Europe/Vienna deployment.
 
+The same stable key also domain-separates the opaque FS-020 iCalendar event
+UIDs. Rotating it changes every exported UID and therefore can change how a
+later manual calendar import behaves. A key rotation, `icalendar` serializer
+upgrade, or `tzdata` upgrade requires regeneration and independent validation
+of the FS-020 fixture corpus plus renewed representative Outlook import
+evidence before release.
+
 ## Optional customer terminology
 
 The shipped German terminology is used when `CUSTOMER_TERMINOLOGY_FILE` is

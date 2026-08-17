@@ -1089,4 +1089,26 @@ describe('CalendarPlanningWorkspace', () => {
     ).toBe(false)
     expect(host.textContent).not.toContain('Entwurf starten')
   })
+
+  it('renders a neutral restricted context action outside date and filter controls', () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() => root.render(
+      <CalendarPlanningWorkspace
+        workspace={loadedCalendarWorkspaceFixture()}
+        loading={false}
+        accessProfile="lecturer-review"
+        fixedContext={<p>Lecturer Dr Ada Â· fixed by link</p>}
+        contextActions={<button type="button">Kalender herunterladen</button>}
+        listContent={<div>Shared occurrence list</div>}
+        onRetry={vi.fn()}
+      />,
+    ))
+
+    const action = button('Kalender herunterladen')!
+    expect(action.closest('.calendar-context-header')).not.toBeNull()
+    expect(action.closest('.calendar-toolbar')).toBeNull()
+    expect(action.closest('.workspace-filters')).toBeNull()
+  })
 })
