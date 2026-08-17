@@ -294,10 +294,10 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented             |
 | 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented             |
 | 16 | FS-019 | Streamlined Schedule Workspace | Use focused Schedule destinations and in-pane session correction | FS-013, FS-014, FS-018 | Implemented — manual acceptance evidence pending |
-| 17 | FS-022 | Consistent Labels, European Dates, and Actionable Messages | Understand interface wording, dates, warnings, and failures consistently | FS-019 | Specified — tasks complete; ready for implementation |
+| 17 | FS-022 | Consistent Labels, European Dates, and Actionable Messages | Understand interface wording, dates, warnings, and failures consistently | FS-019 | Implemented |
 | 18 | FS-023 | Planner-Controlled Schedule Regeneration Decision | Compare and atomically accept or reject a valid regenerated alternative | FS-010 through FS-013, FS-019, FS-022 | Ready for specification |
 | 19 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Ready for specification — implemented baseline retained |
-| 20 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Ready for specification |
+| 20 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Implemented |
 | 21 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
 | 22 | FS-016 | Authenticated Lecturer Access and Role Management | Provide ongoing role-restricted collaboration | FS-015, FS-020, FS-021 | Proposed — later release |
 | 23 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
