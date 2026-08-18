@@ -1,5 +1,6 @@
+from collections import Counter
 from dataclasses import replace
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 
 from app.services.schedule_generation import PlanningPeriodPlan, ResourceCandidatePlan, TimeWindowPlan
 from app.services.holiday_calendar import HolidayReference
@@ -105,7 +106,7 @@ def test_partial_result_uses_valid_session_sizes_and_reports_competition():
     assert {item.code for item in result.courses[0].evidence} >= {"COURSE_CONSTRAINT"}
 
 
-def test_actual_over_scheduled_baseline_and_equal_current_draft_are_preserved_whole():
+def test_over_scheduled_baseline_is_preserved_and_equal_legacy_size_is_improved():
     current = CurrentSession(1, 1, 1, 1, SEMESTER_START, time(8), time(12), 6, 1, 0)
     over_scheduled = replace(optimization_course(1, total_units=4), current_sessions=(current,))
     result = optimize_semester([over_scheduled], [], deadline_seconds=10)
@@ -115,7 +116,8 @@ def test_actual_over_scheduled_baseline_and_equal_current_draft_are_preserved_wh
     equal_current = replace(over_scheduled, total_units=6)
     equal = optimize_semester([equal_current], [], deadline_seconds=10)
     assert equal.total_units == 6
-    assert equal.courses[0].retained_current is True
+    assert equal.courses[0].retained_current is False
+    assert [item.units for item in equal.courses[0].sessions] == [3, 3]
 
 
 def test_current_draft_outside_active_course_dates_is_replaced():
@@ -179,7 +181,7 @@ def test_resource_occupancy_does_not_report_missing_date_or_window():
     assert "NO_ALLOWED_DATE_OR_WINDOW" not in codes
 
 
-def test_canonical_tie_break_prefers_earlier_session_sequence():
+def test_once_per_week_precedes_midpoint_size_adjustment_when_needed():
     course = replace(
         optimization_course(1, total_units=4, min_units=2, max_units=4),
         planning_period=PlanningPeriodPlan(SEMESTER_START, date(2026, 9, 14)),
@@ -192,9 +194,66 @@ def test_canonical_tie_break_prefers_earlier_session_sequence():
     result = optimize_semester([course], [], deadline_seconds=10)
 
     assert [(item.date, item.units) for item in result.courses[0].sessions] == [
-        (date(2026, 9, 7), 2),
-        (date(2026, 9, 9), 2),
+        (date(2026, 9, 9), 4),
     ]
+
+
+def test_midpoint_session_size_is_preferred_and_sessions_are_once_per_week():
+    course = replace(
+        optimization_course(1, total_units=28, min_units=2, max_units=4),
+        windows=(
+            TimeWindowPlan(1, 0, time(8), time(12)),
+            TimeWindowPlan(2, 1, time(8), time(12)),
+            TimeWindowPlan(3, 2, time(8), time(12)),
+        ),
+    )
+
+    result = optimize_semester([course], [], deadline_seconds=10)
+    sessions = result.courses[0].sessions
+
+    assert len(sessions) == 9
+    assert sorted(item.units for item in sessions) == [3] * 8 + [4]
+    assert len({item.date - timedelta(days=item.date.weekday()) for item in sessions}) == 9
+
+
+def test_fixed_session_size_uses_one_session_per_week_when_enough_weeks_exist():
+    course = replace(
+        optimization_course(1, total_units=4, min_units=2, max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, date(2026, 9, 14)),
+        windows=(
+            TimeWindowPlan(1, 0, time(8), time(10)),
+            TimeWindowPlan(2, 2, time(8), time(10)),
+        ),
+    )
+
+    result = optimize_semester([course], [], deadline_seconds=10)
+
+    assert [(item.date, item.units) for item in result.courses[0].sessions] == [
+        (date(2026, 9, 7), 2),
+        (date(2026, 9, 14), 2),
+    ]
+
+
+def test_additional_sessions_are_balanced_across_weeks_only_as_fallback():
+    course = replace(
+        optimization_course(1, total_units=10, min_units=2, max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, date(2026, 9, 20)),
+        windows=(
+            TimeWindowPlan(1, 0, time(8), time(10)),
+            TimeWindowPlan(2, 2, time(8), time(10)),
+            TimeWindowPlan(3, 4, time(8), time(10)),
+        ),
+    )
+
+    result = optimize_semester([course], [], deadline_seconds=10)
+    sessions = result.courses[0].sessions
+    sessions_per_week = Counter(
+        item.date - timedelta(days=item.date.weekday()) for item in sessions
+    )
+
+    assert len(sessions) == 5
+    assert sorted(sessions_per_week.values()) == [2, 3]
+    assert len({item.date for item in sessions}) == 5
 
 
 def test_active_exam_is_fixed_occupancy_with_source_evidence_and_half_open_boundaries():

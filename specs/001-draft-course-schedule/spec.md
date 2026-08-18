@@ -22,6 +22,10 @@ independent test paths.
 - Q: If the admin-selected Study Type Time Window cannot fit a generated session, but another allowed window can, what should happen? -> A: The system tries another allowed Study Type Time Window before failing.
 - Q: What level of detail should the admin-facing failure message provide when generation fails? -> A: The system shows all detected reasons at once.
 
+### Session 2026-08-18
+
+- Q: Which session size should generation prefer within the configured minimum and maximum? -> A: Prefer the midpoint of the range (for example, 3 for a 2-4 range), adjusting individual sessions down or up when required for complete coverage or once-per-week placement. Once-per-week placement has priority over midpoint closeness.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Generate a Complete Draft Schedule (Priority: P1)
@@ -34,7 +38,7 @@ An admin generates a draft teaching schedule for one course so the course's requ
 
 **Acceptance Scenarios**:
 
-1. **Given** a course with 20 teaching units, a lecturer preference of 2 to 4 units per session, a valid room, a Cohort, a semester with enough valid weeks, and a Study Type Time Window that can fit a 4-unit session, **When** the admin triggers draft schedule generation, **Then** the system creates 5 sessions of 4 units each.
+1. **Given** a course with 20 teaching units, a lecturer preference of 2 to 4 units per session, a valid room, a Cohort, a semester with enough valid weeks, and a Study Type Time Window that can fit the preferred sessions, **When** the admin triggers draft schedule generation, **Then** the system creates 7 sessions whose unit distribution is 3, 3, 3, 3, 3, 3, and 2.
 2. **Given** a course with 18 teaching units, a lecturer preference of 3 to 4 units per session, and valid planning inputs, **When** the admin triggers draft schedule generation, **Then** the system creates sessions whose unit distribution is 4, 4, 4, 3, and 3.
 3. **Given** valid planning inputs, a selected Study Type Time Window, and enough valid weeks, **When** the admin triggers draft schedule generation, **Then** the system places sessions once per week by default and keeps the selected window's weekday and start time where possible.
 
@@ -74,8 +78,8 @@ An admin receives clear feedback when a draft schedule cannot be generated becau
 
 ### Edge Cases
 
-- If the total teaching units divide evenly by the maximum preferred session size, all generated sessions use the maximum size.
-- If the final remaining units would be below the minimum preferred session size, the system reduces the previous session enough to make the final session valid where mathematically possible.
+- If the total teaching units divide evenly by the midpoint preferred session size, all generated sessions use the midpoint size when weekly placement permits it.
+- If midpoint-sized sessions cannot exactly cover the total or fit once per week, the system adjusts one or more sessions down or up within the configured range.
 - If a single preferred session cannot fit into any allowed Study Type Time Window, generation fails with a clear reason.
 - If a semester contains too few valid weeks for once-per-week placement, the system attempts multiple sessions in the same week before failing, but does not place more than one generated session on the same day.
 - If multiple windows are available, the system prioritizes the admin-selected window and uses another allowed window only when needed to complete the schedule.
@@ -89,9 +93,9 @@ An admin receives clear feedback when a draft schedule cannot be generated becau
 - **FR-002**: System MUST generate a draft schedule only from one course, one lecturer, one room, one Cohort, one semester date range, and one study type for this feature.
 - **FR-003**: System MUST treat one teaching unit as 45 minutes.
 - **FR-004**: System MUST include 10-minute breaks between teaching units when calculating session duration.
-- **FR-005**: System MUST use the lecturer's maximum preferred session size as the default generated session size.
+- **FR-005**: System MUST prefer the midpoint of the lecturer's minimum and maximum session size, using doubled-distance comparison when the mathematical midpoint is not a whole teaching unit.
 - **FR-006**: System MUST ensure every generated session respects the lecturer's preferred minimum and maximum session units, except where generation fails because no valid distribution exists.
-- **FR-007**: System MUST adjust the previous session when the final remaining units would otherwise be below the lecturer's minimum preferred session size and an adjusted valid distribution is possible.
+- **FR-007**: System MUST adjust individual sessions below or above the preferred midpoint, within the allowed range, when an adjusted distribution is required for complete coverage or once-per-week placement.
 - **FR-008**: System MUST place generated sessions within the semester start and end dates.
 - **FR-009**: System MUST place generated sessions only inside Study Type Time Windows defined by the course's study type.
 - **FR-010**: System MUST support more than one allowed Study Type Time Window for a study type, including multiple windows in the same week.

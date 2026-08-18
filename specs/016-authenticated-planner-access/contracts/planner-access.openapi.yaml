@@ -1,0 +1,663 @@
+openapi: 3.1.0
+info:
+  title: Resource Planner - Authenticated Planner Access
+  version: 1.0.0
+  description: >-
+    FS-016 authentication and planner-account administration contract. Existing
+    planner and lecturer contracts are unchanged except for the default planner
+    session requirement documented in authorization-boundary.md.
+servers:
+  - url: /
+paths:
+  /api/auth/bootstrap:
+    post:
+      operationId: bootstrapAdministrator
+      summary: Establish the first administrator with startup access
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfProtection'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BootstrapRequest'
+      responses:
+        '204':
+          description: Administrator established; normal login is required
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '400':
+          $ref: '#/components/responses/UnusableStartupAccess'
+        '409':
+          $ref: '#/components/responses/UnusableStartupAccess'
+  /api/auth/login:
+    post:
+      operationId: loginPlanner
+      summary: Create the one current planner session
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfProtection'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login succeeded and the server set the opaque session cookie
+          headers:
+            Set-Cookie:
+              description: >-
+                Production: __Host-planner_session; Secure; HttpOnly;
+                SameSite=Strict; Path=/; no Domain, Expires, or Max-Age.
+              schema:
+                type: string
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentAccount'
+        '401':
+          $ref: '#/components/responses/LoginFailure'
+  /api/auth/account-access/redemption:
+    post:
+      operationId: redeemPlannerAccountAccess
+      summary: Redeem setup, reset, or reactivation access
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfProtection'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountAccessRedemptionRequest'
+      responses:
+        '204':
+          description: Password established; normal login is required
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '400':
+          $ref: '#/components/responses/UnusableAccountAccess'
+        '409':
+          $ref: '#/components/responses/UnusableAccountAccess'
+  /api/auth/administrator-recovery:
+    post:
+      operationId: recoverAdministrator
+      summary: Recover the existing sole administrator with startup access
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfProtection'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdministratorRecoveryRequest'
+      responses:
+        '204':
+          description: Administrator password recovered; normal login is required
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '400':
+          $ref: '#/components/responses/UnusableStartupAccess'
+        '409':
+          $ref: '#/components/responses/UnusableStartupAccess'
+  /api/auth/session:
+    get:
+      operationId: inspectPlannerSession
+      summary: Return safe metadata for the current planner
+      security:
+        - plannerSession: []
+      responses:
+        '200':
+          description: Current active session
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentAccount'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+  /api/auth/logout:
+    post:
+      operationId: logoutPlanner
+      summary: Delete the current session and clear its cookie
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfProtection'
+      responses:
+        '204':
+          description: Session ended, including idempotent already-ended logout
+          headers:
+            Set-Cookie:
+              description: Clears the planner session cookie
+              schema:
+                type: string
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+  /api/auth/password-change:
+    post:
+      operationId: changeOwnPassword
+      summary: Change the current planner password and end the session
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfProtection'
+        - $ref: '#/components/parameters/UserActivity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+      responses:
+        '204':
+          description: Password changed and the current session ended
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+        '400':
+          $ref: '#/components/responses/PasswordChangeFailure'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+  /api/planner-accounts:
+    get:
+      operationId: listPlannerAccounts
+      summary: List the minimal planner-account lifecycle projection
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/UserActivity'
+      responses:
+        '200':
+          description: Accounts visible to the sole administrator
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [accounts]
+                properties:
+                  accounts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlannerAccount'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+        '403':
+          $ref: '#/components/responses/AdministratorRequired'
+    post:
+      operationId: createPlannerAccount
+      summary: Create an inactive planner and issue setup access once
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/CsrfProtection'
+        - $ref: '#/components/parameters/UserActivity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlannerAccountRequest'
+      responses:
+        '201':
+          description: Inactive account and one-time setup access
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountWithOneTimeAccess'
+        '400':
+          $ref: '#/components/responses/ValidationFailure'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+        '403':
+          $ref: '#/components/responses/AdministratorRequired'
+        '409':
+          description: Login name already identifies an account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeError'
+  /api/planner-accounts/{accountId}/reset-access:
+    post:
+      operationId: issuePlannerResetAccess
+      summary: Invalidate another active planner password/session and issue reset access
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/CsrfProtection'
+        - $ref: '#/components/parameters/UserActivity'
+      requestBody:
+        $ref: '#/components/requestBodies/RevisionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/OneTimeAccessIssued'
+        '400':
+          $ref: '#/components/responses/InvalidAccountAction'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+        '403':
+          $ref: '#/components/responses/AdministratorRequired'
+        '409':
+          $ref: '#/components/responses/StaleAccountAction'
+  /api/planner-accounts/{accountId}/setup-access:
+    post:
+      operationId: reissuePlannerSetupAccess
+      summary: Replace setup access for a never-activated inactive planner
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/CsrfProtection'
+        - $ref: '#/components/parameters/UserActivity'
+      requestBody:
+        $ref: '#/components/requestBodies/RevisionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/OneTimeAccessIssued'
+        '400':
+          $ref: '#/components/responses/InvalidAccountAction'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+        '403':
+          $ref: '#/components/responses/AdministratorRequired'
+        '409':
+          $ref: '#/components/responses/StaleAccountAction'
+  /api/planner-accounts/{accountId}/disable:
+    post:
+      operationId: disablePlannerAccount
+      summary: Disable another planner immediately
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/CsrfProtection'
+        - $ref: '#/components/parameters/UserActivity'
+      requestBody:
+        $ref: '#/components/requestBodies/RevisionRequest'
+      responses:
+        '200':
+          description: Updated inactive account projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlannerAccount'
+        '400':
+          $ref: '#/components/responses/InvalidAccountAction'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+        '403':
+          $ref: '#/components/responses/AdministratorRequired'
+        '409':
+          $ref: '#/components/responses/StaleAccountAction'
+  /api/planner-accounts/{accountId}/reactivation-access:
+    post:
+      operationId: issuePlannerReactivationAccess
+      summary: Issue fresh access for a disabled planner
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/CsrfProtection'
+        - $ref: '#/components/parameters/UserActivity'
+      requestBody:
+        $ref: '#/components/requestBodies/RevisionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/OneTimeAccessIssued'
+        '400':
+          $ref: '#/components/responses/InvalidAccountAction'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+        '403':
+          $ref: '#/components/responses/AdministratorRequired'
+        '409':
+          $ref: '#/components/responses/StaleAccountAction'
+  /api/planner-accounts/{accountId}/administrator-transfer:
+    post:
+      operationId: transferPlannerAdministration
+      summary: Atomically make another active planner the sole administrator
+      security:
+        - plannerSession: []
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/CsrfProtection'
+        - $ref: '#/components/parameters/UserActivity'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedTargetRevision, expectedAdministratorRevision]
+              properties:
+                expectedTargetRevision:
+                  type: integer
+                  minimum: 1
+                expectedAdministratorRevision:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Transfer committed; requester is now an ordinary planner
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentAccount'
+        '400':
+          $ref: '#/components/responses/InvalidAccountAction'
+        '401':
+          $ref: '#/components/responses/EndedSession'
+        '403':
+          $ref: '#/components/responses/AdministratorRequired'
+        '409':
+          $ref: '#/components/responses/StaleAccountAction'
+components:
+  securitySchemes:
+    plannerSession:
+      type: apiKey
+      in: cookie
+      name: __Host-planner_session
+      description: Production opaque session cookie; local development uses planner_session
+  parameters:
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    CsrfProtection:
+      name: X-CSRF-Protection
+      in: header
+      required: true
+      schema:
+        type: string
+        const: '1'
+    UserActivity:
+      name: X-Planner-Activity
+      in: header
+      required: false
+      description: Present with value user only for a deliberate foreground interaction
+      schema:
+        type: string
+        const: user
+  headers:
+    NoStore:
+      description: Authentication and protected data must not be stored by caches
+      schema:
+        type: string
+        const: no-store
+  requestBodies:
+    RevisionRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [expectedRevision]
+            properties:
+              expectedRevision:
+                type: integer
+                minimum: 1
+  responses:
+    LoginFailure:
+      description: Generic login failure for all credential/account/restriction causes
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    EndedSession:
+      description: Missing, malformed, expired, replaced, or invalidated session
+      headers:
+        Set-Cookie:
+          description: Clears any presented planner session cookie
+          schema:
+            type: string
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    AdministratorRequired:
+      description: Current planner is not the sole administrator
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    UnusableAccountAccess:
+      description: Access is invalid, expired, used, replaced, or inapplicable
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    UnusableStartupAccess:
+      description: Bootstrap or recovery cannot be completed without disclosing why
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    PasswordChangeFailure:
+      description: Current password or new-password validation failed safely
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    ValidationFailure:
+      description: Safe request validation failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    InvalidAccountAction:
+      description: Action is not valid for the current account state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    StaleAccountAction:
+      description: Account or administrator state changed; refresh before retrying
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SafeError'
+    OneTimeAccessIssued:
+      description: Fresh one-time access returned only in this response
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/NoStore'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountWithOneTimeAccess'
+  schemas:
+    Password:
+      type: string
+      minLength: 12
+      maxLength: 128
+      writeOnly: true
+    BootstrapRequest:
+      type: object
+      additionalProperties: false
+      required: [startupCredential, loginName, displayName, password]
+      properties:
+        startupCredential:
+          type: string
+          minLength: 64
+          maxLength: 64
+          writeOnly: true
+        loginName:
+          type: string
+          minLength: 1
+          maxLength: 128
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        password:
+          $ref: '#/components/schemas/Password'
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [loginName, password]
+      properties:
+        loginName:
+          type: string
+          minLength: 1
+          maxLength: 128
+        password:
+          $ref: '#/components/schemas/Password'
+    AccountAccessRedemptionRequest:
+      type: object
+      additionalProperties: false
+      required: [accessCredential, password]
+      properties:
+        accessCredential:
+          type: string
+          minLength: 43
+          maxLength: 43
+          writeOnly: true
+        password:
+          $ref: '#/components/schemas/Password'
+    AdministratorRecoveryRequest:
+      type: object
+      additionalProperties: false
+      required: [startupCredential, password]
+      properties:
+        startupCredential:
+          type: string
+          minLength: 64
+          maxLength: 64
+          writeOnly: true
+        password:
+          $ref: '#/components/schemas/Password'
+    PasswordChangeRequest:
+      type: object
+      additionalProperties: false
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          $ref: '#/components/schemas/Password'
+        newPassword:
+          $ref: '#/components/schemas/Password'
+    CreatePlannerAccountRequest:
+      type: object
+      additionalProperties: false
+      required: [loginName, displayName]
+      properties:
+        loginName:
+          type: string
+          minLength: 1
+          maxLength: 128
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 200
+    CurrentAccount:
+      type: object
+      additionalProperties: false
+      required: [id, loginName, displayName, isAdministrator]
+      properties:
+        id:
+          type: integer
+        loginName:
+          type: string
+        displayName:
+          type: string
+        isAdministrator:
+          type: boolean
+    PlannerAccount:
+      type: object
+      additionalProperties: false
+      required: [id, loginName, displayName, accessLevel, state, revision, createdAt]
+      properties:
+        id:
+          type: integer
+        loginName:
+          type: string
+        displayName:
+          type: string
+        accessLevel:
+          type: string
+          enum: [planner, administrator]
+        state:
+          type: string
+          enum: [active, inactive]
+        revision:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        disabledAt:
+          type: [string, 'null']
+          format: date-time
+        reactivatedAt:
+          type: [string, 'null']
+          format: date-time
+    OneTimeAccess:
+      type: object
+      additionalProperties: false
+      required: [credential, purpose, expiresAt]
+      properties:
+        credential:
+          type: string
+          minLength: 43
+          maxLength: 43
+        purpose:
+          type: string
+          enum: [setup, reset, reactivation]
+        expiresAt:
+          type: string
+          format: date-time
+    AccountWithOneTimeAccess:
+      type: object
+      additionalProperties: false
+      required: [account, oneTimeAccess]
+      properties:
+        account:
+          $ref: '#/components/schemas/PlannerAccount'
+        oneTimeAccess:
+          $ref: '#/components/schemas/OneTimeAccess'
+    SafeError:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+          description: Approved safe German wording; never contains identity or secrets

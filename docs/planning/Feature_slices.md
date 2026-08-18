@@ -405,7 +405,7 @@ The planner selects the planning inputs and triggers generation. The system vali
 #### Business rules
 
 - One unit is 45 minutes; 10-minute breaks contribute to session duration.
-- Use the lecturer's maximum preferred session size by default while respecting the allowed range.
+- Prefer the midpoint of the lecturer's minimum and maximum session size while respecting the allowed range, adjusting individual sessions down or up when coverage or weekly placement requires it.
 - No more than one session for the course occurs on the same day.
 - A failed attempt must not leave a partial replacement.
 

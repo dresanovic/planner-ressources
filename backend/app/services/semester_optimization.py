@@ -152,12 +152,22 @@ class _CourseVariables:
     lecturer: dict[tuple[int, int], cp_model.IntVar] = field(default_factory=dict)
     room: dict[tuple[int, int], cp_model.IntVar] = field(default_factory=dict)
     retain: cp_model.IntVar | None = None
+    weekly_concentration: list[cp_model.IntVar] = field(default_factory=list)
     lecturer_changes: list[cp_model.IntVar] = field(default_factory=list)
     room_changes: list[cp_model.IntVar] = field(default_factory=list)
 
 
 def canonical_minute(value: date, at: time) -> int:
     return value.toordinal() * 1440 + at.hour * 60 + at.minute
+
+
+def week_start(value: date) -> date:
+    return value - timedelta(days=value.weekday())
+
+
+def weekly_concentration_cost(values: Sequence[date]) -> int:
+    sessions_per_week = Counter(week_start(value) for value in values)
+    return sum(count * (count - 1) // 2 for count in sessions_per_week.values())
 
 
 def intervals_overlap(
@@ -527,6 +537,22 @@ def optimize_semester(
             model.add(sum(room_vars) == selected)
         for date_vars in by_date.values():
             model.add(sum(date_vars) <= 1)
+        dates_by_week: dict[date, list[tuple[date, list[cp_model.IntVar]]]] = defaultdict(list)
+        for session_date, date_vars in by_date.items():
+            dates_by_week[week_start(session_date)].append((session_date, date_vars))
+        for week_index, week_dates in enumerate(sorted(dates_by_week.values())):
+            ordered_dates = sorted(week_dates)
+            for first_index, (_, first_vars) in enumerate(ordered_dates):
+                for second_index, (_, second_vars) in enumerate(ordered_dates[first_index + 1:], start=first_index + 1):
+                    same_week_pair = model.new_bool_var(
+                        f"course_{course.course_id}_week_{week_index}_pair_{first_index}_{second_index}"
+                    )
+                    first_selected = sum(first_vars)
+                    second_selected = sum(second_vars)
+                    model.add(same_week_pair <= first_selected)
+                    model.add(same_week_pair <= second_selected)
+                    model.add(same_week_pair >= first_selected + second_selected - 1)
+                    variables.weekly_concentration.append(same_week_pair)
 
         generated_units = sum(
             candidate.units * variables.temporal[candidate.candidate_id]
@@ -559,14 +585,31 @@ def optimize_semester(
     lecturer_change_terms = []
     room_change_terms = []
     retain_terms = []
+    session_size_deviation_terms = []
+    weekly_concentration_terms = []
     canonical_temporal_terms = []
     canonical_resource_terms = []
+    max_session_size_deviation = 0
     for variables in course_vars.values():
+        preferred_size_twice = (
+            variables.course.min_session_units + variables.course.max_session_units
+        )
+        max_generated_sessions = (
+            variables.course.total_units // variables.course.min_session_units
+            if variables.course.min_session_units > 0
+            else 0
+        )
+        course_size_deviation_bound = max_generated_sessions * (
+            variables.course.max_session_units - variables.course.min_session_units
+        )
         for candidate in variables.candidate_set.candidates:
             selected = variables.temporal[candidate.candidate_id]
             total_units_terms.append(candidate.units * selected)
+            session_size_deviation_terms.append(
+                abs(2 * candidate.units - preferred_size_twice) * selected
+            )
             canonical_temporal_terms.append(
-                (len(variables.candidate_set.candidates) - candidate.canonical_rank + 1) * selected
+                candidate.canonical_rank * selected
             )
             canonical_resource_terms.extend(
                 (rank + 1) * variables.lecturer[(candidate.candidate_id, lecturer_id)]
@@ -578,28 +621,53 @@ def optimize_semester(
             )
         lecturer_change_terms.extend(variables.lecturer_changes)
         room_change_terms.extend(variables.room_changes)
+        weekly_concentration_terms.extend(variables.weekly_concentration)
         if variables.retain is not None:
             current_units = sum(session.units for session in variables.course.current_sessions)
             total_units_terms.append(current_units * variables.retain)
+            current_size_deviation = sum(
+                abs(2 * session.units - preferred_size_twice)
+                for session in variables.course.current_sessions
+            )
+            course_size_deviation_bound = max(
+                course_size_deviation_bound,
+                current_size_deviation,
+            )
+            current_weekly_concentration = weekly_concentration_cost(
+                [session.date for session in variables.course.current_sessions]
+            )
+            session_size_deviation_terms.append(
+                current_size_deviation * variables.retain
+            )
+            weekly_concentration_terms.append(
+                current_weekly_concentration * variables.retain
+            )
             lecturer_change_terms.append(_count_current_changes(variables.course.current_sessions, "lecturer_id") * variables.retain)
             room_change_terms.append(_count_current_changes(variables.course.current_sessions, "room_id") * variables.retain)
             retain_terms.append(variables.retain)
+        max_session_size_deviation += course_size_deviation_bound
+
+    schedule_shape_terms = (
+        sum(weekly_concentration_terms) * (max_session_size_deviation + 1)
+        + sum(session_size_deviation_terms)
+    )
 
     objectives = [
-        ("max", sum(total_units_terms)),
-        ("min", sum(conflict_terms)),
-        ("min", sum(lecturer_change_terms)),
-        ("min", sum(room_change_terms)),
-        ("max", sum(retain_terms)),
-        ("max", sum(canonical_temporal_terms)),
-        ("min", sum(canonical_resource_terms)),
+        ("total_units", "max", sum(total_units_terms)),
+        ("conflicts", "min", sum(conflict_terms)),
+        ("schedule_shape", "min", schedule_shape_terms),
+        ("lecturer_changes", "min", sum(lecturer_change_terms)),
+        ("room_changes", "min", sum(room_change_terms)),
+        ("retained_drafts", "max", sum(retain_terms)),
+        ("canonical_temporal", "min", sum(canonical_temporal_terms)),
+        ("canonical_resource", "min", sum(canonical_resource_terms)),
     ]
     solver: cp_model.CpSolver | None = None
     tracked_vars = [var for variables in course_vars.values() for var in (
         list(variables.temporal.values()) + list(variables.lecturer.values()) + list(variables.room.values()) + ([variables.retain] if variables.retain is not None else [])
     )]
-    objective_values: list[int] = []
-    for direction, expression in objectives:
+    objective_values: dict[str, int] = {}
+    for objective_name, direction, expression in objectives:
         elapsed = monotonic() - started
         remaining = deadline_seconds - elapsed
         if remaining <= 0:
@@ -618,9 +686,12 @@ def optimize_semester(
         if status == cp_model.MODEL_INVALID:
             raise OptimizationModelInvalid("The semester optimization model is invalid.")
         if status != cp_model.OPTIMAL:
-            raise OptimalResultNotProven("A fully optimal semester result was not proven within the operation deadline.")
+            raise OptimalResultNotProven(
+                f"A fully optimal semester result was not proven for {objective_name} "
+                "within the operation deadline."
+            )
         value = int(round(solver.objective_value))
-        objective_values.append(value)
+        objective_values[objective_name] = value
         model.add(expression == value)
         model.clear_hints()
         for variable in tracked_vars:
@@ -712,7 +783,7 @@ def optimize_semester(
             course_result,
             evidence=tuple(_deduplicate_evidence(evidence)),
         )
-    if generated_only and objective_values[0] <= 0:
+    if generated_only and objective_values["total_units"] <= 0:
         course_details = []
         for course_result in results:
             course = course_vars[course_result.course_id].course
@@ -725,11 +796,11 @@ def optimize_semester(
         )
     return SemesterOptimizationResult(
         courses=tuple(results),
-        total_units=objective_values[0],
-        conflicts=objective_values[1],
-        lecturer_changes=objective_values[2],
-        room_changes=objective_values[3],
-        retained_drafts=objective_values[4],
+        total_units=objective_values["total_units"],
+        conflicts=objective_values["conflicts"],
+        lecturer_changes=objective_values["lecturer_changes"],
+        room_changes=objective_values["room_changes"],
+        retained_drafts=objective_values["retained_drafts"],
         elapsed_milliseconds=min(int((monotonic() - started) * 1000), 60000),
     )
 

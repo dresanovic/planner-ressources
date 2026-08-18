@@ -260,6 +260,7 @@ associated with its field and all actions and warning details remain reachable.
 - **FR-051**: Weekly generation windows MUST be derived exclusively from the course's current study type and its current mapped time windows; the system MUST NOT copy or persist course-specific weekly-window overrides.
 - **FR-052**: Changing a course's study type or a study type's mapped windows MUST immediately revalidate affected existing schedules without moving them automatically and MUST invalidate any prepared generation that used the previous mapping.
 - **FR-053**: A course whose study type has no active mapped window capable of hosting its minimum session length MUST be unavailable for automatic generation with a precise study-type-window reason.
+- **FR-054**: After maximizing permitted teaching coverage and reducing existing conflicts, generation MUST prefer at most one session per course in each Monday-based calendar week. When several once-per-week arrangements are possible, it MUST prefer session sizes nearest the midpoint of the course's allowed minimum and maximum, while retaining smaller and larger sizes as adjustments when coverage or weekly placement requires them. If multiple sessions in a week are unavoidable, generation MUST keep at most one session per date and minimize weekly concentration before applying lower-priority continuity and deterministic tie-break preferences.
 
 ### Test Requirements *(mandatory)*
 
