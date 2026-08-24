@@ -1,7 +1,40 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.frontend import SPAStaticFiles
+from app.frontend import (
+    SPAStaticFiles,
+    development_cors_origins,
+    is_public_unauthenticated_browser_path,
+)
+from app.main import app as planner_app
+
+
+def test_public_entry_points_are_exact_and_production_has_no_cors_origins():
+    assert is_public_unauthenticated_browser_path("/lecturer-review/")
+    assert is_public_unauthenticated_browser_path("/login/")
+    assert is_public_unauthenticated_browser_path("/assets/app.js")
+    assert not is_public_unauthenticated_browser_path("/lecturer-review/admin")
+    assert not is_public_unauthenticated_browser_path("/login/unexpected")
+    assert development_cors_origins(production=True) == []
+    assert development_cors_origins(production=False) == [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+
+def test_development_cors_preflight_reaches_cors_before_planner_authentication():
+    response = TestClient(planner_app).options(
+        "/api/auth/login",
+        headers={
+            "Origin": "http://127.0.0.1:5173",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type,x-csrf-protection",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
+    assert response.headers["access-control-allow-credentials"] == "true"
 
 
 def _frontend_client(tmp_path):

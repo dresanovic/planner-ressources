@@ -10,6 +10,7 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Semester, StudyType, StudyTypeTimeWindow
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 def _client_with_100_of_each():
@@ -31,7 +32,9 @@ def _client_with_100_of_each():
         ])
     db.commit()
     app.dependency_overrides[get_db] = lambda: (yield db)
-    return db, TestClient(app)
+    client = TestClient(app)
+    authenticate_test_client(client, db)
+    return db, client
 
 
 def test_reference_100_record_catalog_timings():

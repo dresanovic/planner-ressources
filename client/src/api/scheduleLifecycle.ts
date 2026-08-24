@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type LifecycleState = 'draft' | 'ready_for_review' | 'published' | 'superseded' | 'abandoned'
 export type LifecycleEventType = 'created' | 'marked_ready' | 'returned_to_draft' | 'published' | 'superseded' | 'abandoned' | 'restored'
 export type TransitionAction = 'mark_ready' | 'return_to_draft' | 'publish' | 'abandon' | 'restore'
@@ -30,12 +32,11 @@ export class ScheduleLifecycleApiError extends Error {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 const json = (method: string, body: unknown): RequestInit => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 const OFFSET_TIMESTAMP = /(?:Z|[+-]\d{2}:\d{2})$/
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, init)
+  const response = await plannerFetch(path, { ...init, activity: 'user' })
   const payload = await response.json().catch(() => null)
   if (!response.ok) {
     throw new ScheduleLifecycleApiError(response.status, payload?.errors ?? [{ code: 'REQUEST_FAILED', message: 'Schedule lifecycle request failed.', field: null, meta: null }], payload?.currentOverview ?? null)

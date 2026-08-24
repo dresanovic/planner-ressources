@@ -148,7 +148,8 @@ validation and before database mutation for:
 4. absolute-expired cookie;
 5. replaced cookie;
 6. inactive/disabled account;
-7. stored lecturer bearer credential.
+7. active account without a usable password;
+8. stored lecturer bearer credential.
 
 The test substitutes valid path parameters and compares database snapshots for
 rejected mutation attempts. A route added later is protected by middleware and

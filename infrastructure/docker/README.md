@@ -33,15 +33,29 @@ Do not put the registry token in `compose.yaml` or `.env`.
 3. Set `PLANNER_IMAGE` to the exact published release tag.
 4. Generate and set `LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY`. Keep this key
    stable across restarts and upgrades.
-5. Start the application:
+5. Generate a one-time planner bootstrap credential and set
+   `PLANNER_BOOTSTRAP_CREDENTIAL` for the initial administrator setup only:
+
+   ```powershell
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
+
+   Use a newly generated, different value if emergency administrator recovery
+   is later required, and set it as `PLANNER_ADMIN_RECOVERY_CREDENTIAL` only
+   for that recovery startup. Never reuse a value across purposes.
+6. Start the application:
 
    ```text
    docker compose pull
    docker compose up -d
    ```
 
-6. Open `http://localhost:8080`, or the host and port configured for the
-   deployment.
+7. Terminate HTTPS in front of the container and open the HTTPS address. The
+   production `Secure` session cookie intentionally cannot establish a remote
+   authenticated session over plain HTTP. Direct localhost HTTP may be used
+   only for container health/setup diagnostics, not production planner login.
+8. Redeem the bootstrap value at `/bootstrap/`, remove it from `.env`, restart,
+   and sign in normally at `/login/`.
 
 Inspect status and logs with:
 
@@ -58,6 +72,26 @@ docker compose up -d
 ```
 
 Do not use more than one application container while SQLite is the database.
+Production sends no credentialed CORS permission; the browser-facing planner
+and API must share the HTTPS origin. VPN may remain defense in depth but is not
+an identity source or runtime dependency.
+
+### Startup credential replay and rotation
+
+Startup credentials are durable one-time inputs, not permanent environment
+passwords. On first observation the application persists only a digest. An
+unchanged unused value survives restarts. A newly configured value replaces the
+previous unused value for that purpose. Consumed and replaced values remain
+blocked after restart and after removal from `.env`; putting the same value
+back cannot reactivate it. The application deliberately preserves a registered
+unused value when its variable is absent, so rotation requires a newly
+generated value rather than merely clearing the variable.
+
+Bootstrap succeeds only before the first administrator exists. Recovery always
+targets the existing sole administrator, has no account selector, changes that
+account's password, and invalidates its current session. Neither workflow
+creates an infrastructure-operator account or calls email, SSO, VPN identity,
+or another external provider.
 
 ## Run from Docker Desktop
 
@@ -173,6 +207,15 @@ docker compose exec planner python scripts/backup_sqlite_db.py --output-dir /dat
 
 Copy backups off the Docker host or volume on a regular schedule, and test the
 restore procedure before relying on them.
+
+The database also contains planner accounts, password hashes, current-session
+digests, one-time account-access digests, and bootstrap/recovery anti-replay
+state. Always back up and restore it atomically. A restored backup restores the
+security state from that point in time, including a then-current session and
+credential-consumption records. No raw usable credential is stored in the
+database, so retain any still-needed current startup value separately in the
+approved secret store. After a security-sensitive restore, reset or disable
+affected accounts and register new startup access as appropriate.
 
 ## Run without Compose
 

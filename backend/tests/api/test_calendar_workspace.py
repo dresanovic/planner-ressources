@@ -11,6 +11,7 @@ from app.main import app
 from app.models.planning import ScheduleRevision, Semester
 from app.services.schedule_lifecycle import create_working_revision, get_lifecycle_overview
 from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 def _client():
@@ -22,7 +23,9 @@ def _client():
     initialize_database(engine)
     db = Session(engine)
     app.dependency_overrides[get_db] = lambda: (yield db)
-    return TestClient(app), db
+    client = TestClient(app)
+    authenticate_test_client(client, db)
+    return client, db
 
 
 def test_endpoint_returns_distinct_no_revision_and_loaded_variants():

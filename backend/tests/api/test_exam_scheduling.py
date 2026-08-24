@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.main import app
 from app.models.planning import PlanningOutcome
 from tests.exam_fixtures import exam_catalog, teaching_draft
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 @pytest.fixture()
@@ -24,6 +25,7 @@ def client_and_db():
     app.dependency_overrides[get_db] = lambda: (yield db)
     try:
         with TestClient(app) as client:
+            authenticate_test_client(client, db)
             yield client, db
     finally:
         app.dependency_overrides.clear()

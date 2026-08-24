@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type CatalogError = { code: string; message: string; field?: string | null; meta?: Record<string, unknown> | null }
 export type UsageCount = { type: string; count: number }
 export type UsageSummary = { recordId: number; revision: number; canDelete: boolean; dependentRecords: UsageCount[]; savedSchedules: UsageCount; blockers: Array<{ kind: 'dependent' | 'saved_schedule'; type: string; count: number; message: string; prerequisiteAction?: string | null }> }
@@ -30,10 +32,8 @@ export class AcademicCatalogApiError extends Error {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, init)
+  const response = await plannerFetch(path, { ...init, activity: 'user' })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ errors: [{ code: 'REQUEST_FAILED', message: 'Academic catalog request failed.' }] }))
     throw new AcademicCatalogApiError(response.status, payload.errors ?? [])

@@ -29,7 +29,8 @@ describe('calendar workspace API', () => {
     expect((await getCalendarWorkspace(1)).workspaceState).toBe('no_revision')
     const partial = await getCalendarWorkspace(1, 11)
     expect(partial.workspaceState === 'loaded' && partial.summary.conflicts.availability).toBe('unavailable')
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/semesters/1/calendar-workspace?revisionId=11')
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/semesters/1/calendar-workspace?revisionId=11', expect.objectContaining({ credentials: 'include' }))
+    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('X-Planner-Activity')).toBe('user')
   })
 
   it('rejects mixed or conditionally invalid response shapes', async () => {

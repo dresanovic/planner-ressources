@@ -24,6 +24,7 @@ from app.models.planning import (
 from tests.optimization_fixtures import active_exam, past_exam, seed_optimization_planner
 from app.services.draft_schedule_repository import get_draft_schedule, load_course_plan, replace_draft_schedule
 from app.services.schedule_generation import GeneratedSession
+from tests.planner_auth_fixtures import authenticate_test_client
 from datetime import date, time
 
 
@@ -44,6 +45,7 @@ def client(db_session):
         yield db_session
     app.dependency_overrides[get_db] = override
     with TestClient(app) as value:
+        authenticate_test_client(value, db_session)
         yield value
     app.dependency_overrides.clear()
 

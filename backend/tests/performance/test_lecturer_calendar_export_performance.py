@@ -20,6 +20,7 @@ from tests.lecturer_calendar_fixtures import (
     CALENDAR_SOURCE_FINGERPRINT_KEY,
     seed_lecturer_calendar_fixture,
 )
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 app_main = importlib.import_module("app.main")
@@ -81,6 +82,7 @@ def test_complete_100_event_export_meets_release_latency_contract(monkeypatch):
         db.commit()
 
         with TestClient(app_main.app) as client:
+            authenticate_test_client(client, db)
             issued = client.post(
                 "/api/schedule-revisions/2/lecturer-review-links",
                 json={"lecturerId": fixture.review.primary_lecturer_id},

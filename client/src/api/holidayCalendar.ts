@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type HolidayRecord = { id: number; date: string; name: string; revision: number }
 export type HolidayInput = { date: string; name: string }
 export type HolidayUpdateInput = HolidayInput & { expectedRevision: number }
@@ -14,10 +16,8 @@ export class HolidayCalendarApiError extends Error {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, init)
+  const response = await plannerFetch(path, { ...init, activity: 'user' })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ errors: [] }))
     throw new HolidayCalendarApiError(response.status, payload.errors ?? [])

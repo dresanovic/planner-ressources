@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type ExamIssue = { code: string; message: string; relatedDate: string | null; relatedResource: ResourceReference | null; relatedSessionId: number | null; holidayName: string | null }
 export type ResourceReference = { id: number; name: string; referenceCode: string | null }
 export type RoomReference = ResourceReference & { capacity: number }
@@ -31,11 +33,10 @@ export class ExamSchedulingApiError extends Error {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 const json = (method: string, body: unknown): RequestInit => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, init)
+  const response = await plannerFetch(path, { ...init, activity: 'user' })
   const payload = await response.json().catch(() => null)
   if (!response.ok) throw new ExamSchedulingApiError(response.status, payload?.errors ?? [{ code: 'REQUEST_FAILED', message: 'Exam scheduling request failed.', field: null }], payload?.currentState ?? null)
   return payload as T

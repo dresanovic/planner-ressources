@@ -50,14 +50,11 @@ describe('lecturer review API', () => {
     expect(fetchMock.mock.calls[1][0]).toBe(
       '/api/schedule-revisions/15/lecturer-review-links',
     )
-    expect(fetchMock.mock.calls[1][1]).toEqual(
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-        }),
-      }),
-    )
+    expect(fetchMock.mock.calls[1][1]).toEqual(expect.objectContaining({ method: 'POST', credentials: 'include' }))
+    const plannerHeaders = new Headers(fetchMock.mock.calls[1][1]?.headers)
+    expect(plannerHeaders.get('Content-Type')).toBe('application/json')
+    expect(plannerHeaders.get('X-CSRF-Protection')).toBe('1')
+    expect(plannerHeaders.get('X-Planner-Activity')).toBe('user')
     expect(JSON.parse(String(fetchMock.mock.calls[1][1].body))).toEqual({
       lecturerId: 7,
       durationDays: 3,

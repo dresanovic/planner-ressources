@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type WorkspaceAvailability = 'available' | 'partial' | 'unavailable' | 'not_applicable'
 export type CalendarMode = 'week' | 'day' | 'month' | 'list'
 export type RevisionDesignation = 'active_working' | 'current_published'
@@ -201,13 +203,11 @@ export class CalendarWorkspaceApiError extends Error {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
-
 export async function getCalendarWorkspace(semesterId: number, revisionId?: number | null): Promise<CalendarWorkspace> {
   const query = revisionId == null ? '' : `?revisionId=${revisionId}`
   let response: Response
   try {
-    response = await fetch(`${API_BASE}/api/semesters/${semesterId}/calendar-workspace${query}`)
+    response = await plannerFetch(`/api/semesters/${semesterId}/calendar-workspace${query}`, { activity: 'user' })
   } catch {
     throw new CalendarWorkspaceApiError(0, 'Could not reach the calendar workspace service.', true)
   }

@@ -24,7 +24,8 @@ describe('getDraftSchedule', () => {
 
     const result = await getDraftSchedule(2, 3)
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/courses/2/draft-schedule?semesterId=3', undefined)
+    expect(fetchMock).toHaveBeenCalledWith('/api/courses/2/draft-schedule?semesterId=3', expect.objectContaining({ credentials: 'include' }))
+    expect(new Headers(fetchMock.mock.calls[0][1]?.headers).get('X-Planner-Activity')).toBe('user')
     expect(result.revision).toBe(7)
   })
 })

@@ -54,7 +54,7 @@ COPY --from=frontend-build /build/client/dist /app/frontend
 
 RUN python -m pip uninstall --yes pip setuptools wheel \
     && ! command -v pip \
-    && python -c "import alembic, fastapi, ortools, pydantic, sqlalchemy, uvicorn" \
+    && python -c "import alembic, argon2, fastapi, ortools, pydantic, sqlalchemy, uvicorn" \
     && groupadd --system --gid 10001 planner \
     && useradd --system --uid 10001 --gid planner --no-create-home \
         --home-dir /nonexistent --shell /usr/sbin/nologin planner \

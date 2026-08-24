@@ -47,8 +47,13 @@ independent public lecturer capability surface
 **Performance Goals**: Preserve existing planner workflow responsiveness;
 session authorization uses indexed digest/account lookups; successful bootstrap
 and administrator recovery remain completable within five minutes and planner
-setup/sign-in within three minutes; Argon2 parameters are benchmarked in the
-production image so deliberate password work does not exhaust configured memory
+setup/sign-in within three minutes; Argon2 parameters are benchmarked with four
+simultaneous verifications in each production image architecture. Without a
+limiter, the workload must complete without restart or allocation failure, add
+no more than 320 MiB above idle RSS, and keep total RSS below 75% of the test
+container limit. If it does not, a process-local two-verification cap is added
+and the same four-attempt workload must complete with no more than 160 MiB added
+above idle RSS and total RSS below 75% of the limit
 
 **Constraints**: Default-deny backend authorization; exactly one active
 administrator after bootstrap; one current session per account; 24-hour
@@ -330,7 +335,8 @@ transport. Follow [quickstart.md](./quickstart.md) and record:
 - 360 px, 820 px, and 200% zoom layout evidence;
 - supported-browser close/reopen with session restoration disabled, plus the
   documented restoration limitation;
-- production image Argon2 import and memory benchmark on supported architectures;
+- production image Argon2 import and the defined four-attempt memory benchmark
+  on supported architectures;
 - exact production cookie attributes, no production credentialed CORS, HTTPS
   success, remote plain-HTTP failure, startup secret-free logs, and preserved
   backup/restore state.

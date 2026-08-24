@@ -35,6 +35,7 @@ from app.schemas.draft_schedule import (
     StaleDraftFailure,
     StaleDraftResponse,
 )
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 def generation_payload(
@@ -154,6 +155,7 @@ def client(db_session):
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
+        authenticate_test_client(test_client, db_session)
         yield test_client
     app.dependency_overrides.clear()
 

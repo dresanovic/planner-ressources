@@ -13,6 +13,14 @@ import scheduleOccurrenceSource from '../components/ScheduleOccurrenceList.tsx?r
 import examManualSource from '../components/ExamManualSessionEditor.tsx?raw'
 import teachingEditorSource from '../components/TeachingSessionEditor.tsx?raw'
 import holidayAdministrationSource from '../components/HolidayAdministration.tsx?raw'
+import loginSource from './LoginPage.tsx?raw'
+import bootstrapSource from './BootstrapPage.tsx?raw'
+import accountAccessSource from './AccountAccessPage.tsx?raw'
+import recoverySource from './AdministratorRecoveryPage.tsx?raw'
+import passwordChangeSource from './PasswordChangePage.tsx?raw'
+import accountsSource from './PlannerAccountsPage.tsx?raw'
+import plannerApplicationSource from '../PlannerApplication.tsx?raw'
+import navigationSource from '../components/ApplicationNavigation.tsx?raw'
 
 describe('planner German and terminology migration', () => {
   it('does not reintroduce the reviewed English interface copy', () => {
@@ -80,5 +88,15 @@ describe('planner German and terminology migration', () => {
     expect(scheduleOccurrenceSource).toContain('Prüfungstermin')
     expect(holidayAdministrationSource).toContain("label('academicData.heading')")
     expect(calendarWorkspaceSource).not.toContain(".join('; ')")
+  })
+
+  it('keeps the canonical formal German authentication and account inventory', () => {
+    const source = [loginSource, bootstrapSource, accountAccessSource, recoverySource, passwordChangeSource, accountsSource, plannerApplicationSource, navigationSource].join('\n')
+    for (const required of [
+      'Anmelden', 'Passwort ändern', 'Zur Anmeldung', 'Planer-Konten',
+      'Systemadministration', 'Abmelden', 'Ihre Sitzung',
+    ]) expect(source).toContain(required)
+    expect(source).not.toMatch(/\bdu\b|\bdein(?:e|er|em|en)?\b/i)
+    expect(source).not.toContain('Passwort vergessen')
   })
 })

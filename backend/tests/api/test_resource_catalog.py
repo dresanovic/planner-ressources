@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.schema import initialize_database
 from app.db.session import get_db
 from app.main import app
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 @pytest.fixture()
@@ -17,6 +18,7 @@ def client():
     app.dependency_overrides[get_db] = lambda: (yield session)
     try:
         with TestClient(app) as test_client:
+            authenticate_test_client(test_client, session)
             yield test_client
     finally:
         app.dependency_overrides.clear()

@@ -12,6 +12,7 @@ from app.models.planning import LecturerReviewLink
 from app.services.lecturer_review import issue_lecturer_review_link
 from tests.lecturer_review_fixtures import DeterministicUtcClock
 from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 @pytest.fixture()
@@ -23,6 +24,7 @@ def client_and_db():
     with Session(engine) as db:
         app.dependency_overrides[get_db] = lambda: db
         with TestClient(app) as client:
+            authenticate_test_client(client, db)
             yield client, db
         app.dependency_overrides.clear()
 

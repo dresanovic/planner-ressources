@@ -19,6 +19,7 @@ from app.models.planning import (
     Room,
     StudyTypeTimeWindow,
 )
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 @pytest.fixture()
@@ -36,6 +37,7 @@ def db_session():
 def client(db_session):
     app.dependency_overrides[get_db] = lambda: (yield db_session)
     with TestClient(app) as value:
+        authenticate_test_client(value, db_session)
         yield value
     app.dependency_overrides.clear()
 
