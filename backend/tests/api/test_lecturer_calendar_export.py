@@ -322,9 +322,9 @@ def test_calendar_rejects_exactly_at_expiry_but_succeeds_immediately_before(
     issued = _issue(client)
     link = db.get(LecturerReviewLink, issued["issuedLink"]["id"])
     assert link is not None
-    expires_at = datetime(2026, 8, 20, 12, 0, tzinfo=timezone.utc)
-    link.expires_at = expires_at
-    db.commit()
+    expires_at = datetime.fromisoformat(
+        issued["issuedLink"]["expiresAt"].replace("Z", "+00:00")
+    )
 
     monkeypatch.setattr(
         lecturer_review_service,
