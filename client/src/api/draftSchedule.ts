@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type DraftSession = {
   id: number
   date: string
@@ -323,7 +325,7 @@ async function parseConstraintMutationResponse(response: Response): Promise<Gene
 
 async function request(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(input, init)
+    return await plannerFetch(input, { ...init, activity: 'user' })
   } catch {
     throw [
       {

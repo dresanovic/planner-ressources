@@ -25,7 +25,28 @@ def initialize_database(engine: Engine) -> None:
                 Base.metadata.create_all(bind=connection)
                 inspector = inspect(connection)
             elif not _is_current_schema(inspector):
-                if _is_pre_lecturer_review_schema(inspector):
+                if _is_pre_planner_authentication_schema(inspector):
+                    migration = _load_migration("0010_planner_authentication.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                    inspector = inspect(connection)
+                elif _has_any_planner_authentication_table(inspector):
+                    if _has_complete_planner_authentication_schema(inspector):
+                        if not _has_complete_calendar_workspace_schema(inspector):
+                            raise UnsupportedSchemaStateError(
+                                "Database schema is not a supported FS-001 through FS-012 state. "
+                                "Back up the database and inspect its lifecycle tables."
+                            )
+                        if not _has_complete_lecturer_review_schema(inspector):
+                            raise UnsupportedSchemaStateError(
+                                "Database schema is not a complete FS-015 state. Back up the "
+                                "database and inspect its lecturer review tables."
+                            )
+                    raise UnsupportedSchemaStateError(
+                        "Database schema is not a complete FS-016 state. Back up "
+                        "the database and inspect its planner authentication tables."
+                    )
+                elif _is_pre_lecturer_review_schema(inspector):
                     migration = _load_migration("0009_lecturer_token_review.py")
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
@@ -101,9 +122,15 @@ def initialize_database(engine: Engine) -> None:
                         migration.op = Operations(MigrationContext.configure(connection))
                         migration.upgrade()
 
+                inspector = inspect(connection)
+                if _is_pre_planner_authentication_schema(inspector):
+                    migration = _load_migration("0010_planner_authentication.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+
                 if not _is_current_schema(inspect(connection)):
                     raise UnsupportedSchemaStateError(
-                        "FS-015 database migration completed without producing the expected schema."
+                        "FS-016 database migration completed without producing the expected schema."
                     )
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=ON")
@@ -112,6 +139,85 @@ def initialize_database(engine: Engine) -> None:
 
 
 def _is_current_schema(inspector) -> bool:
+    return (
+        _has_complete_lecturer_review_schema(inspector)
+        and _has_complete_planner_authentication_schema(inspector)
+    )
+
+
+def _has_complete_planner_authentication_schema(inspector) -> bool:
+    tables = set(inspector.get_table_names())
+    return (
+        {
+            "planner_accounts",
+            "planner_account_access",
+            "planner_sessions",
+            "planner_startup_credentials",
+        }.issubset(tables)
+        and {
+            "id",
+            "login_name",
+            "normalized_login_name",
+            "display_name",
+            "password_hash",
+            "is_active",
+            "is_administrator",
+            "failed_login_count",
+            "login_blocked_until",
+            "revision",
+            "created_at",
+            "disabled_at",
+            "reactivated_at",
+        }.issubset(_column_names(inspector, "planner_accounts"))
+        and {
+            "id", "account_id", "secret_digest", "purpose", "issued_at", "expires_at"
+        }.issubset(_column_names(inspector, "planner_account_access"))
+        and {
+            "id", "account_id", "secret_digest", "created_at", "last_activity_at", "absolute_expires_at"
+        }.issubset(_column_names(inspector, "planner_sessions"))
+        and {
+            "secret_digest", "purpose", "state", "first_seen_at", "retired_at"
+        }.issubset(_column_names(inspector, "planner_startup_credentials"))
+        and _has_unique_columns(inspector, "planner_accounts", ("normalized_login_name",))
+        and _has_unique_columns(inspector, "planner_account_access", ("account_id",))
+        and _has_unique_columns(inspector, "planner_account_access", ("secret_digest",))
+        and _has_unique_columns(inspector, "planner_sessions", ("account_id",))
+        and _has_unique_columns(inspector, "planner_sessions", ("secret_digest",))
+        and _has_unique_index(
+            inspector,
+            "planner_accounts",
+            "uq_planner_accounts_single_administrator",
+            ("is_administrator",),
+        )
+        and _has_unique_index(
+            inspector,
+            "planner_startup_credentials",
+            "uq_planner_startup_credentials_current_purpose",
+            ("purpose",),
+        )
+    )
+
+
+def _is_pre_planner_authentication_schema(inspector) -> bool:
+    return (
+        _has_complete_lecturer_review_schema(inspector)
+        and not _has_any_planner_authentication_table(inspector)
+    )
+
+
+def _has_any_planner_authentication_table(inspector) -> bool:
+    return bool(
+        {
+            "planner_accounts",
+            "planner_account_access",
+            "planner_sessions",
+            "planner_startup_credentials",
+        }
+        & set(inspector.get_table_names())
+    )
+
+
+def _has_complete_lecturer_review_schema(inspector) -> bool:
     tables = set(inspector.get_table_names())
     return (
         _has_complete_calendar_workspace_schema(inspector)

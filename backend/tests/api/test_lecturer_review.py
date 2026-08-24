@@ -29,14 +29,10 @@ from tests.lecturer_review_fixtures import (
     install_api_clock,
     seed_lecturer_review_fixture,
 )
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 app_main = importlib.import_module("app.main")
-if not any(
-    "lecturer-review" in getattr(route, "path", "")
-    for route in app_main.app.routes
-):
-    app_main = importlib.reload(app_main)
 
 
 SOURCE_FINGERPRINT_KEY = "fs015-test-source-fingerprint-key-" + ("a" * 32)
@@ -62,6 +58,7 @@ def client_and_db(monkeypatch):
     with Session(engine) as db:
         app_main.app.dependency_overrides[get_db] = lambda: db
         with TestClient(app_main.app, client=("198.51.100.7", 43000)) as client:
+            authenticate_test_client(client, db)
             yield client, db
         app_main.app.dependency_overrides.clear()
 
@@ -1346,6 +1343,8 @@ def test_stable_source_key_survives_restart_during_window_and_active_block(
         app_main.app,
         client=("203.0.113.50", 43000),
     ) as planner_client:
+        with Session(engine) as auth_db:
+            authenticate_test_client(planner_client, auth_db)
         issued = _issue_link(planner_client)
     secret = issued["secret"]
 

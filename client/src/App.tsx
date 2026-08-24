@@ -16,8 +16,10 @@ import {
   writeNavigationPinned,
 } from './navigationPreference'
 import { label } from './config/terminology'
+import type { CurrentAccount } from './api/authentication'
+import { PlannerAccountsPage } from './pages/PlannerAccountsPage'
 
-function App() {
+function App({ currentAccount, onCurrentAccountChange, onLogout, onPasswordChange }: { currentAccount?: CurrentAccount; onCurrentAccountChange?: (account: CurrentAccount) => void; onLogout?: () => void; onPasswordChange?: () => void }) {
   const [view, setView] = useState<PlannerView>('schedule')
   const [scheduleDestination, setScheduleDestination] = useState<ScheduleDestination>('calendar')
   const [scheduleExpanded, setScheduleExpanded] = useState(true)
@@ -39,6 +41,8 @@ function App() {
   useEffect(() => {
     writeNavigationPinned(navigationPinned)
   }, [navigationPinned])
+
+  const activeView: PlannerView = view === 'accounts' && !currentAccount?.isAdministrator ? 'schedule' : view
 
   const setNavigationVisibility = useCallback((open: boolean) => setNavigationOpen(open), [])
   const setScheduleNavigationRequester = useCallback((
@@ -95,10 +99,15 @@ function App() {
     setScheduleExpanded((expanded) => !expanded)
   }
 
+  function selectAccounts() {
+    focusContent.current = true
+    setView('accounts')
+  }
+
   return (
     <div className="application-shell" data-navigation-pinned={navigationPinned ? 'true' : 'false'}>
       <ApplicationNavigation
-        view={view}
+        view={activeView}
         selectedCategory={selectedCategory}
         selectedScheduleDestination={scheduleDestination}
         scheduleExpanded={scheduleExpanded}
@@ -111,17 +120,22 @@ function App() {
         onSelectCategory={selectCategory}
         onNavigationOpenChange={setNavigationVisibility}
         onNavigationPinnedChange={setNavigationPinned}
+        currentAccount={currentAccount}
+        onSelectAccounts={selectAccounts}
+        onLogout={onLogout}
+        onPasswordChange={onPasswordChange}
       />
       <main
         ref={contentRef}
         className="application-content"
         tabIndex={-1}
-        aria-label={view === 'schedule' ? label('schedule.heading') : `${label('academicData.heading')}: ${selectedCategory}`}
+        aria-label={activeView === 'schedule' ? label('schedule.heading') : activeView === 'academic' ? `${label('academicData.heading')}: ${selectedCategory}` : 'Planer-Konten'}
         aria-hidden={navigationOpen || undefined}
         inert={navigationOpen || undefined}
       >
-        <div hidden={view !== 'schedule'}><CourseSchedulePage active={view === 'schedule'} catalogRevision={catalogRevision} destination={scheduleDestination} onNavigationRequesterChange={setScheduleNavigationRequester} onScheduleDestinationChange={commitScheduleDestination} /></div>
-        {view === 'academic' && <AcademicDataPage category={selectedCategory} onCatalogChanged={() => setCatalogRevision((value) => value + 1)} />}
+        <div hidden={activeView !== 'schedule'}><CourseSchedulePage active={activeView === 'schedule'} catalogRevision={catalogRevision} destination={scheduleDestination} onNavigationRequesterChange={setScheduleNavigationRequester} onScheduleDestinationChange={commitScheduleDestination} /></div>
+        {activeView === 'academic' && <AcademicDataPage category={selectedCategory} onCatalogChanged={() => setCatalogRevision((value) => value + 1)} />}
+        {activeView === 'accounts' && currentAccount?.isAdministrator && <PlannerAccountsPage currentAccount={currentAccount} onCurrentAccountChange={onCurrentAccountChange} />}
       </main>
     </div>
   )

@@ -26,6 +26,7 @@ from tests.lecturer_calendar_fixtures import (
     remove_all_assignments,
     seed_lecturer_calendar_fixture,
 )
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 app_main = importlib.import_module("app.main")
@@ -49,6 +50,7 @@ def client_and_db(monkeypatch):
     monkeypatch.setattr(app_main, "SessionLocal", lambda: Session(engine))
     try:
         with TestClient(app_main.app) as client:
+            authenticate_test_client(client, db)
             yield client, db
     finally:
         app_main.app.dependency_overrides.clear()

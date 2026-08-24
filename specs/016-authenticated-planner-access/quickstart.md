@@ -124,10 +124,17 @@ operation.
 python -m pytest backend/tests -q
 ```
 
-Benchmark Argon2 verification inside the production image on both supported
-architectures. Record peak memory for realistic concurrent attempts. Add a
-small process-local verification semaphore only if evidence shows that the
-64-MiB profile can exhaust the configured container memory.
+Benchmark Argon2 verification inside the production image on each supported
+architecture. Record idle RSS, then submit exactly four simultaneous password
+verifications under the deployment's configured container memory limit or a
+temporary 512-MiB limit when none is configured. Without a limiter, all four
+must complete without restart or allocation failure, incremental peak RSS must
+be at most 320 MiB, and total peak RSS must remain below 75% of the test limit.
+If any condition fails, add a process-local cap of two simultaneous
+verifications and repeat the four-attempt workload; all four must complete,
+incremental peak RSS must be at most 160 MiB, and total peak RSS must remain
+below 75% of the limit. Record attempt durations, architecture, memory limit,
+idle/peak RSS, and whether the cap was required.
 
 ### Frontend
 
@@ -234,6 +241,21 @@ session may restore non-persistent cookies. Do not use unload/beacon logout as a
 security claim; the server's 60-minute inactivity and 12-hour absolute limits
 remain the backstops.
 
+## Representative participant acceptance
+
+Use ten people who have not previously used the FS-016 screens and synthetic
+accounts/data. Assign five the planner journey: redeem setup access, sign in,
+change their own password, and sign in with the new password. Assign five the
+administrator journey: sign in, disable an ordinary planner, initiate
+reactivation, and transfer administration to another active planner.
+
+Give participants only the interface guidance. One first attempt is one
+uninterrupted run without facilitator assistance; corrections made from the
+interface's own validation or error guidance remain part of that run. Record
+each participant, assigned actor group, completed steps, assistance, and result.
+Acceptance requires at least nine of ten complete results and at least four of
+five complete results in each actor group.
+
 ## Deployment verification
 
 Build and run the production image, then verify:
@@ -261,3 +283,72 @@ npm run build
 Record any unavailable command, reason, and residual risk. Implementation is not
 complete until all feasible automated checks pass and the manual browser,
 accessibility, browser-close, and HTTPS evidence is attached to the delivery.
+
+## Implementation evidence
+
+### T001 baseline — 2026-08-24
+
+- Branch: `codex/fs-016-authenticated-planner-access`.
+- Pre-implementation working tree: only the approved FS-016 specification,
+  plan, research, quickstart, contract, and task refinements were modified; no
+  production or test source files were changed.
+- Backend command: `backend\.venv\Scripts\python.exe -m pytest backend/tests -q`.
+  Authoritative unrestricted result: 519 passed, 1 skipped, 1648 warnings in
+  454.03 seconds.
+- Frontend command: `npm test` from `client`.
+  Authoritative result: 55 files and 412 tests passed in 11.91 seconds.
+- Environmental retries: the first sandboxed frontend run failed before test
+  loading with Vite `spawn EPERM`; the first two sandboxed backend runs reached
+  466 passing tests but reported 53 pytest setup errors because the runner could
+  not access or clean its Windows temporary directory. Repeating the unchanged
+  commands with process/temp access produced the clean results above.
+
+### FS-016 implementation verification — 2026-08-24
+
+- Focused database/authentication command from `backend`: `.venv\Scripts\python.exe
+  -m pytest tests/db/test_migrations.py tests/services/test_planner_auth.py
+  tests/services/test_planner_auth_concurrency.py tests/api/test_planner_auth.py
+  tests/api/test_planner_authorization.py -q`. Result: 48 passed, 21 warnings in
+  20.62 seconds.
+- Complete API command: `.venv\Scripts\python.exe -m pytest tests/api -q`.
+  Result: 199 passed, 314 warnings in 39.35 seconds. The run includes the
+  generated registered-operation denial matrix and existing FS-015 lecturer
+  review/calendar/feedback suites.
+- Complete backend command: `.venv\Scripts\python.exe -m pytest tests -q
+  --basetemp=.pytest-tmp-full-corrections`.
+  Result after the latest post-review corrections: 557 passed, 1 skipped, 1651
+  warnings in 733.95 seconds. The skip is an
+  existing suite skip; no test failed.
+- The final authorization inventory exercises every registered protected
+  operation with active, ended, and replaced stored lecturer credentials beside
+  a valid planner session. Every rejected mutation compares a complete SQLite
+  before/after snapshot, and the focused inventory passed without mutation.
+- Complete frontend commands from `client`: `npm test`, `npm run lint`, and
+  `npm run build`. Results after the latest post-review corrections: 66 test
+  files and 452 tests passed in 18.18 seconds;
+  ESLint passed; TypeScript and Vite production build passed.
+- `git diff --check` reported only the repository's Windows LF-to-CRLF notices
+  and no whitespace errors. The final scope search found no production SSO,
+  OIDC, MFA, passkey, JWT, general-role, authenticated-lecturer, forgot-password,
+  or broad audit-log implementation.
+- Contract audit confirmed the implemented constants and boundaries match the
+  specification/data model/contracts: Argon2id `m=65536,t=3,p=4`, password
+  length 12–128, ten failures plus a fixed 15-minute restriction, 24-hour
+  one-time account access, 60-minute inactivity, 12-hour absolute session life,
+  exactly one administrator, one current session/account, exact anonymous
+  lecturer operations, and the documented browser-close limitation.
+
+### External acceptance still required
+
+- T082 could not run: `docker version` reported that the Docker Desktop Linux
+  engine pipe was unavailable, and `docker buildx ls` additionally could not
+  acquire the user's buildx lock. Therefore no amd64/arm64 production-image
+  Argon2 memory result is claimed.
+- T085 requires supported-browser, assistive-technology, timed-journey, and ten
+  real-participant evidence. Automated jsdom checks pass, but they cannot
+  substitute for those people/browser acceptance requirements.
+- T086 requires an HTTPS-terminated production deployment plus remote HTTP,
+  startup-log, restart/replay, and SQLite backup/restore exercises. Unit/API
+  coverage verifies cookie flags, no-store behavior, persisted replay state,
+  and production CORS configuration, but no live deployment evidence is
+  claimed.

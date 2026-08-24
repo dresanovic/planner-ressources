@@ -8,6 +8,7 @@ import {
   type PlannerView,
   type ScheduleDestination,
 } from './ApplicationNavigation'
+import type { CurrentAccount } from '../api/authentication'
 
 function installMatchMedia(matches = false) {
   const listeners = new Set<() => void>()
@@ -22,7 +23,7 @@ function installMatchMedia(matches = false) {
   return media
 }
 
-function Harness() {
+function Harness({ currentAccount }: { currentAccount?: CurrentAccount } = {}) {
   const [view, setView] = useState<PlannerView>('schedule')
   const [category, setCategory] = useState<AcademicDataCategory>('semesters')
   const [destination, setDestination] = useState<ScheduleDestination>('calendar')
@@ -44,13 +45,15 @@ function Harness() {
     onSelectCategory={(next) => { setCategory(next); setExpanded(true); setView('academic') }}
     onNavigationOpenChange={setOpen}
     onNavigationPinnedChange={setPinned}
+    currentAccount={currentAccount}
+    onSelectAccounts={() => setView('accounts')}
   />
 }
 
-async function renderNavigation(narrow = false) {
+async function renderNavigation(narrow = false, currentAccount?: CurrentAccount) {
   installMatchMedia(narrow)
   const root = createRoot(document.body.appendChild(document.createElement('div')))
-  await act(async () => root.render(<Harness />))
+  await act(async () => root.render(<Harness currentAccount={currentAccount} />))
   return root
 }
 
@@ -196,5 +199,17 @@ describe('ApplicationNavigation', () => {
     act(() => button('Räume').click())
     expect(document.querySelector('.application-navigation')?.classList.contains('is-open')).toBe(false)
     expect(button('Räume').getAttribute('aria-current')).toBe('page')
+  })
+
+  it('shows current identity and account administration only to the administrator', async () => {
+    const root = await renderNavigation(false, { id: 1, loginName: 'admin', displayName: 'Administration', isAdministrator: true })
+    expect(document.body.textContent).toContain('Administration')
+    expect(document.body.textContent).toContain('Passwort ändern')
+    expect(document.body.textContent).toContain('Abmelden')
+    expect(document.body.textContent).toContain('Planer-Konten')
+    act(() => root.unmount())
+    document.body.innerHTML = ''
+    await renderNavigation(false, { id: 2, loginName: 'planer', displayName: 'Planung', isAdministrator: false })
+    expect(document.body.textContent).not.toContain('Planer-Konten')
   })
 })

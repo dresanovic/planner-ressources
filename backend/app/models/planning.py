@@ -25,6 +25,152 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class PlannerAccount(Base):
+    __tablename__ = "planner_accounts"
+    __table_args__ = (
+        UniqueConstraint(
+            "normalized_login_name",
+            name="uq_planner_accounts_normalized_login_name",
+        ),
+        CheckConstraint(
+            "length(login_name) BETWEEN 1 AND 128",
+            name="ck_planner_accounts_login_name_length",
+        ),
+        CheckConstraint(
+            "length(display_name) BETWEEN 1 AND 200",
+            name="ck_planner_accounts_display_name_length",
+        ),
+        CheckConstraint(
+            "is_administrator = 0 OR is_active = 1",
+            name="ck_planner_accounts_active_administrator",
+        ),
+        CheckConstraint(
+            "failed_login_count >= 0",
+            name="ck_planner_accounts_failed_login_count_nonnegative",
+        ),
+        CheckConstraint(
+            "revision > 0",
+            name="ck_planner_accounts_revision_positive",
+        ),
+        Index(
+            "uq_planner_accounts_single_administrator",
+            "is_administrator",
+            unique=True,
+            sqlite_where=text("is_administrator = 1"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    login_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    normalized_login_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_administrator: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    failed_login_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    login_blocked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    disabled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reactivated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
+
+
+class PlannerAccountAccess(Base):
+    __tablename__ = "planner_account_access"
+    __table_args__ = (
+        UniqueConstraint("account_id", name="uq_planner_account_access_account_id"),
+        UniqueConstraint("secret_digest", name="uq_planner_account_access_secret_digest"),
+        CheckConstraint(
+            "length(secret_digest) = 64",
+            name="ck_planner_account_access_digest_length",
+        ),
+        CheckConstraint(
+            "purpose IN ('setup', 'reset', 'reactivation')",
+            name="ck_planner_account_access_purpose",
+        ),
+        CheckConstraint(
+            "expires_at > issued_at",
+            name="ck_planner_account_access_expiry",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(
+        ForeignKey("planner_accounts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    secret_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(20), nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PlannerSession(Base):
+    __tablename__ = "planner_sessions"
+    __table_args__ = (
+        UniqueConstraint("account_id", name="uq_planner_sessions_account_id"),
+        UniqueConstraint("secret_digest", name="uq_planner_sessions_secret_digest"),
+        CheckConstraint(
+            "length(secret_digest) = 64",
+            name="ck_planner_sessions_digest_length",
+        ),
+        CheckConstraint(
+            "last_activity_at >= created_at",
+            name="ck_planner_sessions_activity_sequence",
+        ),
+        CheckConstraint(
+            "absolute_expires_at > created_at",
+            name="ck_planner_sessions_expiry",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    account_id: Mapped[int] = mapped_column(
+        ForeignKey("planner_accounts.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    secret_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_activity_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    absolute_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PlannerStartupCredential(Base):
+    __tablename__ = "planner_startup_credentials"
+    __table_args__ = (
+        CheckConstraint(
+            "length(secret_digest) = 64",
+            name="ck_planner_startup_credentials_digest_length",
+        ),
+        CheckConstraint(
+            "purpose IN ('bootstrap', 'recovery')",
+            name="ck_planner_startup_credentials_purpose",
+        ),
+        CheckConstraint(
+            "state IN ('current', 'consumed', 'replaced')",
+            name="ck_planner_startup_credentials_state",
+        ),
+        CheckConstraint(
+            "(state = 'current' AND retired_at IS NULL) OR "
+            "(state IN ('consumed', 'replaced') AND retired_at IS NOT NULL)",
+            name="ck_planner_startup_credentials_retirement",
+        ),
+        Index(
+            "uq_planner_startup_credentials_current_purpose",
+            "purpose",
+            unique=True,
+            sqlite_where=text("state = 'current'"),
+        ),
+    )
+
+    secret_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    purpose: Mapped[str] = mapped_column(String(20), nullable=False)
+    state: Mapped[str] = mapped_column(String(20), nullable=False)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class InstitutionHoliday(Base):
     __tablename__ = "institution_holidays"
     __table_args__ = (

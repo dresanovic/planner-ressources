@@ -919,6 +919,198 @@ def test_startup_rejects_partial_lecturer_review_schema():
         initialize_database(engine)
 
 
+def test_current_schema_contains_constrained_planner_authentication_tables_and_is_idempotent():
+    engine = create_engine("sqlite://")
+
+    initialize_database(engine)
+    initialize_database(engine)
+
+    inspector = inspect(engine)
+    assert {
+        "planner_accounts",
+        "planner_account_access",
+        "planner_sessions",
+        "planner_startup_credentials",
+    }.issubset(inspector.get_table_names())
+    assert {
+        "id",
+        "login_name",
+        "normalized_login_name",
+        "display_name",
+        "password_hash",
+        "is_active",
+        "is_administrator",
+        "failed_login_count",
+        "login_blocked_until",
+        "revision",
+        "created_at",
+        "disabled_at",
+        "reactivated_at",
+    } == set(_columns_by_name(inspector, "planner_accounts"))
+    assert {
+        "id",
+        "account_id",
+        "secret_digest",
+        "purpose",
+        "issued_at",
+        "expires_at",
+    } == set(_columns_by_name(inspector, "planner_account_access"))
+    assert {
+        "id",
+        "account_id",
+        "secret_digest",
+        "created_at",
+        "last_activity_at",
+        "absolute_expires_at",
+    } == set(_columns_by_name(inspector, "planner_sessions"))
+    assert {
+        "secret_digest",
+        "purpose",
+        "state",
+        "first_seen_at",
+        "retired_at",
+    } == set(_columns_by_name(inspector, "planner_startup_credentials"))
+
+    account_indexes = {item["name"]: item for item in inspector.get_indexes("planner_accounts")}
+    startup_indexes = {item["name"]: item for item in inspector.get_indexes("planner_startup_credentials")}
+    assert account_indexes["uq_planner_accounts_single_administrator"]["unique"] == 1
+    assert startup_indexes["uq_planner_startup_credentials_current_purpose"]["unique"] == 1
+
+
+def test_tenth_migration_upgrades_complete_fs015_without_changing_existing_rows():
+    engine = create_engine("sqlite://")
+    migrations = [
+        _load_migration(filename, f"fs016_predecessor_{index}")
+        for index, filename in enumerate(
+            (
+                "0001_create_planning_tables.py",
+                "0002_course_semester_drafts.py",
+                "0003_academic_catalog_administration.py",
+                "0004_resource_eligibility_availability.py",
+                "0005_institution_holidays.py",
+                "0006_conflict_aware_exam_scheduling.py",
+                "0007_versioned_schedule_lifecycle.py",
+                "0008_calendar_workspace_outcomes.py",
+                "0009_lecturer_token_review.py",
+            ),
+            start=1,
+        )
+    ]
+    tenth = _load_migration("0010_planner_authentication.py", "planner_authentication_migration")
+
+    with engine.begin() as connection:
+        for migration in migrations:
+            migration.op = Operations(MigrationContext.configure(connection))
+            migration.upgrade()
+        connection.execute(
+            text(
+                "INSERT INTO lecturers "
+                "(id, name, reference_code, normalized_reference_code, is_active, revision) "
+                "VALUES (41, 'Bestehende Person', 'L-41', 'l-41', 1, 1)"
+            )
+        )
+        tenth.op = Operations(MigrationContext.configure(connection))
+        tenth.upgrade()
+
+        assert connection.execute(text("SELECT name FROM lecturers WHERE id = 41")).scalar_one() == "Bestehende Person"
+        assert {
+            "planner_accounts",
+            "planner_account_access",
+            "planner_sessions",
+            "planner_startup_credentials",
+        }.issubset(inspect(connection).get_table_names())
+
+
+def test_planner_authentication_database_constraints_enforce_single_current_state():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    account_insert = text(
+        "INSERT INTO planner_accounts "
+        "(id, login_name, normalized_login_name, display_name, password_hash, "
+        "is_active, is_administrator, failed_login_count, revision, created_at) "
+        "VALUES (:id, :login, :normalized, :display, :password_hash, :active, "
+        ":administrator, :failures, :revision, CURRENT_TIMESTAMP)"
+    )
+
+    with engine.begin() as connection:
+        connection.execute(
+            account_insert,
+            {
+                "id": 1,
+                "login": "admin",
+                "normalized": "admin",
+                "display": "Administration",
+                "password_hash": "$argon2id$present",
+                "active": 1,
+                "administrator": 1,
+                "failures": 0,
+                "revision": 1,
+            },
+        )
+        connection.execute(
+            account_insert,
+            {
+                "id": 2,
+                "login": "planner",
+                "normalized": "planner",
+                "display": "Planung",
+                "password_hash": None,
+                "active": 0,
+                "administrator": 0,
+                "failures": 0,
+                "revision": 1,
+            },
+        )
+
+        invalid_accounts = (
+            {"id": 3, "login": "Admin", "normalized": "admin", "display": "Doppelt", "password_hash": None, "active": 0, "administrator": 0, "failures": 0, "revision": 1},
+            {"id": 4, "login": "admin2", "normalized": "admin2", "display": "Zweite Administration", "password_hash": "$argon2id$present", "active": 1, "administrator": 1, "failures": 0, "revision": 1},
+            {"id": 5, "login": "bad", "normalized": "bad", "display": "Ungültig", "password_hash": None, "active": 0, "administrator": 1, "failures": 0, "revision": 1},
+            {"id": 6, "login": "negative", "normalized": "negative", "display": "Ungültig", "password_hash": None, "active": 0, "administrator": 0, "failures": -1, "revision": 1},
+        )
+        for values in invalid_accounts:
+            with connection.begin_nested(), pytest.raises(Exception):
+                connection.execute(account_insert, values)
+
+        session_insert = text(
+            "INSERT INTO planner_sessions "
+            "(account_id, secret_digest, created_at, last_activity_at, absolute_expires_at) "
+            "VALUES (:account_id, :digest, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '2026-09-02')"
+        )
+        connection.execute(session_insert, {"account_id": 1, "digest": "a" * 64})
+        with connection.begin_nested(), pytest.raises(Exception):
+            connection.execute(session_insert, {"account_id": 1, "digest": "b" * 64})
+
+        access_insert = text(
+            "INSERT INTO planner_account_access "
+            "(account_id, secret_digest, purpose, issued_at, expires_at) "
+            "VALUES (:account_id, :digest, :purpose, CURRENT_TIMESTAMP, '2026-09-02')"
+        )
+        connection.execute(access_insert, {"account_id": 2, "digest": "c" * 64, "purpose": "setup"})
+        with connection.begin_nested(), pytest.raises(Exception):
+            connection.execute(access_insert, {"account_id": 2, "digest": "d" * 64, "purpose": "setup"})
+
+        startup_insert = text(
+            "INSERT INTO planner_startup_credentials "
+            "(secret_digest, purpose, state, first_seen_at) "
+            "VALUES (:digest, :purpose, :state, CURRENT_TIMESTAMP)"
+        )
+        connection.execute(startup_insert, {"digest": "e" * 64, "purpose": "bootstrap", "state": "current"})
+        with connection.begin_nested(), pytest.raises(Exception):
+            connection.execute(startup_insert, {"digest": "f" * 64, "purpose": "bootstrap", "state": "current"})
+        connection.execute(startup_insert, {"digest": "0" * 64, "purpose": "recovery", "state": "current"})
+
+
+def test_startup_rejects_partial_planner_authentication_schema():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    with engine.begin() as connection:
+        connection.execute(text("DROP TABLE planner_sessions"))
+
+    with pytest.raises(Exception, match="complete FS-016 state"):
+        initialize_database(engine)
+
+
 def _seed_current_resource_course(engine, *, include_room: bool, include_draft: bool) -> None:
     lecturer = Lecturer(id=7, name="Lecturer", reference_code="LECT-7", normalized_reference_code="lect-7")
     room = Room(id=9, name="Room", reference_code="ROOM-9", normalized_reference_code="room-9", capacity=30)

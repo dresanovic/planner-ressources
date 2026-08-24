@@ -11,6 +11,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.schema import initialize_database
 from app.db.session import get_db
 from tests.lecturer_review_fixtures import seed_lecturer_review_fixture
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 app_main = importlib.import_module("app.main")
@@ -29,6 +30,7 @@ def client_and_db(monkeypatch):
     monkeypatch.setattr(app_main, "SessionLocal", lambda: Session(engine))
     try:
         with TestClient(app_main.app) as client:
+            authenticate_test_client(client, db)
             yield client, db
     finally:
         app_main.app.dependency_overrides.clear()

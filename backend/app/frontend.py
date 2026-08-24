@@ -10,6 +10,33 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
 
+PUBLIC_UNAUTHENTICATED_BROWSER_PATHS = frozenset(
+    {
+        "/login/",
+        "/bootstrap/",
+        "/account-access/",
+        "/administrator-recovery/",
+        "/lecturer-review/",
+    }
+)
+
+
+def is_public_unauthenticated_browser_path(path: str) -> bool:
+    """Recognize only the deliberately public application entry points."""
+
+    return path in PUBLIC_UNAUTHENTICATED_BROWSER_PATHS or path.startswith("/assets/")
+
+
+def development_cors_origins(*, production: bool | None = None) -> list[str]:
+    """Permit credentialed cross-origin requests only for local development."""
+
+    if production is None:
+        production = os.getenv("APP_ENV", "").casefold() == "production"
+    if production:
+        return []
+    return ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+
 class SPAStaticFiles(StaticFiles):
     """Serve frontend assets and fall back to index.html for browser routes."""
 

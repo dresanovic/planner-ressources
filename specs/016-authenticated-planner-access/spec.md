@@ -135,16 +135,19 @@ account-management actions.
 ### User Story 3 - Keep One Current Session per Account (Priority: P1)
 
 Each active planner uses at most one current browser-bound session. A later
-successful login replaces the earlier session, while logout, browser close,
-password change, expiry, reset, disablement, and administrator recovery end the
-applicable session before it can expose or change more planner data.
+successful login replaces the earlier session, while logout, password change,
+expiry, reset, disablement, and administrator recovery end the applicable
+server-side session before it can expose or change more planner data. The
+browser receives only a non-persistent session cookie.
 
 **Why this priority**: Authentication does not protect planner work if stale or
 superseded sessions remain usable.
 
 **Independent Test**: Sign in from two browser contexts, verify that the second
-successful sign-in invalidates the first, and exercise every required session
-ending event against a protected planner read and mutation.
+successful sign-in invalidates the first while a failed sign-in does not, and
+exercise logout, inactivity expiry, absolute expiry, and self-service password
+change against a protected planner read and mutation. Reset, disablement, and
+administrator recovery are independently verified in their owning stories.
 
 **Acceptance Scenarios**:
 
@@ -154,8 +157,8 @@ ending event against a protected planner read and mutation.
    request.
 2. **Given** an account has a current session, **When** a later login attempt for
    that account fails, **Then** the current session is not replaced.
-3. **Given** a planner logs out or closes the browser, **When** the former session
-   is presented again, **Then** it cannot read or change planner data.
+3. **Given** a planner logs out, **When** the former session is presented again,
+   **Then** it cannot read or change planner data.
 4. **Given** a current session reaches its inactivity or absolute lifetime,
    **When** the user next requests a protected page or action, **Then** the
    session is rejected, no requested mutation occurs, and the user receives a
@@ -164,6 +167,10 @@ ending event against a protected planner read and mutation.
    knowledge of the current password, **When** the change succeeds, **Then** the
    current session ends, the old password is unusable, and the planner must sign
    in with the new password.
+6. **Given** a supported browser is configured not to restore its prior browser
+   session, **When** the planner closes all browser windows and reopens the
+   application, **Then** the non-persistent planner cookie is absent and normal
+   sign-in is required.
 
 ---
 
@@ -538,12 +545,17 @@ fields, focus movement, labels, errors, confirmations, and secret handling.
   provide an advance session-expiry warning; after expiry, the next protected
   interaction MUST use the approved ended-session wording and route the user to
   sign in again.
-- **FR-030**: Logout, browser close, session replacement, inactivity expiry,
-  absolute expiry, successful password change, reset issuance, account
-  disablement, and successful administrator recovery MUST make the applicable
-  former session unusable for every later protected request.
-- **FR-031**: Closing and reopening the browser MUST require a new sign-in and
-  MUST NOT restore access from the earlier browser session.
+- **FR-030**: Logout, session replacement, inactivity expiry, absolute expiry,
+  successful password change, reset issuance, account disablement, and
+  successful administrator recovery MUST make the applicable former server-side
+  session unusable for every later protected request.
+- **FR-031**: The planner session cookie MUST be non-persistent, with no explicit
+  browser-storage expiry, so closing all browser windows requires a new sign-in
+  when browser session restoration is disabled. Because supported browsers may
+  restore session cookies as part of session restoration and do not reliably
+  notify the server of browser close, the product MUST NOT claim instantaneous
+  server-side invalidation on browser close; the 60-minute inactivity and
+  12-hour absolute limits remain authoritative server-side backstops.
 - **FR-032**: When authentication expires or is invalidated during a protected
   workflow, the next protected read or action MUST be denied without applying
   the requested mutation and MUST provide a clear route to sign in again.
@@ -671,8 +683,10 @@ fields, focus movement, labels, errors, confirmations, and secret handling.
   session, replaced session, inactive account, disabled account, and lecturer
   capability credentials.
 - **TR-006**: Session tests MUST verify successful-login replacement, failed-
-  login non-replacement, logout, browser-close behavior, inactivity expiry,
-  absolute expiry, password change, reset, disablement, and recovery.
+  login non-replacement, logout, non-persistent cookie attributes, inactivity
+  expiry, absolute expiry, password change, reset, disablement, and recovery;
+  supported-browser close/reopen behavior MUST be manually verified with session
+  restoration disabled and the restoration limitation recorded.
 - **TR-007**: Concurrency and stale-state tests MUST prove at-most-one successful
   redemption, exactly one administrator after bootstrap and transfer, and no
   partial account or authority change on failure.
@@ -771,10 +785,14 @@ fields, focus movement, labels, errors, confirmations, and secret handling.
   the correct current state and corresponding lifecycle time within one minute
   of the completed action in 100% of acceptance tests, with no additional audit
   history displayed.
-- **SC-011**: At least 90% of representative planner and administrator
-  participants complete sign-in, planner setup, password change, disablement,
-  reactivation, and transfer correctly on their first attempt using only the
-  interface guidance.
+- **SC-011**: In an acceptance sample of ten people who have not previously used
+  the FS-016 screens, five acting as planners and five acting as administrators,
+  at least nine of ten participants and at least four of five in each actor group
+  MUST complete every step in their assigned role journey on the first
+  uninterrupted attempt using only interface guidance. The planner journey
+  covers setup redemption, sign-in, self-service password change, and sign-in
+  with the new password; the administrator journey covers sign-in, disablement,
+  reactivation initiation, and administrator transfer.
 - **SC-012**: All new authentication and account-administration journeys can be
   completed with keyboard-only input at a narrow supported viewport and 200%
   zoom, with every error and state change available without color alone.
@@ -794,8 +812,10 @@ fields, focus movement, labels, errors, confirmations, and secret handling.
 - Reset issuance invalidates the old password and current session immediately;
   the administrator is expected to deliver the newly displayed one-time access
   through an appropriate manual channel.
-- A browser-close outcome is verified from the user's perspective: reopening
-  the browser does not restore planner access and requires a new sign-in.
+- Browser-close acceptance uses a supported browser with session restoration
+  disabled and verifies normal non-persistent-cookie behavior. A browser that
+  restores its prior session may also restore the cookie; inactivity and
+  absolute expiry remain the server-side limits in that case.
 - An authenticated request that is accepted before a concurrent invalidation
   remains indivisible, but no later protected request may use the invalidated
   session.

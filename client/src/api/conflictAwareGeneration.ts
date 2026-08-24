@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type OptimizationStatus = 'complete' | 'improved_partial' | 'unchanged' | 'failed' | 'stale'
 
 export type OptimizationError = {
@@ -214,7 +216,7 @@ async function parseOptimizationError(response: Response): Promise<OptimizationE
 
 async function request(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(input, init)
+    return await plannerFetch(input, { ...init, activity: 'user' })
   } catch {
     throw [{ code: 'NETWORK_ERROR', message: 'Could not reach the backend API.' }]
   }

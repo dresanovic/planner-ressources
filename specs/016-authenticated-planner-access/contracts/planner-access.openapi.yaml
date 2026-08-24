@@ -137,7 +137,7 @@ paths:
         - $ref: '#/components/parameters/CsrfProtection'
       responses:
         '204':
-          description: Session ended, including idempotent already-ended logout
+          description: Valid current session ended and its cookie cleared
           headers:
             Set-Cookie:
               description: Clears the planner session cookie
@@ -535,10 +535,12 @@ components:
       properties:
         loginName:
           type: string
-          minLength: 1
           maxLength: 128
         password:
-          $ref: '#/components/schemas/Password'
+          type: string
+          writeOnly: true
+          maxLength: 128
+          description: Submitted login value; new-password acceptance rules are evaluated only when setting a password.
     AccountAccessRedemptionRequest:
       type: object
       additionalProperties: false

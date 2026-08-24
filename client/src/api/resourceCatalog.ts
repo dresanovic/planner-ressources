@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type ResourceType = 'lecturers' | 'rooms'
 export type ResourceStatus = 'active' | 'inactive' | 'all'
 export type ResourceError = { code: string; message: string; field?: string | null; meta?: Record<string, unknown> | null }
@@ -40,10 +42,8 @@ export class ResourceCatalogApiError extends Error {
   }
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
-
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, init)
+  const response = await plannerFetch(path, { ...init, activity: 'user' })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ errors: [{ code: 'REQUEST_FAILED', message: 'Resource catalog request failed.' }] }))
     throw new ResourceCatalogApiError(response.status, payload.errors ?? [])

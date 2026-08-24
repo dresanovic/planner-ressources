@@ -31,6 +31,76 @@ DATABASE_URL=sqlite:///./planner.db
 
 Set `DATABASE_URL` to a different SQLAlchemy URL when running against another database. The current model layer is SQLAlchemy-based so the same feature code can later move to PostgreSQL with migrations instead of a rewrite.
 
+## Planner authentication and first setup (FS-016)
+
+All planner pages, API reads, and mutations require an active named local
+planner account. Authentication is application-owned: it does not use VPN
+identity, institutional SSO, email, or another identity provider. Existing
+public lecturer review, calendar, and feedback capabilities remain anonymous
+and cannot authorize planner operations.
+
+Generate a one-time bootstrap value with a cryptographically secure 32-byte
+generator and pass its 64-character hexadecimal representation only at
+startup:
+
+```powershell
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+```text
+PLANNER_BOOTSTRAP_CREDENTIAL=<64 different hexadecimal characters>
+```
+
+Open `/bootstrap/`, enter that value, and establish the first named system
+administrator. Bootstrap is available only while no administrator exists and
+does not sign the new administrator in automatically. Remove the redeemed
+value from deployment configuration and sign in normally at `/login/`.
+
+The sole administrator creates inactive planner accounts and manually delivers
+the one-time link shown immediately after creation, reset, or reactivation.
+The link expires after 24 hours, is replaced by a later issuance, and is
+consumed by the first successful password setup. It is never reproduced by an
+account listing. Passwords are 12–128 characters and must not equal the
+case-insensitive trimmed login name.
+
+Each account has at most one opaque server-side session. A later successful
+login replaces it; a failed login does not. The non-persistent `HttpOnly`
+cookie uses `SameSite=Strict`, expires after 60 minutes without deliberate
+planner activity, and has a 12-hour absolute lifetime. Logout, password change
+or reset, disablement, and administrator recovery invalidate it. A browser
+configured to restore a prior session may restore a session cookie, so the
+server timeouts remain authoritative.
+
+For emergency recovery, generate a value different from every bootstrap value
+and start once with:
+
+```text
+PLANNER_ADMIN_RECOVERY_CREDENTIAL=<64 different hexadecimal characters>
+```
+
+Open `/administrator-recovery/` and set a new password for the current sole
+administrator. There is no account selector and no operator account. Recovery
+consumes the startup value and ends the administrator's prior session. Remove
+the redeemed value from configuration and use normal login. To rotate an
+unused startup value, configure a newly generated value; the application
+persists the old value as replaced. Removing an unused value does not retire
+it, and a consumed or replaced value cannot be made current again by restarting
+with the same value.
+
+Production planner authentication requires HTTPS. In production the cookie is
+named `__Host-planner_session` and is `Secure`; local development permits only
+the exact `localhost:5173` and `127.0.0.1:5173` credentialed CORS origins, while
+production permits no cross-origin planner frontend. Authentication and
+protected responses use `Cache-Control: no-store`.
+
+Accounts, password hashes, startup anti-replay records, one-time-access
+digests, and current-session digests are stored in SQLite. Back up and restore
+the complete database as one unit. Raw passwords and usable startup, access,
+or session secrets are not recoverable from it. Treat a database restore as a
+security-state restore: it also restores the recorded credential consumption
+and any session that was current at backup time; disable/reset affected access
+or rotate to a new startup value when that is not acceptable.
+
 ## Draft Schedule Slice
 
 The draft schedule API supports explicit generation for one course:

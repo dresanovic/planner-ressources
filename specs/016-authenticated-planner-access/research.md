@@ -36,6 +36,19 @@ serialization and upgrade format. Benchmark the production container and, only
 if needed, cap concurrent verification work with a small process-local
 semaphore.
 
+The acceptance benchmark starts from the idle application RSS and submits
+exactly four simultaneous password verifications in each supported production
+image architecture. Run it under the deployment's configured container memory
+limit or, when no limit is configured, a temporary 512-MiB test limit. The
+unlimited implementation passes when all four attempts complete without process
+restart or allocation failure, incremental peak RSS is at most 320 MiB, and
+total peak RSS remains below 75% of the test limit. If any condition fails, add
+the simplest process-local semaphore with a maximum of two simultaneous
+verifications and repeat the four-attempt workload; all four must complete,
+incremental peak RSS must be at most 160 MiB, and total peak RSS must remain
+below 75% of the test limit. Record idle RSS, peak RSS, attempt durations, image
+architecture, test limit, and whether the cap was required.
+
 For an unknown, inactive, passwordless, or temporarily blocked account, perform
 one verification against a precomputed dummy Argon2 hash before returning the
 same generic login failure. Never log or serialize a submitted password or a

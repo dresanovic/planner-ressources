@@ -7,6 +7,7 @@ import pytest
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
+from tests.planner_auth_fixtures import authenticate_test_client
 
 
 @pytest.fixture()
@@ -17,6 +18,7 @@ def client():
     app.dependency_overrides[get_db] = lambda: (yield db)
     try:
         with TestClient(app) as value:
+            authenticate_test_client(value, db)
             yield value
     finally:
         app.dependency_overrides.clear()

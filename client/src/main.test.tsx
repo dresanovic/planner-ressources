@@ -17,11 +17,11 @@ const probes = vi.hoisted(() => ({
   publicModuleLoads: 0,
 }))
 
-vi.mock('./App.tsx', () => {
+vi.mock('./PlannerApplication.tsx', () => {
   probes.plannerModuleLoads += 1
   return {
-    default: function PlannerProbe() {
-      return <div data-testid="planner-probe">Planner application</div>
+    default: function PlannerProbe({ initialPath, accountAccessSecret, onAccountAccessSecretConsumed }: { initialPath?: string; accountAccessSecret?: string | null; onAccountAccessSecretConsumed?: () => void }) {
+      return <div data-testid="planner-probe" data-path={initialPath} data-secret={accountAccessSecret ?? 'none'} data-hash-at-render={window.location.hash}>Planner application<button type="button" onClick={onAccountAccessSecretConsumed}>Zugang verwenden</button></div>
     },
   }
 })
@@ -117,6 +117,20 @@ describe('client bootstrap lecturer-review boundary', () => {
     expect(window.location.hash).toBe('')
     expect(probes.publicModuleLoads).toBe(1)
     expect(probes.plannerModuleLoads).toBe(0)
+  })
+
+  it('scrubs account-access fragments before terminology or planner/auth module work', async () => {
+    const replaceState = vi.spyOn(window.history, 'replaceState')
+    const terminologyFetch = await bootstrap(`/account-access/#/${LECTURER_REVIEW_SECRET_CANARY}`)
+    const planner = document.querySelector<HTMLElement>('[data-testid="planner-probe"]')
+    expect(planner?.dataset.path).toBe('/account-access/')
+    expect(planner?.dataset.secret).toBe(LECTURER_REVIEW_SECRET_CANARY)
+    expect(planner?.dataset.hashAtRender).toBe('')
+    expect(window.location.hash).toBe('')
+    expect(window.location.href).not.toContain(LECTURER_REVIEW_SECRET_CANARY)
+    expect(replaceState.mock.invocationCallOrder[0]).toBeLessThan(terminologyFetch.mock.invocationCallOrder[0])
+    act(() => document.querySelector<HTMLButtonElement>('[data-testid="planner-probe"] button')!.click())
+    expect(document.querySelector<HTMLElement>('[data-testid="planner-probe"]')?.dataset.secret).toBe('none')
   })
 
   it('does not treat a similar planner path as the public entry point', async () => {

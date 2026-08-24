@@ -1,6 +1,7 @@
 import type { PlanningEntity } from './draftSchedule'
 import type { Availability } from './academicCatalog'
 import type { LecturerRecord, ResourceCandidate, RoomRecord } from './resourceCatalog'
+import { plannerFetch } from './plannerFetch'
 
 export type CourseOption = {
   id: number
@@ -55,11 +56,9 @@ export type PlanningOptions = {
   courseResources: Array<{ courseId: number; eligibleLecturers: ResourceCandidate[]; eligibleRooms: ResourceCandidate[]; preferences: { minimizeLecturerChanges: true; minimizeRoomChanges: true } }>
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
-
 export async function getPlanningOptions(semesterId?: number): Promise<PlanningOptions> {
   const query = semesterId == null ? '' : `?semesterId=${semesterId}`
-  const response = await fetch(`${API_BASE}/api/planning-options${query}`)
+  const response = await plannerFetch(`/api/planning-options${query}`, { activity: 'user' })
   if (!response.ok) {
     throw new Error('Could not load planning options.')
   }

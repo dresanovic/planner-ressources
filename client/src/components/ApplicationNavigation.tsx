@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { label } from '../config/terminology'
+import type { CurrentAccount } from '../api/authentication'
 
 // Shared with the controlled Academic Data page and contract tests.
 // eslint-disable-next-line react-refresh/only-export-components
@@ -15,7 +16,7 @@ export const ACADEMIC_DATA_CATEGORIES = [
 ] as const
 
 export type AcademicDataCategory = (typeof ACADEMIC_DATA_CATEGORIES)[number]['id']
-export type PlannerView = 'schedule' | 'academic'
+export type PlannerView = 'schedule' | 'academic' | 'accounts'
 export type ScheduleDestination = 'calendar' | 'versions' | 'exams' | 'reviews'
 
 // Shared with the application shell and navigation contract tests.
@@ -41,6 +42,10 @@ type ApplicationNavigationProps = {
   onSelectCategory: (category: AcademicDataCategory) => void
   onNavigationOpenChange: (open: boolean) => void
   onNavigationPinnedChange: (pinned: boolean) => void
+  currentAccount?: CurrentAccount
+  onSelectAccounts?: () => void
+  onLogout?: () => void
+  onPasswordChange?: () => void
 }
 
 const NARROW_QUERY = '(max-width: 820px)'
@@ -59,6 +64,10 @@ export function ApplicationNavigation({
   onSelectCategory,
   onNavigationOpenChange,
   onNavigationPinnedChange,
+  currentAccount,
+  onSelectAccounts,
+  onLogout,
+  onPasswordChange,
 }: ApplicationNavigationProps) {
   const [isNarrow, setIsNarrow] = useState(() => globalThis.matchMedia?.(NARROW_QUERY).matches ?? false)
   const openerRef = useRef<HTMLButtonElement>(null)
@@ -242,7 +251,9 @@ export function ApplicationNavigation({
               ))}
             </div>
           )}
+          {currentAccount?.isAdministrator && <button type="button" className="navigation-leaf" aria-current={view === 'accounts' ? 'page' : undefined} onClick={() => { onSelectAccounts?.(); if (temporaryPanel) closePanel(false) }}><span className="navigation-marker" aria-hidden="true" />Planer-Konten</button>}
         </nav>
+        {currentAccount && <div className="navigation-account"><strong>{currentAccount.displayName}</strong><span>{currentAccount.loginName}</span><button type="button" onClick={onPasswordChange}>Passwort ändern</button><button type="button" onClick={onLogout}>Abmelden</button></div>}
       </aside>
     </>
   )

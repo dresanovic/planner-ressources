@@ -1,3 +1,5 @@
+import { plannerFetch } from './plannerFetch'
+
 export type ReviewRevisionState =
   | 'draft'
   | 'ready_for_review'
@@ -459,7 +461,7 @@ export async function submitPublicLecturerFeedback(
 async function plannerRequest(path: string, init?: RequestInit): Promise<unknown> {
   let response: Response
   try {
-    response = await fetch(`${API_BASE}${path}`, init)
+    response = await plannerFetch(path, { ...init, activity: 'user' })
   } catch {
     throw new LecturerReviewApiError(
       0,

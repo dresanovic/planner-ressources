@@ -4,6 +4,9 @@ alembic==1.18.0
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.14.1
+argon2-cffi==25.1.0
+argon2-cffi-bindings==25.1.0
+cffi==2.1.1
 click==8.4.2
 fastapi==0.139.0
 greenlet==3.5.4
@@ -17,6 +20,7 @@ numpy==2.5.1
 ortools==9.15.6755
 pandas==3.0.3
 protobuf==6.33.6
+pycparser==3.0
 pydantic==2.13.4
 pydantic_core==2.46.4
 python-dateutil==2.9.0.post0

@@ -38,6 +38,24 @@ Initial session inspection and future automatic/background requests use the
 non-activity form. Public terminology and lecturer APIs remain independent
 direct calls with `credentials: "omit"` and never receive planner headers.
 
+### Activity call-site inventory
+
+| Call origin | Activity marker | Rule |
+|---|---|---|
+| `GET /api/auth/session` during gate startup or account refresh | Omit | Inspection is never user activity. |
+| A planner read started by opening or changing a visible planner view, filter, page, selection, or dialog | `user` | The foreground interaction is deliberate even when it loads supporting data. |
+| A planner mutation started by an explicit submit, confirm, generate, publish, copy-management, or account-management action | `user` | Only a successful protected response refreshes inactivity. |
+| Logout | Omit | It ends the session, so refreshing activity has no effect. |
+| Any future timer, polling, prefetch, retry, or background refresh | Omit | Background traffic must not extend the session. |
+| Public terminology and lecturer capability calls | Not applicable | They bypass `plannerFetch`, use `credentials: "omit"`, and never send planner headers. |
+
+The migrated planner API modules (`academicCatalog`, `calendarWorkspace`,
+`conflictAwareGeneration`, `draftSchedule`, `examScheduling`,
+`holidayCalendar`, `planningOptions`, `resourceCatalog`, `scheduleLifecycle`,
+and the planner-only functions in `lecturerReview`) must classify each call at
+its UI call site according to this table. `plannerFetch` defaults to non-activity
+so a newly introduced automatic request cannot silently extend a session.
+
 ## Account-access fragment handling
 
 The deliverable link is `${origin}/account-access/#/${credential}`. Before
