@@ -200,6 +200,7 @@ export function CourseSchedulePage({
   const [examRefreshError, setExamRefreshError] = useState(false)
   const [examBusy, setExamBusy] = useState(false)
   const [examError, setExamError] = useState('')
+  const [examRequirementEditorOpen, setExamRequirementEditorOpen] = useState(false)
   const [examEditor, setExamEditor] = useState<'create' | ExamSession | null>(null)
   const [examDeletion, setExamDeletion] = useState<ExamSession | null>(null)
   const [lifecycleOverview, setLifecycleOverview] = useState<ScheduleLifecycleOverview | null>(null)
@@ -1141,6 +1142,18 @@ export function CourseSchedulePage({
     })
   }
 
+  function requestExamRequirementEdit(courseId: number) {
+    requestPaneIntent({
+      label: `der Prüfungsanforderung einer anderen ${label('course.singular')}`,
+      commit: () => {
+        commitPaneSelection(null)
+        setSelectedCourseId(courseId)
+        setExamRequirementEditorOpen(true)
+      },
+      focusAfterCommit: () => window.requestAnimationFrame(() => document.getElementById('exam-overview-requirement-title')?.focus({ preventScroll: true })),
+    })
+  }
+
   function requestSemesterChange(semesterId: number) {
     requestPaneIntent({
       label: 'einem anderen Semester',
@@ -1594,13 +1607,13 @@ export function CourseSchedulePage({
             </section>
             <section className="schedule-workspace-region exams-workspace-region" aria-labelledby="exams-region-title" hidden={destination !== 'exams'} inert={destination !== 'exams' || undefined}>
               <h2 id="exams-region-title">Prüfungen</h2>
-              {selectedExamState && <div className="focused-exam-requirement">
-                <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={examConfigurationBusy} saving={examBusy} onSave={handleExamConfiguration} />
+              {examRequirementEditorOpen && selectedExamState && <div className="focused-exam-requirement">
+                <ExamRequirementEditor key={`${selectedExamState.courseId}-${selectedExamState.configuration?.revision ?? 0}-${selectedExamState.activeExam?.revision ?? 0}`} state={selectedExamState} lecturers={examLecturers} busy={examConfigurationBusy} saving={examBusy} courseName={selectedExamState.courseName} headingId="exam-overview-requirement-title" onSave={handleExamConfiguration} />
                 {selectedExamState.configuration && selectedExamState.finalTeachingAnchor && !selectedExamState.activeExam && <button type="button" className="secondary-button" disabled={writeBusy || examBusy} onClick={()=>setExamEditor('create')}>Prüfung manuell eintragen</button>}
               </div>}
               {examError && <div className="alert-item" role="alert">{examError}</div>}
               {examRefreshError && <div className="refresh-error" role="alert"><span>Die Prüfungsplanung konnte nicht aktualisiert werden. Die zuletzt vollständig geladene Prüfungsansicht bleibt sichtbar.</span><button type="button" onClick={()=>void refreshExamOverview()}>Prüfungsplanung erneut laden</button></div>}
-              {selectedSemesterId && activeScheduleRevisionId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} scheduleRevisionId={activeScheduleRevisionId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onChanged={async()=>{ await refreshOverview(selectedSemesterId, false) }} />}
+              {selectedSemesterId && activeScheduleRevisionId && currentExamOverview && <ExamGenerationPanel semesterId={selectedSemesterId} scheduleRevisionId={activeScheduleRevisionId} courses={currentExamOverview.courses} disabled={writeBusy || examBusy} onEditRequirement={requestExamRequirementEdit} onChanged={async()=>{ await refreshOverview(selectedSemesterId, false) }} />}
             </section>
             <section className="schedule-workspace-region calendar-history-region" aria-label="Historischer Planungsstand" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
             {selectedRevisionAvailable && selectedLifecycleRevision && !selectedLifecycleRevision.isActiveWorking && !selectedLifecycleRevision.isCurrentPublication ? <DraftSchedulePanel

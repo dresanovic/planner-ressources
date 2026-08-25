@@ -15,12 +15,14 @@ export function ExamGenerationPanel({
   scheduleRevisionId = 0,
   courses,
   disabled,
+  onEditRequirement,
   onChanged,
 }: {
   semesterId: number
   scheduleRevisionId?: number
   courses: ExamCoursePlanningState[]
   disabled: boolean
+  onEditRequirement?: (courseId: number) => void
   onChanged: (result: ExamGenerationResult) => Promise<void> | void
 }) {
   const [selected, setSelected] = useState<number[]>([])
@@ -109,6 +111,7 @@ export function ExamGenerationPanel({
           <span>{course.courseName}</span>
         </label>
         {!selectable && <small>Für diese Lehrveranstaltung ist die Prüfungserzeugung derzeit nicht verfügbar. Prüfen und speichern Sie zuerst die Prüfungsanforderung und den letzten Lehrtermin.</small>}
+        {onEditRequirement && <div className="exam-course-choice-actions"><button type="button" className="secondary-button" disabled={disabled || busy} onClick={() => onEditRequirement(course.courseId)}>Bearbeiten</button></div>}
       </div>
     )
   }

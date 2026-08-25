@@ -360,6 +360,19 @@ describe('CourseSchedulePage multi-course mode', () => {
     expect(document.querySelectorAll('.calendar-workspace')).not.toHaveLength(0)
   })
 
+  it('opens the selected course requirement from the exams overview', async () => {
+    await renderPage('exams')
+    const examsRegion = document.querySelector<HTMLElement>('.exams-workspace-region')!
+    expect(examsRegion.querySelector('#exam-overview-requirement-title')).toBeNull()
+
+    const editButtons = [...examsRegion.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.textContent === 'Bearbeiten')
+    expect(editButtons).toHaveLength(2)
+    await act(async () => editButtons[1].click())
+
+    expect(examsRegion.querySelector('#exam-overview-requirement-title')?.textContent).toBe('Prüfungsanforderung – Course 2')
+    expect(examsRegion.textContent).toContain('Für diese Lehrveranstaltung ist eine Prüfung erforderlich')
+  })
+
   it('preserves the selected schedule revision when opening Lecturer coordination', async () => {
     const lifecycle = lifecycleWithWorkingAndPublished()
     mocks.getScheduleLifecycle.mockResolvedValue(lifecycle)

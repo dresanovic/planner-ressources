@@ -1455,6 +1455,11 @@ button:disabled[aria-busy='true'] {
   padding: .5rem 0;
 }
 
+.exam-course-choice-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .exam-generation-action-context {
   position: sticky;
   bottom: 0;

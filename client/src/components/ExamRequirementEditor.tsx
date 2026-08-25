@@ -9,7 +9,7 @@ import { fieldProblem, type UserProblem } from '../utils/userProblems'
 type LecturerOption = { id: number; name: string; referenceCode?: string }
 type FieldErrors = Partial<Record<'identifier' | 'duration' | 'capacity' | 'examType' | 'lecturer' | 'recommendationStart' | 'recommendationEnd', string>>
 
-export function ExamRequirementEditor({ state, lecturers, busy, saving, onSave }: { state: ExamCoursePlanningState; lecturers: LecturerOption[]; busy: boolean; saving: boolean; onSave: (request: SaveExamConfigurationRequest) => Promise<void> | void }) {
+export function ExamRequirementEditor({ state, lecturers, busy, saving, courseName, headingId = 'exam-requirement-title', onSave }: { state: ExamCoursePlanningState; lecturers: LecturerOption[]; busy: boolean; saving: boolean; courseName?: string; headingId?: string; onSave: (request: SaveExamConfigurationRequest) => Promise<void> | void }) {
   const current = state.configuration
   const [enabled, setEnabled] = useState(state.enabled)
   const [identifier, setIdentifier] = useState(current?.identifier ?? 'Prüfung')
@@ -51,8 +51,8 @@ export function ExamRequirementEditor({ state, lecturers, busy, saving, onSave }
 
   const describedBy = (field: keyof FieldErrors) => errors[field] ? `exam-${field}-error` : undefined
   return (
-    <section className="exam-card" aria-labelledby="exam-requirement-title">
-      <div className="section-heading"><h3 id="exam-requirement-title">Prüfungsanforderung</h3></div>
+    <section className="exam-card" aria-labelledby={headingId}>
+      <div className="section-heading"><h3 id={headingId} tabIndex={courseName ? -1 : undefined}>Prüfungsanforderung{courseName ? ` – ${courseName}` : ''}</h3></div>
       {readOnly && <p className="constraint-note" role="status">Eine aktive Prüfung ist vorhanden. Die dafür verwendete Konfiguration ist schreibgeschützt, bis die Prüfung vergangen oder gelöscht ist.</p>}
       {enabled && !state.finalTeachingAnchor && <p className="constraint-note">Noch kein letzter Lehrtermin gespeichert. Die Prüfung kann konfiguriert werden; automatische und manuelle Platzierung bleiben bis dahin blockiert.</p>}
       <label className="course-checkbox"><input type="checkbox" checked={enabled} disabled={busy || readOnly} onChange={(event) => setEnabled(event.target.checked)} /> Für diese {label('course.singular')} ist eine Prüfung erforderlich</label>

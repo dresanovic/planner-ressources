@@ -1,4 +1,4 @@
-import { act } from 'react'; import { createRoot } from 'react-dom/client'; import { afterEach, expect, it } from 'vitest'; import { ExamGenerationPanel } from './ExamGenerationPanel'
+import { act } from 'react'; import { createRoot } from 'react-dom/client'; import { afterEach, expect, it, vi } from 'vitest'; import { ExamGenerationPanel } from './ExamGenerationPanel'
 let host: HTMLDivElement; afterEach(()=>host?.remove())
 it('groups eligible and unavailable courses using the authoritative eligibility boolean', async()=>{ host=document.createElement('div');document.body.append(host);const root=createRoot(host);await act(async()=>root.render(<ExamGenerationPanel semesterId={1} courses={[{courseId:1,courseName:'Ready',generationEligibility:{eligible:true,code:'ELIGIBLE',message:null}},{courseId:2,courseName:'Missing anchor',generationEligibility:{eligible:false,code:'FINAL_TEACHING_SESSION_MISSING',message:'Save teaching first.'}},{courseId:3,courseName:'Disabled',generationEligibility:{eligible:false,code:'DISABLED',message:null}},{courseId:4,courseName:'Already active',generationEligibility:{eligible:false,code:'ACTIVE_EXAM_EXISTS',message:'Active exam exists.'}}] as never} disabled={false} onChanged={()=>{}}/>));const boxes=[...host.querySelectorAll<HTMLInputElement>('input[type=checkbox]')];expect(host.textContent).toContain('Geeignete Lehrveranstaltungen');expect(host.textContent).toContain('Nicht verfügbare Lehrveranstaltungen');expect(host.textContent).toContain('Prüfungsanforderung');expect(boxes.map((item)=>item.disabled)).toEqual([false,true,true,true]);expect(host.textContent).toContain('Wählen Sie mindestens eine geeignete Lehrveranstaltung');expect(host.textContent).toContain('Prüfungen vorbereiten');await act(async()=>root.unmount())})
 
@@ -39,5 +39,30 @@ it('prunes a selected course when refreshed eligibility makes it unavailable', a
   expect(host.textContent).toContain('0 ausgewählt')
   expect(host.textContent).toContain('Die Auswahl wurde aktualisiert')
   expect(host.textContent).toContain('Prüfungsanforderung')
+  await act(async () => root.unmount())
+})
+
+it('offers requirement editing for each course and reports the selected course', async () => {
+  host = document.createElement('div')
+  document.body.append(host)
+  const root = createRoot(host)
+  const onEditRequirement = vi.fn()
+  await act(async () => root.render(
+    <ExamGenerationPanel
+      semesterId={1}
+      courses={[
+        { courseId: 1, courseName: 'Data Visualization', generationEligibility: { eligible: true, code: 'ELIGIBLE', message: null } },
+        { courseId: 2, courseName: 'KI Grundlagen', generationEligibility: { eligible: false, code: 'DISABLED', message: null } },
+      ] as never}
+      disabled={false}
+      onEditRequirement={onEditRequirement}
+      onChanged={() => {}}
+    />,
+  ))
+
+  const editButtons = [...host.querySelectorAll<HTMLButtonElement>('button')].filter((item) => item.textContent === 'Bearbeiten')
+  expect(editButtons).toHaveLength(2)
+  await act(async () => editButtons[1].click())
+  expect(onEditRequirement).toHaveBeenCalledWith(2)
   await act(async () => root.unmount())
 })
