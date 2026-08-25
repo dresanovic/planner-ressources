@@ -4,7 +4,7 @@
 
 ### What the system does
 
-Resource Planner helps a university planner maintain academic data, build conflict-aware teaching and exam schedules, review the semester in a calendar, correct sessions, coordinate feedback with lecturers, and publish controlled schedule revisions.
+Resource Planner helps a university planner maintain academic data, build conflict-aware teaching and exam schedules, review the semester in a calendar, correct sessions, coordinate feedback with lecturers, and publish controlled schedule revisions. Named local accounts protect all planner work.
 
 The planner application is German. Accountless lecturers can review only the assignments shared through a temporary link and cannot change planning data. Selected German terms may differ between customer installations; this manual names the shipped defaults.
 
@@ -16,7 +16,7 @@ Choose one way to access the application:
 - **Docker Desktop installation:** use a current Docker Desktop installation, an exact Resource Planner image tag supplied by the maintainer, and a dedicated local data folder.
 - **Developer start:** use Python with `backend/requirements.txt`, Node.js and npm with `client/package.json`, and two terminal windows.
 
-If your organization already hosts the application and has prepared its data, open the supplied application address and continue with [First-use setup](#first-use-setup).
+You need an active planner account. If your organization already hosts the application, obtain your username and either your initial one-time setup link or password from the system administrator. If no administrator exists yet, the installation operator must complete [First administrator setup](#first-administrator-setup).
 
 ### Install and open with Docker Desktop on Windows
 
@@ -42,10 +42,10 @@ This procedure is for a local single-computer installation. It runs the complete
 
 **Expected result:** The image appears under **Images** in Docker Desktop. Do not substitute `latest` when a tested exact release tag is available.
 
-#### Prepare persistent data and the required key
+#### Prepare persistent data and startup values
 
 1. Create a dedicated folder such as `C:\DockerData\planner-ressources`. Keep it outside OneDrive or another synchronized folder.
-2. Open PowerShell and generate the required private key:
+2. Open PowerShell and generate the required stable private key:
 
    ```powershell
    $key = New-Object byte[] 32
@@ -55,7 +55,14 @@ This procedure is for a local single-computer installation. It runs the complete
    [BitConverter]::ToString($key).Replace('-', '').ToLowerInvariant()
    ```
 
-3. Copy the displayed 64-character value to a secure location. Keep the same value across container restarts and upgrades.
+3. Copy the displayed 64-character value to a secure location. Keep the same value across container restarts and upgrades. Never publish or reuse it as an account credential.
+4. For the first administrator setup only, generate a separate one-time bootstrap value:
+
+   ```powershell
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
+
+5. Keep the two values distinct and private. The bootstrap value is removed after it is redeemed.
 
 #### Create and run the container
 
@@ -70,16 +77,20 @@ This procedure is for a local single-computer installation. It runs the complete
    | Container port | `8080` |
    | Host path | `C:\DockerData\planner-ressources` or your dedicated folder |
    | Container path | `/data` |
-   | Environment variable | `LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY` |
-   | Environment value | The generated 64-character key |
+   | Environment variable 1 | `LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY` |
+   | Environment value 1 | The stable generated 64-character key |
+   | Environment variable 2, first setup only | `PLANNER_BOOTSTRAP_CREDENTIAL` |
+   | Environment value 2 | The separate one-time bootstrap value |
+   | Optional environment variable 3, isolated local HTTP evaluation only | `APP_ENV` |
+   | Optional environment value 3 | `development` |
 
 4. Select **Run**.
 5. Open **Containers** and wait until `planner-ressources` is running and healthy.
-6. Open `http://localhost:8080` in a browser.
+6. For an isolated local container explicitly configured with `APP_ENV=development`, open `http://localhost:8080`. Otherwise, open the installation's HTTPS address. Use `http://localhost:8080/health` only to confirm a production-mode local container is healthy; authenticated production use requires HTTPS.
 
-**Expected result:** Resource Planner opens through one address. Its database is stored in the mapped host folder and remains available when the container is restarted or replaced. The health address `http://localhost:8080/health` returns `{"status":"ok"}`.
+**Expected result:** Resource Planner opens at **Anmelden**. Its database is stored in the mapped host folder and remains available when the container is restarted or replaced. The health address `http://localhost:8080/health` returns `{"status":"ok"}`.
 
-If port `8080` is already occupied, use host port `8081`, keep container port `8080`, and open `http://localhost:8081`.
+If port `8080` is already occupied, use host port `8081` and keep container port `8080`. The local health check then uses `http://localhost:8081/health`; authenticated use still follows the installation's HTTPS address unless this is an isolated container explicitly started in development mode.
 
 ### Open the system locally
 
@@ -98,33 +109,66 @@ Use this developer procedure only when you need to run the frontend and backend 
    python scripts/seed_dummy_planning_data.py
    ```
 
-4. Start the backend:
+4. Before the first administrator exists, generate a one-time bootstrap value and supply it to the backend process:
+
+   ```powershell
+   $env:PLANNER_BOOTSTRAP_CREDENTIAL=python -c "import secrets; print(secrets.token_hex(32))"
+   $env:PLANNER_BOOTSTRAP_CREDENTIAL
+   ```
+
+5. Start the backend:
 
    ```powershell
    python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
    ```
 
-5. In the second PowerShell terminal, open the `client` directory.
-6. Install the client packages:
+6. In the second PowerShell terminal, open the `client` directory.
+7. Install the client packages:
 
    ```powershell
    npm install
    ```
 
-7. Point the client at the backend and start it:
+8. Point the client at the backend and start it:
 
    ```powershell
    $env:VITE_API_BASE_URL='http://127.0.0.1:8000'
    npm run dev -- --host 127.0.0.1 --port 5173
    ```
 
-8. Open `http://127.0.0.1:5173` in a browser.
+9. Open `http://127.0.0.1:5173` in a browser.
 
-**Expected result:** The application opens in **Planung > Kalender**. The backend health address `http://127.0.0.1:8000/health` returns `{"status":"ok"}`.
+**Expected result:** The application opens at **Anmelden**. The backend health address `http://127.0.0.1:8000/health` returns `{"status":"ok"}`.
 
 The default database is `backend/planner.db`. Set `DATABASE_URL` before starting the backend only when your environment uses a different SQLAlchemy database URL.
 
-### First-use setup
+When using IntelliJ's default Vite start instead of the command above, use `localhost` consistently: set `VITE_API_BASE_URL=http://localhost:8000` and open `http://localhost:5173`. Do not mix `localhost` and `127.0.0.1`; the strict session cookie will not cross between them.
+
+### First administrator setup
+
+Complete this procedure only while no administrator exists.
+
+1. On **Anmelden**, select **Erste Systemadministration einrichten**.
+2. Enter the one-time value in **Startzugang**.
+3. Choose a unique **Benutzername** and enter the administrator's **Anzeigename**.
+4. Enter and confirm a password containing 12–128 characters. It may contain spaces and does not need particular character classes, but it must not equal the username.
+5. Select **Systemadministration einrichten**.
+6. Remove `PLANNER_BOOTSTRAP_CREDENTIAL` from the backend or container configuration and restart it. Keep the database, `/data` mapping, and fingerprint key unchanged.
+7. Return to **Anmelden** and sign in with the new username and password.
+
+**Expected result:** Exactly one active system administrator exists and can use all planner workflows plus **Planer-Konten**. The bootstrap value cannot be reused and does not sign the administrator in automatically.
+
+For Docker Desktop, removing a container does not remove a bind-mounted database. Recreate the container without `PLANNER_BOOTSTRAP_CREDENTIAL`, using the same host folder, `/data` mapping, image, ports, HTTPS configuration, and stable fingerprint key.
+
+### Sign in and finish
+
+1. Open the supplied application address and enter **Benutzername** and **Passwort**.
+2. Select **Anmelden**.
+3. When finished, open the navigation and select **Abmelden**.
+
+**Expected result:** An active named planner reaches the planning application. Anonymous or inactive users receive no planner data.
+
+### First planning-data setup
 
 If planning data already exists, skip this section.
 
@@ -139,6 +183,15 @@ If planning data already exists, skip this section.
 **Expected result:** The Lehrveranstaltung is available for planning in its Semester, and an editable Arbeitsrevision exists. A record with missing or inactive required planning data remains visible but unavailable.
 
 ### Common use cases
+
+#### Activate a new planner account
+
+1. Open the private one-time link sent manually by the system administrator.
+2. On **Passwort festlegen**, enter and confirm a password containing 12–128 characters.
+3. Select **Passwort festlegen**.
+4. Follow **Zur Anmeldung** and sign in with the username supplied by the administrator.
+
+**Expected result:** The password is set, the one-time link is consumed, and the account becomes active. The link expires after 24 hours and cannot be used after a successful setup or replacement.
 
 #### Generate or optimize one or more Lehrveranstaltungen
 
@@ -191,7 +244,7 @@ If planning data already exists, skip this section.
 
 ### Where to go next
 
-Use the Detailed Guide for catalog maintenance, custom constraints, calendar summaries and filters, resource availability, holidays, manual session management, exam rules, lifecycle recovery, limitations, and troubleshooting.
+Use the Detailed Guide for account administration, password and session behavior, catalog maintenance, custom constraints, calendar summaries and filters, resource availability, holidays, manual session management, exam rules, lifecycle recovery, limitations, and troubleshooting.
 
 ## Detailed Guide
 
@@ -207,6 +260,15 @@ Use the Detailed Guide for catalog maintenance, custom constraints, calendar sum
 - An Arbeitsrevision may be **Entwurf** or **Bereit zur Prüfung**. A published or superseded revision is read-only.
 - Validation warnings describe current problems but do not automatically move or delete sessions.
 - Saved Published content remains unchanged when current catalog data changes; current warnings may still reflect new validation conditions.
+
+### Roles and permissions
+
+- An active **Planner** signs in with a named local account and may use all existing planning and Stammdaten workflows.
+- The sole **System administrator** is also a planner. Only this account may open **Planer-Konten** and create, reset, disable, reactivate, or transfer planner access.
+- The **Infrastructure operator** supplies a one-time startup value only for the first administrator or emergency administrator recovery. This does not create an operator account.
+- An **Accountless lecturer** continues to use only a temporary scoped review link. A lecturer link cannot open planner pages or authorize planner actions.
+
+There is exactly one system administrator after first setup. The application does not provide general roles, multiple administrators, authenticated lecturer accounts, or external identity integration.
 
 ### Navigation and workspace layout
 
@@ -226,14 +288,87 @@ With the shipped terminology, the primary navigation contains:
   - **Zeitfenster**
   - **Lehrende**
   - **Räume**
+- **Planer-Konten**, visible only to the system administrator
 
 Only the selected Planung workspace is shown. Its compact context header keeps the relevant Semester, Revision, and Lehrveranstaltung selectors available.
+
+The navigation footer displays the signed-in account's display name and username. Use **Passwort ändern** for a self-service password change and **Abmelden** to end the current session.
 
 On wide screens, use the pin icon to detach or permanently display the navigation. The wide-screen pin choice is retained on the same device. When the detached navigation is open, use the red **×** to close it.
 
 At 820 pixels or narrower, select **Menü** to open the temporary navigation. The red **×** or Escape closes it. Pinning is intentionally unavailable in this narrow presentation.
 
 In Kalender, **Planungseingaben ausblenden** reclaims additional width without changing the navigation. This choice is not retained after the application is revisited.
+
+### Manage planner access
+
+Only the current system administrator can open **Planer-Konten**. The page shows each account's display name, username, access level, current **Aktiv** or **Inaktiv** state, creation time, and the most recent disablement or reactivation time where applicable. It never shows passwords, usable links, or session secrets.
+
+#### Create and activate a planner account
+
+1. Open **Planer-Konten**.
+2. Under **Planer-Konto erstellen**, enter a unique **Benutzername** and the person's **Anzeigename**.
+3. Select **Planer-Konto erstellen**.
+4. In **Einmaliger Zugangslink**, select **Link kopieren**. If automatic copying fails, select and copy the displayed link manually.
+5. Send the link and username privately to the intended planner, then select **Schließen**.
+6. The planner opens the link, enters and confirms a password under **Passwort festlegen**, and then signs in normally.
+
+**Expected result:** The account begins inactive and becomes active only after the planner successfully chooses a password. The one-time link is displayed only immediately after issuance, expires after 24 hours, and is consumed by the first successful password setup.
+
+Use **Zugang erneut erstellen** when the initial inactive account needs a replacement setup link. Issuing a newer setup, reset, or reactivation link invalidates every older unredeemed account-access link. The account list intentionally does not show whether such a link is pending or expired.
+
+Usernames are trimmed, compared without regard to capitalization, and displayed using the accepted entered spelling. Passwords contain 12–128 characters, may contain spaces and other normal characters, have no required character classes, and must not equal the username under those matching rules.
+
+#### Reset, disable, or reactivate another planner
+
+- **Zugang zurücksetzen:** confirm the action, copy the newly displayed one-time link, and send it privately. The old password and current session become invalid immediately. The planner chooses a new password through the link and signs in again.
+- **Deaktivieren:** confirm the action. The account's current session ends and it can no longer sign in or view planner data.
+- **Reaktivieren:** confirm the action, copy the fresh one-time link, and send it privately. The account remains unable to sign in until the planner chooses a new password through that link.
+
+The administrator cannot reset or disable their own account from **Planer-Konten**. A signed-in administrator uses **Passwort ändern**; a locked-out administrator requires operator-assisted recovery.
+
+#### Transfer the system administration
+
+1. In **Planer-Konten**, find another active planner.
+2. Select **Administration übertragen**.
+3. Review the named target and consequence, then confirm **Administration übertragen**.
+
+**Expected result:** The target immediately becomes the sole system administrator. The former administrator remains signed in as an ordinary planner and no longer sees or may use **Planer-Konten**. The transfer never leaves zero or multiple administrators.
+
+#### Change your own password
+
+1. Open the navigation and select **Passwort ändern**.
+2. Enter **Aktuelles Passwort**, **Neues Passwort**, and **Passwort bestätigen**.
+3. Select **Passwort ändern**.
+4. Sign in again with the new password.
+
+**Expected result:** The old password and current session become invalid. A failed password change clears the password fields and does not change access.
+
+#### Understand login and session behavior
+
+- One account has at most one current session. A later successful login replaces the earlier session; a failed login does not.
+- Ten consecutive failed logins cause a 15-minute temporary refusal. The public message remains generic and attempts during that period do not extend it.
+- A session ends after 60 minutes without a successful user-initiated planner request or 12 hours after login, whichever occurs first. There is no advance-expiry warning.
+- Logout, a replacement login, password change or reset, disablement, expiry, and administrator recovery invalidate the applicable session.
+- The cookie is browser-session-bound. Closing all browser windows normally requires a new login when session restoration is disabled, but a browser configured to restore its former session may also restore the cookie. Server inactivity and absolute limits remain authoritative.
+
+#### Recover a locked-out administrator
+
+This procedure is for the infrastructure operator and the existing sole administrator. It is not a Forgot-password function.
+
+1. Generate a new value that has never been used for bootstrap or recovery:
+
+   ```powershell
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
+
+2. Supply it only for the next backend/container startup as `PLANNER_ADMIN_RECOVERY_CREDENTIAL` and restart the application.
+3. Open `/administrator-recovery/` through the same application origin.
+4. Under **Systemadministration wiederherstellen**, enter the supplied **Startzugang**, a new password, and its confirmation.
+5. Select **Passwort wiederherstellen**, then follow **Zur Anmeldung** and sign in normally.
+6. Remove `PLANNER_ADMIN_RECOVERY_CREDENTIAL` from startup configuration and restart the application again.
+
+**Expected result:** The sole administrator receives the new password, any former session ends, and the recovery value becomes permanently unusable. There is no account selector, operator account, email, SSO, or external identity service.
 
 ### Operate a Docker Desktop installation
 
@@ -247,6 +382,10 @@ These procedures are for the person responsible for the local installation.
 4. After a start or restart, wait for the container to become healthy before opening the application.
 
 Run only one Resource Planner application container against a data folder. The current SQLite deployment is not designed for multiple application containers sharing the same database.
+
+The packaged container runs in production mode and sets a secure planner-session cookie. Terminate HTTPS in front of it and use the HTTPS application address for bootstrap, recovery, login, and all planner work. Plain `http://localhost:8080/health` is suitable for local health diagnostics, not production credential exchange.
+
+For an isolated local Docker Desktop evaluation only, `APP_ENV=development` permits the same non-secure local HTTP cookie behavior as a source-development start. Never expose such a container remotely, and do not use this override for institutional or production data.
 
 #### Import or export planning setup data
 
@@ -287,12 +426,14 @@ The image contains an optional JSON-based setup script. It imports catalog and c
 3. Confirm that a backup was reported and appears in the `backups` subfolder of the mapped host data folder.
 4. Copy backups to separate protected storage and test the restore process before relying on them.
 
+The SQLite backup contains planner accounts, password hashes, consumed startup-value records, one-time-access digests, and current session state together with planning data. Restoring it also restores that security state. Raw passwords and usable startup, account-access, or session secrets are not recoverable from the database.
+
 #### Upgrade the application image
 
 1. Create a verified database backup.
 2. Pull the new exact release tag through Docker Desktop's integrated terminal.
 3. Stop and remove the old application container, but do not delete the mapped host data folder.
-4. Run the new image with the same `/data` host folder, container name, port mapping, and fingerprint key.
+4. Run the new image with the same `/data` host folder, container name, port mapping, HTTPS configuration, and fingerprint key. Do not add a consumed bootstrap or recovery value.
 5. Wait for the new container to become healthy and verify the application and saved data.
 
 The image is replaceable; the mapped `/data` folder and its key are installation data and must be preserved.
@@ -660,6 +801,10 @@ Use **Abandon revision** to remove an unpublished revision from active work with
 
 ### Important rules and edge cases
 
+- Every planner page, read, and action requires a current active named planner session. A lecturer review credential never grants planner access, even when presented beside a planner cookie.
+- Bootstrap works only before the first administrator exists. A consumed or replaced startup value remains unusable after restart and cannot be reactivated by configuring it again.
+- Setup, reset, and reactivation links are private, single-use, valid for 24 hours, and shown only immediately after issuance. Send them manually through an appropriate private channel.
+- Exactly one system administrator exists. Only an active planner can receive administration through the atomic transfer action.
 - No scheduling change can be saved without an active Working revision.
 - Draft and Ready for review are editable; Current Published, superseded, abandoned, and historical selections are read-only.
 - A stale edit, lifecycle action, or destructive confirmation never overwrites newer saved state. A stale unified teaching preparation saves none of its selected results.
@@ -680,9 +825,10 @@ Use **Abandon revision** to remove an unpublished revision from active work with
 The current application does not provide:
 
 - lecturer accounts or authenticated ongoing lecturer access
-- authentication or role-based permissions
+- institutional SSO, VPN identity, email-based provisioning, MFA, passkeys, or self-service forgotten-password recovery
+- general role management, multiple administrators, multiple concurrent sessions, or session/device-management screens
+- detailed login, password, session, or administrator-action audit history
 - external planning-data import or synchronization
-- automated email delivery or institutional single sign-on
 - drag-and-drop, resize, duplicate, split, or merge actions in Kalender
 - automatic repair of saved sessions after a warning appears
 - multiple institutional or partial-day holiday calendars
@@ -703,6 +849,8 @@ The current limit is 20 Lehrveranstaltungen per teaching optimization and 100 Le
 3. Confirm the client is running on port 5173.
 4. Verify `VITE_API_BASE_URL` points to the backend address.
 
+Use one hostname consistently. A command-line start may use `http://127.0.0.1:5173` with `VITE_API_BASE_URL=http://127.0.0.1:8000`. IntelliJ's default Vite start may instead use `http://localhost:5173`; in that case set `VITE_API_BASE_URL=http://localhost:8000`. Mixing `localhost` and `127.0.0.1` prevents the strict session cookie from authorizing later requests.
+
 If startup reports a terminology configuration problem, verify `CUSTOMER_TERMINOLOGY_FILE`, JSON syntax, stable keys, and non-empty text values. Remove the optional setting to use the shipped German defaults, or correct the file and restart.
 
 For a Docker Desktop installation:
@@ -714,6 +862,36 @@ For a Docker Desktop installation:
 5. Confirm the host data folder still exists and is mapped to `/data`.
 
 If the image pull is denied, the GitHub Container Registry package may be private. Ask the deployment administrator for package-read access and authenticate through Docker without storing the registry token in container configuration.
+
+If startup fails after a successful bootstrap or recovery, verify that the consumed `PLANNER_BOOTSTRAP_CREDENTIAL` or `PLANNER_ADMIN_RECOVERY_CREDENTIAL` was removed from the run/container configuration. Keep the database and all other stable installation settings unchanged.
+
+#### First administrator setup is unavailable
+
+1. Confirm the backend/container was restarted after receiving `PLANNER_BOOTSTRAP_CREDENTIAL`.
+2. Enter the complete 64-character value supplied for that startup.
+3. Confirm the selected database does not already contain an administrator.
+
+The application deliberately gives no account details on failure. Bootstrap cannot be repeated after the administrator exists, and a consumed or replaced startup value cannot be reused. Do not delete the database to solve an access problem; use normal login or administrator recovery as appropriate.
+
+#### Login returns immediately to “Ihre Sitzung ist beendet”
+
+The backend may have accepted the login while the browser did not return its session cookie.
+
+1. For a local source start, confirm the browser and `VITE_API_BASE_URL` use the same hostname: either both `localhost` or both `127.0.0.1`.
+2. Restart Vite after changing `VITE_API_BASE_URL`.
+3. Confirm a local HTTP backend does not run with `APP_ENV=production`.
+4. For a production container, use its HTTPS address; a secure production session is not intended for remote plain HTTP.
+5. Retry in a private browser window after correcting the origin.
+
+The ended-session message may also be visible when the application first checks for a session before any login. That initial message alone does not mean the administrator account is missing.
+
+#### Login is refused
+
+Check the username and password without expecting the public message to identify which value or account state is wrong. Login names ignore leading/trailing spaces and capitalization. After ten consecutive failed attempts, wait 15 minutes before trying again. An ordinary planner who forgot the password needs a fresh reset link from the system administrator; the sole administrator needs operator-assisted recovery.
+
+#### A planner setup, reset, or reactivation link is unavailable
+
+The link may have expired after 24 hours, already succeeded once, or been replaced by a newer link. Ask the system administrator to issue the appropriate fresh link. The old URL cannot be recovered from **Planer-Konten** and must not be edited or forwarded.
 
 #### Docker starts with an empty application
 
@@ -792,7 +970,11 @@ The latest refresh failed. The application preserves the last complete view wher
 
 ### Glossary
 
-- **Planner:** The current end-user role with scheduling and administration access.
+- **Planner:** An active named local account that may use scheduling and Stammdaten workflows.
+- **System administrator:** The sole planner account with the additional authority to manage **Planer-Konten**.
+- **Startup access:** A distinct operator-generated one-time value supplied only at application startup for first-administrator bootstrap or emergency recovery.
+- **Account-access link:** A manually delivered, single-use 24-hour link through which a planner chooses a password for setup, reset, or reactivation.
+- **Planner session:** The one current server-side session for an account, bounded by 60 minutes of inactivity and 12 hours absolutely.
 - **Arbeitsrevision:** The single editable Semester revision in Entwurf or Bereit zur Prüfung state.
 - **Aktuelle Veröffentlichung:** The immutable published revision currently designated for the Semester.
 - **Generation constraints:** The active course-semester date boundaries plus the current read-only weekly windows derived from the Lehrveranstaltung's Studienart.
