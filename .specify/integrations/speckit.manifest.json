@@ -1,17 +1,19 @@
 {
   "integration": "speckit",
-  "version": "0.12.3.dev0",
-  "installed_at": "2026-07-03T09:59:54.286494+00:00",
+  "version": "1.2.2",
+  "installed_at": "2026-10-22T07:10:30.808778+00:00",
   "files": {
-    ".specify/scripts/powershell/check-prerequisites.ps1": "3739a7625332f61474c9361bc47431d239ee60c3d6fd762bd5328bb9ee81c0fe",
-    ".specify/scripts/powershell/common.ps1": "1d64eef3a96d92ade478af5cdc8494791fd62f70961ce0187ea2e057a2aa2b65",
-    ".specify/scripts/powershell/create-new-feature.ps1": "6eb5f2680da6fb8931cc7e4b4564befc35128a91edf5eff490500ca67aa1afed",
-    ".specify/scripts/powershell/setup-plan.ps1": "e82c86c961ea76f23d59f9e10a9c80ebc8c247ff87a5dbd9cf2b10190f3112a5",
-    ".specify/scripts/powershell/setup-tasks.ps1": "441f3a6cfa1da236411ed6a68ebf754a391515662df0bb74dd6916106d8caf52",
-    ".specify/templates/checklist-template.md": "c37695297e5d3153d64f82c21223509940b13932046c7961c42d1d669516130c",
+    ".specify/scripts/powershell/check-prerequisites.ps1": "057404ffc15acea9afeb169d9c3942de4940c7ee6f889a1ae423a24133e15340",
+    ".specify/scripts/powershell/common.ps1": "8b188a9c3a2e979cfcb874acc4452175c00e9095cb0caef18374ea0cfbc384c0",
+    ".specify/scripts/powershell/create-new-feature.ps1": "481c7368541a816b1679e5ed65fa9e5aea84b09f8be3a02ff8a340e3b48dd58a",
+    ".specify/scripts/powershell/resolve-template.ps1": "e49c565a09902e4ebd4b5a51c4e014d5067fdee5b1592f15cb44ef31f430d745",
+    ".specify/scripts/powershell/setup-plan.ps1": "5939ef98418e8dc8cc722ef53ba359fc814f3d2a9fd7620f04e8d145a7041f1a",
+    ".specify/scripts/powershell/setup-tasks.ps1": "578c19c7fa196327c1c6791e3179accffab049fe62851961139d67bd699f336e",
+    ".specify/templates/checklist-template.md": "70bbc48e884fab372ffb09e83e78ff983e28b69caebf8cd9964a02b6836683ac",
     ".specify/templates/constitution-template.md": "ce7549540fa45543cca797a150201d868e64495fdff39dc38246fb17bd4024b3",
-    ".specify/templates/plan-template.md": "cc7f7979cf8d8836ec26492785affd80791d3422a2b745062ec695be8c985ef7",
+    ".specify/templates/plan-template.md": "a828ad6206526574ab3fc99be6d0154588cb1c9774c5919d71b81ab5b2dbffa0",
     ".specify/templates/spec-template.md": "3945437fc35cd30a5b2bf7beea680337c3516826d3efa5a6b92c4a7eca1ba28e",
-    ".specify/templates/tasks-template.md": "fc29a233f6f5a27ca31f1aa46b596af6500c627441c6e62b2bc4a1d721525842"
+    ".specify/templates/tasks-template.md": "b0f527d41e546af0c31903e04f9b20965b6b497b573792198f663a64ce128863",
+    ".specify/.gitignore": "0a61c5378b0bb2e0f85babff99c8b166f2170a2c12378cd17d929aa19296ec88"
   }
 }

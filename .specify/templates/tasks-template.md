@@ -9,17 +9,9 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: Tests are REQUIRED by the constitution wherever automated testing is
-practical. Create or update test tasks before production implementation tasks.
-If a test-first exception is justified in plan.md, include the manual
-verification task and cite the exception.
+**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
-
-**Simplicity**: Generate tasks only for the current approved slice. Do not add
-layers, abstractions, dependencies, patterns, or extensibility work excluded by
-the plan's Simplicity Check. A task for any new architectural element MUST cite
-the demonstrated current need and its justification in plan.md.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -30,7 +22,7 @@ the demonstrated current need and its justification in plan.md.
 ## Path Conventions
 
 - **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/app/`, `backend/tests/`, `client/src/`, `client/tests/`
+- **Web app**: `backend/src/`, `frontend/src/`
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
 - Paths shown below assume single project - adjust based on plan.md structure
 
@@ -38,7 +30,7 @@ the demonstrated current need and its justification in plan.md.
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
 
-  The /speckit-tasks command MUST replace these with actual tasks based on:
+  The $speckit-tasks command MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md
@@ -67,40 +59,40 @@ the demonstrated current need and its justification in plan.md.
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-**CRITICAL**: No user story work can begin until this phase is complete
+**⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-Examples of foundational tasks (include only when required by the current slice):
+Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Add the database change required by [current requirement]
-- [ ] T005 [P] Add authentication/authorization behavior required by [current requirement]
-- [ ] T006 [P] Add the API route required by [current requirement]
+- [ ] T004 Setup database schema and migrations framework
+- [ ] T005 [P] Implement authentication/authorization framework
+- [ ] T006 [P] Setup API routing and middleware structure
 - [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Add error handling or logging required by [current requirement]
-- [ ] T009 Add configuration required by [current requirement]
+- [ ] T008 Configure error handling and logging infrastructure
+- [ ] T009 Setup environment configuration management
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
 ---
 
-## Phase 3: User Story 1 - [Title] (Priority: P1) MVP
+## Phase 3: User Story 1 - [Title] (Priority: P1) 🎯 MVP
 
 **Goal**: [Brief description of what this story delivers]
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (write before implementation)
+### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
 
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation where practical**
+> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] Backend contract/API test for [endpoint] in backend/tests/test_[name].py
-- [ ] T011 [P] [US1] Frontend/client test or verification for [user journey] in client/src/[test-location]
+- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 1
 
 - [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
 - [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
-- [ ] T014 [US1] Implement [required behavior] in existing src/[location]/[file].py (depends on T012, T013)
-- [ ] T015 [US1] Expose [endpoint/feature] in src/[location]/[file].py
+- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
+- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T016 [US1] Add validation and error handling
 - [ ] T017 [US1] Add logging for user story 1 operations
 
@@ -114,15 +106,15 @@ Examples of foundational tasks (include only when required by the current slice)
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (write before implementation)
+### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T018 [P] [US2] Backend contract/API test for [endpoint] in backend/tests/test_[name].py
-- [ ] T019 [P] [US2] Frontend/client test or verification for [user journey] in client/src/[test-location]
+- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 2
 
 - [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
-- [ ] T021 [US2] Implement [required behavior] in existing src/[location]/[file].py
+- [ ] T021 [US2] Implement [Service] in src/services/[service].py
 - [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T023 [US2] Integrate with User Story 1 components (if needed)
 
@@ -136,15 +128,15 @@ Examples of foundational tasks (include only when required by the current slice)
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (write before implementation)
+### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T024 [P] [US3] Backend contract/API test for [endpoint] in backend/tests/test_[name].py
-- [ ] T025 [P] [US3] Frontend/client test or verification for [user journey] in client/src/[test-location]
+- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 3
 
 - [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
-- [ ] T027 [US3] Implement [required behavior] in existing src/[location]/[file].py
+- [ ] T027 [US3] Implement [Service] in src/services/[service].py
 - [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
 
 **Checkpoint**: All user stories should now be independently functional
@@ -162,10 +154,9 @@ Examples of foundational tasks (include only when required by the current slice)
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
 - [ ] TXXX Performance optimization across all stories
-- [ ] TXXX [P] Additional unit tests in backend/tests/ or client/src/
+- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
-- [ ] TXXX Run relevant backend/client verification before commit
 
 ---
 
@@ -177,7 +168,7 @@ Examples of foundational tasks (include only when required by the current slice)
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
 - **User Stories (Phase 3+)**: All depend on Foundational phase completion
   - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 -> P2 -> P3)
+  - Or sequentially in priority order (P1 → P2 → P3)
 - **Polish (Final Phase)**: Depends on all desired user stories being complete
 
 ### User Story Dependencies
@@ -188,9 +179,9 @@ Examples of foundational tasks (include only when required by the current slice)
 
 ### Within Each User Story
 
-- Tests MUST be written before implementation where automated testing is practical
-- Required data changes before behavior that uses them
-- Core behavior before endpoints or UI that expose it
+- Tests (if included) MUST be written and FAIL before implementation
+- Models before services
+- Services before endpoints
 - Core implementation before integration
 - Story complete before moving to next priority
 
@@ -208,9 +199,9 @@ Examples of foundational tasks (include only when required by the current slice)
 ## Parallel Example: User Story 1
 
 ```bash
-# Launch all tests for User Story 1 together:
-Task: "Backend contract/API test for [endpoint] in backend/tests/test_[name].py"
-Task: "Frontend/client test or verification for [user journey] in client/src/[test-location]"
+# Launch all tests for User Story 1 together (if tests requested):
+Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
+Task: "Integration test for [user journey] in tests/integration/test_[name].py"
 
 # Launch all models for User Story 1 together:
 Task: "Create [Entity1] model in src/models/[entity1].py"
@@ -231,10 +222,10 @@ Task: "Create [Entity2] model in src/models/[entity2].py"
 
 ### Incremental Delivery
 
-1. Complete Setup + Foundational -> Foundation ready
-2. Add User Story 1 -> Test independently -> Deploy/Demo (MVP)
-3. Add User Story 2 -> Test independently -> Deploy/Demo
-4. Add User Story 3 -> Test independently -> Deploy/Demo
+1. Complete Setup + Foundational → Foundation ready
+2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
+3. Add User Story 2 → Test independently → Deploy/Demo
+4. Add User Story 3 → Test independently → Deploy/Demo
 5. Each story adds value without breaking previous stories
 
 ### Parallel Team Strategy
@@ -255,11 +246,7 @@ With multiple developers:
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
-- Verify tests fail before implementing where practical
+- Verify tests fail before implementing
 - Commit after each task or logical group
-- Run relevant backend/client verification before commit
-- Use feature branches for larger, risky, collaborative, or customer-facing changes
-- Solo work on `main`/`master` is acceptable only when the working tree is clean before changes and verification passes before commit
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
-- Avoid: speculative abstractions, future-proofing tasks, and unrelated capabilities

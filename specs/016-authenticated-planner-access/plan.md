@@ -1,6 +1,6 @@
 # Implementation Plan: FS-016 Authenticated Planner Access and Account Administration
 
-**Working Branch**: `master` | **Date**: 2026-08-18 | **Spec**: [spec.md](./spec.md)
+**Working Branch**: `master` (FS-016 merged) | **Date**: 2026-08-18 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from
 `/specs/016-authenticated-planner-access/spec.md`
@@ -92,12 +92,12 @@ API call sites to one credentialed request boundary
   [authorization-boundary.md](./contracts/authorization-boundary.md), and
   [planner-access-ui.md](./contracts/planner-access-ui.md) define the cross-stack
   contract.
-- **Delivery workflow — PASS WITH PRE-IMPLEMENTATION ACTION**: Planning artifacts
-  are being prepared on `master` as a clean solo documentation change. Because
-  authentication is security-sensitive and touches most planner APIs, create a
-  `codex/fs-016-authenticated-planner-access` feature branch before production
-  implementation unless the implementer explicitly records why a clean,
-  verified solo `master` change remains appropriate.
+- **Delivery workflow — PASS (MERGED)**: FS-016 was implemented on
+  `codex/fs-016-authenticated-planner-access` and merged into `master`
+  through PR #18 at `2583dcc`; reviewed `master` HEAD is `f9593e5`.
+  The original branch-setup gate is satisfied and must not be repeated.
+  Future security-sensitive development still requires a feature branch unless
+  a clean, verified solo `master` exception is explicitly recorded.
 - **Verification before commit — PASS**: Focused and full pytest, Vitest, lint,
   build, contract, manual accessibility/browser, HTTPS, secret-disclosure, and
   deployment checks are listed below and in the quickstart.

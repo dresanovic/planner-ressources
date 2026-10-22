@@ -2,7 +2,7 @@ schema_version: "1.0"
 workflow:
   id: "speckit"
   name: "Full SDD Cycle"
-  version: "1.0.0"
+  version: "1.0.1"
   author: "GitHub"
   description: "Runs specify → plan → tasks → implement with review gates"
 
@@ -20,6 +20,7 @@ requires:
     # ones not listed below, as long as that integration provides the four
     # core commands referenced in ``steps``.
     any:
+      - "alquimia"
       - "claude"
       - "copilot"
       - "gemini"
@@ -34,6 +35,9 @@ inputs:
     type: string
     default: "auto"
     prompt: "Integration to use (e.g. claude, copilot, gemini; 'auto' uses the project's initialized integration)"
+
+  # Retained project input; v1.2.2 workflow overlays can edit steps only.
+  # This is descriptive metadata: it does not filter workflow steps.
   scope:
     type: string
     default: "full"

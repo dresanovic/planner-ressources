@@ -1,18 +1,19 @@
 <!--
 Sync Impact Report
-Version change: 1.0.0 -> 1.1.0
+Version change: 1.1.0 -> 1.2.0
 Modified principles:
-- IV. Simple, Fit-for-Purpose Implementation -> IV. Simplicity and KISS
+- Existing principles I-V retained without weakening
 Added sections:
-- None
+- VI. Incremental Delivery
+- Explicit backend/client layout, TypeScript, and verification-task requirements
 Removed sections:
 - None
 Templates requiring updates:
-- ✅ .specify/templates/plan-template.md: updated
-- ✅ .specify/templates/spec-template.md: reviewed; no change required
-- ✅ .specify/templates/tasks-template.md: updated
-- ✅ .specify/templates/commands/*.md: not present
-- ✅ docs/process/Spec_Driven_Development_Process.md: updated
+- .specify/templates/*-template.md: official Spec Kit v1.2.2 bases retained
+- .specify/templates/overrides/plan-template.md: Simplicity and Verification sections
+- .specify/templates/overrides/spec-template.md: explicit test-first requirements
+- Tasks and checklist overrides removed; runtime constitution governs both
+- .specify/README.md: customization ownership and compatibility documented
 Follow-up TODOs:
 - Existing `specs/*/plan.md` files predate v1.1.0; before implementation under
   this amendment, the applicable plan MUST add and complete the Simplicity Check.
@@ -84,13 +85,26 @@ branches are RECOMMENDED for larger, risky, collaborative, or customer-facing
 changes. Rationale: small solo changes can stay lightweight, while higher-risk
 work still benefits from branch isolation and explicit review boundaries.
 
+### VI. Incremental Delivery
+
+Work MUST proceed in small, independently testable user stories or vertical
+slices, delivering and verifying the highest-priority useful increment first.
+Each increment MUST preserve previously verified behavior. Shared setup,
+foundational work, optimization, logging, security changes, and refactoring
+tasks MUST address a demonstrated requirement of the current slice; sample
+template tasks MUST NOT become mandatory infrastructure by default.
+Rationale: iterative delivery exposes feedback early and avoids speculative work.
+
 ## Technology Standards
 
 The backend MUST use FastAPI for HTTP APIs and service entry points. Backend
 tests SHOULD use `pytest` unless a feature plan justifies a different compatible
 tool.
 
-The frontend MUST use React with Vite. Frontend production code MUST remain
+Backend production code MUST remain in `backend/app/`, with backend tests in
+`backend/tests/`, unless a plan documents and justifies a different boundary.
+
+The frontend MUST use React, TypeScript, and Vite. Frontend production code MUST remain
 inside the `client/` application unless a plan documents a new app boundary.
 Frontend verification MUST include the available Vite, TypeScript, lint, and UI
 test commands relevant to the changed files.
@@ -118,6 +132,13 @@ Plans and task lists MUST explicitly identify backend, frontend, and shared
 contract impacts. Reviewers MUST reject implementation work that lacks an
 updated spec, clear acceptance criteria, or verification evidence.
 
+Task lists MUST include explicit verification tasks with the concrete backend,
+frontend, and contract commands relevant to the change. Test tasks MUST precede
+the production tasks they verify wherever automated testing is practical. Any
+exception MUST cite the plan's rationale and include its manual verification
+task. Task paths MUST follow the selected plan and existing `backend/` and
+`client/` conventions, rather than generic template example paths.
+
 ## Governance
 
 This constitution supersedes conflicting process guidance in project templates,
@@ -135,4 +156,4 @@ Compliance MUST be reviewed during planning, task generation, implementation
 review, and before commit. Any approved exception MUST be documented in the
 feature plan with rationale, scope, and verification impact.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-15
+**Version**: 1.2.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-10-22

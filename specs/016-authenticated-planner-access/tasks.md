@@ -35,12 +35,12 @@ the P3 administration/accessibility story is last.
 **Purpose**: Isolate the security-sensitive implementation and establish the
 pre-change verification/configuration baseline.
 
-- [X] T001 Create or switch to `codex/fs-016-authenticated-planner-access`, run the existing focused backend/client suites, and record the branch, dirty-worktree baseline, commands, and pre-existing failures in `specs/016-authenticated-planner-access/quickstart.md`
+- [X] T001 Historical completed setup: create or switch to `codex/fs-016-authenticated-planner-access`, run the existing focused backend/client suites, and record the branch, dirty-worktree baseline, commands, and pre-existing failures in `specs/016-authenticated-planner-access/quickstart.md`. The feature branch was merged into `master` through PR #18 at `2583dcc`; do not repeat this branch-setup task on the merged checkout.
 - [X] T002 [P] Add the direct Argon2 runtime dependency and production-image import check in `backend/requirements-runtime.txt` and `infrastructure/docker/Dockerfile`
 - [X] T003 [P] Add optional bootstrap/recovery startup variable passthrough with secret-free examples in `.env.example` and `compose.yaml`
 
-**Checkpoint**: Implementation is isolated, the baseline is known, and required
-dependency/configuration entry points exist without creating credentials.
+**Checkpoint**: Implementation was isolated on the now-merged feature branch,
+the baseline was recorded, and dependency/configuration entry points exist without creating credentials.
 
 ---
 
