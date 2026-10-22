@@ -76,6 +76,9 @@ tmp/
 temp/
 .cache/
 
+# Local Spec Kit migration backups and rollback evidence
+/.specify-migration-backups/
+
 # -----------------------------------------------------
 # Agent runtime (keep skills)
 # -----------------------------------------------------
