@@ -15,7 +15,9 @@ from tests.planner_auth_fixtures import authenticate_test_client
 
 
 @pytest.fixture()
-def client_and_db():
+def client_and_db(monkeypatch):
+    # Keep the fixed exam dates active regardless of when the suite runs.
+    monkeypatch.setattr("app.services.exam_scheduling.institution_today", lambda: date(2026, 10, 1))
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
     db = sessionmaker(bind=engine)()

@@ -1075,7 +1075,7 @@ def test_planner_authentication_database_constraints_enforce_single_current_stat
         session_insert = text(
             "INSERT INTO planner_sessions "
             "(account_id, secret_digest, created_at, last_activity_at, absolute_expires_at) "
-            "VALUES (:account_id, :digest, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '2026-09-02')"
+            "VALUES (:account_id, :digest, '2026-09-01', '2026-09-01', '2026-09-02')"
         )
         connection.execute(session_insert, {"account_id": 1, "digest": "a" * 64})
         with connection.begin_nested(), pytest.raises(Exception):
@@ -1084,7 +1084,7 @@ def test_planner_authentication_database_constraints_enforce_single_current_stat
         access_insert = text(
             "INSERT INTO planner_account_access "
             "(account_id, secret_digest, purpose, issued_at, expires_at) "
-            "VALUES (:account_id, :digest, :purpose, CURRENT_TIMESTAMP, '2026-09-02')"
+            "VALUES (:account_id, :digest, :purpose, '2026-09-01', '2026-09-02')"
         )
         connection.execute(access_insert, {"account_id": 2, "digest": "c" * 64, "purpose": "setup"})
         with connection.begin_nested(), pytest.raises(Exception):
