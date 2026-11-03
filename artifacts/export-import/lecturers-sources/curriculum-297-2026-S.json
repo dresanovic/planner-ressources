@@ -1,0 +1,727 @@
+{
+  "courses": [
+    {
+      "additionalText": "Vortragende*r:\nGrobelscheg, Philipp",
+      "code": "0319BB2008",
+      "courseId": "117735",
+      "lecturers": [
+        {
+          "name": "Grobelscheg, Philipp",
+          "personId": "3937638AF47C6DBE"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Algorithmen",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick\nGerzic, Harris\nHatzl, Stefanie\nHöber, Angelika\nJiménez, Simon\nKochauf, Stephan\nKrassnigg, Helmut\nPetelinc, Markus\nPrettenthaler, Elisabeth\nSchirgi, Eva\nSoftic, Safet\nSoftic, Selver",
+      "code": "0319BB6SO1",
+      "courseId": "117799",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        },
+        {
+          "name": "Gerzic, Harris",
+          "personId": "EB250C321C4BAB92"
+        },
+        {
+          "name": "Hatzl, Stefanie",
+          "personId": "AD9C25620F917CAF"
+        },
+        {
+          "name": "Höber, Angelika",
+          "personId": "DA83715465530449"
+        },
+        {
+          "name": "Jiménez, Simon",
+          "personId": "9EA890015EAF213F"
+        },
+        {
+          "name": "Kochauf, Stephan",
+          "personId": "296474ACC3749EC1"
+        },
+        {
+          "name": "Krassnigg, Helmut",
+          "personId": "3FE55B7E1464E266"
+        },
+        {
+          "name": "Petelinc, Markus",
+          "personId": "5959E1E78F716637"
+        },
+        {
+          "name": "Prettenthaler, Elisabeth",
+          "personId": "E2CE8CA0FF23027E"
+        },
+        {
+          "name": "Schirgi, Eva",
+          "personId": "C595F8F0D6E8B3CA"
+        },
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        },
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Bachelorprüfung",
+      "courseType": "SO",
+      "displayedMetadata": "SO | 0 UE",
+      "sourceUnits": 0
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick\nKoch, Volker\nPrettenthaler, Elisabeth",
+      "code": "0319BB2010",
+      "courseId": "117563",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        },
+        {
+          "name": "Koch, Volker",
+          "personId": "A7F8F1C446D7DD60"
+        },
+        {
+          "name": "Prettenthaler, Elisabeth",
+          "personId": "E2CE8CA0FF23027E"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Buchhaltung und Bilanzierung",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nJoyce, Elizabeth\nStaud, Sophie Erika",
+      "code": "0319BB4017",
+      "courseId": "118009",
+      "lecturers": [
+        {
+          "name": "Joyce, Elizabeth",
+          "personId": "6E73DB80D1617246"
+        },
+        {
+          "name": "Staud, Sophie Erika",
+          "personId": "A561A94C0347FF73"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Business English",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSoftic, Selver",
+      "code": "0319BB6010",
+      "courseId": "117522",
+      "lecturers": [
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Datenvisualisierung",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nKoch, Volker\nMeglitsch, Mario",
+      "code": "0319BB2020",
+      "courseId": "117562",
+      "lecturers": [
+        {
+          "name": "Koch, Volker",
+          "personId": "A7F8F1C446D7DD60"
+        },
+        {
+          "name": "Meglitsch, Mario",
+          "personId": "DDC8728DD3A3C28C"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Einführung in die Betriebswirtschaftslehre",
+      "courseType": "VO",
+      "displayedMetadata": "VO | 17 UE",
+      "sourceUnits": 17
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick",
+      "code": "0319BB4005",
+      "courseId": "117647",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Erweiterte Themen der digitalen Geschäftsmodelle",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick\nKochauf, Stephan\nSoftic, Safet\nZettel, Daniel",
+      "code": "0319BB2017",
+      "courseId": "117970",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        },
+        {
+          "name": "Kochauf, Stephan",
+          "personId": "296474ACC3749EC1"
+        },
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        },
+        {
+          "name": "Zettel, Daniel",
+          "personId": "9DE745D2E4A0252E"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Erweiterte Themen der Softwareentwicklung",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nKapfer, Viktoria",
+      "code": "0319BB4020",
+      "courseId": "117627",
+      "lecturers": [
+        {
+          "name": "Kapfer, Viktoria",
+          "personId": "D1A879C956E9D2D6"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Erweiterte Themen des Prozessmanagement",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nMoser, Mario\nSchmuck, Florian",
+      "code": "0319BB6004",
+      "courseId": "117518",
+      "lecturers": [
+        {
+          "name": "Moser, Mario",
+          "personId": "CC60D01360A73BA2"
+        },
+        {
+          "name": "Schmuck, Florian",
+          "personId": "217DE69AA0098C1C"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Erweiterte Web-Technologien",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nGerzic, Harris\nGrünwald, Stefan",
+      "code": "0319BB6005",
+      "courseId": "118026",
+      "lecturers": [
+        {
+          "name": "Gerzic, Harris",
+          "personId": "EB250C321C4BAB92"
+        },
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Fallstudien der Wirtschaftsinformatik",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick\nKienzl, Stefan\nSoftic, Safet",
+      "code": "0319BB2005",
+      "courseId": "117987",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        },
+        {
+          "name": "Kienzl, Stefan",
+          "personId": "4DFDE9782DB5540E"
+        },
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Grundlagen der Netzwerktechnik",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nResanovic, Daniel",
+      "code": "0319BB6009",
+      "courseId": "117516",
+      "lecturers": [
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Grundlagen Maschinelles Lernen und künstliche Intelligenz",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSchmid, Christian",
+      "code": "0319BB6001",
+      "courseId": "118027",
+      "lecturers": [
+        {
+          "name": "Schmid, Christian",
+          "personId": "A5C3C0349668598F"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Identity Management",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick",
+      "code": "0319BB4013",
+      "courseId": "117648",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Informationssysteme",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nRath, Walter",
+      "code": "0319BB6008",
+      "courseId": "117523",
+      "lecturers": [
+        {
+          "name": "Rath, Walter",
+          "personId": "F8CB6D695C40D551"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Internet-Marketing",
+      "courseType": "VO",
+      "displayedMetadata": "VO | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSoftic, Safet",
+      "code": "0319BB4016",
+      "courseId": "118003",
+      "lecturers": [
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "IT Operations",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 25.5 UE",
+      "sourceUnits": 25.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nRath, Walter",
+      "code": "0319BB4012",
+      "courseId": "118007",
+      "lecturers": [
+        {
+          "name": "Rath, Walter",
+          "personId": "F8CB6D695C40D551"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Konfliktmanagement",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 17 UE",
+      "sourceUnits": 17
+    },
+    {
+      "additionalText": "Vortragende*r:\nFuchs, Bernhard",
+      "code": "0319BB2022",
+      "courseId": "117993",
+      "lecturers": [
+        {
+          "name": "Fuchs, Bernhard",
+          "personId": "010FF70CDC2146F1"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Laufendes Berufspraktikum im Unternehmen 2",
+      "courseType": "BP",
+      "displayedMetadata": "BP | 8.5 UE",
+      "sourceUnits": 8.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nFuchs, Bernhard",
+      "code": "0319BB4018",
+      "courseId": "117652",
+      "lecturers": [
+        {
+          "name": "Fuchs, Bernhard",
+          "personId": "010FF70CDC2146F1"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Laufendes Berufspraktikum im Unternehmen 4",
+      "courseType": "BP",
+      "displayedMetadata": "BP | 8.5 UE",
+      "sourceUnits": 8.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nFuchs, Bernhard",
+      "code": "0319BB6012",
+      "courseId": "117515",
+      "lecturers": [
+        {
+          "name": "Fuchs, Bernhard",
+          "personId": "010FF70CDC2146F1"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Laufendes Berufspraktikum im Unternehmen 6",
+      "courseType": "BP",
+      "displayedMetadata": "BP | 8.5 UE",
+      "sourceUnits": 8.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nGrünwald, Stefan\nPrettenthaler, Elisabeth\nSoftic, Safet",
+      "code": "0319BB4014",
+      "courseId": "117658",
+      "lecturers": [
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        },
+        {
+          "name": "Prettenthaler, Elisabeth",
+          "personId": "E2CE8CA0FF23027E"
+        },
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Markup Languages",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nHatzl, Johannes\nHochfellner, Walter\nJesenko, Berndt\nResanovic, Daniel",
+      "code": "0319BB2019",
+      "courseId": "117734",
+      "lecturers": [
+        {
+          "name": "Hatzl, Johannes",
+          "personId": "4B9FD052DF069DEC"
+        },
+        {
+          "name": "Hochfellner, Walter",
+          "personId": "6D8B808AB8A6FE7C"
+        },
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Mathematik in der Betriebswirtschaft",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nGschweitl, Roswitha\nHörmann, Monika\nSemlitsch, Erhard",
+      "code": "0319BB2023",
+      "courseId": "117946",
+      "lecturers": [
+        {
+          "name": "Gschweitl, Roswitha",
+          "personId": "B940C0935F222834"
+        },
+        {
+          "name": "Hörmann, Monika",
+          "personId": "C2F31424322120EF"
+        },
+        {
+          "name": "Semlitsch, Erhard",
+          "personId": "A667B751EC45FFEA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Präsentationstechniken",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 17 UE",
+      "sourceUnits": 17
+    },
+    {
+      "additionalText": "Vortragende*r:\nBriscoe, Henry\nPhillips, Michael",
+      "code": "0319BB6011",
+      "courseId": "117521",
+      "lecturers": [
+        {
+          "name": "Briscoe, Henry",
+          "personId": "01F1C806C9A8937A"
+        },
+        {
+          "name": "Phillips, Michael",
+          "personId": "A837922C0DD9FD7E"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Professional Meetings in English",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick",
+      "code": "0319BB2021",
+      "courseId": "117992",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Projekt zum Berufspraktikum",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 8.5 UE",
+      "sourceUnits": 8.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nSchmidt, Christopher\nZweidick, Mario",
+      "code": "0319BB2006",
+      "courseId": "117988",
+      "lecturers": [
+        {
+          "name": "Schmidt, Christopher",
+          "personId": "A812E4A88F43EE99"
+        },
+        {
+          "name": "Zweidick, Mario",
+          "personId": "81466E5E48396718"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Relationale Datenbanken",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nAmann-Langeder, Michael\nBećirević, Haris",
+      "code": "0319BB4021",
+      "courseId": "117579",
+      "lecturers": [
+        {
+          "name": "Amann-Langeder, Michael",
+          "personId": "34FFA8D4A1C8CAFB"
+        },
+        {
+          "name": "Bećirević, Haris",
+          "personId": "6D628EB4D3B90E98"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Requirements Engineering",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSchmid, Christian",
+      "code": "0319BB6003",
+      "courseId": "117524",
+      "lecturers": [
+        {
+          "name": "Schmid, Christian",
+          "personId": "A5C3C0349668598F"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Sicherheit von Web Applikationen",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nPetelinc, Markus",
+      "code": "0319BB2018",
+      "courseId": "117971",
+      "lecturers": [
+        {
+          "name": "Petelinc, Markus",
+          "personId": "5959E1E78F716637"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Software Design",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nAmann-Langeder, Michael\nBećirević, Haris",
+      "code": "0319BB4011",
+      "courseId": "117580",
+      "lecturers": [
+        {
+          "name": "Amann-Langeder, Michael",
+          "personId": "34FFA8D4A1C8CAFB"
+        },
+        {
+          "name": "Bećirević, Haris",
+          "personId": "6D628EB4D3B90E98"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Softwareentwicklungsprojekt",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 17 UE",
+      "sourceUnits": 17
+    },
+    {
+      "additionalText": "Vortragende*r:\nHörmann, Monika\nSemlitsch, Erhard",
+      "code": "0319BB2007",
+      "courseId": "117945",
+      "lecturers": [
+        {
+          "name": "Hörmann, Monika",
+          "personId": "C2F31424322120EF"
+        },
+        {
+          "name": "Semlitsch, Erhard",
+          "personId": "A667B751EC45FFEA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Teamtraining",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 17 UE",
+      "sourceUnits": 17
+    },
+    {
+      "additionalText": "Vortragende*r:\nAmbrosch, Clemens",
+      "code": "0319BB6002",
+      "courseId": "117519",
+      "lecturers": [
+        {
+          "name": "Ambrosch, Clemens",
+          "personId": "E2F084FFC84CD939"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Virtualisierung",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nPöcherstorfer, Winfried",
+      "code": "0319BB6007",
+      "courseId": "117520",
+      "lecturers": [
+        {
+          "name": "Pöcherstorfer, Winfried",
+          "personId": "E166F279DDF806AA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Wirtschafts- und IT-Recht",
+      "courseType": "VO",
+      "displayedMetadata": "VO | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nHöber, Angelika\nPrettenthaler, Elisabeth",
+      "code": "0319BB6006",
+      "courseId": "117517",
+      "lecturers": [
+        {
+          "name": "Höber, Angelika",
+          "personId": "DA83715465530449"
+        },
+        {
+          "name": "Prettenthaler, Elisabeth",
+          "personId": "E2CE8CA0FF23027E"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Wirtschaftsinformatik Projekt",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 25.5 UE",
+      "sourceUnits": 25.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nHöber, Angelika",
+      "code": "0319BB4015",
+      "courseId": "118008",
+      "lecturers": [
+        {
+          "name": "Höber, Angelika",
+          "personId": "DA83715465530449"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Wissenschaftliches Arbeiten",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 34 UE",
+      "sourceUnits": 34
+    }
+  ],
+  "curriculum": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+  "pagination": [
+    "1 - 36 von 36"
+  ],
+  "semester": "2026 S",
+  "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=297&objTermId=124&orgId=1",
+  "capturedAt": "2026-11-03T10:50:56.666Z"
+}

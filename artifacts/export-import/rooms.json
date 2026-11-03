@@ -1,0 +1,458 @@
+﻿{ "type": "resources", "link": [  ]
+
+, "resource": [ 
+{ "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC201", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": null, "FLAECHE": 6951, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC202", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 56, "FLAECHE": 9933, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC203", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 63, "FLAECHE": 9933, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC204", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 36, "FLAECHE": 8500, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC205", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 24, "FLAECHE": 8500, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC206", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 24, "FLAECHE": 7635, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC207", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 24, "FLAECHE": 6587, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC208", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 24, "FLAECHE": 6587, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC209", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 24, "FLAECHE": 6587, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC210", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 24, "FLAECHE": 6587, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC211", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 32, "FLAECHE": 7635, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC212", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 56, "FLAECHE": 8500, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC213", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 56, "FLAECHE": 8500, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC214", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 56, "FLAECHE": 9933, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC215", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 63, "FLAECHE": 9933, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC219", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": null, "FLAECHE": 35904, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CC224", "GEBAEUDE": "Campus Classic", "SITZPLAETZE": 120, "FLAECHE": 19917, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE201", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 64, "FLAECHE": 14772, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE202", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 64, "FLAECHE": 13345, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE203", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 24, "FLAECHE": 9176, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE204", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 24, "FLAECHE": 8969, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE301", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 22, "FLAECHE": 7878, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE302", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 48, "FLAECHE": 14395, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE303", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 30, "FLAECHE": 10411, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE304", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 20, "FLAECHE": 12444, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE305", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 20, "FLAECHE": 12263, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE306", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 24, "FLAECHE": 11954, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE404", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 20, "FLAECHE": 12444, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE404", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 20, "FLAECHE": 12444, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE405", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 20, "FLAECHE": 12263, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE405", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 20, "FLAECHE": 12263, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CE408", "GEBAEUDE": "Center of Excellence", "SITZPLAETZE": 16, "FLAECHE": 4663, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR001", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 2327, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR002", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 5054, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR006", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 751, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR007", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 444, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR008", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1962, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR102", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 4028, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR103", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3643, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR104", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3018, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR106", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1210, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR107", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 589, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR108", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1159, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR109", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1614, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR121", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3868, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR122", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 4007, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR202", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3621, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR203", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3600, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR204", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3501, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR205", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 2977, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR206", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 669, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR207", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 868, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR210", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1491, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR221", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3025, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR222", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3995, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR232", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1739, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR233", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 2460, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR235A", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 358, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR235B", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 189, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR235C", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 186, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR236", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3248, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR237", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": 9, "FLAECHE": 2212, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR238", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": 7, "FLAECHE": 1494, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR239", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1545, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR302", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3710, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR302a", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1800, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR303", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": 6, "FLAECHE": 1733, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR304", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3578, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR305", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 2971, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR306", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 870, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR307", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 868, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR309", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": 10, "FLAECHE": 1587, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR310", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 1183, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR321", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3025, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR322", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 5131, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR332", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": 8, "FLAECHE": 1914, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR333", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 2656, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR334A", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 163, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR334B", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 162, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR335", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 624, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR337", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 2299, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR338", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 8545, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR432", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 17986, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR434", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 5866, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CR435", "GEBAEUDE": "Campus Rosenhof - Haus A & B", "SITZPLAETZE": null, "FLAECHE": 3489, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ001", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 53, "FLAECHE": 7438, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ002", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 48, "FLAECHE": 7469, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ003", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 48, "FLAECHE": 7454, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ004", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 45, "FLAECHE": 7771, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ010", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 861, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ011", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1593, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ015", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 37183, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ015a", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1480, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ016", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 670, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ017", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1002, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ018", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 409, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ030", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 16, "FLAECHE": 5678, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ033", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 406, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ034", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 511, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ100", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 51, "FLAECHE": 37000, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ101", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 12800, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ102", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 41, "FLAECHE": 6030, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ103", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 39, "FLAECHE": 6167, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ104", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2445, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ105", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2193, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ106", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 36, "FLAECHE": 6007, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ107", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 45, "FLAECHE": 6845, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ108", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 45, "FLAECHE": 6772, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ109", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 53, "FLAECHE": 8564, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ110", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 63, "FLAECHE": 9303, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ114", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1697, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ115", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1955, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ116", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 395, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ128", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 4531, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ129", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 30, "FLAECHE": 4889, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ130", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 842, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ131", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 807, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ132a", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 852, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ134", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 2, "FLAECHE": 1851, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ135", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1535, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ137", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1980, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ138", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 49, "FLAECHE": 7630, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ201", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2602, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ201a", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1798, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ202", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2599, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ202a", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2100, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ203", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2077, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ204", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 13, "FLAECHE": 2503, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ205", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1370, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ206", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2015, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ207", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2015, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ208", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1381, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ211", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 662, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ212", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 531, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ226", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1806, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ228", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 2, "FLAECHE": 1530, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ229", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1982, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ230", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1381, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ233", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 35, "FLAECHE": 5752, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ235", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 3941, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ236", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2260, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ237", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 4271, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ238", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 3923, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ239", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 856, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ240", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 743, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ327", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1736, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ328", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2306, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ329", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 3728, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ330", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": 16, "FLAECHE": 3773, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ331", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 3442, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ332", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1112, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ333", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 399, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ334", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 3248, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ335", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1854, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ337", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 1784, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "CZ339", "GEBAEUDE": "Campus Zusertal", "SITZPLAETZE": null, "FLAECHE": 2196, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "RC402", "GEBAEUDE": "Campus Rosenhof - Haus C", "SITZPLAETZE": 28, "FLAECHE": 7630, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "RC403", "GEBAEUDE": "Campus Rosenhof - Haus C", "SITZPLAETZE": 72, "FLAECHE": 11870, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "RC404", "GEBAEUDE": "Campus Rosenhof - Haus C", "SITZPLAETZE": 60, "FLAECHE": 12663, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "RC409", "GEBAEUDE": "Campus Rosenhof - Haus C", "SITZPLAETZE": 78, "FLAECHE": 14231, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "RC410", "GEBAEUDE": "Campus Rosenhof - Haus C", "SITZPLAETZE": 6, "FLAECHE": 4233, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF177", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 8, "FLAECHE": 2820, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF178", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 8, "FLAECHE": 2094, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF179", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 8, "FLAECHE": 2023, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF180", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 8, "FLAECHE": 3277, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF181", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 8, "FLAECHE": 2847, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF183", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 40, "FLAECHE": 8128, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF185", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 48, "FLAECHE": 8715, "STOCKWERK": "Ebene 01" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF254", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 18, "FLAECHE": 5616, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF256", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 40, "FLAECHE": 8010, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF260", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 12, "FLAECHE": 6196, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF261", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 12, "FLAECHE": 5574, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF262", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 12, "FLAECHE": 5666, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF276", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 12, "FLAECHE": 5599, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF277", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 12, "FLAECHE": 5651, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF278", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 10105, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF279", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 12, "FLAECHE": 6713, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF280", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 10, "FLAECHE": 5684, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF281", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 12, "FLAECHE": 5830, "STOCKWERK": "Ebene 02" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF376", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5656, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF377", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5607, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF378", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 36, "FLAECHE": 10101, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF379", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 40, "FLAECHE": 8128, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF380", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5589, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF381", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5822, "STOCKWERK": "Ebene 03" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF476", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 18, "FLAECHE": 5599, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF477", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5651, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF478", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 48, "FLAECHE": 10101, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF479", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 40, "FLAECHE": 8128, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF480", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5602, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF481", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5653, "STOCKWERK": "Ebene 04" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF554", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5611, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF555", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5672, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF556", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 40, "FLAECHE": 8843, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF558", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 40, "FLAECHE": 8843, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF559", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 64, "FLAECHE": 11400, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF560", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5612, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF576", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 20, "FLAECHE": 5649, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF577", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 64, "FLAECHE": 11400, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF578", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 34, "FLAECHE": 10001, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF579", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 40, "FLAECHE": 8128, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF580", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 24, "FLAECHE": 5601, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF581", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 24, "FLAECHE": 5830, "STOCKWERK": "Ebene 05" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF676", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 32, "FLAECHE": 7561, "STOCKWERK": "Ebene 06" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF677", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 40, "FLAECHE": 10367, "STOCKWERK": "Ebene 06" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF678", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 18, "FLAECHE": 6027, "STOCKWERK": "Ebene 06" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF679", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 48, "FLAECHE": 10392, "STOCKWERK": "Ebene 06" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WF680", "GEBAEUDE": "WIFI Turm", "SITZPLAETZE": 24, "FLAECHE": 7559, "STOCKWERK": "Ebene 06" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WK001", "GEBAEUDE": "Wirtschaftskammer", "SITZPLAETZE": 396, "FLAECHE": 45428, "STOCKWERK": "Ebene 00" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW912", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 25, "FLAECHE": 8749, "STOCKWERK": "Untergeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW913", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 24, "FLAECHE": 8749, "STOCKWERK": "Untergeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW914", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 27, "FLAECHE": 8745, "STOCKWERK": "Untergeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW915", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 24, "FLAECHE": 7005, "STOCKWERK": "Untergeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW916", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 18, "FLAECHE": 7168, "STOCKWERK": "Untergeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW917", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": null, "FLAECHE": 10903, "STOCKWERK": "Untergeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW923", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 40, "FLAECHE": 9144, "STOCKWERK": "Untergeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW924", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 40, "FLAECHE": 9880, "STOCKWERK": "Untergeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW954", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 40, "FLAECHE": 8156, "STOCKWERK": "Erdgeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW957", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 21, "FLAECHE": 5717, "STOCKWERK": "Erdgeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW969", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 40, "FLAECHE": 11641, "STOCKWERK": "Erdgeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW971", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 20, "FLAECHE": 11664, "STOCKWERK": "Erdgeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW972", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 20, "FLAECHE": 13789, "STOCKWERK": "Erdgeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW973", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 10, "FLAECHE": 10007, "STOCKWERK": "Erdgeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW974", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 16, "FLAECHE": 10472, "STOCKWERK": "Erdgeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW976", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": 20, "FLAECHE": 11713, "STOCKWERK": "Erdgeschoß" } } }
+, { "link": [  ]
+, "content": { "type": "model-CO_EXAMPLE.MEINE_RAUM_V", "MEINE_RAUM_V": { "RAUMCODE": "WW979", "GEBAEUDE": "WIFI Werkstätten", "SITZPLAETZE": null, "FLAECHE": 2105, "STOCKWERK": "Erdgeschoß" } } }
+ ]
+
+ }

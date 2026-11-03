@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "country": "AT",
+  "semesterName": "2027 S",
+  "rangeStart": "2027-02-19",
+  "rangeEnd": "2027-08-17",
+  "scope": "Nationwide statutory holidays only; no school vacations, bridge days or institution-specific closures",
+  "sources": [
+    "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+    "https://www.bmeia.gv.at/fileadmin/user_upload/Vertretungen/Kopenhagen/Aktuelles/Feiertage_2025-2027.pdf"
+  ],
+  "verifiedOn": "2026-11-03",
+  "holidays": [
+    {"date": "2027-03-29", "name": "Ostermontag"},
+    {"date": "2027-05-01", "name": "Staatsfeiertag"},
+    {"date": "2027-05-06", "name": "Christi Himmelfahrt"},
+    {"date": "2027-05-17", "name": "Pfingstmontag"},
+    {"date": "2027-05-27", "name": "Fronleichnam"},
+    {"date": "2027-08-15", "name": "Mariä Himmelfahrt"}
+  ]
+}

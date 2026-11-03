@@ -1,0 +1,1428 @@
+{
+  "schemaVersion": 1,
+  "sourceSystem": "CAMPUSonline CAMPUS 02",
+  "sourceSemester": "2026 S",
+  "intendedTargetSemester": "2027 S",
+  "sources": [
+    {
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=297&objTermId=124&orgId=1",
+      "capturedAt": "2026-11-03T10:50:56.666Z",
+      "courseCount": 36,
+      "file": "curriculum-297-2026-S.json",
+      "sha256": "71a45b61543831c3cc6d655f9022be53f3097934b5926c2bc71c281176bd3879"
+    },
+    {
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=301&objTermId=124&orgId=1",
+      "capturedAt": "2026-11-03T10:50:43.438Z",
+      "courseCount": 13,
+      "file": "curriculum-301-2026-S.json",
+      "sha256": "8ac3aa197db1cf634ddc947e012561011606b08d6f170348f3fb5cf7e9831935"
+    },
+    {
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=349&objTermId=124&orgId=1",
+      "capturedAt": "2026-11-03T10:50:53.080Z",
+      "courseCount": 22,
+      "file": "curriculum-349-2026-S.json",
+      "sha256": "9202d8cc7bd0c82e3866f1642b62e86fb9e2ab81c775ae42dd35be36bd7ab919"
+    },
+    {
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=362&objTermId=124&orgId=1",
+      "capturedAt": "2026-11-03T10:50:54.797Z",
+      "courseCount": 29,
+      "file": "curriculum-362-2026-S.json",
+      "sha256": "12359f06fd6ce463a6257d0ef375c547ff336cc0aed232a354cb1e04958a2ee7"
+    }
+  ],
+  "referenceCodePolicy": "campus02:<business-card-person-id>; stability across future exports must be checked",
+  "roundingPolicy": "nearest integer, ties rounded up (ROUND_HALF_UP); original UE retained",
+  "courseExclusionPolicy": "Exclude Bachelorprüfung, Masterprüfung and Masterarbeit (including numbered suffixes)",
+  "excludedCourseCount": 5,
+  "courses": [
+    {
+      "sourceCourseId": "117987",
+      "code": "0319BB2005",
+      "title": "Grundlagen der Netzwerktechnik",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117987",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35",
+        "campus02:4DFDE9782DB5540E",
+        "campus02:A025C4CF0CB99C00"
+      ]
+    },
+    {
+      "sourceCourseId": "117988",
+      "code": "0319BB2006",
+      "title": "Relationale Datenbanken",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117988",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:A812E4A88F43EE99",
+        "campus02:81466E5E48396718"
+      ]
+    },
+    {
+      "sourceCourseId": "117945",
+      "code": "0319BB2007",
+      "title": "Teamtraining",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117945",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "SE",
+      "sourceUnits": 17,
+      "roundedTotalUnits": 17,
+      "lecturerReferenceCodes": [
+        "campus02:C2F31424322120EF",
+        "campus02:A667B751EC45FFEA"
+      ]
+    },
+    {
+      "sourceCourseId": "117735",
+      "code": "0319BB2008",
+      "title": "Algorithmen",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117735",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:3937638AF47C6DBE"
+      ]
+    },
+    {
+      "sourceCourseId": "117563",
+      "code": "0319BB2010",
+      "title": "Buchhaltung und Bilanzierung",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117563",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35",
+        "campus02:A7F8F1C446D7DD60",
+        "campus02:E2CE8CA0FF23027E"
+      ]
+    },
+    {
+      "sourceCourseId": "117970",
+      "code": "0319BB2017",
+      "title": "Erweiterte Themen der Softwareentwicklung",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117970",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35",
+        "campus02:296474ACC3749EC1",
+        "campus02:A025C4CF0CB99C00",
+        "campus02:9DE745D2E4A0252E"
+      ]
+    },
+    {
+      "sourceCourseId": "117971",
+      "code": "0319BB2018",
+      "title": "Software Design",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117971",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:5959E1E78F716637"
+      ]
+    },
+    {
+      "sourceCourseId": "117734",
+      "code": "0319BB2019",
+      "title": "Mathematik in der Betriebswirtschaft",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117734",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:4B9FD052DF069DEC",
+        "campus02:6D8B808AB8A6FE7C",
+        "campus02:87386A33AA11E3F3",
+        "campus02:12A9C91896FA6E6D"
+      ]
+    },
+    {
+      "sourceCourseId": "117562",
+      "code": "0319BB2020",
+      "title": "Einführung in die Betriebswirtschaftslehre",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117562",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "VO",
+      "sourceUnits": 17,
+      "roundedTotalUnits": 17,
+      "lecturerReferenceCodes": [
+        "campus02:A7F8F1C446D7DD60",
+        "campus02:DDC8728DD3A3C28C"
+      ]
+    },
+    {
+      "sourceCourseId": "117992",
+      "code": "0319BB2021",
+      "title": "Projekt zum Berufspraktikum",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117992",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "PR",
+      "sourceUnits": 8.5,
+      "roundedTotalUnits": 9,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ]
+    },
+    {
+      "sourceCourseId": "117993",
+      "code": "0319BB2022",
+      "title": "Laufendes Berufspraktikum im Unternehmen 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117993",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "BP",
+      "sourceUnits": 8.5,
+      "roundedTotalUnits": 9,
+      "lecturerReferenceCodes": [
+        "campus02:010FF70CDC2146F1"
+      ]
+    },
+    {
+      "sourceCourseId": "117946",
+      "code": "0319BB2023",
+      "title": "Präsentationstechniken",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117946",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "SE",
+      "sourceUnits": 17,
+      "roundedTotalUnits": 17,
+      "lecturerReferenceCodes": [
+        "campus02:B940C0935F222834",
+        "campus02:C2F31424322120EF",
+        "campus02:A667B751EC45FFEA"
+      ]
+    },
+    {
+      "sourceCourseId": "117647",
+      "code": "0319BB4005",
+      "title": "Erweiterte Themen der digitalen Geschäftsmodelle",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117647",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ]
+    },
+    {
+      "sourceCourseId": "117580",
+      "code": "0319BB4011",
+      "title": "Softwareentwicklungsprojekt",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117580",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "PR",
+      "sourceUnits": 17,
+      "roundedTotalUnits": 17,
+      "lecturerReferenceCodes": [
+        "campus02:34FFA8D4A1C8CAFB",
+        "campus02:6D628EB4D3B90E98"
+      ]
+    },
+    {
+      "sourceCourseId": "118007",
+      "code": "0319BB4012",
+      "title": "Konfliktmanagement",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/118007",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "SE",
+      "sourceUnits": 17,
+      "roundedTotalUnits": 17,
+      "lecturerReferenceCodes": [
+        "campus02:F8CB6D695C40D551"
+      ]
+    },
+    {
+      "sourceCourseId": "117648",
+      "code": "0319BB4013",
+      "title": "Informationssysteme",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117648",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ]
+    },
+    {
+      "sourceCourseId": "117658",
+      "code": "0319BB4014",
+      "title": "Markup Languages",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117658",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:066E22DC2C0CA454",
+        "campus02:E2CE8CA0FF23027E",
+        "campus02:A025C4CF0CB99C00"
+      ]
+    },
+    {
+      "sourceCourseId": "118008",
+      "code": "0319BB4015",
+      "title": "Wissenschaftliches Arbeiten",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/118008",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "SE",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:DA83715465530449"
+      ]
+    },
+    {
+      "sourceCourseId": "118003",
+      "code": "0319BB4016",
+      "title": "IT Operations",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/118003",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 25.5,
+      "roundedTotalUnits": 26,
+      "lecturerReferenceCodes": [
+        "campus02:A025C4CF0CB99C00"
+      ]
+    },
+    {
+      "sourceCourseId": "118009",
+      "code": "0319BB4017",
+      "title": "Business English",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/118009",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "SE",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:6E73DB80D1617246",
+        "campus02:A561A94C0347FF73"
+      ]
+    },
+    {
+      "sourceCourseId": "117652",
+      "code": "0319BB4018",
+      "title": "Laufendes Berufspraktikum im Unternehmen 4",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117652",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "BP",
+      "sourceUnits": 8.5,
+      "roundedTotalUnits": 9,
+      "lecturerReferenceCodes": [
+        "campus02:010FF70CDC2146F1"
+      ]
+    },
+    {
+      "sourceCourseId": "117627",
+      "code": "0319BB4020",
+      "title": "Erweiterte Themen des Prozessmanagement",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117627",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:D1A879C956E9D2D6"
+      ]
+    },
+    {
+      "sourceCourseId": "117579",
+      "code": "0319BB4021",
+      "title": "Requirements Engineering",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117579",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:34FFA8D4A1C8CAFB",
+        "campus02:6D628EB4D3B90E98"
+      ]
+    },
+    {
+      "sourceCourseId": "118027",
+      "code": "0319BB6001",
+      "title": "Identity Management",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/118027",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:A5C3C0349668598F"
+      ]
+    },
+    {
+      "sourceCourseId": "117519",
+      "code": "0319BB6002",
+      "title": "Virtualisierung",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117519",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:E2F084FFC84CD939"
+      ]
+    },
+    {
+      "sourceCourseId": "117524",
+      "code": "0319BB6003",
+      "title": "Sicherheit von Web Applikationen",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117524",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:A5C3C0349668598F"
+      ]
+    },
+    {
+      "sourceCourseId": "117518",
+      "code": "0319BB6004",
+      "title": "Erweiterte Web-Technologien",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117518",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:CC60D01360A73BA2",
+        "campus02:217DE69AA0098C1C"
+      ]
+    },
+    {
+      "sourceCourseId": "118026",
+      "code": "0319BB6005",
+      "title": "Fallstudien der Wirtschaftsinformatik",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/118026",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:EB250C321C4BAB92",
+        "campus02:066E22DC2C0CA454"
+      ]
+    },
+    {
+      "sourceCourseId": "117517",
+      "code": "0319BB6006",
+      "title": "Wirtschaftsinformatik Projekt",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117517",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "PR",
+      "sourceUnits": 25.5,
+      "roundedTotalUnits": 26,
+      "lecturerReferenceCodes": [
+        "campus02:DA83715465530449",
+        "campus02:E2CE8CA0FF23027E"
+      ]
+    },
+    {
+      "sourceCourseId": "117520",
+      "code": "0319BB6007",
+      "title": "Wirtschafts- und IT-Recht",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117520",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "VO",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:E166F279DDF806AA"
+      ]
+    },
+    {
+      "sourceCourseId": "117523",
+      "code": "0319BB6008",
+      "title": "Internet-Marketing",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117523",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "VO",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:F8CB6D695C40D551"
+      ]
+    },
+    {
+      "sourceCourseId": "117516",
+      "code": "0319BB6009",
+      "title": "Grundlagen Maschinelles Lernen und künstliche Intelligenz",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117516",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ]
+    },
+    {
+      "sourceCourseId": "117522",
+      "code": "0319BB6010",
+      "title": "Datenvisualisierung",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117522",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ]
+    },
+    {
+      "sourceCourseId": "117521",
+      "code": "0319BB6011",
+      "title": "Professional Meetings in English",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117521",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "SE",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:01F1C806C9A8937A",
+        "campus02:A837922C0DD9FD7E"
+      ]
+    },
+    {
+      "sourceCourseId": "117515",
+      "code": "0319BB6012",
+      "title": "Laufendes Berufspraktikum im Unternehmen 6",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117515",
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "courseType": "BP",
+      "sourceUnits": 8.5,
+      "roundedTotalUnits": 9,
+      "lecturerReferenceCodes": [
+        "campus02:010FF70CDC2146F1"
+      ]
+    },
+    {
+      "sourceCourseId": "117891",
+      "code": "0320BB2001",
+      "title": "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117891",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "IL",
+      "sourceUnits": 25.5,
+      "roundedTotalUnits": 26,
+      "lecturerReferenceCodes": [
+        "campus02:AD9C25620F917CAF",
+        "campus02:DA83715465530449"
+      ]
+    },
+    {
+      "sourceCourseId": "117730",
+      "code": "0320BB2005",
+      "title": "Unternehmensgründung in der IT",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117730",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:FDE7AE35064DC868"
+      ]
+    },
+    {
+      "sourceCourseId": "117548",
+      "code": "0320BB2006",
+      "title": "Communication & Presentation",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117548",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "SE",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:01F1C806C9A8937A",
+        "campus02:A837922C0DD9FD7E"
+      ]
+    },
+    {
+      "sourceCourseId": "117556",
+      "code": "0320BB2007",
+      "title": "Operation Research",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117556",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35",
+        "campus02:4B9FD052DF069DEC",
+        "campus02:9CEE0DC1020F7AC3",
+        "campus02:12A9C91896FA6E6D"
+      ]
+    },
+    {
+      "sourceCourseId": "117995",
+      "code": "0320BB2012",
+      "title": "Informationssicherheitsmanagement",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117995",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:A5C3C0349668598F"
+      ]
+    },
+    {
+      "sourceCourseId": "117905",
+      "code": "0320BB2018",
+      "title": "Seminar zur Masterarbeit 1",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117905",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "SE",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3",
+        "campus02:E2CE8CA0FF23027E"
+      ]
+    },
+    {
+      "sourceCourseId": "117890",
+      "code": "0320BB2019",
+      "title": "Systems Engineering & Analytisches Denken",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117890",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "PR",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:066E22DC2C0CA454"
+      ]
+    },
+    {
+      "sourceCourseId": "117557",
+      "code": "0320BB2020",
+      "title": "Begleitendes FuE Projekt",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117557",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "PR",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:DA83715465530449",
+        "campus02:E2CE8CA0FF23027E"
+      ]
+    },
+    {
+      "sourceCourseId": "117731",
+      "code": "0320BB2021",
+      "title": "Gesellschafts- und Vertragsrecht",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117731",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:AD60EC1EBEA83942",
+        "campus02:639CA1D1F252796C"
+      ]
+    },
+    {
+      "sourceCourseId": "117547",
+      "code": "0320BB2022",
+      "title": "Consulting Methoden",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117547",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "SE",
+      "sourceUnits": 25.5,
+      "roundedTotalUnits": 26,
+      "lecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3",
+        "campus02:F8CB6D695C40D551"
+      ]
+    },
+    {
+      "sourceCourseId": "117972",
+      "code": "0320BB2024",
+      "title": "Integration elekt. Geschäftsprozesse",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117972",
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:C72B956A216E7641"
+      ]
+    },
+    {
+      "sourceCourseId": "117860",
+      "code": "0864VZ2001",
+      "title": "Requirementsanalyse",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117860",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 25.5,
+      "roundedTotalUnits": 26,
+      "lecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ]
+    },
+    {
+      "sourceCourseId": "117936",
+      "code": "0864VZ2002",
+      "title": "Algorithmen und Datenstrukturen",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117936",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:A7FF75B4D5ACE6B7"
+      ]
+    },
+    {
+      "sourceCourseId": "117937",
+      "code": "0864VZ2003",
+      "title": "Markupsprachen",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117937",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ]
+    },
+    {
+      "sourceCourseId": "117857",
+      "code": "0864VZ2004",
+      "title": "Mathematik 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117857",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:4B9FD052DF069DEC",
+        "campus02:87386A33AA11E3F3",
+        "campus02:C595F8F0D6E8B3CA"
+      ]
+    },
+    {
+      "sourceCourseId": "117858",
+      "code": "0864VZ2005",
+      "title": "Stochastik und Statistik",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117858",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:C595F8F0D6E8B3CA"
+      ]
+    },
+    {
+      "sourceCourseId": "117899",
+      "code": "0864VZ2006",
+      "title": "English 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117899",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 25.5,
+      "roundedTotalUnits": 26,
+      "lecturerReferenceCodes": [
+        "campus02:A561A94C0347FF73"
+      ]
+    },
+    {
+      "sourceCourseId": "117906",
+      "code": "0864VZ2007",
+      "title": "Betriebswirtschaftslehre",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117906",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:A7F8F1C446D7DD60",
+        "campus02:DDC8728DD3A3C28C"
+      ]
+    },
+    {
+      "sourceCourseId": "117907",
+      "code": "0864VZ2008",
+      "title": "Business IT-Applications",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117907",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 25.5,
+      "roundedTotalUnits": 26,
+      "lecturerReferenceCodes": [
+        "campus02:EB250C321C4BAB92",
+        "campus02:741FCB0067DB5B9A"
+      ]
+    },
+    {
+      "sourceCourseId": "117859",
+      "code": "0864VZ2009",
+      "title": "Software Design 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117859",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ]
+    },
+    {
+      "sourceCourseId": "117900",
+      "code": "0864VZ2010",
+      "title": "Rhetorik und Präsentation",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117900",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "SE",
+      "sourceUnits": 25.5,
+      "roundedTotalUnits": 26,
+      "lecturerReferenceCodes": [
+        "campus02:A7F8F1C446D7DD60"
+      ]
+    },
+    {
+      "sourceCourseId": "117846",
+      "code": "0864VZ4001",
+      "title": "Electronic und Mobile Business",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117846",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 59.5,
+      "roundedTotalUnits": 60,
+      "lecturerReferenceCodes": [
+        "campus02:75055F43A64C3544",
+        "campus02:87386A33AA11E3F3"
+      ]
+    },
+    {
+      "sourceCourseId": "117916",
+      "code": "0864VZ4003",
+      "title": "Accompanying Project",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117916",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "PR",
+      "sourceUnits": 0,
+      "roundedTotalUnits": 0,
+      "lecturerReferenceCodes": [
+        "campus02:741FCB0067DB5B9A"
+      ]
+    },
+    {
+      "sourceCourseId": "117884",
+      "code": "0864VZ4004",
+      "title": "Databases",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117884",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 68,
+      "roundedTotalUnits": 68,
+      "lecturerReferenceCodes": [
+        "campus02:A025C4CF0CB99C00"
+      ]
+    },
+    {
+      "sourceCourseId": "117911",
+      "code": "0864VZ4005",
+      "title": "Internet Security",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117911",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 51,
+      "roundedTotalUnits": 51,
+      "lecturerReferenceCodes": [
+        "campus02:34EE877A518FC99F"
+      ]
+    },
+    {
+      "sourceCourseId": "117943",
+      "code": "0864VZ4006",
+      "title": "Business English 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117943",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:01F1C806C9A8937A"
+      ]
+    },
+    {
+      "sourceCourseId": "117944",
+      "code": "0864VZ4007",
+      "title": "Managerial Communication und Leadership",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117944",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 51,
+      "roundedTotalUnits": 51,
+      "lecturerReferenceCodes": [
+        "campus02:0D6019B9267012CC"
+      ]
+    },
+    {
+      "sourceCourseId": "120737",
+      "code": "0864VZ4009",
+      "title": "Data Cleaning und Data Analytics",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/120737",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 46.75,
+      "roundedTotalUnits": 47,
+      "lecturerReferenceCodes": [
+        "campus02:08FF124FA70CBBA2",
+        "campus02:C595F8F0D6E8B3CA"
+      ]
+    },
+    {
+      "sourceCourseId": "117642",
+      "code": "0864VZ6001",
+      "title": "Cloud Computing",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117642",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ]
+    },
+    {
+      "sourceCourseId": "117932",
+      "code": "0864VZ6003",
+      "title": "Bachelorarbeit",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117932",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "PR",
+      "sourceUnits": 17,
+      "roundedTotalUnits": 17,
+      "lecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ]
+    },
+    {
+      "sourceCourseId": "117588",
+      "code": "0864VZ6007",
+      "title": "Data Mining",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117588",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:C595F8F0D6E8B3CA"
+      ]
+    },
+    {
+      "sourceCourseId": "117655",
+      "code": "0864VZ6009",
+      "title": "Wissensmanagement und Semantic Web",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117655",
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ]
+    },
+    {
+      "sourceCourseId": "117863",
+      "code": "0835VD2001",
+      "title": "Mathematik für Informatik 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117863",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 59.5,
+      "roundedTotalUnits": 60,
+      "lecturerReferenceCodes": [
+        "campus02:B5555E345ED28DBB"
+      ]
+    },
+    {
+      "sourceCourseId": "117711",
+      "code": "0835VD2002",
+      "title": "Professional English",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117711",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:AF3152B0E24DB28F"
+      ]
+    },
+    {
+      "sourceCourseId": "117710",
+      "code": "0835VD2003",
+      "title": "Personalmanagement und Arbeitsrecht",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117710",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "VO",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:192F5B334A7D23E3"
+      ]
+    },
+    {
+      "sourceCourseId": "117793",
+      "code": "0835VD2004",
+      "title": "Objektorientierte Programmierung",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117793",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 59.5,
+      "roundedTotalUnits": 60,
+      "lecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3",
+        "campus02:A025C4CF0CB99C00",
+        "campus02:57AE0B5699CF034B"
+      ]
+    },
+    {
+      "sourceCourseId": "117894",
+      "code": "0835VD2005",
+      "title": "Datenbankdesign",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117894",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 46.75,
+      "roundedTotalUnits": 47,
+      "lecturerReferenceCodes": [
+        "campus02:57AE0B5699CF034B"
+      ]
+    },
+    {
+      "sourceCourseId": "117791",
+      "code": "0835VD2006",
+      "title": "Datenstrukturen und Algorithmen",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117791",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 46.75,
+      "roundedTotalUnits": 47,
+      "lecturerReferenceCodes": [
+        "campus02:16DB2721A8B92422"
+      ]
+    },
+    {
+      "sourceCourseId": "117949",
+      "code": "0835VD2007",
+      "title": "Konfigurationsmanagement",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117949",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:066E22DC2C0CA454",
+        "campus02:99108567F747C915",
+        "campus02:87386A33AA11E3F3",
+        "campus02:12A9C91896FA6E6D"
+      ]
+    },
+    {
+      "sourceCourseId": "117792",
+      "code": "0835VD2008",
+      "title": "Web Technologien & Usability",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117792",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 46.75,
+      "roundedTotalUnits": 47,
+      "lecturerReferenceCodes": [
+        "campus02:16DB2721A8B92422"
+      ]
+    },
+    {
+      "sourceCourseId": "117748",
+      "code": "0835VD4001",
+      "title": "Wissenschaftliches Arbeiten und Hypothesenbildung",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117748",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "PR",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:AD9C25620F917CAF"
+      ]
+    },
+    {
+      "sourceCourseId": "117753",
+      "code": "0835VD4002",
+      "title": "Informationssysteme",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117753",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ]
+    },
+    {
+      "sourceCourseId": "117747",
+      "code": "0835VD4003",
+      "title": "Betriebspraktische individuelle Vertiefung 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117747",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "BP",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3"
+      ]
+    },
+    {
+      "sourceCourseId": "117749",
+      "code": "0835VD4004",
+      "title": "Scientific English",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117749",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:AF3152B0E24DB28F"
+      ]
+    },
+    {
+      "sourceCourseId": "117973",
+      "code": "0835VD4005",
+      "title": "Prozessmanagement 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117973",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:D1A879C956E9D2D6"
+      ]
+    },
+    {
+      "sourceCourseId": "117750",
+      "code": "0835VD4006",
+      "title": "Marketing",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117750",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "VO",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:F8CB6D695C40D551"
+      ]
+    },
+    {
+      "sourceCourseId": "117751",
+      "code": "0835VD4007",
+      "title": "Requirements Engineering",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117751",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:C1C5A47BFD7EE532"
+      ]
+    },
+    {
+      "sourceCourseId": "117845",
+      "code": "0835VD4008",
+      "title": "Markup Languages",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117845",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:A025C4CF0CB99C00"
+      ]
+    },
+    {
+      "sourceCourseId": "117752",
+      "code": "0835VD4009",
+      "title": "Digitale Geschäftsmodelle 2",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117752",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ]
+    },
+    {
+      "sourceCourseId": "118116",
+      "code": "0835VD4011",
+      "title": "Grundlagen Maschinelles Lernen und Künstliche Intelligenz",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/118116",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 34,
+      "roundedTotalUnits": 34,
+      "lecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ]
+    },
+    {
+      "sourceCourseId": "117938",
+      "code": "0835VD6001",
+      "title": "Fallstudien der Wirtschaftsinformatik",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117938",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:066E22DC2C0CA454"
+      ]
+    },
+    {
+      "sourceCourseId": "117939",
+      "code": "0835VD6002",
+      "title": "IT-Service Management",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117939",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:5F5B3C6BFF9787FA"
+      ]
+    },
+    {
+      "sourceCourseId": "117855",
+      "code": "0835VD6003",
+      "title": "Supply Chain Management",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117855",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:EB250C321C4BAB92",
+        "campus02:066E22DC2C0CA454",
+        "campus02:87386A33AA11E3F3"
+      ]
+    },
+    {
+      "sourceCourseId": "117856",
+      "code": "0835VD6004",
+      "title": "Wirtschafts- und IT-Recht",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117856",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "VO",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:E166F279DDF806AA"
+      ]
+    },
+    {
+      "sourceCourseId": "117980",
+      "code": "0835VD6005",
+      "title": "Betriebspraktische individuelle Vertiefung 4",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117980",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "BP",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3"
+      ]
+    },
+    {
+      "sourceCourseId": "117979",
+      "code": "0835VD6006",
+      "title": "Servicebasierte Systeme",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117979",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ]
+    },
+    {
+      "sourceCourseId": "117978",
+      "code": "0835VD6007",
+      "title": "Grundlagen Mobile Computing",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117978",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:C1C5A47BFD7EE532",
+        "campus02:EB250C321C4BAB92",
+        "campus02:066E22DC2C0CA454"
+      ]
+    },
+    {
+      "sourceCourseId": "117781",
+      "code": "0835VD6008",
+      "title": "Sicherheit von Webapplikationen",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117781",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:8072A685B46B8684"
+      ]
+    },
+    {
+      "sourceCourseId": "117976",
+      "code": "0835VD6009",
+      "title": "Cloud Computing",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117976",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 29.75,
+      "roundedTotalUnits": 30,
+      "lecturerReferenceCodes": [
+        "campus02:9EA890015EAF213F"
+      ]
+    },
+    {
+      "sourceCourseId": "117977",
+      "code": "0835VD6011",
+      "title": "Presentations",
+      "sourceUrl": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses/117977",
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "courseType": "IL",
+      "sourceUnits": 17,
+      "roundedTotalUnits": 17,
+      "lecturerReferenceCodes": [
+        "campus02:AF3152B0E24DB28F"
+      ]
+    }
+  ]
+}

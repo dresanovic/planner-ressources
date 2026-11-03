@@ -1,0 +1,447 @@
+- complementary:
+  - generic: RP
+  - generic: Ressourcenplanung
+  - button "Navigation lösen":
+    - generic: Navigation lösen
+  - navigation "Hauptnavigation":
+    - button "Planung" [expanded]:
+      - generic: Planung
+      - generic: −
+    - button "Kalender": Kalender
+    - button "Versionen": Versionen
+    - button "Prüfungen": Prüfungen
+    - button "Abstimmung mit Lehrenden": Abstimmung mit Lehrenden
+    - button "Stammdaten" [expanded]:
+      - generic: Stammdaten
+      - generic: −
+    - button "Semester": Semester
+    - button "Feiertage": Feiertage
+    - button "Kohorten": Kohorten
+    - button "Lehrveranstaltungen": Lehrveranstaltungen
+    - button "Studienformen": Studienformen
+    - button "Zeitfenster": Zeitfenster
+    - button "Lehrende": Lehrende
+    - button "Räume": Räume
+    - button "Planer-Konten": Planer-Konten
+  - strong: daniel
+  - generic: daniel
+  - button "Passwort ändern"
+  - button "Abmelden"
+- main "Terminplanung" [active]:
+  - heading "Ressourcenplanung" [level=1]
+  - paragraph: Entwurfsplanung für eine oder mehrere Lehrveranstaltungen
+  - generic: 2027 S
+  - region "Terminplanung – Kontext":
+    - paragraph: Terminplanung
+    - heading "Kalender" [level=2]
+    - generic: Semester
+    - combobox "Semester":
+      - option "2027 S" [selected]
+    - generic: Revision
+    - combobox "Revision" [disabled]:
+      - option "Keine Revision verfügbar" [selected]
+    - generic: Lehrveranstaltung
+    - combobox "Lehrveranstaltung":
+      - option "Algorithmen [0319BB2008] – 2027 S" [selected]
+      - option "Algorithmen und Datenstrukturen [0864VZ2002] – 2027 S"
+      - option "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S"
+      - option "Bachelorarbeit [0864VZ6003] – 2027 S"
+      - option "Begleitendes FuE Projekt [0320BB2020] – 2027 S"
+      - option "Betriebspraktische individuelle Vertiefung 2 [0835VD4003] – 2027 S"
+      - option "Betriebspraktische individuelle Vertiefung 4 [0835VD6005] – 2027 S"
+      - option "Betriebswirtschaftslehre [0864VZ2007] – 2027 S"
+      - option "Buchhaltung und Bilanzierung [0319BB2010] – 2027 S"
+      - option "Business English 2 [0864VZ4006] – 2027 S"
+      - option "Business English [0319BB4017] – 2027 S"
+      - option "Business IT-Applications [0864VZ2008] – 2027 S"
+      - option "Cloud Computing [0835VD6009] – 2027 S"
+      - option "Cloud Computing [0864VZ6001] – 2027 S"
+      - option "Communication & Presentation [0320BB2006] – 2027 S"
+      - option "Consulting Methoden [0320BB2022] – 2027 S"
+      - option "Data Cleaning und Data Analytics [0864VZ4009] – 2027 S"
+      - option "Data Mining [0864VZ6007] – 2027 S"
+      - option "Databases [0864VZ4004] – 2027 S"
+      - option "Datenbankdesign [0835VD2005] – 2027 S"
+      - option "Datenstrukturen und Algorithmen [0835VD2006] – 2027 S"
+      - option "Datenvisualisierung [0319BB6010] – 2027 S"
+      - option "Digitale Geschäftsmodelle 2 [0835VD4009] – 2027 S"
+      - option "Einführung in die Betriebswirtschaftslehre [0319BB2020] – 2027 S"
+      - option "Electronic und Mobile Business [0864VZ4001] – 2027 S"
+      - option "English 2 [0864VZ2006] – 2027 S"
+      - option "Erweiterte Themen der Softwareentwicklung [0319BB2017] – 2027 S"
+      - option "Erweiterte Themen der digitalen Geschäftsmodelle [0319BB4005] – 2027 S"
+      - option "Erweiterte Themen des Prozessmanagement [0319BB4020] – 2027 S"
+      - option "Erweiterte Web-Technologien [0319BB6004] – 2027 S"
+      - option "Fallstudien der Wirtschaftsinformatik [0319BB6005] – 2027 S"
+      - option "Fallstudien der Wirtschaftsinformatik [0835VD6001] – 2027 S"
+      - option "Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S"
+      - option "Grundlagen Maschinelles Lernen und Künstliche Intelligenz [0835VD4011] – 2027 S"
+      - option "Grundlagen Maschinelles Lernen und künstliche Intelligenz [0319BB6009] – 2027 S"
+      - option "Grundlagen Mobile Computing [0835VD6007] – 2027 S"
+      - option "Grundlagen der Netzwerktechnik [0319BB2005] – 2027 S"
+      - option "IT Operations [0319BB4016] – 2027 S"
+      - option "IT-Service Management [0835VD6002] – 2027 S"
+      - option "Identity Management [0319BB6001] – 2027 S"
+      - option "Informationssicherheitsmanagement [0320BB2012] – 2027 S"
+      - option "Informationssysteme [0319BB4013] – 2027 S"
+      - option "Informationssysteme [0835VD4002] – 2027 S"
+      - option "Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S"
+      - option "Internet Security [0864VZ4005] – 2027 S"
+      - option "Internet-Marketing [0319BB6008] – 2027 S"
+      - option "Konfigurationsmanagement [0835VD2007] – 2027 S"
+      - option "Konfliktmanagement [0319BB4012] – 2027 S"
+      - option "Laufendes Berufspraktikum im Unternehmen 2 [0319BB2022] – 2027 S"
+      - option "Laufendes Berufspraktikum im Unternehmen 4 [0319BB4018] – 2027 S"
+      - option "Laufendes Berufspraktikum im Unternehmen 6 [0319BB6012] – 2027 S"
+      - option "Managerial Communication und Leadership [0864VZ4007] – 2027 S"
+      - option "Marketing [0835VD4006] – 2027 S"
+      - option "Markup Languages [0319BB4014] – 2027 S"
+      - option "Markup Languages [0835VD4008] – 2027 S"
+      - option "Markupsprachen [0864VZ2003] – 2027 S"
+      - option "Mathematik 2 [0864VZ2004] – 2027 S"
+      - option "Mathematik für Informatik 2 [0835VD2001] – 2027 S"
+      - option "Mathematik in der Betriebswirtschaft [0319BB2019] – 2027 S"
+      - option "Objektorientierte Programmierung [0835VD2004] – 2027 S"
+      - option "Operation Research [0320BB2007] – 2027 S"
+      - option "Personalmanagement und Arbeitsrecht [0835VD2003] – 2027 S"
+      - option "Presentations [0835VD6011] – 2027 S"
+      - option "Professional English [0835VD2002] – 2027 S"
+      - option "Professional Meetings in English [0319BB6011] – 2027 S"
+      - option "Projekt zum Berufspraktikum [0319BB2021] – 2027 S"
+      - option "Prozessmanagement 2 [0835VD4005] – 2027 S"
+      - option "Präsentationstechniken [0319BB2023] – 2027 S"
+      - option "Relationale Datenbanken [0319BB2006] – 2027 S"
+      - option "Requirements Engineering [0319BB4021] – 2027 S"
+      - option "Requirements Engineering [0835VD4007] – 2027 S"
+      - option "Requirementsanalyse [0864VZ2001] – 2027 S"
+      - option "Rhetorik und Präsentation [0864VZ2010] – 2027 S"
+      - option "Scientific English [0835VD4004] – 2027 S"
+      - option "Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S"
+      - option "Servicebasierte Systeme [0835VD6006] – 2027 S"
+      - option "Sicherheit von Web Applikationen [0319BB6003] – 2027 S"
+      - option "Sicherheit von Webapplikationen [0835VD6008] – 2027 S"
+      - option "Software Design 2 [0864VZ2009] – 2027 S"
+      - option "Software Design [0319BB2018] – 2027 S"
+      - option "Softwareentwicklungsprojekt [0319BB4011] – 2027 S"
+      - option "Stochastik und Statistik [0864VZ2005] – 2027 S"
+      - option "Supply Chain Management [0835VD6003] – 2027 S"
+      - option "Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S"
+      - option "Teamtraining [0319BB2007] – 2027 S"
+      - option "Unternehmensgründung in der IT [0320BB2005] – 2027 S"
+      - option "Virtualisierung [0319BB6002] – 2027 S"
+      - option "Web Technologien & Usability [0835VD2008] – 2027 S"
+      - option "Wirtschafts- und IT-Recht [0319BB6007] – 2027 S"
+      - option "Wirtschafts- und IT-Recht [0835VD6004] – 2027 S"
+      - option "Wirtschaftsinformatik Projekt [0319BB6006] – 2027 S"
+      - option "Wissenschaftliches Arbeiten [0319BB4015] – 2027 S"
+      - option "Wissenschaftliches Arbeiten und Hypothesenbildung [0835VD4001] – 2027 S"
+      - option "Wissensmanagement und Semantic Web [0864VZ6009] – 2027 S"
+  - button "Planungseingaben ausblenden" [expanded]
+  - region "Planungseingaben":
+    - heading "Planungseingaben" [level=2]
+    - tablist "Planungseingaben":
+      - tab "Kursdetails" [selected]
+      - tab "Plan erzeugen"
+    - generic: Fokussierte Lehrveranstaltung
+    - combobox "Fokussierte Lehrveranstaltung":
+      - option "Algorithmen [0319BB2008] – 2027 S" [selected]
+      - option "Algorithmen und Datenstrukturen [0864VZ2002] – 2027 S"
+      - option "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S"
+      - option "Bachelorarbeit [0864VZ6003] – 2027 S"
+      - option "Begleitendes FuE Projekt [0320BB2020] – 2027 S"
+      - option "Betriebspraktische individuelle Vertiefung 2 [0835VD4003] – 2027 S"
+      - option "Betriebspraktische individuelle Vertiefung 4 [0835VD6005] – 2027 S"
+      - option "Betriebswirtschaftslehre [0864VZ2007] – 2027 S"
+      - option "Buchhaltung und Bilanzierung [0319BB2010] – 2027 S"
+      - option "Business English 2 [0864VZ4006] – 2027 S"
+      - option "Business English [0319BB4017] – 2027 S"
+      - option "Business IT-Applications [0864VZ2008] – 2027 S"
+      - option "Cloud Computing [0835VD6009] – 2027 S"
+      - option "Cloud Computing [0864VZ6001] – 2027 S"
+      - option "Communication & Presentation [0320BB2006] – 2027 S"
+      - option "Consulting Methoden [0320BB2022] – 2027 S"
+      - option "Data Cleaning und Data Analytics [0864VZ4009] – 2027 S"
+      - option "Data Mining [0864VZ6007] – 2027 S"
+      - option "Databases [0864VZ4004] – 2027 S"
+      - option "Datenbankdesign [0835VD2005] – 2027 S"
+      - option "Datenstrukturen und Algorithmen [0835VD2006] – 2027 S"
+      - option "Datenvisualisierung [0319BB6010] – 2027 S"
+      - option "Digitale Geschäftsmodelle 2 [0835VD4009] – 2027 S"
+      - option "Einführung in die Betriebswirtschaftslehre [0319BB2020] – 2027 S"
+      - option "Electronic und Mobile Business [0864VZ4001] – 2027 S"
+      - option "English 2 [0864VZ2006] – 2027 S"
+      - option "Erweiterte Themen der Softwareentwicklung [0319BB2017] – 2027 S"
+      - option "Erweiterte Themen der digitalen Geschäftsmodelle [0319BB4005] – 2027 S"
+      - option "Erweiterte Themen des Prozessmanagement [0319BB4020] – 2027 S"
+      - option "Erweiterte Web-Technologien [0319BB6004] – 2027 S"
+      - option "Fallstudien der Wirtschaftsinformatik [0319BB6005] – 2027 S"
+      - option "Fallstudien der Wirtschaftsinformatik [0835VD6001] – 2027 S"
+      - option "Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S"
+      - option "Grundlagen Maschinelles Lernen und Künstliche Intelligenz [0835VD4011] – 2027 S"
+      - option "Grundlagen Maschinelles Lernen und künstliche Intelligenz [0319BB6009] – 2027 S"
+      - option "Grundlagen Mobile Computing [0835VD6007] – 2027 S"
+      - option "Grundlagen der Netzwerktechnik [0319BB2005] – 2027 S"
+      - option "IT Operations [0319BB4016] – 2027 S"
+      - option "IT-Service Management [0835VD6002] – 2027 S"
+      - option "Identity Management [0319BB6001] – 2027 S"
+      - option "Informationssicherheitsmanagement [0320BB2012] – 2027 S"
+      - option "Informationssysteme [0319BB4013] – 2027 S"
+      - option "Informationssysteme [0835VD4002] – 2027 S"
+      - option "Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S"
+      - option "Internet Security [0864VZ4005] – 2027 S"
+      - option "Internet-Marketing [0319BB6008] – 2027 S"
+      - option "Konfigurationsmanagement [0835VD2007] – 2027 S"
+      - option "Konfliktmanagement [0319BB4012] – 2027 S"
+      - option "Laufendes Berufspraktikum im Unternehmen 2 [0319BB2022] – 2027 S"
+      - option "Laufendes Berufspraktikum im Unternehmen 4 [0319BB4018] – 2027 S"
+      - option "Laufendes Berufspraktikum im Unternehmen 6 [0319BB6012] – 2027 S"
+      - option "Managerial Communication und Leadership [0864VZ4007] – 2027 S"
+      - option "Marketing [0835VD4006] – 2027 S"
+      - option "Markup Languages [0319BB4014] – 2027 S"
+      - option "Markup Languages [0835VD4008] – 2027 S"
+      - option "Markupsprachen [0864VZ2003] – 2027 S"
+      - option "Mathematik 2 [0864VZ2004] – 2027 S"
+      - option "Mathematik für Informatik 2 [0835VD2001] – 2027 S"
+      - option "Mathematik in der Betriebswirtschaft [0319BB2019] – 2027 S"
+      - option "Objektorientierte Programmierung [0835VD2004] – 2027 S"
+      - option "Operation Research [0320BB2007] – 2027 S"
+      - option "Personalmanagement und Arbeitsrecht [0835VD2003] – 2027 S"
+      - option "Presentations [0835VD6011] – 2027 S"
+      - option "Professional English [0835VD2002] – 2027 S"
+      - option "Professional Meetings in English [0319BB6011] – 2027 S"
+      - option "Projekt zum Berufspraktikum [0319BB2021] – 2027 S"
+      - option "Prozessmanagement 2 [0835VD4005] – 2027 S"
+      - option "Präsentationstechniken [0319BB2023] – 2027 S"
+      - option "Relationale Datenbanken [0319BB2006] – 2027 S"
+      - option "Requirements Engineering [0319BB4021] – 2027 S"
+      - option "Requirements Engineering [0835VD4007] – 2027 S"
+      - option "Requirementsanalyse [0864VZ2001] – 2027 S"
+      - option "Rhetorik und Präsentation [0864VZ2010] – 2027 S"
+      - option "Scientific English [0835VD4004] – 2027 S"
+      - option "Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S"
+      - option "Servicebasierte Systeme [0835VD6006] – 2027 S"
+      - option "Sicherheit von Web Applikationen [0319BB6003] – 2027 S"
+      - option "Sicherheit von Webapplikationen [0835VD6008] – 2027 S"
+      - option "Software Design 2 [0864VZ2009] – 2027 S"
+      - option "Software Design [0319BB2018] – 2027 S"
+      - option "Softwareentwicklungsprojekt [0319BB4011] – 2027 S"
+      - option "Stochastik und Statistik [0864VZ2005] – 2027 S"
+      - option "Supply Chain Management [0835VD6003] – 2027 S"
+      - option "Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S"
+      - option "Teamtraining [0319BB2007] – 2027 S"
+      - option "Unternehmensgründung in der IT [0320BB2005] – 2027 S"
+      - option "Virtualisierung [0319BB6002] – 2027 S"
+      - option "Web Technologien & Usability [0835VD2008] – 2027 S"
+      - option "Wirtschafts- und IT-Recht [0319BB6007] – 2027 S"
+      - option "Wirtschafts- und IT-Recht [0835VD6004] – 2027 S"
+      - option "Wirtschaftsinformatik Projekt [0319BB6006] – 2027 S"
+      - option "Wissenschaftliches Arbeiten [0319BB4015] – 2027 S"
+      - option "Wissenschaftliches Arbeiten und Hypothesenbildung [0835VD4001] – 2027 S"
+      - option "Wissensmanagement und Semantic Web [0864VZ6009] – 2027 S"
+    - generic: Semester
+    - combobox "Semester":
+      - option "2027 S" [selected]
+    - tabpanel "Kursdetails":
+      - heading "Lehrveranstaltung bearbeiten" [level=3]
+      - term: Lehreinheiten
+      - definition: "34"
+      - term: Geplante Lehreinheiten
+      - definition: "0"
+      - term: Offene Lehreinheiten
+      - definition: "34"
+      - term: Bevorzugte Termingröße
+      - definition: 2-4 Lehreinheiten
+      - term: Kohorte
+      - definition: Wirtschaftsinformatik - 2.Semester
+      - term: Lehrende Person
+      - definition: Grobelscheg, Philipp
+      - term: Raum
+      - definition: CZ107 – Campus Zusertal
+      - term: Studienart
+      - definition: Berufsbegleitend
+      - term: Semesterzeitraum
+      - definition: 19.02.2027–17.08.2027
+      - region "Prüfungsanforderung":
+        - heading "Prüfungsanforderung" [level=3]
+        - checkbox "Für diese Lehrveranstaltung ist eine Prüfung erforderlich"
+        - text: Für diese Lehrveranstaltung ist eine Prüfung erforderlich
+        - button "Änderungen verwerfen"
+        - button "Prüfungsanforderung speichern"
+      - form "Entwurfstermin hinzufügen":
+        - heading "Entwurfstermin hinzufügen" [level=3]
+        - generic: Datum
+        - 'textbox "Datum Format: TT.MM.JJJJ"':
+          - /placeholder: TT.MM.JJJJ
+          - text: 19.02.2027
+        - generic: "Format: TT.MM.JJJJ"
+        - generic: Beginn
+        - textbox "Beginn": 08:00
+        - generic: Lehreinheiten
+        - spinbutton "Lehreinheiten": "2"
+        - generic: Ende
+        - textbox "Ende": 09:40
+        - generic: Lehrende Person
+        - combobox "Lehrende Person":
+          - option "Amann-Langeder, Michael"
+          - option "Ambrosch, Clemens"
+          - option "Beer, Patrick"
+          - option "Bećirević, Haris"
+          - option "Bouwman, Marinus"
+          - option "Bower, Hendrik"
+          - option "Briscoe, Henry"
+          - option "Derado, Ivo"
+          - option "Eberhard, Lukas"
+          - option "Fuchs, Bernhard"
+          - option "Gerzic, Harris"
+          - option "Glinik, Martin"
+          - option "Grabner, Johann"
+          - option "Grasser, Michael Georg"
+          - option "Grobelscheg, Lisa"
+          - option "Grobelscheg, Philipp" [selected]
+          - option "Grünwald, Stefan"
+          - option "Gschweitl, Roswitha"
+          - option "Hatzl, Johannes"
+          - option "Hatzl, Stefanie"
+          - option "Hochfellner, Walter"
+          - option "Hofer, Christian"
+          - option "Hollosi, Arno"
+          - option "Horneck, Karin"
+          - option "Höber, Angelika"
+          - option "Hörmann, Monika"
+          - option "Innerhuber, Nikolaus"
+          - option "Ivković, Edin"
+          - option "Jesenko, Berndt"
+          - option "Jiménez, Simon"
+          - option "Joyce, Elizabeth"
+          - option "Kapfer, Viktoria"
+          - option "Kienzl, Stefan"
+          - option "Koch, Volker"
+          - option "Kochauf, Stephan"
+          - option "Koitz-Hristov, Roxane"
+          - option "Krassnigg, Helmut"
+          - option "Kraxberger, Stefan"
+          - option "Kreuzer, Ernst"
+          - option "Kröll, Mark"
+          - option "Leitner, Sascha"
+          - option "Lindbichler, Georg"
+          - option "Liu, Xiaoshan"
+          - option "Meglitsch, Mario"
+          - option "Merth, Harald"
+          - option "Moser, Mario"
+          - option "Neudorfer, Reinhard"
+          - option "Neumann, Dominic"
+          - option "Obermayr, Florian"
+          - option "Pangerl, Christoph"
+          - option "Petelinc, Markus"
+          - option "Phillips, Michael"
+          - option "Prettenthaler, Elisabeth"
+          - option "Puchleitner, Thomas"
+          - option "Pöcherstorfer, Winfried"
+          - option "Randus, Christian"
+          - option "Rath, Walter"
+          - option "Resanovic, Daniel"
+          - option "Schirgi, Eva"
+          - option "Schmid, Christian"
+          - option "Schmidt, Christopher"
+          - option "Schmuck, Florian"
+          - option "Semlitsch, Erhard"
+          - option "Softic, Safet"
+          - option "Softic, Selver"
+          - option "Staud, Sophie Erika"
+          - option "Stettinger, Martin"
+          - option "Streibl, Markus"
+          - option "Wipfler, Yevheniia"
+          - option "Zeiringer, Johannes"
+          - option "Zettel, Daniel"
+          - option "Zweidick, Mario"
+          - option "Zwetti, Günther"
+        - generic: Kohorte
+        - combobox "Kohorte":
+          - option "Business Analytics & AI - 2.Semester (30)"
+          - option "Business Analytics & AI - 4.Semester (30)"
+          - option "Business Analytics & AI - 6.Semester (30)"
+          - option "Business Software Development – 2. Semester (25)"
+          - option "Business Software Development – 4. Semester (25)"
+          - option "Business Software Development – 6. Semester (25)"
+          - option "MA IT & Wirtschaftsinformatik - 2.Semester (65)"
+          - option "Wirtschaftsinformatik - 2.Semester (40)" [selected]
+          - option "Wirtschaftsinformatik - 4.Semester (40)"
+          - option "Wirtschaftsinformatik - 6.Semester (40)"
+        - generic: Raum
+        - combobox "Raum":
+          - option "CC202 – Campus Classic (56 Plätze)"
+          - option "CC203 – Campus Classic (63 Plätze)"
+          - option "CC212 – Campus Classic (56 Plätze)"
+          - option "CC213 – Campus Classic (56 Plätze)"
+          - option "CC214 – Campus Classic (56 Plätze)"
+          - option "CC215 – Campus Classic (63 Plätze)"
+          - option "CC224 – Campus Classic (120 Plätze)"
+          - option "CE201 – Center of Excellence (64 Plätze)"
+          - option "CE202 – Center of Excellence (64 Plätze)"
+          - option "CE302 – Center of Excellence (48 Plätze)"
+          - option "CZ001 – Campus Zusertal (53 Plätze)"
+          - option "CZ002 – Campus Zusertal (48 Plätze)"
+          - option "CZ003 – Campus Zusertal (48 Plätze)"
+          - option "CZ004 – Campus Zusertal (45 Plätze)"
+          - option "CZ100 – Campus Zusertal (51 Plätze)"
+          - option "CZ102 – Campus Zusertal (41 Plätze)"
+          - option "CZ107 – Campus Zusertal (45 Plätze)" [selected]
+          - option "CZ108 – Campus Zusertal (45 Plätze)"
+          - option "CZ109 – Campus Zusertal (53 Plätze)"
+          - option "CZ110 – Campus Zusertal (63 Plätze)"
+          - option "CZ138 – Campus Zusertal (49 Plätze)"
+          - option "RC403 – Campus Rosenhof - Haus C (72 Plätze)"
+          - option "RC404 – Campus Rosenhof - Haus C (60 Plätze)"
+          - option "RC409 – Campus Rosenhof - Haus C (78 Plätze)"
+          - option "WF183 – WIFI Turm (40 Plätze)"
+          - option "WF185 – WIFI Turm (48 Plätze)"
+          - option "WF256 – WIFI Turm (40 Plätze)"
+          - option "WF379 – WIFI Turm (40 Plätze)"
+          - option "WF478 – WIFI Turm (48 Plätze)"
+          - option "WF479 – WIFI Turm (40 Plätze)"
+          - option "WF556 – WIFI Turm (40 Plätze)"
+          - option "WF558 – WIFI Turm (40 Plätze)"
+          - option "WF559 – WIFI Turm (64 Plätze)"
+          - option "WF577 – WIFI Turm (64 Plätze)"
+          - option "WF579 – WIFI Turm (40 Plätze)"
+          - option "WF677 – WIFI Turm (40 Plätze)"
+          - option "WF679 – WIFI Turm (48 Plätze)"
+          - option "WK001 – Wirtschaftskammer (396 Plätze)"
+          - option "WW923 – WIFI Werkstätten (40 Plätze)"
+          - option "WW924 – WIFI Werkstätten (40 Plätze)"
+          - option "WW954 – WIFI Werkstätten (40 Plätze)"
+          - option "WW969 – WIFI Werkstätten (40 Plätze)"
+        - paragraph: Starten Sie vor dem Hinzufügen von Terminen einen Entwurf.
+        - button "Entwurfstermin hinzufügen" [disabled]
+        - paragraph: Vorgeschlagene Endzeit 09:40.
+      - button "Lehrveranstaltung-Entwurf leeren" [disabled]
+      - region "Eingaben für den nächsten Entwurf":
+        - paragraph: Erzeugungsregeln
+        - heading "Eingaben für den nächsten Entwurf" [level=3]
+        - button "Benutzerdefinierte Regeln zurücksetzen" [disabled]
+        - generic: Beginn
+        - 'textbox "Beginn Format: TT.MM.JJJJ"':
+          - /placeholder: TT.MM.JJJJ
+          - text: 19.02.2027
+        - generic: "Format: TT.MM.JJJJ"
+        - generic: Ende
+        - 'textbox "Ende Format: TT.MM.JJJJ"':
+          - /placeholder: TT.MM.JJJJ
+          - text: 17.08.2027
+        - generic: "Format: TT.MM.JJJJ"
+        - paragraph: "Studienart: Berufsbegleitend"
+        - generic "Erlaubte wöchentliche Lehrzeitfenster":
+          - generic: Freitag
+          - generic: 16:00 - 22:00
+          - generic: Samstag
+          - generic: 08:15 - 15:00
+        - button "Datumsgrenzen speichern" [disabled]
+  - region "Kalender-Arbeitsbereich":
+    - region "Semesterplanung":
+      - paragraph: 2027 S
+      - heading "Semesterplanung" [level=2]
+      - paragraph: Es gibt noch keine Planungsrevision. Starten Sie einen Entwurf, um Lehr- und Prüfungstermine zu planen.
+      - button "Entwurf starten"
+    - status
+  - region "Kalender-Rückmeldungen"
+  - region "Historischer Planungsstand"

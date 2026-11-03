@@ -1,0 +1,53 @@
+- complementary:
+  - generic: RP
+  - generic: Ressourcenplanung
+  - button "Navigation lösen":
+    - generic: Navigation lösen
+  - navigation "Hauptnavigation":
+    - button "Planung" [expanded]:
+      - generic: Planung
+      - generic: −
+    - button "Kalender": Kalender
+    - button "Versionen": Versionen
+    - button "Prüfungen": Prüfungen
+    - button "Abstimmung mit Lehrenden": Abstimmung mit Lehrenden
+    - button "Stammdaten" [expanded]:
+      - generic: Stammdaten
+      - generic: −
+    - button "Semester": Semester
+    - button "Feiertage": Feiertage
+    - button "Kohorten": Kohorten
+    - button "Lehrveranstaltungen": Lehrveranstaltungen
+    - button "Studienformen": Studienformen
+    - button "Zeitfenster": Zeitfenster
+    - button "Lehrende": Lehrende
+    - button "Räume": Räume
+    - button "Planer-Konten": Planer-Konten
+  - strong: daniel
+  - generic: daniel
+  - button "Passwort ändern"
+  - button "Abmelden"
+- 'main "Akademische Stammdaten: study-types" [active]':
+  - paragraph: Planungsverwaltung
+  - heading "Akademische Stammdaten" [level=1]
+  - text: Anzeigen
+  - combobox "Anzeigen":
+    - option "Alle Datensätze" [selected]
+    - option "Aktiv"
+    - option "Inaktiv"
+  - heading "Studienformen" [level=2]
+  - list:
+    - generic: Berufsbegleitend
+    - generic: Aktiv
+    - button "Bearbeiten"
+    - button "Archivieren"
+    - button "Löschen"
+    - generic: Vollzeit
+    - generic: Aktiv
+    - button "Bearbeiten"
+    - button "Archivieren"
+    - button "Löschen"
+  - 'heading "Erstellen: Studienform" [level=2]'
+  - generic: Name
+  - textbox "Name"
+  - button "Erstellen"

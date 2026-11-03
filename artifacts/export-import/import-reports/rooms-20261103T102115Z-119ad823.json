@@ -1,0 +1,1497 @@
+{
+  "source": "C:\\Codex\\planner-resource\\artifacts\\export-import\\rooms.json",
+  "sourceSha256": "7e7a9b4cd91ab2554b543d4157da0e92df556120405046fb5a36da9e62587fcf",
+  "createdAt": "2026-11-03T10:21:15.373595+00:00",
+  "baseUrl": null,
+  "apply": false,
+  "validUniqueRooms": 121,
+  "identicalDuplicatesRemoved": 2,
+  "skipped": [
+    {
+      "referenceCode": "CC201",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CC219",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR001",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR002",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR006",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR007",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR008",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR102",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR103",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR104",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR106",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR107",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR108",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR109",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR121",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR122",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR202",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR203",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR204",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR205",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR206",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR207",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR210",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR221",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR222",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR232",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR233",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR235A",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR235B",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR235C",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR236",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR239",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR302",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR302a",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR304",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR305",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR306",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR307",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR310",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR321",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR322",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR333",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR334A",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR334B",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR335",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR337",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR338",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR432",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR434",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CR435",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ010",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ011",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ015",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ015a",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ016",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ017",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ018",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ033",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ034",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ101",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ104",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ105",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ114",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ115",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ116",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ128",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ130",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ131",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ132a",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ135",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ137",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ201",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ201a",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ202",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ202a",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ203",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ205",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ206",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ207",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ208",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ211",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ212",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ226",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ229",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ230",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ235",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ236",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ237",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ238",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ239",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ240",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ327",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ328",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ329",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ331",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ332",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ333",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ334",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ335",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ337",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "CZ339",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "WW917",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    },
+    {
+      "referenceCode": "WW979",
+      "status": "skipped",
+      "reason": "missing_or_invalid_capacity"
+    }
+  ],
+  "plan": [
+    {
+      "room": {
+        "name": "CC202 – Campus Classic",
+        "referenceCode": "CC202",
+        "capacity": 56
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC203 – Campus Classic",
+        "referenceCode": "CC203",
+        "capacity": 63
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC204 – Campus Classic",
+        "referenceCode": "CC204",
+        "capacity": 36
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC205 – Campus Classic",
+        "referenceCode": "CC205",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC206 – Campus Classic",
+        "referenceCode": "CC206",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC207 – Campus Classic",
+        "referenceCode": "CC207",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC208 – Campus Classic",
+        "referenceCode": "CC208",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC209 – Campus Classic",
+        "referenceCode": "CC209",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC210 – Campus Classic",
+        "referenceCode": "CC210",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC211 – Campus Classic",
+        "referenceCode": "CC211",
+        "capacity": 32
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC212 – Campus Classic",
+        "referenceCode": "CC212",
+        "capacity": 56
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC213 – Campus Classic",
+        "referenceCode": "CC213",
+        "capacity": 56
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC214 – Campus Classic",
+        "referenceCode": "CC214",
+        "capacity": 56
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC215 – Campus Classic",
+        "referenceCode": "CC215",
+        "capacity": 63
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CC224 – Campus Classic",
+        "referenceCode": "CC224",
+        "capacity": 120
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE201 – Center of Excellence",
+        "referenceCode": "CE201",
+        "capacity": 64
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE202 – Center of Excellence",
+        "referenceCode": "CE202",
+        "capacity": 64
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE203 – Center of Excellence",
+        "referenceCode": "CE203",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE204 – Center of Excellence",
+        "referenceCode": "CE204",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE301 – Center of Excellence",
+        "referenceCode": "CE301",
+        "capacity": 22
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE302 – Center of Excellence",
+        "referenceCode": "CE302",
+        "capacity": 48
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE303 – Center of Excellence",
+        "referenceCode": "CE303",
+        "capacity": 30
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE304 – Center of Excellence",
+        "referenceCode": "CE304",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE305 – Center of Excellence",
+        "referenceCode": "CE305",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE306 – Center of Excellence",
+        "referenceCode": "CE306",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE404 – Center of Excellence",
+        "referenceCode": "CE404",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE405 – Center of Excellence",
+        "referenceCode": "CE405",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CE408 – Center of Excellence",
+        "referenceCode": "CE408",
+        "capacity": 16
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CR237 – Campus Rosenhof - Haus A & B",
+        "referenceCode": "CR237",
+        "capacity": 9
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CR238 – Campus Rosenhof - Haus A & B",
+        "referenceCode": "CR238",
+        "capacity": 7
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CR303 – Campus Rosenhof - Haus A & B",
+        "referenceCode": "CR303",
+        "capacity": 6
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CR309 – Campus Rosenhof - Haus A & B",
+        "referenceCode": "CR309",
+        "capacity": 10
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CR332 – Campus Rosenhof - Haus A & B",
+        "referenceCode": "CR332",
+        "capacity": 8
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ001 – Campus Zusertal",
+        "referenceCode": "CZ001",
+        "capacity": 53
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ002 – Campus Zusertal",
+        "referenceCode": "CZ002",
+        "capacity": 48
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ003 – Campus Zusertal",
+        "referenceCode": "CZ003",
+        "capacity": 48
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ004 – Campus Zusertal",
+        "referenceCode": "CZ004",
+        "capacity": 45
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ030 – Campus Zusertal",
+        "referenceCode": "CZ030",
+        "capacity": 16
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ100 – Campus Zusertal",
+        "referenceCode": "CZ100",
+        "capacity": 51
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ102 – Campus Zusertal",
+        "referenceCode": "CZ102",
+        "capacity": 41
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ103 – Campus Zusertal",
+        "referenceCode": "CZ103",
+        "capacity": 39
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ106 – Campus Zusertal",
+        "referenceCode": "CZ106",
+        "capacity": 36
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ107 – Campus Zusertal",
+        "referenceCode": "CZ107",
+        "capacity": 45
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ108 – Campus Zusertal",
+        "referenceCode": "CZ108",
+        "capacity": 45
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ109 – Campus Zusertal",
+        "referenceCode": "CZ109",
+        "capacity": 53
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ110 – Campus Zusertal",
+        "referenceCode": "CZ110",
+        "capacity": 63
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ129 – Campus Zusertal",
+        "referenceCode": "CZ129",
+        "capacity": 30
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ134 – Campus Zusertal",
+        "referenceCode": "CZ134",
+        "capacity": 2
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ138 – Campus Zusertal",
+        "referenceCode": "CZ138",
+        "capacity": 49
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ204 – Campus Zusertal",
+        "referenceCode": "CZ204",
+        "capacity": 13
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ228 – Campus Zusertal",
+        "referenceCode": "CZ228",
+        "capacity": 2
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ233 – Campus Zusertal",
+        "referenceCode": "CZ233",
+        "capacity": 35
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "CZ330 – Campus Zusertal",
+        "referenceCode": "CZ330",
+        "capacity": 16
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "RC402 – Campus Rosenhof - Haus C",
+        "referenceCode": "RC402",
+        "capacity": 28
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "RC403 – Campus Rosenhof - Haus C",
+        "referenceCode": "RC403",
+        "capacity": 72
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "RC404 – Campus Rosenhof - Haus C",
+        "referenceCode": "RC404",
+        "capacity": 60
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "RC409 – Campus Rosenhof - Haus C",
+        "referenceCode": "RC409",
+        "capacity": 78
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "RC410 – Campus Rosenhof - Haus C",
+        "referenceCode": "RC410",
+        "capacity": 6
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF177 – WIFI Turm",
+        "referenceCode": "WF177",
+        "capacity": 8
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF178 – WIFI Turm",
+        "referenceCode": "WF178",
+        "capacity": 8
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF179 – WIFI Turm",
+        "referenceCode": "WF179",
+        "capacity": 8
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF180 – WIFI Turm",
+        "referenceCode": "WF180",
+        "capacity": 8
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF181 – WIFI Turm",
+        "referenceCode": "WF181",
+        "capacity": 8
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF183 – WIFI Turm",
+        "referenceCode": "WF183",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF185 – WIFI Turm",
+        "referenceCode": "WF185",
+        "capacity": 48
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF254 – WIFI Turm",
+        "referenceCode": "WF254",
+        "capacity": 18
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF256 – WIFI Turm",
+        "referenceCode": "WF256",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF260 – WIFI Turm",
+        "referenceCode": "WF260",
+        "capacity": 12
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF261 – WIFI Turm",
+        "referenceCode": "WF261",
+        "capacity": 12
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF262 – WIFI Turm",
+        "referenceCode": "WF262",
+        "capacity": 12
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF276 – WIFI Turm",
+        "referenceCode": "WF276",
+        "capacity": 12
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF277 – WIFI Turm",
+        "referenceCode": "WF277",
+        "capacity": 12
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF278 – WIFI Turm",
+        "referenceCode": "WF278",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF279 – WIFI Turm",
+        "referenceCode": "WF279",
+        "capacity": 12
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF280 – WIFI Turm",
+        "referenceCode": "WF280",
+        "capacity": 10
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF281 – WIFI Turm",
+        "referenceCode": "WF281",
+        "capacity": 12
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF376 – WIFI Turm",
+        "referenceCode": "WF376",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF377 – WIFI Turm",
+        "referenceCode": "WF377",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF378 – WIFI Turm",
+        "referenceCode": "WF378",
+        "capacity": 36
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF379 – WIFI Turm",
+        "referenceCode": "WF379",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF380 – WIFI Turm",
+        "referenceCode": "WF380",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF381 – WIFI Turm",
+        "referenceCode": "WF381",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF476 – WIFI Turm",
+        "referenceCode": "WF476",
+        "capacity": 18
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF477 – WIFI Turm",
+        "referenceCode": "WF477",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF478 – WIFI Turm",
+        "referenceCode": "WF478",
+        "capacity": 48
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF479 – WIFI Turm",
+        "referenceCode": "WF479",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF480 – WIFI Turm",
+        "referenceCode": "WF480",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF481 – WIFI Turm",
+        "referenceCode": "WF481",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF554 – WIFI Turm",
+        "referenceCode": "WF554",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF555 – WIFI Turm",
+        "referenceCode": "WF555",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF556 – WIFI Turm",
+        "referenceCode": "WF556",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF558 – WIFI Turm",
+        "referenceCode": "WF558",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF559 – WIFI Turm",
+        "referenceCode": "WF559",
+        "capacity": 64
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF560 – WIFI Turm",
+        "referenceCode": "WF560",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF576 – WIFI Turm",
+        "referenceCode": "WF576",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF577 – WIFI Turm",
+        "referenceCode": "WF577",
+        "capacity": 64
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF578 – WIFI Turm",
+        "referenceCode": "WF578",
+        "capacity": 34
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF579 – WIFI Turm",
+        "referenceCode": "WF579",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF580 – WIFI Turm",
+        "referenceCode": "WF580",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF581 – WIFI Turm",
+        "referenceCode": "WF581",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF676 – WIFI Turm",
+        "referenceCode": "WF676",
+        "capacity": 32
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF677 – WIFI Turm",
+        "referenceCode": "WF677",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF678 – WIFI Turm",
+        "referenceCode": "WF678",
+        "capacity": 18
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF679 – WIFI Turm",
+        "referenceCode": "WF679",
+        "capacity": 48
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WF680 – WIFI Turm",
+        "referenceCode": "WF680",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WK001 – Wirtschaftskammer",
+        "referenceCode": "WK001",
+        "capacity": 396
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW912 – WIFI Werkstätten",
+        "referenceCode": "WW912",
+        "capacity": 25
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW913 – WIFI Werkstätten",
+        "referenceCode": "WW913",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW914 – WIFI Werkstätten",
+        "referenceCode": "WW914",
+        "capacity": 27
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW915 – WIFI Werkstätten",
+        "referenceCode": "WW915",
+        "capacity": 24
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW916 – WIFI Werkstätten",
+        "referenceCode": "WW916",
+        "capacity": 18
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW923 – WIFI Werkstätten",
+        "referenceCode": "WW923",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW924 – WIFI Werkstätten",
+        "referenceCode": "WW924",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW954 – WIFI Werkstätten",
+        "referenceCode": "WW954",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW957 – WIFI Werkstätten",
+        "referenceCode": "WW957",
+        "capacity": 21
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW969 – WIFI Werkstätten",
+        "referenceCode": "WW969",
+        "capacity": 40
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW971 – WIFI Werkstätten",
+        "referenceCode": "WW971",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW972 – WIFI Werkstätten",
+        "referenceCode": "WW972",
+        "capacity": 20
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW973 – WIFI Werkstätten",
+        "referenceCode": "WW973",
+        "capacity": 10
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW974 – WIFI Werkstätten",
+        "referenceCode": "WW974",
+        "capacity": 16
+      },
+      "status": "candidate"
+    },
+    {
+      "room": {
+        "name": "WW976 – WIFI Werkstätten",
+        "referenceCode": "WW976",
+        "capacity": 20
+      },
+      "status": "candidate"
+    }
+  ],
+  "status": "preview"
+}

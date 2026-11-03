@@ -1,0 +1,595 @@
+{
+  "kind": "lecturers",
+  "source": "C:\\Codex\\planner-resource\\artifacts\\export-import\\lecturers.json",
+  "sourceSha256": "c33c953d2b3ce1cbc25468461b1ddace20440b9845b3dd7c852b3959a30ab6dd",
+  "mappingSha256": null,
+  "baseUrl": null,
+  "apply": false,
+  "plan": [
+    {
+      "sourceKey": "campus02:34FFA8D4A1C8CAFB",
+      "payload": {
+        "name": "Amann-Langeder, Michael",
+        "referenceCode": "campus02:34FFA8D4A1C8CAFB"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:E2F084FFC84CD939",
+      "payload": {
+        "name": "Ambrosch, Clemens",
+        "referenceCode": "campus02:E2F084FFC84CD939"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:8D880F8B1D500B35",
+      "payload": {
+        "name": "Beer, Patrick",
+        "referenceCode": "campus02:8D880F8B1D500B35"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:6D628EB4D3B90E98",
+      "payload": {
+        "name": "Bećirević, Haris",
+        "referenceCode": "campus02:6D628EB4D3B90E98"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:C1C5A47BFD7EE532",
+      "payload": {
+        "name": "Bouwman, Marinus",
+        "referenceCode": "campus02:C1C5A47BFD7EE532"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:AF3152B0E24DB28F",
+      "payload": {
+        "name": "Bower, Hendrik",
+        "referenceCode": "campus02:AF3152B0E24DB28F"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:01F1C806C9A8937A",
+      "payload": {
+        "name": "Briscoe, Henry",
+        "referenceCode": "campus02:01F1C806C9A8937A"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:C730AEC447334CF5",
+      "payload": {
+        "name": "Derado, Ivo",
+        "referenceCode": "campus02:C730AEC447334CF5"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:B5555E345ED28DBB",
+      "payload": {
+        "name": "Eberhard, Lukas",
+        "referenceCode": "campus02:B5555E345ED28DBB"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:010FF70CDC2146F1",
+      "payload": {
+        "name": "Fuchs, Bernhard",
+        "referenceCode": "campus02:010FF70CDC2146F1"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:EB250C321C4BAB92",
+      "payload": {
+        "name": "Gerzic, Harris",
+        "referenceCode": "campus02:EB250C321C4BAB92"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:75055F43A64C3544",
+      "payload": {
+        "name": "Glinik, Martin",
+        "referenceCode": "campus02:75055F43A64C3544"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:C72B956A216E7641",
+      "payload": {
+        "name": "Grabner, Johann",
+        "referenceCode": "campus02:C72B956A216E7641"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:683936EF0C73C08F",
+      "payload": {
+        "name": "Grasser, Michael Georg",
+        "referenceCode": "campus02:683936EF0C73C08F"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:7B535F25447DE522",
+      "payload": {
+        "name": "Grobelscheg, Lisa",
+        "referenceCode": "campus02:7B535F25447DE522"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:3937638AF47C6DBE",
+      "payload": {
+        "name": "Grobelscheg, Philipp",
+        "referenceCode": "campus02:3937638AF47C6DBE"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:066E22DC2C0CA454",
+      "payload": {
+        "name": "Grünwald, Stefan",
+        "referenceCode": "campus02:066E22DC2C0CA454"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:B940C0935F222834",
+      "payload": {
+        "name": "Gschweitl, Roswitha",
+        "referenceCode": "campus02:B940C0935F222834"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:4B9FD052DF069DEC",
+      "payload": {
+        "name": "Hatzl, Johannes",
+        "referenceCode": "campus02:4B9FD052DF069DEC"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:AD9C25620F917CAF",
+      "payload": {
+        "name": "Hatzl, Stefanie",
+        "referenceCode": "campus02:AD9C25620F917CAF"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:6D8B808AB8A6FE7C",
+      "payload": {
+        "name": "Hochfellner, Walter",
+        "referenceCode": "campus02:6D8B808AB8A6FE7C"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:99108567F747C915",
+      "payload": {
+        "name": "Hofer, Christian",
+        "referenceCode": "campus02:99108567F747C915"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:08FF124FA70CBBA2",
+      "payload": {
+        "name": "Hollosi, Arno",
+        "referenceCode": "campus02:08FF124FA70CBBA2"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:A7FF75B4D5ACE6B7",
+      "payload": {
+        "name": "Horneck, Karin",
+        "referenceCode": "campus02:A7FF75B4D5ACE6B7"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:DA83715465530449",
+      "payload": {
+        "name": "Höber, Angelika",
+        "referenceCode": "campus02:DA83715465530449"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:C2F31424322120EF",
+      "payload": {
+        "name": "Hörmann, Monika",
+        "referenceCode": "campus02:C2F31424322120EF"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:9341DD2AEF1EF140",
+      "payload": {
+        "name": "Innerhuber, Nikolaus",
+        "referenceCode": "campus02:9341DD2AEF1EF140"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:E5EDC4B26217CF9D",
+      "payload": {
+        "name": "Ivković, Edin",
+        "referenceCode": "campus02:E5EDC4B26217CF9D"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:87386A33AA11E3F3",
+      "payload": {
+        "name": "Jesenko, Berndt",
+        "referenceCode": "campus02:87386A33AA11E3F3"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:9EA890015EAF213F",
+      "payload": {
+        "name": "Jiménez, Simon",
+        "referenceCode": "campus02:9EA890015EAF213F"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:6E73DB80D1617246",
+      "payload": {
+        "name": "Joyce, Elizabeth",
+        "referenceCode": "campus02:6E73DB80D1617246"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:D1A879C956E9D2D6",
+      "payload": {
+        "name": "Kapfer, Viktoria",
+        "referenceCode": "campus02:D1A879C956E9D2D6"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:4DFDE9782DB5540E",
+      "payload": {
+        "name": "Kienzl, Stefan",
+        "referenceCode": "campus02:4DFDE9782DB5540E"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:A7F8F1C446D7DD60",
+      "payload": {
+        "name": "Koch, Volker",
+        "referenceCode": "campus02:A7F8F1C446D7DD60"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:296474ACC3749EC1",
+      "payload": {
+        "name": "Kochauf, Stephan",
+        "referenceCode": "campus02:296474ACC3749EC1"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:16DB2721A8B92422",
+      "payload": {
+        "name": "Koitz-Hristov, Roxane",
+        "referenceCode": "campus02:16DB2721A8B92422"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:3FE55B7E1464E266",
+      "payload": {
+        "name": "Krassnigg, Helmut",
+        "referenceCode": "campus02:3FE55B7E1464E266"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:8072A685B46B8684",
+      "payload": {
+        "name": "Kraxberger, Stefan",
+        "referenceCode": "campus02:8072A685B46B8684"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:0D6019B9267012CC",
+      "payload": {
+        "name": "Kreuzer, Ernst",
+        "referenceCode": "campus02:0D6019B9267012CC"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:FEA1A0B4590D5D33",
+      "payload": {
+        "name": "Kröll, Mark",
+        "referenceCode": "campus02:FEA1A0B4590D5D33"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:34EE877A518FC99F",
+      "payload": {
+        "name": "Leitner, Sascha",
+        "referenceCode": "campus02:34EE877A518FC99F"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:192F5B334A7D23E3",
+      "payload": {
+        "name": "Lindbichler, Georg",
+        "referenceCode": "campus02:192F5B334A7D23E3"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:9CEE0DC1020F7AC3",
+      "payload": {
+        "name": "Liu, Xiaoshan",
+        "referenceCode": "campus02:9CEE0DC1020F7AC3"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:DDC8728DD3A3C28C",
+      "payload": {
+        "name": "Meglitsch, Mario",
+        "referenceCode": "campus02:DDC8728DD3A3C28C"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:AD60EC1EBEA83942",
+      "payload": {
+        "name": "Merth, Harald",
+        "referenceCode": "campus02:AD60EC1EBEA83942"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:CC60D01360A73BA2",
+      "payload": {
+        "name": "Moser, Mario",
+        "referenceCode": "campus02:CC60D01360A73BA2"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:FDE7AE35064DC868",
+      "payload": {
+        "name": "Neudorfer, Reinhard",
+        "referenceCode": "campus02:FDE7AE35064DC868"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:305B526ED618EBCD",
+      "payload": {
+        "name": "Neumann, Dominic",
+        "referenceCode": "campus02:305B526ED618EBCD"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:639CA1D1F252796C",
+      "payload": {
+        "name": "Obermayr, Florian",
+        "referenceCode": "campus02:639CA1D1F252796C"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:12E612097445B8A1",
+      "payload": {
+        "name": "Pangerl, Christoph",
+        "referenceCode": "campus02:12E612097445B8A1"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:5959E1E78F716637",
+      "payload": {
+        "name": "Petelinc, Markus",
+        "referenceCode": "campus02:5959E1E78F716637"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:A837922C0DD9FD7E",
+      "payload": {
+        "name": "Phillips, Michael",
+        "referenceCode": "campus02:A837922C0DD9FD7E"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:E2CE8CA0FF23027E",
+      "payload": {
+        "name": "Prettenthaler, Elisabeth",
+        "referenceCode": "campus02:E2CE8CA0FF23027E"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:1506FB680D28DDBB",
+      "payload": {
+        "name": "Puchleitner, Thomas",
+        "referenceCode": "campus02:1506FB680D28DDBB"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:E166F279DDF806AA",
+      "payload": {
+        "name": "Pöcherstorfer, Winfried",
+        "referenceCode": "campus02:E166F279DDF806AA"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:5F5B3C6BFF9787FA",
+      "payload": {
+        "name": "Randus, Christian",
+        "referenceCode": "campus02:5F5B3C6BFF9787FA"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:F8CB6D695C40D551",
+      "payload": {
+        "name": "Rath, Walter",
+        "referenceCode": "campus02:F8CB6D695C40D551"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:12A9C91896FA6E6D",
+      "payload": {
+        "name": "Resanovic, Daniel",
+        "referenceCode": "campus02:12A9C91896FA6E6D"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:C595F8F0D6E8B3CA",
+      "payload": {
+        "name": "Schirgi, Eva",
+        "referenceCode": "campus02:C595F8F0D6E8B3CA"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:A5C3C0349668598F",
+      "payload": {
+        "name": "Schmid, Christian",
+        "referenceCode": "campus02:A5C3C0349668598F"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:A812E4A88F43EE99",
+      "payload": {
+        "name": "Schmidt, Christopher",
+        "referenceCode": "campus02:A812E4A88F43EE99"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:217DE69AA0098C1C",
+      "payload": {
+        "name": "Schmuck, Florian",
+        "referenceCode": "campus02:217DE69AA0098C1C"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:A667B751EC45FFEA",
+      "payload": {
+        "name": "Semlitsch, Erhard",
+        "referenceCode": "campus02:A667B751EC45FFEA"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:A025C4CF0CB99C00",
+      "payload": {
+        "name": "Softic, Safet",
+        "referenceCode": "campus02:A025C4CF0CB99C00"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:91DEB6D66C6E1E64",
+      "payload": {
+        "name": "Softic, Selver",
+        "referenceCode": "campus02:91DEB6D66C6E1E64"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:A561A94C0347FF73",
+      "payload": {
+        "name": "Staud, Sophie Erika",
+        "referenceCode": "campus02:A561A94C0347FF73"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:57AE0B5699CF034B",
+      "payload": {
+        "name": "Stettinger, Martin",
+        "referenceCode": "campus02:57AE0B5699CF034B"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:8C15A95BE09D2F65",
+      "payload": {
+        "name": "Streibl, Markus",
+        "referenceCode": "campus02:8C15A95BE09D2F65"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:741FCB0067DB5B9A",
+      "payload": {
+        "name": "Wipfler, Yevheniia",
+        "referenceCode": "campus02:741FCB0067DB5B9A"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:8DDB25150DA3BD16",
+      "payload": {
+        "name": "Zeiringer, Johannes",
+        "referenceCode": "campus02:8DDB25150DA3BD16"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:9DE745D2E4A0252E",
+      "payload": {
+        "name": "Zettel, Daniel",
+        "referenceCode": "campus02:9DE745D2E4A0252E"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:81466E5E48396718",
+      "payload": {
+        "name": "Zweidick, Mario",
+        "referenceCode": "campus02:81466E5E48396718"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "campus02:8E50A1B3C8820F3B",
+      "payload": {
+        "name": "Zwetti, Günther",
+        "referenceCode": "campus02:8E50A1B3C8820F3B"
+      },
+      "status": "candidate"
+    }
+  ],
+  "status": "preview"
+}

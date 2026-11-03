@@ -1,0 +1,611 @@
+{
+  "kind": "courses",
+  "source": "C:\\Codex\\planner-resource\\artifacts\\export-import\\courses.json",
+  "sourceSha256": "eb40efd725202e2f640202f4860353ac8c5b51ec05a24b95fb3347e7f1d60aba",
+  "mappingSha256": "2827997b965f19c75340a8b03b3549e90693d78da7a4b3081125fc7712b9da43",
+  "baseUrl": null,
+  "apply": false,
+  "plan": [
+    {
+      "sourceKey": "117987",
+      "code": "0319BB2005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117988",
+      "code": "0319BB2006",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117945",
+      "code": "0319BB2007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117735",
+      "code": "0319BB2008",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117563",
+      "code": "0319BB2010",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117970",
+      "code": "0319BB2017",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117971",
+      "code": "0319BB2018",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117734",
+      "code": "0319BB2019",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117562",
+      "code": "0319BB2020",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117992",
+      "code": "0319BB2021",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117993",
+      "code": "0319BB2022",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117946",
+      "code": "0319BB2023",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117647",
+      "code": "0319BB4005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117580",
+      "code": "0319BB4011",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "118007",
+      "code": "0319BB4012",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117648",
+      "code": "0319BB4013",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117658",
+      "code": "0319BB4014",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "118008",
+      "code": "0319BB4015",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "118003",
+      "code": "0319BB4016",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "118009",
+      "code": "0319BB4017",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117652",
+      "code": "0319BB4018",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117627",
+      "code": "0319BB4020",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117579",
+      "code": "0319BB4021",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "118027",
+      "code": "0319BB6001",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117519",
+      "code": "0319BB6002",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117524",
+      "code": "0319BB6003",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117518",
+      "code": "0319BB6004",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "118026",
+      "code": "0319BB6005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117517",
+      "code": "0319BB6006",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117520",
+      "code": "0319BB6007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117523",
+      "code": "0319BB6008",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117516",
+      "code": "0319BB6009",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117522",
+      "code": "0319BB6010",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117521",
+      "code": "0319BB6011",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117515",
+      "code": "0319BB6012",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117799",
+      "code": "0319BB6SO1",
+      "status": "skipped",
+      "reason": "Zero UE: retained in source catalog, excluded from teaching import"
+    },
+    {
+      "sourceKey": "117891",
+      "code": "0320BB2001",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117730",
+      "code": "0320BB2005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117548",
+      "code": "0320BB2006",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117556",
+      "code": "0320BB2007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117995",
+      "code": "0320BB2012",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117905",
+      "code": "0320BB2018",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117890",
+      "code": "0320BB2019",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117557",
+      "code": "0320BB2020",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117731",
+      "code": "0320BB2021",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117547",
+      "code": "0320BB2022",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117914",
+      "code": "0320BB2023",
+      "status": "skipped",
+      "reason": "Zero UE: retained in source catalog, excluded from teaching import"
+    },
+    {
+      "sourceKey": "117972",
+      "code": "0320BB2024",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117736",
+      "code": "0320BB4SO1",
+      "status": "skipped",
+      "reason": "Zero UE: retained in source catalog, excluded from teaching import"
+    },
+    {
+      "sourceKey": "117860",
+      "code": "0864VZ2001",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117936",
+      "code": "0864VZ2002",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117937",
+      "code": "0864VZ2003",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117857",
+      "code": "0864VZ2004",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117858",
+      "code": "0864VZ2005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117899",
+      "code": "0864VZ2006",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117906",
+      "code": "0864VZ2007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117907",
+      "code": "0864VZ2008",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117859",
+      "code": "0864VZ2009",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117900",
+      "code": "0864VZ2010",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117846",
+      "code": "0864VZ4001",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117916",
+      "code": "0864VZ4003",
+      "status": "skipped",
+      "reason": "Zero UE: retained in source catalog, excluded from teaching import"
+    },
+    {
+      "sourceKey": "117884",
+      "code": "0864VZ4004",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117911",
+      "code": "0864VZ4005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117943",
+      "code": "0864VZ4006",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117944",
+      "code": "0864VZ4007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "120737",
+      "code": "0864VZ4009",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117642",
+      "code": "0864VZ6001",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117932",
+      "code": "0864VZ6003",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117588",
+      "code": "0864VZ6007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117655",
+      "code": "0864VZ6009",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117605",
+      "code": "0864VZ6SO1",
+      "status": "skipped",
+      "reason": "Zero UE: retained in source catalog, excluded from teaching import"
+    },
+    {
+      "sourceKey": "117863",
+      "code": "0835VD2001",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117711",
+      "code": "0835VD2002",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117710",
+      "code": "0835VD2003",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117793",
+      "code": "0835VD2004",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117894",
+      "code": "0835VD2005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117791",
+      "code": "0835VD2006",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117949",
+      "code": "0835VD2007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117792",
+      "code": "0835VD2008",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117748",
+      "code": "0835VD4001",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117753",
+      "code": "0835VD4002",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117747",
+      "code": "0835VD4003",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117749",
+      "code": "0835VD4004",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117973",
+      "code": "0835VD4005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117750",
+      "code": "0835VD4006",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117751",
+      "code": "0835VD4007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117845",
+      "code": "0835VD4008",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117752",
+      "code": "0835VD4009",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "118116",
+      "code": "0835VD4011",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117938",
+      "code": "0835VD6001",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117939",
+      "code": "0835VD6002",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117855",
+      "code": "0835VD6003",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117856",
+      "code": "0835VD6004",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117980",
+      "code": "0835VD6005",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117979",
+      "code": "0835VD6006",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117978",
+      "code": "0835VD6007",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117781",
+      "code": "0835VD6008",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117976",
+      "code": "0835VD6009",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117977",
+      "code": "0835VD6011",
+      "status": "blocked",
+      "reason": "Require positive integers with minSessionUnits <= maxSessionUnits <= totalUnits."
+    },
+    {
+      "sourceKey": "117739",
+      "code": "0835VD6SO1",
+      "status": "skipped",
+      "reason": "Zero UE: retained in source catalog, excluded from teaching import"
+    }
+  ],
+  "status": "needs_resolution"
+}

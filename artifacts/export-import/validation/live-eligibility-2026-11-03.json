@@ -1,0 +1,4307 @@
+[
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grobelscheg, Philipp · campus02:3937638AF47C6DBE\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grobelscheg, Philipp · campus02:3937638AF47C6DBE"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Algorithmen [0319BB2008] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Horneck, Karin · campus02:A7FF75B4D5ACE6B7\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Horneck, Karin · campus02:A7FF75B4D5ACE6B7"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Algorithmen und Datenstrukturen [0864VZ2002] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Hatzl, Stefanie · campus02:AD9C25620F917CAF\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hatzl, Stefanie · campus02:AD9C25620F917CAF"
+          },
+          {
+            "details": "Höber, Angelika · campus02:DA83715465530449\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Höber, Angelika · campus02:DA83715465530449"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Softic, Selver · campus02:91DEB6D66C6E1E64\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Selver · campus02:91DEB6D66C6E1E64"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Bachelorarbeit [0864VZ6003] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Höber, Angelika · campus02:DA83715465530449\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Höber, Angelika · campus02:DA83715465530449"
+          },
+          {
+            "details": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Begleitendes FuE Projekt [0320BB2020] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Betriebspraktische individuelle Vertiefung 2 [0835VD4003] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Betriebspraktische individuelle Vertiefung 4 [0835VD6005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Koch, Volker · campus02:A7F8F1C446D7DD60\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Koch, Volker · campus02:A7F8F1C446D7DD60"
+          },
+          {
+            "details": "Meglitsch, Mario · campus02:DDC8728DD3A3C28C\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Meglitsch, Mario · campus02:DDC8728DD3A3C28C"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Betriebswirtschaftslehre [0864VZ2007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          },
+          {
+            "details": "Koch, Volker · campus02:A7F8F1C446D7DD60\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Koch, Volker · campus02:A7F8F1C446D7DD60"
+          },
+          {
+            "details": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Buchhaltung und Bilanzierung [0319BB2010] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Briscoe, Henry · campus02:01F1C806C9A8937A\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Briscoe, Henry · campus02:01F1C806C9A8937A"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Business English 2 [0864VZ4006] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Joyce, Elizabeth · campus02:6E73DB80D1617246\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Joyce, Elizabeth · campus02:6E73DB80D1617246"
+          },
+          {
+            "details": "Staud, Sophie Erika · campus02:A561A94C0347FF73\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Staud, Sophie Erika · campus02:A561A94C0347FF73"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Business English [0319BB4017] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Wipfler, Yevheniia · campus02:741FCB0067DB5B9A\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Wipfler, Yevheniia · campus02:741FCB0067DB5B9A"
+          },
+          {
+            "details": "Gerzic, Harris · campus02:EB250C321C4BAB92\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Gerzic, Harris · campus02:EB250C321C4BAB92"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Business IT-Applications [0864VZ2008] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Jiménez, Simon · campus02:9EA890015EAF213F\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jiménez, Simon · campus02:9EA890015EAF213F"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Cloud Computing [0835VD6009] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Softic, Selver · campus02:91DEB6D66C6E1E64\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Selver · campus02:91DEB6D66C6E1E64"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Cloud Computing [0864VZ6001] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Briscoe, Henry · campus02:01F1C806C9A8937A\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Briscoe, Henry · campus02:01F1C806C9A8937A"
+          },
+          {
+            "details": "Phillips, Michael · campus02:A837922C0DD9FD7E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Phillips, Michael · campus02:A837922C0DD9FD7E"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Communication & Presentation [0320BB2006] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          },
+          {
+            "details": "Rath, Walter · campus02:F8CB6D695C40D551\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Rath, Walter · campus02:F8CB6D695C40D551"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Consulting Methoden [0320BB2022] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Hollosi, Arno · campus02:08FF124FA70CBBA2\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hollosi, Arno · campus02:08FF124FA70CBBA2"
+          },
+          {
+            "details": "Schirgi, Eva · campus02:C595F8F0D6E8B3CA\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Schirgi, Eva · campus02:C595F8F0D6E8B3CA"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Data Cleaning und Data Analytics [0864VZ4009] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Schirgi, Eva · campus02:C595F8F0D6E8B3CA\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Schirgi, Eva · campus02:C595F8F0D6E8B3CA"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Data Mining [0864VZ6007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Softic, Safet · campus02:A025C4CF0CB99C00\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Safet · campus02:A025C4CF0CB99C00"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Databases [0864VZ4004] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Stettinger, Martin · campus02:57AE0B5699CF034B\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Stettinger, Martin · campus02:57AE0B5699CF034B"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Datenbankdesign [0835VD2005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Koitz-Hristov, Roxane · campus02:16DB2721A8B92422\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Koitz-Hristov, Roxane · campus02:16DB2721A8B92422"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Datenstrukturen und Algorithmen [0835VD2006] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Softic, Selver · campus02:91DEB6D66C6E1E64\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Selver · campus02:91DEB6D66C6E1E64"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Datenvisualisierung [0319BB6010] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Digitale Geschäftsmodelle 2 [0835VD4009] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Koch, Volker · campus02:A7F8F1C446D7DD60\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Koch, Volker · campus02:A7F8F1C446D7DD60"
+          },
+          {
+            "details": "Meglitsch, Mario · campus02:DDC8728DD3A3C28C\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Meglitsch, Mario · campus02:DDC8728DD3A3C28C"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Einführung in die Betriebswirtschaftslehre [0319BB2020] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Glinik, Martin · campus02:75055F43A64C3544\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Glinik, Martin · campus02:75055F43A64C3544"
+          },
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Electronic und Mobile Business [0864VZ4001] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Staud, Sophie Erika · campus02:A561A94C0347FF73\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Staud, Sophie Erika · campus02:A561A94C0347FF73"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "English 2 [0864VZ2006] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Kochauf, Stephan · campus02:296474ACC3749EC1\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Kochauf, Stephan · campus02:296474ACC3749EC1"
+          },
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          },
+          {
+            "details": "Zettel, Daniel · campus02:9DE745D2E4A0252E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Zettel, Daniel · campus02:9DE745D2E4A0252E"
+          },
+          {
+            "details": "Softic, Safet · campus02:A025C4CF0CB99C00\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Safet · campus02:A025C4CF0CB99C00"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Erweiterte Themen der Softwareentwicklung [0319BB2017] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Erweiterte Themen der digitalen Geschäftsmodelle [0319BB4005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Kapfer, Viktoria · campus02:D1A879C956E9D2D6\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Kapfer, Viktoria · campus02:D1A879C956E9D2D6"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Erweiterte Themen des Prozessmanagement [0319BB4020] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Schmuck, Florian · campus02:217DE69AA0098C1C\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Schmuck, Florian · campus02:217DE69AA0098C1C"
+          },
+          {
+            "details": "Moser, Mario · campus02:CC60D01360A73BA2\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Moser, Mario · campus02:CC60D01360A73BA2"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Erweiterte Web-Technologien [0319BB6004] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grünwald, Stefan · campus02:066E22DC2C0CA454\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grünwald, Stefan · campus02:066E22DC2C0CA454"
+          },
+          {
+            "details": "Gerzic, Harris · campus02:EB250C321C4BAB92\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Gerzic, Harris · campus02:EB250C321C4BAB92"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Fallstudien der Wirtschaftsinformatik [0319BB6005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grünwald, Stefan · campus02:066E22DC2C0CA454\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grünwald, Stefan · campus02:066E22DC2C0CA454"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Fallstudien der Wirtschaftsinformatik [0835VD6001] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Obermayr, Florian · campus02:639CA1D1F252796C\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Obermayr, Florian · campus02:639CA1D1F252796C"
+          },
+          {
+            "details": "Merth, Harald · campus02:AD60EC1EBEA83942\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Merth, Harald · campus02:AD60EC1EBEA83942"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Resanovic, Daniel · campus02:12A9C91896FA6E6D\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Resanovic, Daniel · campus02:12A9C91896FA6E6D"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Grundlagen Maschinelles Lernen und Künstliche Intelligenz [0835VD4011] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Resanovic, Daniel · campus02:12A9C91896FA6E6D\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Resanovic, Daniel · campus02:12A9C91896FA6E6D"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Grundlagen Maschinelles Lernen und künstliche Intelligenz [0319BB6009] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grünwald, Stefan · campus02:066E22DC2C0CA454\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grünwald, Stefan · campus02:066E22DC2C0CA454"
+          },
+          {
+            "details": "Bouwman, Marinus · campus02:C1C5A47BFD7EE532\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Bouwman, Marinus · campus02:C1C5A47BFD7EE532"
+          },
+          {
+            "details": "Gerzic, Harris · campus02:EB250C321C4BAB92\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Gerzic, Harris · campus02:EB250C321C4BAB92"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Grundlagen Mobile Computing [0835VD6007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Kienzl, Stefan · campus02:4DFDE9782DB5540E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Kienzl, Stefan · campus02:4DFDE9782DB5540E"
+          },
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          },
+          {
+            "details": "Softic, Safet · campus02:A025C4CF0CB99C00\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Safet · campus02:A025C4CF0CB99C00"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Grundlagen der Netzwerktechnik [0319BB2005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Softic, Safet · campus02:A025C4CF0CB99C00\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Safet · campus02:A025C4CF0CB99C00"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "IT Operations [0319BB4016] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Randus, Christian · campus02:5F5B3C6BFF9787FA\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Randus, Christian · campus02:5F5B3C6BFF9787FA"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "IT-Service Management [0835VD6002] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Schmid, Christian · campus02:A5C3C0349668598F\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Schmid, Christian · campus02:A5C3C0349668598F"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Identity Management [0319BB6001] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Schmid, Christian · campus02:A5C3C0349668598F\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Schmid, Christian · campus02:A5C3C0349668598F"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Informationssicherheitsmanagement [0320BB2012] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Informationssysteme [0319BB4013] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Informationssysteme [0835VD4002] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grabner, Johann · campus02:C72B956A216E7641\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grabner, Johann · campus02:C72B956A216E7641"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Leitner, Sascha · campus02:34EE877A518FC99F\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Leitner, Sascha · campus02:34EE877A518FC99F"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Internet Security [0864VZ4005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Rath, Walter · campus02:F8CB6D695C40D551\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Rath, Walter · campus02:F8CB6D695C40D551"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Internet-Marketing [0319BB6008] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grünwald, Stefan · campus02:066E22DC2C0CA454\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grünwald, Stefan · campus02:066E22DC2C0CA454"
+          },
+          {
+            "details": "Resanovic, Daniel · campus02:12A9C91896FA6E6D\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Resanovic, Daniel · campus02:12A9C91896FA6E6D"
+          },
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          },
+          {
+            "details": "Hofer, Christian · campus02:99108567F747C915\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hofer, Christian · campus02:99108567F747C915"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Konfigurationsmanagement [0835VD2007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Rath, Walter · campus02:F8CB6D695C40D551\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Rath, Walter · campus02:F8CB6D695C40D551"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Konfliktmanagement [0319BB4012] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Fuchs, Bernhard · campus02:010FF70CDC2146F1\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Fuchs, Bernhard · campus02:010FF70CDC2146F1"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Laufendes Berufspraktikum im Unternehmen 2 [0319BB2022] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Fuchs, Bernhard · campus02:010FF70CDC2146F1\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Fuchs, Bernhard · campus02:010FF70CDC2146F1"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Laufendes Berufspraktikum im Unternehmen 4 [0319BB4018] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Fuchs, Bernhard · campus02:010FF70CDC2146F1\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Fuchs, Bernhard · campus02:010FF70CDC2146F1"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Laufendes Berufspraktikum im Unternehmen 6 [0319BB6012] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Kreuzer, Ernst · campus02:0D6019B9267012CC\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Kreuzer, Ernst · campus02:0D6019B9267012CC"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Managerial Communication und Leadership [0864VZ4007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Rath, Walter · campus02:F8CB6D695C40D551\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Rath, Walter · campus02:F8CB6D695C40D551"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Marketing [0835VD4006] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grünwald, Stefan · campus02:066E22DC2C0CA454\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grünwald, Stefan · campus02:066E22DC2C0CA454"
+          },
+          {
+            "details": "Softic, Safet · campus02:A025C4CF0CB99C00\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Safet · campus02:A025C4CF0CB99C00"
+          },
+          {
+            "details": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Markup Languages [0319BB4014] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Softic, Safet · campus02:A025C4CF0CB99C00\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Safet · campus02:A025C4CF0CB99C00"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Markup Languages [0835VD4008] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Softic, Selver · campus02:91DEB6D66C6E1E64\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Selver · campus02:91DEB6D66C6E1E64"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Markupsprachen [0864VZ2003] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Hatzl, Johannes · campus02:4B9FD052DF069DEC\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hatzl, Johannes · campus02:4B9FD052DF069DEC"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Mathematik 2 [0864VZ2004] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Eberhard, Lukas · campus02:B5555E345ED28DBB\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Eberhard, Lukas · campus02:B5555E345ED28DBB"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Mathematik für Informatik 2 [0835VD2001] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Resanovic, Daniel · campus02:12A9C91896FA6E6D\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Resanovic, Daniel · campus02:12A9C91896FA6E6D"
+          },
+          {
+            "details": "Hatzl, Johannes · campus02:4B9FD052DF069DEC\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hatzl, Johannes · campus02:4B9FD052DF069DEC"
+          },
+          {
+            "details": "Hochfellner, Walter · campus02:6D8B808AB8A6FE7C\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hochfellner, Walter · campus02:6D8B808AB8A6FE7C"
+          },
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Mathematik in der Betriebswirtschaft [0319BB2019] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Stettinger, Martin · campus02:57AE0B5699CF034B\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Stettinger, Martin · campus02:57AE0B5699CF034B"
+          },
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          },
+          {
+            "details": "Softic, Safet · campus02:A025C4CF0CB99C00\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Safet · campus02:A025C4CF0CB99C00"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Objektorientierte Programmierung [0835VD2004] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Resanovic, Daniel · campus02:12A9C91896FA6E6D\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Resanovic, Daniel · campus02:12A9C91896FA6E6D"
+          },
+          {
+            "details": "Hatzl, Johannes · campus02:4B9FD052DF069DEC\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hatzl, Johannes · campus02:4B9FD052DF069DEC"
+          },
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          },
+          {
+            "details": "Liu, Xiaoshan · campus02:9CEE0DC1020F7AC3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Liu, Xiaoshan · campus02:9CEE0DC1020F7AC3"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Operation Research [0320BB2007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Lindbichler, Georg · campus02:192F5B334A7D23E3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Lindbichler, Georg · campus02:192F5B334A7D23E3"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Personalmanagement und Arbeitsrecht [0835VD2003] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Bower, Hendrik · campus02:AF3152B0E24DB28F\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Bower, Hendrik · campus02:AF3152B0E24DB28F"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Presentations [0835VD6011] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Bower, Hendrik · campus02:AF3152B0E24DB28F\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Bower, Hendrik · campus02:AF3152B0E24DB28F"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Professional English [0835VD2002] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Briscoe, Henry · campus02:01F1C806C9A8937A\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Briscoe, Henry · campus02:01F1C806C9A8937A"
+          },
+          {
+            "details": "Phillips, Michael · campus02:A837922C0DD9FD7E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Phillips, Michael · campus02:A837922C0DD9FD7E"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Professional Meetings in English [0319BB6011] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Beer, Patrick · campus02:8D880F8B1D500B35\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Beer, Patrick · campus02:8D880F8B1D500B35"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Projekt zum Berufspraktikum [0319BB2021] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Kapfer, Viktoria · campus02:D1A879C956E9D2D6\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Kapfer, Viktoria · campus02:D1A879C956E9D2D6"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Prozessmanagement 2 [0835VD4005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Semlitsch, Erhard · campus02:A667B751EC45FFEA\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Semlitsch, Erhard · campus02:A667B751EC45FFEA"
+          },
+          {
+            "details": "Gschweitl, Roswitha · campus02:B940C0935F222834\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Gschweitl, Roswitha · campus02:B940C0935F222834"
+          },
+          {
+            "details": "Hörmann, Monika · campus02:C2F31424322120EF\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hörmann, Monika · campus02:C2F31424322120EF"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Präsentationstechniken [0319BB2023] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Zweidick, Mario · campus02:81466E5E48396718\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Zweidick, Mario · campus02:81466E5E48396718"
+          },
+          {
+            "details": "Schmidt, Christopher · campus02:A812E4A88F43EE99\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Schmidt, Christopher · campus02:A812E4A88F43EE99"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Relationale Datenbanken [0319BB2006] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Amann-Langeder, Michael · campus02:34FFA8D4A1C8CAFB\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Amann-Langeder, Michael · campus02:34FFA8D4A1C8CAFB"
+          },
+          {
+            "details": "Bećirević, Haris · campus02:6D628EB4D3B90E98\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Bećirević, Haris · campus02:6D628EB4D3B90E98"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Requirements Engineering [0319BB4021] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Bouwman, Marinus · campus02:C1C5A47BFD7EE532\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Bouwman, Marinus · campus02:C1C5A47BFD7EE532"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Requirements Engineering [0835VD4007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Resanovic, Daniel · campus02:12A9C91896FA6E6D\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Resanovic, Daniel · campus02:12A9C91896FA6E6D"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Requirementsanalyse [0864VZ2001] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Koch, Volker · campus02:A7F8F1C446D7DD60\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Koch, Volker · campus02:A7F8F1C446D7DD60"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Rhetorik und Präsentation [0864VZ2010] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Bower, Hendrik · campus02:AF3152B0E24DB28F\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Bower, Hendrik · campus02:AF3152B0E24DB28F"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Scientific English [0835VD4004] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          },
+          {
+            "details": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Resanovic, Daniel · campus02:12A9C91896FA6E6D\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Resanovic, Daniel · campus02:12A9C91896FA6E6D"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Servicebasierte Systeme [0835VD6006] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Schmid, Christian · campus02:A5C3C0349668598F\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Schmid, Christian · campus02:A5C3C0349668598F"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Sicherheit von Web Applikationen [0319BB6003] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Kraxberger, Stefan · campus02:8072A685B46B8684\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Kraxberger, Stefan · campus02:8072A685B46B8684"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Sicherheit von Webapplikationen [0835VD6008] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Resanovic, Daniel · campus02:12A9C91896FA6E6D\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Resanovic, Daniel · campus02:12A9C91896FA6E6D"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Software Design 2 [0864VZ2009] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Petelinc, Markus · campus02:5959E1E78F716637\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Petelinc, Markus · campus02:5959E1E78F716637"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Software Design [0319BB2018] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Amann-Langeder, Michael · campus02:34FFA8D4A1C8CAFB\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Amann-Langeder, Michael · campus02:34FFA8D4A1C8CAFB"
+          },
+          {
+            "details": "Bećirević, Haris · campus02:6D628EB4D3B90E98\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Bećirević, Haris · campus02:6D628EB4D3B90E98"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Softwareentwicklungsprojekt [0319BB4011] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Schirgi, Eva · campus02:C595F8F0D6E8B3CA\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Schirgi, Eva · campus02:C595F8F0D6E8B3CA"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Stochastik und Statistik [0864VZ2005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grünwald, Stefan · campus02:066E22DC2C0CA454\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grünwald, Stefan · campus02:066E22DC2C0CA454"
+          },
+          {
+            "details": "Jesenko, Berndt · campus02:87386A33AA11E3F3\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Jesenko, Berndt · campus02:87386A33AA11E3F3"
+          },
+          {
+            "details": "Gerzic, Harris · campus02:EB250C321C4BAB92\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Gerzic, Harris · campus02:EB250C321C4BAB92"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Supply Chain Management [0835VD6003] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Grünwald, Stefan · campus02:066E22DC2C0CA454\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Grünwald, Stefan · campus02:066E22DC2C0CA454"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Semlitsch, Erhard · campus02:A667B751EC45FFEA\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Semlitsch, Erhard · campus02:A667B751EC45FFEA"
+          },
+          {
+            "details": "Hörmann, Monika · campus02:C2F31424322120EF\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hörmann, Monika · campus02:C2F31424322120EF"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Teamtraining [0319BB2007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Neudorfer, Reinhard · campus02:FDE7AE35064DC868\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Neudorfer, Reinhard · campus02:FDE7AE35064DC868"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 65\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Unternehmensgründung in der IT [0320BB2005] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Ambrosch, Clemens · campus02:E2F084FFC84CD939\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Ambrosch, Clemens · campus02:E2F084FFC84CD939"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Virtualisierung [0319BB6002] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Koitz-Hristov, Roxane · campus02:16DB2721A8B92422\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Koitz-Hristov, Roxane · campus02:16DB2721A8B92422"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Web Technologien & Usability [0835VD2008] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Pöcherstorfer, Winfried · campus02:E166F279DDF806AA\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Pöcherstorfer, Winfried · campus02:E166F279DDF806AA"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Wirtschafts- und IT-Recht [0319BB6007] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Pöcherstorfer, Winfried · campus02:E166F279DDF806AA\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Pöcherstorfer, Winfried · campus02:E166F279DDF806AA"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Wirtschafts- und IT-Recht [0835VD6004] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Höber, Angelika · campus02:DA83715465530449\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Höber, Angelika · campus02:DA83715465530449"
+          },
+          {
+            "details": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Prettenthaler, Elisabeth · campus02:E2CE8CA0FF23027E"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Wirtschaftsinformatik Projekt [0319BB6006] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Höber, Angelika · campus02:DA83715465530449\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Höber, Angelika · campus02:DA83715465530449"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 40\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          }
+        ]
+      }
+    ],
+    "name": "Wissenschaftliches Arbeiten [0319BB4015] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Hatzl, Stefanie · campus02:AD9C25620F917CAF\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Hatzl, Stefanie · campus02:AD9C25620F917CAF"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 25\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Wissenschaftliches Arbeiten und Hypothesenbildung [0835VD4001] – 2027 S"
+  },
+  {
+    "groups": [
+      {
+        "group": "Lehrende",
+        "selected": [
+          {
+            "details": "Softic, Selver · campus02:91DEB6D66C6E1E64\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "Softic, Selver · campus02:91DEB6D66C6E1E64"
+          }
+        ]
+      },
+      {
+        "group": "Räume",
+        "selected": [
+          {
+            "details": "CZ106 – Campus Zusertal · CZ106\nKapazität 36 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ106 – Campus Zusertal · CZ106"
+          },
+          {
+            "details": "CZ107 – Campus Zusertal · CZ107\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ107 – Campus Zusertal · CZ107"
+          },
+          {
+            "details": "CZ108 – Campus Zusertal · CZ108\nKapazität 45 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ108 – Campus Zusertal · CZ108"
+          },
+          {
+            "details": "CZ109 – Campus Zusertal · CZ109\nKapazität 53 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ109 – Campus Zusertal · CZ109"
+          },
+          {
+            "details": "CZ110 – Campus Zusertal · CZ110\nKapazität 63 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "CZ110 – Campus Zusertal · CZ110"
+          },
+          {
+            "details": "RC403 – Campus Rosenhof - Haus C · RC403\nKapazität 72 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+          },
+          {
+            "details": "RC404 – Campus Rosenhof - Haus C · RC404\nKapazität 60 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+          },
+          {
+            "details": "RC409 – Campus Rosenhof - Haus C · RC409\nKapazität 78 · benötigt 30\n0 gespeicherte Termine in 0 Planungen für diese Lehrveranstaltung.",
+            "disabled": false,
+            "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+          }
+        ]
+      }
+    ],
+    "name": "Wissensmanagement und Semantic Web [0864VZ6009] – 2027 S"
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "kind": "holidays",
+  "source": "C:\\Codex\\planner-resource\\artifacts\\export-import\\holidays-AT-2027-S.json",
+  "sourceSha256": "e35e5ca92b14f921ebe8e028ecf5bd3ba175d195d5416adb65d6fe44b70d16ea",
+  "mappingSha256": null,
+  "baseUrl": null,
+  "apply": false,
+  "plan": [
+    {
+      "sourceKey": "2027-03-29",
+      "payload": {
+        "date": "2027-03-29",
+        "name": "Ostermontag"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-05-01",
+      "payload": {
+        "date": "2027-05-01",
+        "name": "Staatsfeiertag"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-05-06",
+      "payload": {
+        "date": "2027-05-06",
+        "name": "Christi Himmelfahrt"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-05-17",
+      "payload": {
+        "date": "2027-05-17",
+        "name": "Pfingstmontag"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-05-27",
+      "payload": {
+        "date": "2027-05-27",
+        "name": "Fronleichnam"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-08-15",
+      "payload": {
+        "date": "2027-08-15",
+        "name": "Mariä Himmelfahrt"
+      },
+      "status": "candidate"
+    }
+  ],
+  "status": "preview"
+}

@@ -1,0 +1,395 @@
+{
+  "courses": [
+    {
+      "additionalText": "Vortragende*r:\nWipfler, Yevheniia",
+      "code": "0864VZ4003",
+      "courseId": "117916",
+      "lecturers": [
+        {
+          "name": "Wipfler, Yevheniia",
+          "personId": "741FCB0067DB5B9A"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Accompanying Project",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 0 UE",
+      "sourceUnits": 0
+    },
+    {
+      "additionalText": "Vortragende*r:\nHorneck, Karin",
+      "code": "0864VZ2002",
+      "courseId": "117936",
+      "lecturers": [
+        {
+          "name": "Horneck, Karin",
+          "personId": "A7FF75B4D5ACE6B7"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Algorithmen und Datenstrukturen",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSoftic, Selver",
+      "code": "0864VZ6003",
+      "courseId": "117932",
+      "lecturers": [
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Bachelorarbeit",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 17 UE",
+      "sourceUnits": 17
+    },
+    {
+      "additionalText": "Vortragende*r:\nGrünwald, Stefan\nSchirgi, Eva\nSoftic, Selver",
+      "code": "0864VZ6SO1",
+      "courseId": "117605",
+      "lecturers": [
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        },
+        {
+          "name": "Schirgi, Eva",
+          "personId": "C595F8F0D6E8B3CA"
+        },
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Bachelorprüfung",
+      "courseType": "SO",
+      "displayedMetadata": "SO | 0 UE",
+      "sourceUnits": 0
+    },
+    {
+      "additionalText": "Vortragende*r:\nKoch, Volker\nMeglitsch, Mario",
+      "code": "0864VZ2007",
+      "courseId": "117906",
+      "lecturers": [
+        {
+          "name": "Koch, Volker",
+          "personId": "A7F8F1C446D7DD60"
+        },
+        {
+          "name": "Meglitsch, Mario",
+          "personId": "DDC8728DD3A3C28C"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Betriebswirtschaftslehre",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBriscoe, Henry",
+      "code": "0864VZ4006",
+      "courseId": "117943",
+      "lecturers": [
+        {
+          "name": "Briscoe, Henry",
+          "personId": "01F1C806C9A8937A"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Business English 2",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nGerzic, Harris\nWipfler, Yevheniia",
+      "code": "0864VZ2008",
+      "courseId": "117907",
+      "lecturers": [
+        {
+          "name": "Gerzic, Harris",
+          "personId": "EB250C321C4BAB92"
+        },
+        {
+          "name": "Wipfler, Yevheniia",
+          "personId": "741FCB0067DB5B9A"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Business IT-Applications",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 25.5 UE",
+      "sourceUnits": 25.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nSoftic, Selver",
+      "code": "0864VZ6001",
+      "courseId": "117642",
+      "lecturers": [
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Cloud Computing",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nHollosi, Arno\nSchirgi, Eva",
+      "code": "0864VZ4009",
+      "courseId": "120737",
+      "lecturers": [
+        {
+          "name": "Hollosi, Arno",
+          "personId": "08FF124FA70CBBA2"
+        },
+        {
+          "name": "Schirgi, Eva",
+          "personId": "C595F8F0D6E8B3CA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Data Cleaning und Data Analytics",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 46.75 UE",
+      "sourceUnits": 46.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nSchirgi, Eva",
+      "code": "0864VZ6007",
+      "courseId": "117588",
+      "lecturers": [
+        {
+          "name": "Schirgi, Eva",
+          "personId": "C595F8F0D6E8B3CA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Data Mining",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSoftic, Safet",
+      "code": "0864VZ4004",
+      "courseId": "117884",
+      "lecturers": [
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Databases",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 68 UE",
+      "sourceUnits": 68
+    },
+    {
+      "additionalText": "Vortragende*r:\nGlinik, Martin\nJesenko, Berndt",
+      "code": "0864VZ4001",
+      "courseId": "117846",
+      "lecturers": [
+        {
+          "name": "Glinik, Martin",
+          "personId": "75055F43A64C3544"
+        },
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Electronic und Mobile Business",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 59.5 UE",
+      "sourceUnits": 59.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nStaud, Sophie Erika",
+      "code": "0864VZ2006",
+      "courseId": "117899",
+      "lecturers": [
+        {
+          "name": "Staud, Sophie Erika",
+          "personId": "A561A94C0347FF73"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "English 2",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 25.5 UE",
+      "sourceUnits": 25.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nLeitner, Sascha",
+      "code": "0864VZ4005",
+      "courseId": "117911",
+      "lecturers": [
+        {
+          "name": "Leitner, Sascha",
+          "personId": "34EE877A518FC99F"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Internet Security",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 51 UE",
+      "sourceUnits": 51
+    },
+    {
+      "additionalText": "Vortragende*r:\nKreuzer, Ernst",
+      "code": "0864VZ4007",
+      "courseId": "117944",
+      "lecturers": [
+        {
+          "name": "Kreuzer, Ernst",
+          "personId": "0D6019B9267012CC"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Managerial Communication und Leadership",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 51 UE",
+      "sourceUnits": 51
+    },
+    {
+      "additionalText": "Vortragende*r:\nSoftic, Selver",
+      "code": "0864VZ2003",
+      "courseId": "117937",
+      "lecturers": [
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Markupsprachen",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nHatzl, Johannes\nJesenko, Berndt\nSchirgi, Eva",
+      "code": "0864VZ2004",
+      "courseId": "117857",
+      "lecturers": [
+        {
+          "name": "Hatzl, Johannes",
+          "personId": "4B9FD052DF069DEC"
+        },
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Schirgi, Eva",
+          "personId": "C595F8F0D6E8B3CA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Mathematik 2",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nResanovic, Daniel",
+      "code": "0864VZ2001",
+      "courseId": "117860",
+      "lecturers": [
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Requirementsanalyse",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 25.5 UE",
+      "sourceUnits": 25.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nKoch, Volker",
+      "code": "0864VZ2010",
+      "courseId": "117900",
+      "lecturers": [
+        {
+          "name": "Koch, Volker",
+          "personId": "A7F8F1C446D7DD60"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Rhetorik und Präsentation",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 25.5 UE",
+      "sourceUnits": 25.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nResanovic, Daniel",
+      "code": "0864VZ2009",
+      "courseId": "117859",
+      "lecturers": [
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Software Design 2",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSchirgi, Eva",
+      "code": "0864VZ2005",
+      "courseId": "117858",
+      "lecturers": [
+        {
+          "name": "Schirgi, Eva",
+          "personId": "C595F8F0D6E8B3CA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Stochastik und Statistik",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSoftic, Selver",
+      "code": "0864VZ6009",
+      "courseId": "117655",
+      "lecturers": [
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Wissensmanagement und Semantic Web",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    }
+  ],
+  "curriculum": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+  "pagination": [
+    "1 - 22 von 22"
+  ],
+  "semester": "2026 S",
+  "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=349&objTermId=124&orgId=1",
+  "capturedAt": "2026-11-03T10:50:53.080Z"
+}

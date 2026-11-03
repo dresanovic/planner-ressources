@@ -1,0 +1,29 @@
+{
+  "courseResourcesChecked": 94,
+  "resourceIssues": [],
+  "lecturerCount": 73,
+  "missingLecturers": [],
+  "unexpectedLecturers": [],
+  "roomCount": 121,
+  "roomIssues": [],
+  "missingRooms": [],
+  "holidayCount": 15,
+  "holidayIssues": [],
+  "cohortSizes": {
+    "Business Analytics & AI - 2.Semester": 30,
+    "Business Analytics & AI - 4.Semester": 30,
+    "Business Analytics & AI - 6.Semester": 30,
+    "Business Software Development – 2. Semester": 25,
+    "Business Software Development – 4. Semester": 25,
+    "Business Software Development – 6. Semester": 25,
+    "MA IT & Wirtschaftsinformatik - 2.Semester": 65,
+    "Wirtschaftsinformatik - 2.Semester": 40,
+    "Wirtschaftsinformatik - 4.Semester": 40,
+    "Wirtschaftsinformatik - 6.Semester": 40
+  },
+  "capacityIssues": [],
+  "courseFieldIssues": [],
+  "courseCount": 94,
+  "planningRevisionCreated": false,
+  "method": "Read-only browser UI inspection; all 94 academic edit forms and all 94 resource eligibility forms inspected without saving. Local source comparison only; no direct database or API mutations."
+}

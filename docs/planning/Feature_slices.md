@@ -142,6 +142,8 @@ synchronization remain later releases.
 ### In scope
 
 - Planner-controlled course and multi-course draft generation by semester.
+- Cohort-based filtering of course lists in both teaching-generation selection
+  and Academic Data course administration (I-005).
 - Course-semester generation constraints and default teaching windows.
 - Semester-wide list and calendar review with filters.
 - Manual editing of existing Draft Sessions and non-blocking validation alerts.
@@ -150,6 +152,8 @@ synchronization remain later releases.
 - Manual Draft Session creation and deletion, complete course-schedule deletion, and remaining-unit tracking.
 - Global conflict-aware generation that maximizes scheduled units across the selected courses.
 - Persisted partial plans with understandable unscheduled-unit reasons.
+- Longer configurable teaching-optimization budgets and explicit planner
+  acceptance of hard-valid results whose optimality is unproven (I-006).
 - Post-generation comparison and planner-controlled atomic replacement when at
   least one selected course already has teaching sessions.
 - Institution-wide holiday avoidance.
@@ -362,8 +366,15 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 24 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
 | 25 | FS-022 | Authenticated Lecturer Access | Reuse lecturer collaboration through ongoing authenticated identity | FS-015, FS-016, FS-020, FS-021 | Deferred |
 | 26 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
+| 27 | I-005 | Filterable Course Lists for Generation and Administration | Find cohort-specific courses directly in both course-list workflows | FS-007, FS-019, I-003 | Proposed — requirements recorded; not implemented |
+| 28 | I-006 | Configurable Optimization Time and Valid Incumbent Acceptance | Use longer optimization runs and consciously accept valid results without an optimality proof | I-003, I-004, FS-013, FS-019 | Proposed — requirements recorded; not implemented |
 
 **Improvement sequence:** `I-001` through `I-004`, with detailed artifacts in their matching `specs/I-.../` directories.
+
+**New improvement backlog:** `I-005` and `I-006` record requirements only.
+Their delivery priority relative to other open slices is not yet assigned.
+They are independent improvements on the implemented baseline: course-list
+filtering and optimization time/result handling respectively.
 
 **Recommended next slice:** `FS-016 – Authenticated Planner Access and Account Administration`.
 
@@ -3444,6 +3455,318 @@ Known clarification topics: None. Candidate transport and temporary representati
 Keep the specification strictly limited to this slice and consistent with docs/planning/Feature_slices.md. Define independently testable scenarios, functional requirements, edge cases, atomicity and stale-state behavior, accessibility expectations, and measurable success criteria without choosing an algorithm or persistence mechanism.
 ```
 
+### I-005: Filterable Course Lists for Generation and Administration
+
+#### User or business outcome
+
+A planner can find courses belonging to a cohort directly in both
+`Planung > Kalender > Plan erzeugen > Stundenpläne erzeugen` and
+`Stammdaten > Lehrveranstaltungen`, without scanning a flat semester list or
+opening another browser tab to identify the relevant courses.
+
+#### Rationale for this slice boundary
+
+During first-plan preparation for 2027 S on 03.11.2026, selecting the eleven
+Master courses from 94 courses exposed missing filtering in the generation
+selector. The user also identified the flat Academic Data course list as the
+same usability problem. Both surfaces belong to one course-discovery outcome;
+existing calendar session filters do not address this need.
+
+#### Primary actors
+
+- Planner user.
+
+#### Preconditions
+
+- Courses have semester and cohort relationships in Academic Data.
+- The unified teaching-generation selector and course-administration view exist.
+
+#### In scope
+
+- Direct course-list filtering in both named surfaces.
+- Cohort filtering, including identifying the courses for
+  `MA IT & Wirtschaftsinformatik – 2. Semester` within semester `2027 S`.
+- Clear active-filter context, a way to reset filters, and an understandable
+  no-matches state.
+- Course and cohort identification sufficient to distinguish similarly named
+  courses without opening a separate administration tab.
+- Safe interaction between filtering and explicit generation selection:
+  changing a filter must not silently add or remove selected course IDs.
+- Visibility of the total generation selection, including selected courses
+  currently hidden by filters, before the planner starts generation.
+- Keyboard-operable and usable filtering in the existing narrow planning panel
+  and course-administration view.
+
+#### Out of scope
+
+- Changes to optimization, time windows, teaching constraints, resource
+  eligibility, revision lifecycle, publication, or authorization.
+- Raising the generation limit, automatically splitting a selection into runs,
+  or automatically generating the filtered courses.
+- A general redesign of all application lists or calendar session filters.
+- Implementation, detailed specifications, plans, and tasks in this update.
+
+#### Main workflow
+
+In the relevant semester context, the planner filters the generation list by
+cohort, explicitly selects the intended courses, reviews the total selection,
+and uses the existing generation workflow. In Academic Data, the planner can
+similarly narrow the course list by cohort and open the existing detail or edit
+workflow. Resetting a filter restores the applicable unfiltered list.
+
+#### Business rules
+
+- Filters affect list visibility; they do not change academic or schedule data.
+- Generation runs only for explicitly selected courses, never implicitly for
+  every matching course.
+- The existing one-to-twenty-course generation limit and eligibility rules
+  remain authoritative across the complete selection, including hidden items.
+- Generation-list, administration-list, and calendar-session filtering have
+  distinct purposes; filtering one list must not silently change another.
+
+#### Data inputs and outputs
+
+Inputs are the applicable semester context, course/cohort relationships, chosen
+filters, and explicit generation selection. Outputs are matching course lists,
+active-filter/no-matches feedback, and a clearly reviewable selection. Filtering
+itself produces no saved academic or schedule changes.
+
+#### Integrations
+
+None.
+
+#### UI references
+
+- User screenshots and first-plan walkthrough from 03.11.2026: the narrow
+  `Stundenpläne erzeugen` selector shows an unfiltered list with checkboxes.
+- Existing `Stammdaten > Lehrveranstaltungen` view, reported by the user as a
+  flat list requiring the same filtering capability.
+
+#### Constraints and assumptions
+
+- Confirmed: filtering is needed in both surfaces; cohort discovery is the
+  demonstrated use case.
+- Additional filters such as study type or search by course name/code are
+  proposals for clarification, not confirmed requirements.
+- The user explicitly requested requirements only, with no implementation now.
+
+#### Dependencies
+
+- FS-007, FS-019, and I-003. Existing I-004 replacement safeguards remain intact.
+
+#### Completion outcome
+
+A planner can isolate the eleven Master courses from the 94-course 2027 S
+catalog in both surfaces and explicitly select them for generation without an
+external lookup. Filter changes leave selection understandable and never
+silently change the set submitted for generation.
+
+#### Open clarification topics
+
+- Additional filter dimensions: study type, lecturer, room, or course name/code.
+- Whether to add grouping as well as filtering; a grouped/tree layout is not
+  yet a confirmed requirement.
+- Optional selection of all visible matches within the existing limit.
+- Filter persistence and reset behavior on semester changes or navigation.
+
+#### Specification status
+
+Proposed — requirements recorded; not specified or implemented. Delivery
+priority and additional filter dimensions remain open.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for I-005: Filterable Course Lists for Generation and Administration only when specification work is explicitly requested.
+
+Product context: During first-plan preparation for semester 2027 S, the planner had to find eleven Master courses among 94 courses in a flat generation selector. The user requested filtering both under Planung > Kalender > Plan erzeugen > Stundenpläne erzeugen and under Stammdaten > Lehrveranstaltungen.
+Outcome: Find cohort-specific courses directly in either workflow without manually scanning the entire list or using a second browser tab.
+Actor: Planner user.
+In scope: Cohort filtering in both surfaces within the applicable semester context; clear course/cohort identification; active-filter context; reset and no-matches states; explicit course selection independent of filter visibility; clear total selection including hidden selected courses; accessible operation within the existing layouts.
+Out of scope: Scheduling-rule changes, calendar-session filter redesign, academic-data mutation by filtering, raising the 1–20 generation limit, automatic generation or batching, and unrelated list redesign.
+Workflow: Narrow the relevant course list by cohort, inspect matches, explicitly select courses for the existing generation workflow or open an existing Academic Data course action, and reset filters when needed.
+Rules: Filtering only changes visibility; changing filters never silently adds or removes selected IDs; only explicit selection determines generation input; existing eligibility, revision, stale-state, and I-004 replacement safeguards remain authoritative.
+Data and integrations: Existing course, semester, cohort, and selection context; no external integration.
+Dependencies: FS-007, FS-019, I-003; preserve I-004.
+UI references: User screenshots and first-plan walkthrough dated 03.11.2026 and the existing Academic Data course list.
+Completion: The eleven MA IT & Wirtschaftsinformatik – 2. Semester courses can be isolated from 94 courses in 2027 S in both surfaces, and selection remains understandable through filtering.
+Clarification topics: Additional filters/search by name or code; grouping; optional select-visible action; filter persistence and semester-change behavior. These are proposals, not confirmed scope.
+
+Keep the specification consistent with docs/planning/Feature_slices.md. Define scenarios, requirements, edge cases, accessibility, and measurable success criteria without prescribing implementation or expanding scope. This backlog entry itself authorizes no specification or implementation work.
+```
+
+### I-006: Configurable Optimization Time and Valid Incumbent Acceptance
+
+#### User or business outcome
+
+A planner can give teaching optimization more than the current 60 seconds and,
+when the time budget expires, review and explicitly accept an available valid
+result even if the optimizer has not proved it optimal. Useful work is not
+discarded solely because an optimality proof is missing.
+
+#### Rationale for this slice boundary
+
+First-plan preparation on 03.11.2026 repeatedly returned
+`OPTIMAL_RESULT_NOT_PROVEN` for larger selections, with `saved: false`.
+Smaller selections succeeded, including six courses and 192 units in 24.7
+seconds. These observations demonstrate a practical time-budget problem, not a
+fixed five- or six-course limit or proof of invalid source data. A longer budget
+and safe handling of valid results at timeout address one coherent outcome.
+
+#### Primary actors
+
+- Planner user.
+- Installation operator if configuration is supplied at deployment.
+
+#### Preconditions
+
+- I-003 provides unified conflict-aware teaching generation.
+- I-004 provides comparison and atomic acceptance of a generated alternative.
+- An active Working revision and valid planning inputs exist.
+
+#### In scope
+
+- Increase the default optimization budget beyond 60 seconds and make the
+  budget configurable. Five minutes is the proposed starting default; its exact
+  value and configuration surface remain clarification topics.
+- Communicate the effective budget, elapsed time, and understandable running,
+  timeout, result-review, and failure states without requiring browser DevTools.
+- On budget exhaustion, distinguish an available hard-valid candidate from
+  absence of a valid candidate and from an actual operation failure.
+- Offer a hard-valid candidate for explicit planner acceptance even when
+  optimality has not been proved for total units or a later preference objective.
+- Show scheduled/required/remaining units for the selection and each course,
+  available reasons, elapsed time, and the scope of any optimality proof.
+- Where available, show a trustworthy upper bound on achievable total units and
+  explain the remaining possible improvement. If unavailable, state that the
+  gap is unknown rather than inventing a percentage or bound.
+- Explain that a valid accepted result can leave avoidable units open, have
+  improvable arrangement preferences, and constrain later runs when retained
+  as fixed occupancy.
+- Reuse the comparison/accept/cancel workflow with atomic application of the
+  complete selected result and fresh validation before acceptance.
+- Handle longer computations without confusing client/proxy timeouts or a
+  frozen interface; exact execution and transport mechanisms are not prescribed.
+
+#### Out of scope
+
+- Weakening any hard scheduling constraint or accepting an invalid candidate.
+- Automatically saving an unproven candidate, including for previously
+  unplanned selections, or interpreting elapsed time as proof of infeasibility.
+- Guaranteeing an optimum or completion merely by increasing the budget.
+- Raising the current twenty-course selection limit or promising one joint
+  94-course solve in this slice.
+- Automatically repartitioning runs, moving unselected/protected sessions,
+  mandatory parallel solving, or prescribing a new solver/architecture.
+- Implementation, detailed specifications, plans, or tasks in this update.
+
+#### Main workflow
+
+The planner starts optimization with a visible effective budget. A result with
+the required optimality proofs follows the existing workflow. At timeout, an
+available hard-valid candidate is presented as provisional and explicitly not
+proven optimal, with coverage and quality information. The planner accepts the
+complete candidate or cancels to retain the saved state. If no valid candidate
+exists, the application explains that nothing was saved and offers a fresh run
+with a larger budget or a smaller selection.
+
+#### Business rules
+
+- Feasibility and optimality are separate claims: all active semester, course,
+  time-window, holiday, capacity, eligibility, availability, teaching-overlap,
+  and active-exam constraints remain authoritative for every offered candidate.
+- No optimality proof is required to offer a hard-valid incumbent after timeout;
+  this deliberately supersedes the FS-010/I-003 all-stages-optimal-or-no-save
+  baseline for explicitly accepted candidates only.
+- Complete unit coverage does not imply optimal room changes, lecturer changes,
+  or other arrangement objectives. Report proven objectives accurately.
+- An unproven result always requires explicit acceptance, extending I-004's
+  decision workflow to initially unplanned selections in this case.
+- Acceptance is operation-wide and atomic. Per-course mixing is excluded.
+- Cancel, failure, and timeout without a valid candidate do not alter saved
+  sessions. Stale candidates cannot be accepted without fresh validation;
+  a longer compute window does not weaken existing concurrency safeguards.
+- Solver proof scope refers to the prepared selected-course problem with fixed
+  occupancy, never automatically to a globally optimal semester.
+
+#### Data inputs and outputs
+
+Inputs are the existing selected-course planning snapshot and the effective
+time budget. Outputs are running/result state, a provisional validated
+candidate when available, coverage metrics, available bounds and proof scope,
+and an atomic accepted result or no saved change. A provisional candidate is
+not exposed as the saved Working revision before acceptance.
+
+#### Integrations
+
+None. Deployment/proxy behavior must support the longer workflow; infrastructure
+details remain implementation choices.
+
+#### UI references
+
+- User's 03.11.2026 generation screenshots and JSON response:
+  `OPTIMAL_RESULT_NOT_PROVEN`, objective `total_units`, `saved: false`.
+- Existing `Stundenpläne erzeugen`, saved-result summaries, and I-004 comparison.
+
+#### Constraints and assumptions
+
+- Confirmed: increase and configure the limit; permit conscious acceptance of
+  valid unproven candidates; disclose the quality trade-offs.
+- Five minutes is a recommendation rather than a separately confirmed default.
+- No assumption that an incumbent exists at every timeout or that longer
+  calculation always improves it.
+- Requirements only; no implementation is authorized by this document update.
+
+#### Dependencies
+
+- I-003, I-004, FS-013, and FS-019. Independent of I-005 filtering.
+
+#### Completion outcome
+
+The planner can run with a configured budget greater than 60 seconds. When a
+hard-valid candidate is available at timeout without full optimality proof,
+the planner sees its coverage, uncertainty, and proof scope and can explicitly
+accept it atomically. Cancellation, stale acceptance, and absence of a valid
+candidate preserve saved work. Representative larger selections are validated
+without claiming that any course count guarantees timely completion.
+
+#### Open clarification topics
+
+- Default budget (proposed: five minutes), maximum budget, configuration owner,
+  and whether a planner can override it per run.
+- Whether to offer `Weiter optimieren` directly, and whether that means resume
+  or a new run; genuine solver continuation is not yet a confirmed requirement.
+- Progress update frequency, cancellation during computation, and behavior
+  after navigation or reconnection.
+- Candidate review validity duration and quality-bound presentation where only
+  some objective stages are proven.
+
+#### Specification status
+
+Proposed — requirements recorded; not specified or implemented. Exact budget
+and optional continuation interaction remain open.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for I-006: Configurable Optimization Time and Valid Incumbent Acceptance only when specification work is explicitly requested.
+
+Context: Teaching generation currently has a 60-second operation deadline and saves only results proven optimal through all objective stages. During 2027 S preparation, larger selections failed with OPTIMAL_RESULT_NOT_PROVEN for total_units and saved:false, while smaller groups succeeded. The user approved a longer configurable limit and conscious acceptance of valid unproven results.
+Outcome: Give larger selected-course problems more computation time and avoid discarding useful hard-valid candidates solely because an optimality proof is missing.
+Actors: Planner; installation operator where deployment configuration applies.
+In scope: Default budget above 60 seconds; configurable effective budget; understandable running/timeout/result states; hard-valid provisional candidates at timeout; explicit operation-wide accept/cancel even for previously unplanned selections; course/selection coverage, remaining units and available reasons; accurate per-objective proof scope; trustworthy unit bounds when available, unknown gap otherwise; fresh validation, atomic save, stale protection, and preserved saved state on cancellation or no candidate.
+Rules: Hard constraints never weaken. An unproven candidate never auto-saves. Completeness is distinct from preference optimality. This supersedes the FS-010/I-003 all-stages-optimal requirement only for explicit acceptance of valid candidates and extends the I-004 decision flow. No claim of global semester optimality from a selected-course solve.
+Quality trade-offs: Possible avoidable remaining units, inferior arrangement preferences, and constraints on later runs when accepted sessions become fixed occupancy must be clear.
+Out of scope: Invalid candidates; guaranteed optimality or timely completion; raising the twenty-course limit; a guaranteed 94-course joint solve; automatic batching or changes to unselected/protected sessions; prescribed solver, parallelism, architecture, or transport.
+Data/integrations: Existing prepared planning inputs plus effective budget and available candidate/proof/bound information; no external system.
+Dependencies: I-003, I-004, FS-013, FS-019; independent of I-005.
+References: 03.11.2026 first-plan screenshots/error response and existing generation/result/comparison surfaces.
+Completion: A budget above 60 seconds is usable; timeout with a valid candidate yields an honest actionable review and atomic explicit acceptance, while no valid candidate or cancellation preserves saved work.
+Clarification: Five minutes is the proposed default, not a separately confirmed exact value. Resolve maximum/configuration ownership, per-run override, optional Weiter optimieren and its semantics, running cancellation/navigation, progress, and candidate validity.
+
+Keep the specification consistent with docs/planning/Feature_slices.md. Define measurable scenarios including valid feasible-only timeout, timeout with no candidate, later-objective timeout, fully proven results, stale acceptance, and cancellation without prescribing implementation. This backlog entry authorizes no specification or implementation work by itself.
+```
+
 ## Deferred scope
 
 - **Automated email delivery**: FS-015 and FS-021 deliberately use
@@ -3497,6 +3820,8 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-11-03 | New improvement slice, optimization-result policy change | I-006, FS-010, I-003, I-004 | Recorded a longer configurable optimization budget and explicit atomic acceptance of hard-valid candidates without complete optimality proof, with honest quality/bound reporting and unchanged hard constraints; five minutes remains the proposed default. Requirements only. | Larger first-plan selections exhausted the 60-second deadline and discarded any potential useful result; the user approved increasing the limit and offering valid unproven results for conscious acceptance. |
+| 2026-11-03 | New improvement slice, product-level usability scope change | I-005 | Recorded cohort-based course-list filtering for both teaching-generation selection and Academic Data course administration; additional filter dimensions remain clarification topics. Requirements only, no specification or implementation started. | First-plan preparation required identifying eleven Master courses in a flat list of 94 courses; the user requested direct filtering in both views. |
 | 2026-08-14 | Split slice, new deferred slice, reordered slice, product-scope and authentication-boundary change | FS-016, FS-022, FS-020, FS-021, FS-017 | Narrowed FS-016 to self-contained named planner authentication with exactly one account administrator, one active session per account, one-time startup bootstrap and recovery, manually delivered setup/reset access, and minimal account lifecycle visibility; moved authenticated lecturer access to new deferred FS-022; made FS-016 the recommended next slice. | Protect powerful planner work without depending on VPN, SSO, or email while keeping the first implementation simple and preserving existing accountless lecturer capabilities. |
 | 2026-08-14 | Identifier and status reconciliation | I-001 through I-004, FS-001, FS-006, FS-010 | Added the missing I-001 and I-003 map entries, corrected the former FS-022 and FS-023 labels to I-002 and I-004, aligned direct dependencies, and reconciled statuses with remaining validation work. | Make the slice map mirror the improvement specification directories while retaining earlier FS slices as historical baselines. |
 | 2026-08-12 | New improvement and product-level scheduling decision change | I-004, FS-010 | Added a post-generation comparison that lets the planner atomically accept one valid joint regenerated result or cancel to retain the complete current selection; documented that this supersedes FS-010's automatic non-worsening persistence rule without weakening hard-constraint validation. | A complete current schedule can contain active-window or other hard-constraint warnings while a valid partial alternative is operationally preferable; completeness alone must not silently decide the replacement, and per-course acceptance would break joint conflict guarantees. |

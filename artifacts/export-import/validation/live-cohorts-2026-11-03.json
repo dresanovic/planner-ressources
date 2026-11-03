@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Business Analytics & AI - 2.Semester",
+    "studentCount": "30"
+  },
+  {
+    "name": "Business Analytics & AI - 4.Semester",
+    "studentCount": "30"
+  },
+  {
+    "name": "Business Analytics & AI - 6.Semester",
+    "studentCount": "30"
+  },
+  {
+    "name": "Business Software Development – 2. Semester",
+    "studentCount": "25"
+  },
+  {
+    "name": "Business Software Development – 4. Semester",
+    "studentCount": "25"
+  },
+  {
+    "name": "Business Software Development – 6. Semester",
+    "studentCount": "25"
+  },
+  {
+    "name": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "studentCount": "65"
+  },
+  {
+    "name": "Wirtschaftsinformatik - 2.Semester",
+    "studentCount": "40"
+  },
+  {
+    "name": "Wirtschaftsinformatik - 4.Semester",
+    "studentCount": "40"
+  },
+  {
+    "name": "Wirtschaftsinformatik - 6.Semester",
+    "studentCount": "40"
+  }
+]

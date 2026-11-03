@@ -1,0 +1,84 @@
+- complementary:
+  - generic: RP
+  - generic: Ressourcenplanung
+  - button "Navigation lösen":
+    - generic: Navigation lösen
+  - navigation "Hauptnavigation":
+    - button "Planung" [expanded]:
+      - generic: Planung
+      - generic: −
+    - button "Kalender": Kalender
+    - button "Versionen": Versionen
+    - button "Prüfungen": Prüfungen
+    - button "Abstimmung mit Lehrenden": Abstimmung mit Lehrenden
+    - button "Stammdaten" [expanded]:
+      - generic: Stammdaten
+      - generic: −
+    - button "Semester": Semester
+    - button "Feiertage": Feiertage
+    - button "Kohorten": Kohorten
+    - button "Lehrveranstaltungen": Lehrveranstaltungen
+    - button "Studienformen": Studienformen
+    - button "Zeitfenster": Zeitfenster
+    - button "Lehrende": Lehrende
+    - button "Räume": Räume
+    - button "Planer-Konten": Planer-Konten
+  - strong: daniel
+  - generic: daniel
+  - button "Passwort ändern"
+  - button "Abmelden"
+- 'main "Akademische Stammdaten: time-windows" [active]':
+  - paragraph: Planungsverwaltung
+  - heading "Akademische Stammdaten" [level=1]
+  - text: Anzeigen
+  - combobox "Anzeigen":
+    - option "Alle Datensätze" [selected]
+    - option "Aktiv"
+    - option "Inaktiv"
+  - heading "Zeitfenster" [level=2]
+  - list:
+    - generic: Berufsbegleitend · Freitag, 16:00–22:00
+    - generic: Aktiv
+    - button "Bearbeiten"
+    - button "Archivieren"
+    - button "Löschen"
+    - generic: Berufsbegleitend · Samstag, 08:15–15:00
+    - generic: Aktiv
+    - button "Bearbeiten"
+    - button "Archivieren"
+    - button "Löschen"
+    - generic: Vollzeit · Montag, 08:15–17:00
+    - generic: Aktiv
+    - button "Bearbeiten"
+    - button "Archivieren"
+    - button "Löschen"
+    - generic: Vollzeit · Dienstag, 08:15–17:00
+    - generic: Aktiv
+    - button "Bearbeiten"
+    - button "Archivieren"
+    - button "Löschen"
+    - generic: Vollzeit · Mittwoch, 08:15–17:00
+    - generic: Aktiv
+    - button "Bearbeiten"
+    - button "Archivieren"
+    - button "Löschen"
+  - 'heading "Erstellen: Zeitfenster" [level=2]'
+  - generic: Studienform
+  - combobox "Studienform":
+    - option "Studienform auswählen" [selected]
+    - option "Berufsbegleitend"
+    - option "Vollzeit"
+  - generic: Wochentag
+  - combobox "Wochentag":
+    - option "Montag" [selected]
+    - option "Dienstag"
+    - option "Mittwoch"
+    - option "Donnerstag"
+    - option "Freitag"
+    - option "Samstag"
+    - option "Sonntag"
+  - generic: Beginn
+  - textbox "Beginn"
+  - generic: Ende
+  - textbox "Ende"
+  - button "Erstellen"

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "country": "AT",
+  "semesterName": "2027 S",
+  "rangeStart": "2027-02-19",
+  "rangeEnd": "2027-08-17",
+  "scope": "Six nationwide statutory holidays plus institution-wide Easter teaching closure 2027-03-20 through 2027-03-29 inclusive, explicitly requested by user. Statutory name Ostermontag preserved.",
+  "sources": [
+    "https://www.usp.gv.at/themen/mitarbeiter-und-gesundheit/urlaub-und-arbeitszeit/ruhezeiten.html",
+    "https://www.bmeia.gv.at/fileadmin/user_upload/Vertretungen/Kopenhagen/Aktuelles/Feiertage_2025-2027.pdf",
+    "https://www.bmb.gv.at/Themen/schule/schulpraxis/termine/ferientermine_26_27.html"
+  ],
+  "verifiedOn": "2026-11-03",
+  "holidays": [
+    {
+      "date": "2027-03-20",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-21",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-22",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-23",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-24",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-25",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-26",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-27",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-28",
+      "name": "Osterferien (unterrichtsfrei)"
+    },
+    {
+      "date": "2027-03-29",
+      "name": "Ostermontag"
+    },
+    {
+      "date": "2027-05-01",
+      "name": "Staatsfeiertag"
+    },
+    {
+      "date": "2027-05-06",
+      "name": "Christi Himmelfahrt"
+    },
+    {
+      "date": "2027-05-17",
+      "name": "Pfingstmontag"
+    },
+    {
+      "date": "2027-05-27",
+      "name": "Fronleichnam"
+    },
+    {
+      "date": "2027-08-15",
+      "name": "Mariä Himmelfahrt"
+    }
+  ],
+  "institutionClosures": [
+    {
+      "start": "2027-03-20",
+      "end": "2027-03-29",
+      "name": "Osterferien",
+      "basis": "User explicitly adopts the school Easter vacation period as institution-wide non-teaching days"
+    }
+  ]
+}

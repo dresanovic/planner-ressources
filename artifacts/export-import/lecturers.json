@@ -1,0 +1,1936 @@
+{
+  "schemaVersion": 1,
+  "sourceSystem": "CAMPUSonline CAMPUS 02",
+  "sourceSemester": "2026 S",
+  "intendedTargetSemester": "2027 S",
+  "sources": [
+    {
+      "curriculumVersionId": "297",
+      "curriculumName": "FH-Bachelorstudiengang Wirtschaftsinformatik Berufsbegleitend [2021W V1], Bachelorstudium",
+      "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=297&objTermId=124&orgId=1",
+      "capturedAt": "2026-11-03T10:50:56.666Z",
+      "courseCount": 36,
+      "file": "curriculum-297-2026-S.json",
+      "sha256": "71a45b61543831c3cc6d655f9022be53f3097934b5926c2bc71c281176bd3879"
+    },
+    {
+      "curriculumVersionId": "301",
+      "curriculumName": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+      "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=301&objTermId=124&orgId=1",
+      "capturedAt": "2026-11-03T10:50:43.438Z",
+      "courseCount": 13,
+      "file": "curriculum-301-2026-S.json",
+      "sha256": "8ac3aa197db1cf634ddc947e012561011606b08d6f170348f3fb5cf7e9831935"
+    },
+    {
+      "curriculumVersionId": "349",
+      "curriculumName": "FH-Bachelorstudiengang Business Analytics und Artificial Intelligence Vollzeit [2020W V3], Bachelorstudium",
+      "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=349&objTermId=124&orgId=1",
+      "capturedAt": "2026-11-03T10:50:53.080Z",
+      "courseCount": 22,
+      "file": "curriculum-349-2026-S.json",
+      "sha256": "9202d8cc7bd0c82e3866f1642b62e86fb9e2ab81c775ae42dd35be36bd7ab919"
+    },
+    {
+      "curriculumVersionId": "362",
+      "curriculumName": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+      "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=362&objTermId=124&orgId=1",
+      "capturedAt": "2026-11-03T10:50:54.797Z",
+      "courseCount": 29,
+      "file": "curriculum-362-2026-S.json",
+      "sha256": "12359f06fd6ce463a6257d0ef375c547ff336cc0aed232a354cb1e04958a2ee7"
+    }
+  ],
+  "referenceCodePolicy": "campus02:<business-card-person-id>; stability across future exports must be checked",
+  "roundingPolicy": "nearest integer, ties rounded up (ROUND_HALF_UP); original UE retained",
+  "courseExclusionPolicy": "Exclude Bachelorprüfung, Masterprüfung and Masterarbeit (including numbered suffixes)",
+  "excludedCourseCount": 5,
+  "lecturers": [
+    {
+      "name": "Amann-Langeder, Michael",
+      "referenceCode": "campus02:34FFA8D4A1C8CAFB",
+      "sourcePersonId": "34FFA8D4A1C8CAFB",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/34FFA8D4A1C8CAFB",
+      "sourceCourses": [
+        {
+          "courseId": "117579",
+          "code": "0319BB4021",
+          "title": "Requirements Engineering",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117580",
+          "code": "0319BB4011",
+          "title": "Softwareentwicklungsprojekt",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Ambrosch, Clemens",
+      "referenceCode": "campus02:E2F084FFC84CD939",
+      "sourcePersonId": "E2F084FFC84CD939",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/E2F084FFC84CD939",
+      "sourceCourses": [
+        {
+          "courseId": "117519",
+          "code": "0319BB6002",
+          "title": "Virtualisierung",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Beer, Patrick",
+      "referenceCode": "campus02:8D880F8B1D500B35",
+      "sourcePersonId": "8D880F8B1D500B35",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/8D880F8B1D500B35",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117563",
+          "code": "0319BB2010",
+          "title": "Buchhaltung und Bilanzierung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117647",
+          "code": "0319BB4005",
+          "title": "Erweiterte Themen der digitalen Geschäftsmodelle",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117970",
+          "code": "0319BB2017",
+          "title": "Erweiterte Themen der Softwareentwicklung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117987",
+          "code": "0319BB2005",
+          "title": "Grundlagen der Netzwerktechnik",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117648",
+          "code": "0319BB4013",
+          "title": "Informationssysteme",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117992",
+          "code": "0319BB2021",
+          "title": "Projekt zum Berufspraktikum",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117556",
+          "code": "0320BB2007",
+          "title": "Operation Research",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117752",
+          "code": "0835VD4009",
+          "title": "Digitale Geschäftsmodelle 2",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117753",
+          "code": "0835VD4002",
+          "title": "Informationssysteme",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Bećirević, Haris",
+      "referenceCode": "campus02:6D628EB4D3B90E98",
+      "sourcePersonId": "6D628EB4D3B90E98",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/6D628EB4D3B90E98",
+      "sourceCourses": [
+        {
+          "courseId": "117579",
+          "code": "0319BB4021",
+          "title": "Requirements Engineering",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117580",
+          "code": "0319BB4011",
+          "title": "Softwareentwicklungsprojekt",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Bouwman, Marinus",
+      "referenceCode": "campus02:C1C5A47BFD7EE532",
+      "sourcePersonId": "C1C5A47BFD7EE532",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/C1C5A47BFD7EE532",
+      "sourceCourses": [
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117978",
+          "code": "0835VD6007",
+          "title": "Grundlagen Mobile Computing",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117751",
+          "code": "0835VD4007",
+          "title": "Requirements Engineering",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Bower, Hendrik",
+      "referenceCode": "campus02:AF3152B0E24DB28F",
+      "sourcePersonId": "AF3152B0E24DB28F",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/AF3152B0E24DB28F",
+      "sourceCourses": [
+        {
+          "courseId": "117977",
+          "code": "0835VD6011",
+          "title": "Presentations",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117711",
+          "code": "0835VD2002",
+          "title": "Professional English",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117749",
+          "code": "0835VD4004",
+          "title": "Scientific English",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Briscoe, Henry",
+      "referenceCode": "campus02:01F1C806C9A8937A",
+      "sourcePersonId": "01F1C806C9A8937A",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/01F1C806C9A8937A",
+      "sourceCourses": [
+        {
+          "courseId": "117521",
+          "code": "0319BB6011",
+          "title": "Professional Meetings in English",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117548",
+          "code": "0320BB2006",
+          "title": "Communication & Presentation",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117943",
+          "code": "0864VZ4006",
+          "title": "Business English 2",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Derado, Ivo",
+      "referenceCode": "campus02:C730AEC447334CF5",
+      "sourcePersonId": "C730AEC447334CF5",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/C730AEC447334CF5",
+      "sourceCourses": [
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Eberhard, Lukas",
+      "referenceCode": "campus02:B5555E345ED28DBB",
+      "sourcePersonId": "B5555E345ED28DBB",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/B5555E345ED28DBB",
+      "sourceCourses": [
+        {
+          "courseId": "117863",
+          "code": "0835VD2001",
+          "title": "Mathematik für Informatik 2",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Fuchs, Bernhard",
+      "referenceCode": "campus02:010FF70CDC2146F1",
+      "sourcePersonId": "010FF70CDC2146F1",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/010FF70CDC2146F1",
+      "sourceCourses": [
+        {
+          "courseId": "117993",
+          "code": "0319BB2022",
+          "title": "Laufendes Berufspraktikum im Unternehmen 2",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117652",
+          "code": "0319BB4018",
+          "title": "Laufendes Berufspraktikum im Unternehmen 4",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117515",
+          "code": "0319BB6012",
+          "title": "Laufendes Berufspraktikum im Unternehmen 6",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Gerzic, Harris",
+      "referenceCode": "campus02:EB250C321C4BAB92",
+      "sourcePersonId": "EB250C321C4BAB92",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/EB250C321C4BAB92",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "118026",
+          "code": "0319BB6005",
+          "title": "Fallstudien der Wirtschaftsinformatik",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117907",
+          "code": "0864VZ2008",
+          "title": "Business IT-Applications",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117978",
+          "code": "0835VD6007",
+          "title": "Grundlagen Mobile Computing",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117855",
+          "code": "0835VD6003",
+          "title": "Supply Chain Management",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Glinik, Martin",
+      "referenceCode": "campus02:75055F43A64C3544",
+      "sourcePersonId": "75055F43A64C3544",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/75055F43A64C3544",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117846",
+          "code": "0864VZ4001",
+          "title": "Electronic und Mobile Business",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Grabner, Johann",
+      "referenceCode": "campus02:C72B956A216E7641",
+      "sourcePersonId": "C72B956A216E7641",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/C72B956A216E7641",
+      "sourceCourses": [
+        {
+          "courseId": "117972",
+          "code": "0320BB2024",
+          "title": "Integration elekt. Geschäftsprozesse",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Grasser, Michael Georg",
+      "referenceCode": "campus02:683936EF0C73C08F",
+      "sourcePersonId": "683936EF0C73C08F",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/683936EF0C73C08F",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Grobelscheg, Lisa",
+      "referenceCode": "campus02:7B535F25447DE522",
+      "sourcePersonId": "7B535F25447DE522",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/7B535F25447DE522",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Grobelscheg, Philipp",
+      "referenceCode": "campus02:3937638AF47C6DBE",
+      "sourcePersonId": "3937638AF47C6DBE",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/3937638AF47C6DBE",
+      "sourceCourses": [
+        {
+          "courseId": "117735",
+          "code": "0319BB2008",
+          "title": "Algorithmen",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Grünwald, Stefan",
+      "referenceCode": "campus02:066E22DC2C0CA454",
+      "sourcePersonId": "066E22DC2C0CA454",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/066E22DC2C0CA454",
+      "sourceCourses": [
+        {
+          "courseId": "118026",
+          "code": "0319BB6005",
+          "title": "Fallstudien der Wirtschaftsinformatik",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117658",
+          "code": "0319BB4014",
+          "title": "Markup Languages",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117890",
+          "code": "0320BB2019",
+          "title": "Systems Engineering & Analytisches Denken",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117605",
+          "code": "0864VZ6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117938",
+          "code": "0835VD6001",
+          "title": "Fallstudien der Wirtschaftsinformatik",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117978",
+          "code": "0835VD6007",
+          "title": "Grundlagen Mobile Computing",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117949",
+          "code": "0835VD2007",
+          "title": "Konfigurationsmanagement",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117855",
+          "code": "0835VD6003",
+          "title": "Supply Chain Management",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Gschweitl, Roswitha",
+      "referenceCode": "campus02:B940C0935F222834",
+      "sourcePersonId": "B940C0935F222834",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/B940C0935F222834",
+      "sourceCourses": [
+        {
+          "courseId": "117946",
+          "code": "0319BB2023",
+          "title": "Präsentationstechniken",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Hatzl, Johannes",
+      "referenceCode": "campus02:4B9FD052DF069DEC",
+      "sourcePersonId": "4B9FD052DF069DEC",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/4B9FD052DF069DEC",
+      "sourceCourses": [
+        {
+          "courseId": "117734",
+          "code": "0319BB2019",
+          "title": "Mathematik in der Betriebswirtschaft",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117556",
+          "code": "0320BB2007",
+          "title": "Operation Research",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117857",
+          "code": "0864VZ2004",
+          "title": "Mathematik 2",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Hatzl, Stefanie",
+      "referenceCode": "campus02:AD9C25620F917CAF",
+      "sourcePersonId": "AD9C25620F917CAF",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/AD9C25620F917CAF",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117891",
+          "code": "0320BB2001",
+          "title": "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117748",
+          "code": "0835VD4001",
+          "title": "Wissenschaftliches Arbeiten und Hypothesenbildung",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Hochfellner, Walter",
+      "referenceCode": "campus02:6D8B808AB8A6FE7C",
+      "sourcePersonId": "6D8B808AB8A6FE7C",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/6D8B808AB8A6FE7C",
+      "sourceCourses": [
+        {
+          "courseId": "117734",
+          "code": "0319BB2019",
+          "title": "Mathematik in der Betriebswirtschaft",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Hofer, Christian",
+      "referenceCode": "campus02:99108567F747C915",
+      "sourcePersonId": "99108567F747C915",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/99108567F747C915",
+      "sourceCourses": [
+        {
+          "courseId": "117949",
+          "code": "0835VD2007",
+          "title": "Konfigurationsmanagement",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Hollosi, Arno",
+      "referenceCode": "campus02:08FF124FA70CBBA2",
+      "sourcePersonId": "08FF124FA70CBBA2",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/08FF124FA70CBBA2",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "120737",
+          "code": "0864VZ4009",
+          "title": "Data Cleaning und Data Analytics",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Horneck, Karin",
+      "referenceCode": "campus02:A7FF75B4D5ACE6B7",
+      "sourcePersonId": "A7FF75B4D5ACE6B7",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/A7FF75B4D5ACE6B7",
+      "sourceCourses": [
+        {
+          "courseId": "117936",
+          "code": "0864VZ2002",
+          "title": "Algorithmen und Datenstrukturen",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Höber, Angelika",
+      "referenceCode": "campus02:DA83715465530449",
+      "sourcePersonId": "DA83715465530449",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/DA83715465530449",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117517",
+          "code": "0319BB6006",
+          "title": "Wirtschaftsinformatik Projekt",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "118008",
+          "code": "0319BB4015",
+          "title": "Wissenschaftliches Arbeiten",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117891",
+          "code": "0320BB2001",
+          "title": "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117557",
+          "code": "0320BB2020",
+          "title": "Begleitendes FuE Projekt",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Hörmann, Monika",
+      "referenceCode": "campus02:C2F31424322120EF",
+      "sourcePersonId": "C2F31424322120EF",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/C2F31424322120EF",
+      "sourceCourses": [
+        {
+          "courseId": "117946",
+          "code": "0319BB2023",
+          "title": "Präsentationstechniken",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117945",
+          "code": "0319BB2007",
+          "title": "Teamtraining",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Innerhuber, Nikolaus",
+      "referenceCode": "campus02:9341DD2AEF1EF140",
+      "sourcePersonId": "9341DD2AEF1EF140",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/9341DD2AEF1EF140",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Ivković, Edin",
+      "referenceCode": "campus02:E5EDC4B26217CF9D",
+      "sourcePersonId": "E5EDC4B26217CF9D",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/E5EDC4B26217CF9D",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Jesenko, Berndt",
+      "referenceCode": "campus02:87386A33AA11E3F3",
+      "sourcePersonId": "87386A33AA11E3F3",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/87386A33AA11E3F3",
+      "sourceCourses": [
+        {
+          "courseId": "117734",
+          "code": "0319BB2019",
+          "title": "Mathematik in der Betriebswirtschaft",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117547",
+          "code": "0320BB2022",
+          "title": "Consulting Methoden",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117905",
+          "code": "0320BB2018",
+          "title": "Seminar zur Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117846",
+          "code": "0864VZ4001",
+          "title": "Electronic und Mobile Business",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117857",
+          "code": "0864VZ2004",
+          "title": "Mathematik 2",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117747",
+          "code": "0835VD4003",
+          "title": "Betriebspraktische individuelle Vertiefung 2",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117980",
+          "code": "0835VD6005",
+          "title": "Betriebspraktische individuelle Vertiefung 4",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117949",
+          "code": "0835VD2007",
+          "title": "Konfigurationsmanagement",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117793",
+          "code": "0835VD2004",
+          "title": "Objektorientierte Programmierung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117855",
+          "code": "0835VD6003",
+          "title": "Supply Chain Management",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Jiménez, Simon",
+      "referenceCode": "campus02:9EA890015EAF213F",
+      "sourcePersonId": "9EA890015EAF213F",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/9EA890015EAF213F",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117976",
+          "code": "0835VD6009",
+          "title": "Cloud Computing",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Joyce, Elizabeth",
+      "referenceCode": "campus02:6E73DB80D1617246",
+      "sourcePersonId": "6E73DB80D1617246",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/6E73DB80D1617246",
+      "sourceCourses": [
+        {
+          "courseId": "118009",
+          "code": "0319BB4017",
+          "title": "Business English",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Kapfer, Viktoria",
+      "referenceCode": "campus02:D1A879C956E9D2D6",
+      "sourcePersonId": "D1A879C956E9D2D6",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/D1A879C956E9D2D6",
+      "sourceCourses": [
+        {
+          "courseId": "117627",
+          "code": "0319BB4020",
+          "title": "Erweiterte Themen des Prozessmanagement",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117973",
+          "code": "0835VD4005",
+          "title": "Prozessmanagement 2",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Kienzl, Stefan",
+      "referenceCode": "campus02:4DFDE9782DB5540E",
+      "sourcePersonId": "4DFDE9782DB5540E",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/4DFDE9782DB5540E",
+      "sourceCourses": [
+        {
+          "courseId": "117987",
+          "code": "0319BB2005",
+          "title": "Grundlagen der Netzwerktechnik",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Koch, Volker",
+      "referenceCode": "campus02:A7F8F1C446D7DD60",
+      "sourcePersonId": "A7F8F1C446D7DD60",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/A7F8F1C446D7DD60",
+      "sourceCourses": [
+        {
+          "courseId": "117563",
+          "code": "0319BB2010",
+          "title": "Buchhaltung und Bilanzierung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117562",
+          "code": "0319BB2020",
+          "title": "Einführung in die Betriebswirtschaftslehre",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117906",
+          "code": "0864VZ2007",
+          "title": "Betriebswirtschaftslehre",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117900",
+          "code": "0864VZ2010",
+          "title": "Rhetorik und Präsentation",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Kochauf, Stephan",
+      "referenceCode": "campus02:296474ACC3749EC1",
+      "sourcePersonId": "296474ACC3749EC1",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/296474ACC3749EC1",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117970",
+          "code": "0319BB2017",
+          "title": "Erweiterte Themen der Softwareentwicklung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Koitz-Hristov, Roxane",
+      "referenceCode": "campus02:16DB2721A8B92422",
+      "sourcePersonId": "16DB2721A8B92422",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/16DB2721A8B92422",
+      "sourceCourses": [
+        {
+          "courseId": "117791",
+          "code": "0835VD2006",
+          "title": "Datenstrukturen und Algorithmen",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117792",
+          "code": "0835VD2008",
+          "title": "Web Technologien & Usability",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Krassnigg, Helmut",
+      "referenceCode": "campus02:3FE55B7E1464E266",
+      "sourcePersonId": "3FE55B7E1464E266",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/3FE55B7E1464E266",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Kraxberger, Stefan",
+      "referenceCode": "campus02:8072A685B46B8684",
+      "sourcePersonId": "8072A685B46B8684",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/8072A685B46B8684",
+      "sourceCourses": [
+        {
+          "courseId": "117781",
+          "code": "0835VD6008",
+          "title": "Sicherheit von Webapplikationen",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Kreuzer, Ernst",
+      "referenceCode": "campus02:0D6019B9267012CC",
+      "sourcePersonId": "0D6019B9267012CC",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/0D6019B9267012CC",
+      "sourceCourses": [
+        {
+          "courseId": "117944",
+          "code": "0864VZ4007",
+          "title": "Managerial Communication und Leadership",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Kröll, Mark",
+      "referenceCode": "campus02:FEA1A0B4590D5D33",
+      "sourcePersonId": "FEA1A0B4590D5D33",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/FEA1A0B4590D5D33",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Leitner, Sascha",
+      "referenceCode": "campus02:34EE877A518FC99F",
+      "sourcePersonId": "34EE877A518FC99F",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/34EE877A518FC99F",
+      "sourceCourses": [
+        {
+          "courseId": "117911",
+          "code": "0864VZ4005",
+          "title": "Internet Security",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Lindbichler, Georg",
+      "referenceCode": "campus02:192F5B334A7D23E3",
+      "sourcePersonId": "192F5B334A7D23E3",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/192F5B334A7D23E3",
+      "sourceCourses": [
+        {
+          "courseId": "117710",
+          "code": "0835VD2003",
+          "title": "Personalmanagement und Arbeitsrecht",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Liu, Xiaoshan",
+      "referenceCode": "campus02:9CEE0DC1020F7AC3",
+      "sourcePersonId": "9CEE0DC1020F7AC3",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/9CEE0DC1020F7AC3",
+      "sourceCourses": [
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117556",
+          "code": "0320BB2007",
+          "title": "Operation Research",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Meglitsch, Mario",
+      "referenceCode": "campus02:DDC8728DD3A3C28C",
+      "sourcePersonId": "DDC8728DD3A3C28C",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/DDC8728DD3A3C28C",
+      "sourceCourses": [
+        {
+          "courseId": "117562",
+          "code": "0319BB2020",
+          "title": "Einführung in die Betriebswirtschaftslehre",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117906",
+          "code": "0864VZ2007",
+          "title": "Betriebswirtschaftslehre",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Merth, Harald",
+      "referenceCode": "campus02:AD60EC1EBEA83942",
+      "sourcePersonId": "AD60EC1EBEA83942",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/AD60EC1EBEA83942",
+      "sourceCourses": [
+        {
+          "courseId": "117731",
+          "code": "0320BB2021",
+          "title": "Gesellschafts- und Vertragsrecht",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Moser, Mario",
+      "referenceCode": "campus02:CC60D01360A73BA2",
+      "sourcePersonId": "CC60D01360A73BA2",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/CC60D01360A73BA2",
+      "sourceCourses": [
+        {
+          "courseId": "117518",
+          "code": "0319BB6004",
+          "title": "Erweiterte Web-Technologien",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Neudorfer, Reinhard",
+      "referenceCode": "campus02:FDE7AE35064DC868",
+      "sourcePersonId": "FDE7AE35064DC868",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/FDE7AE35064DC868",
+      "sourceCourses": [
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117730",
+          "code": "0320BB2005",
+          "title": "Unternehmensgründung in der IT",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Neumann, Dominic",
+      "referenceCode": "campus02:305B526ED618EBCD",
+      "sourcePersonId": "305B526ED618EBCD",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/305B526ED618EBCD",
+      "sourceCourses": [
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Obermayr, Florian",
+      "referenceCode": "campus02:639CA1D1F252796C",
+      "sourcePersonId": "639CA1D1F252796C",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/639CA1D1F252796C",
+      "sourceCourses": [
+        {
+          "courseId": "117731",
+          "code": "0320BB2021",
+          "title": "Gesellschafts- und Vertragsrecht",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Pangerl, Christoph",
+      "referenceCode": "campus02:12E612097445B8A1",
+      "sourcePersonId": "12E612097445B8A1",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/12E612097445B8A1",
+      "sourceCourses": [
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Petelinc, Markus",
+      "referenceCode": "campus02:5959E1E78F716637",
+      "sourcePersonId": "5959E1E78F716637",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/5959E1E78F716637",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117971",
+          "code": "0319BB2018",
+          "title": "Software Design",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Phillips, Michael",
+      "referenceCode": "campus02:A837922C0DD9FD7E",
+      "sourcePersonId": "A837922C0DD9FD7E",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/A837922C0DD9FD7E",
+      "sourceCourses": [
+        {
+          "courseId": "117521",
+          "code": "0319BB6011",
+          "title": "Professional Meetings in English",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117548",
+          "code": "0320BB2006",
+          "title": "Communication & Presentation",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Prettenthaler, Elisabeth",
+      "referenceCode": "campus02:E2CE8CA0FF23027E",
+      "sourcePersonId": "E2CE8CA0FF23027E",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/E2CE8CA0FF23027E",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117563",
+          "code": "0319BB2010",
+          "title": "Buchhaltung und Bilanzierung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117658",
+          "code": "0319BB4014",
+          "title": "Markup Languages",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117517",
+          "code": "0319BB6006",
+          "title": "Wirtschaftsinformatik Projekt",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117557",
+          "code": "0320BB2020",
+          "title": "Begleitendes FuE Projekt",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117905",
+          "code": "0320BB2018",
+          "title": "Seminar zur Masterarbeit 1",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Puchleitner, Thomas",
+      "referenceCode": "campus02:1506FB680D28DDBB",
+      "sourcePersonId": "1506FB680D28DDBB",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/1506FB680D28DDBB",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Pöcherstorfer, Winfried",
+      "referenceCode": "campus02:E166F279DDF806AA",
+      "sourcePersonId": "E166F279DDF806AA",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/E166F279DDF806AA",
+      "sourceCourses": [
+        {
+          "courseId": "117520",
+          "code": "0319BB6007",
+          "title": "Wirtschafts- und IT-Recht",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117856",
+          "code": "0835VD6004",
+          "title": "Wirtschafts- und IT-Recht",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Randus, Christian",
+      "referenceCode": "campus02:5F5B3C6BFF9787FA",
+      "sourcePersonId": "5F5B3C6BFF9787FA",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/5F5B3C6BFF9787FA",
+      "sourceCourses": [
+        {
+          "courseId": "117939",
+          "code": "0835VD6002",
+          "title": "IT-Service Management",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Rath, Walter",
+      "referenceCode": "campus02:F8CB6D695C40D551",
+      "sourcePersonId": "F8CB6D695C40D551",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/F8CB6D695C40D551",
+      "sourceCourses": [
+        {
+          "courseId": "117523",
+          "code": "0319BB6008",
+          "title": "Internet-Marketing",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "118007",
+          "code": "0319BB4012",
+          "title": "Konfliktmanagement",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117547",
+          "code": "0320BB2022",
+          "title": "Consulting Methoden",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117750",
+          "code": "0835VD4006",
+          "title": "Marketing",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Resanovic, Daniel",
+      "referenceCode": "campus02:12A9C91896FA6E6D",
+      "sourcePersonId": "12A9C91896FA6E6D",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/12A9C91896FA6E6D",
+      "sourceCourses": [
+        {
+          "courseId": "117516",
+          "code": "0319BB6009",
+          "title": "Grundlagen Maschinelles Lernen und künstliche Intelligenz",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117734",
+          "code": "0319BB2019",
+          "title": "Mathematik in der Betriebswirtschaft",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117556",
+          "code": "0320BB2007",
+          "title": "Operation Research",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117860",
+          "code": "0864VZ2001",
+          "title": "Requirementsanalyse",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117859",
+          "code": "0864VZ2009",
+          "title": "Software Design 2",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "118116",
+          "code": "0835VD4011",
+          "title": "Grundlagen Maschinelles Lernen und Künstliche Intelligenz",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117949",
+          "code": "0835VD2007",
+          "title": "Konfigurationsmanagement",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117979",
+          "code": "0835VD6006",
+          "title": "Servicebasierte Systeme",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Schirgi, Eva",
+      "referenceCode": "campus02:C595F8F0D6E8B3CA",
+      "sourcePersonId": "C595F8F0D6E8B3CA",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/C595F8F0D6E8B3CA",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117605",
+          "code": "0864VZ6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "120737",
+          "code": "0864VZ4009",
+          "title": "Data Cleaning und Data Analytics",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117588",
+          "code": "0864VZ6007",
+          "title": "Data Mining",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117857",
+          "code": "0864VZ2004",
+          "title": "Mathematik 2",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117858",
+          "code": "0864VZ2005",
+          "title": "Stochastik und Statistik",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Schmid, Christian",
+      "referenceCode": "campus02:A5C3C0349668598F",
+      "sourcePersonId": "A5C3C0349668598F",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/A5C3C0349668598F",
+      "sourceCourses": [
+        {
+          "courseId": "118027",
+          "code": "0319BB6001",
+          "title": "Identity Management",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117524",
+          "code": "0319BB6003",
+          "title": "Sicherheit von Web Applikationen",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117995",
+          "code": "0320BB2012",
+          "title": "Informationssicherheitsmanagement",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Schmidt, Christopher",
+      "referenceCode": "campus02:A812E4A88F43EE99",
+      "sourcePersonId": "A812E4A88F43EE99",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/A812E4A88F43EE99",
+      "sourceCourses": [
+        {
+          "courseId": "117988",
+          "code": "0319BB2006",
+          "title": "Relationale Datenbanken",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Schmuck, Florian",
+      "referenceCode": "campus02:217DE69AA0098C1C",
+      "sourcePersonId": "217DE69AA0098C1C",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/217DE69AA0098C1C",
+      "sourceCourses": [
+        {
+          "courseId": "117518",
+          "code": "0319BB6004",
+          "title": "Erweiterte Web-Technologien",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Semlitsch, Erhard",
+      "referenceCode": "campus02:A667B751EC45FFEA",
+      "sourcePersonId": "A667B751EC45FFEA",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/A667B751EC45FFEA",
+      "sourceCourses": [
+        {
+          "courseId": "117946",
+          "code": "0319BB2023",
+          "title": "Präsentationstechniken",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117945",
+          "code": "0319BB2007",
+          "title": "Teamtraining",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Softic, Safet",
+      "referenceCode": "campus02:A025C4CF0CB99C00",
+      "sourcePersonId": "A025C4CF0CB99C00",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/A025C4CF0CB99C00",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117970",
+          "code": "0319BB2017",
+          "title": "Erweiterte Themen der Softwareentwicklung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117987",
+          "code": "0319BB2005",
+          "title": "Grundlagen der Netzwerktechnik",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "118003",
+          "code": "0319BB4016",
+          "title": "IT Operations",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117658",
+          "code": "0319BB4014",
+          "title": "Markup Languages",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117884",
+          "code": "0864VZ4004",
+          "title": "Databases",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117739",
+          "code": "0835VD6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117845",
+          "code": "0835VD4008",
+          "title": "Markup Languages",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117793",
+          "code": "0835VD2004",
+          "title": "Objektorientierte Programmierung",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Softic, Selver",
+      "referenceCode": "campus02:91DEB6D66C6E1E64",
+      "sourcePersonId": "91DEB6D66C6E1E64",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/91DEB6D66C6E1E64",
+      "sourceCourses": [
+        {
+          "courseId": "117799",
+          "code": "0319BB6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117522",
+          "code": "0319BB6010",
+          "title": "Datenvisualisierung",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117932",
+          "code": "0864VZ6003",
+          "title": "Bachelorarbeit",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117605",
+          "code": "0864VZ6SO1",
+          "title": "Bachelorprüfung",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117642",
+          "code": "0864VZ6001",
+          "title": "Cloud Computing",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117937",
+          "code": "0864VZ2003",
+          "title": "Markupsprachen",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117655",
+          "code": "0864VZ6009",
+          "title": "Wissensmanagement und Semantic Web",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Staud, Sophie Erika",
+      "referenceCode": "campus02:A561A94C0347FF73",
+      "sourcePersonId": "A561A94C0347FF73",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/A561A94C0347FF73",
+      "sourceCourses": [
+        {
+          "courseId": "118009",
+          "code": "0319BB4017",
+          "title": "Business English",
+          "curriculumVersionId": "297"
+        },
+        {
+          "courseId": "117899",
+          "code": "0864VZ2006",
+          "title": "English 2",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Stettinger, Martin",
+      "referenceCode": "campus02:57AE0B5699CF034B",
+      "sourcePersonId": "57AE0B5699CF034B",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/57AE0B5699CF034B",
+      "sourceCourses": [
+        {
+          "courseId": "117894",
+          "code": "0835VD2005",
+          "title": "Datenbankdesign",
+          "curriculumVersionId": "362"
+        },
+        {
+          "courseId": "117793",
+          "code": "0835VD2004",
+          "title": "Objektorientierte Programmierung",
+          "curriculumVersionId": "362"
+        }
+      ]
+    },
+    {
+      "name": "Streibl, Markus",
+      "referenceCode": "campus02:8C15A95BE09D2F65",
+      "sourcePersonId": "8C15A95BE09D2F65",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/8C15A95BE09D2F65",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Wipfler, Yevheniia",
+      "referenceCode": "campus02:741FCB0067DB5B9A",
+      "sourcePersonId": "741FCB0067DB5B9A",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/741FCB0067DB5B9A",
+      "sourceCourses": [
+        {
+          "courseId": "117916",
+          "code": "0864VZ4003",
+          "title": "Accompanying Project",
+          "curriculumVersionId": "349"
+        },
+        {
+          "courseId": "117907",
+          "code": "0864VZ2008",
+          "title": "Business IT-Applications",
+          "curriculumVersionId": "349"
+        }
+      ]
+    },
+    {
+      "name": "Zeiringer, Johannes",
+      "referenceCode": "campus02:8DDB25150DA3BD16",
+      "sourcePersonId": "8DDB25150DA3BD16",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/8DDB25150DA3BD16",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        }
+      ]
+    },
+    {
+      "name": "Zettel, Daniel",
+      "referenceCode": "campus02:9DE745D2E4A0252E",
+      "sourcePersonId": "9DE745D2E4A0252E",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/9DE745D2E4A0252E",
+      "sourceCourses": [
+        {
+          "courseId": "117970",
+          "code": "0319BB2017",
+          "title": "Erweiterte Themen der Softwareentwicklung",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Zweidick, Mario",
+      "referenceCode": "campus02:81466E5E48396718",
+      "sourcePersonId": "81466E5E48396718",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/81466E5E48396718",
+      "sourceCourses": [
+        {
+          "courseId": "117988",
+          "code": "0319BB2006",
+          "title": "Relationale Datenbanken",
+          "curriculumVersionId": "297"
+        }
+      ]
+    },
+    {
+      "name": "Zwetti, Günther",
+      "referenceCode": "campus02:8E50A1B3C8820F3B",
+      "sourcePersonId": "8E50A1B3C8820F3B",
+      "sourcePersonUrl": "https://online.campus02.at/C02online/ee/rest/pages/brm.pm.bc/business-card/8E50A1B3C8820F3B",
+      "sourceCourses": [
+        {
+          "courseId": "117914",
+          "code": "0320BB2023",
+          "title": "Masterarbeit 1",
+          "curriculumVersionId": "301"
+        },
+        {
+          "courseId": "117736",
+          "code": "0320BB4SO1",
+          "title": "Masterprüfung",
+          "curriculumVersionId": "301"
+        }
+      ]
+    }
+  ]
+}

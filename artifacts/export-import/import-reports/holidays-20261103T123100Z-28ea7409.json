@@ -1,0 +1,131 @@
+{
+  "kind": "holidays",
+  "source": "C:\\Codex\\planner-resource\\artifacts\\export-import\\nonteaching-AT-2027-S.json",
+  "sourceSha256": "1ec33878afa86bd7d6f34a0a62de6494b9fb9ebe56b18e31afbd28b1f775540d",
+  "mappingSha256": null,
+  "baseUrl": null,
+  "apply": false,
+  "plan": [
+    {
+      "sourceKey": "2027-03-20",
+      "payload": {
+        "date": "2027-03-20",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-21",
+      "payload": {
+        "date": "2027-03-21",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-22",
+      "payload": {
+        "date": "2027-03-22",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-23",
+      "payload": {
+        "date": "2027-03-23",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-24",
+      "payload": {
+        "date": "2027-03-24",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-25",
+      "payload": {
+        "date": "2027-03-25",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-26",
+      "payload": {
+        "date": "2027-03-26",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-27",
+      "payload": {
+        "date": "2027-03-27",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-28",
+      "payload": {
+        "date": "2027-03-28",
+        "name": "Osterferien (unterrichtsfrei)"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-03-29",
+      "payload": {
+        "date": "2027-03-29",
+        "name": "Ostermontag"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-05-01",
+      "payload": {
+        "date": "2027-05-01",
+        "name": "Staatsfeiertag"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-05-06",
+      "payload": {
+        "date": "2027-05-06",
+        "name": "Christi Himmelfahrt"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-05-17",
+      "payload": {
+        "date": "2027-05-17",
+        "name": "Pfingstmontag"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-05-27",
+      "payload": {
+        "date": "2027-05-27",
+        "name": "Fronleichnam"
+      },
+      "status": "candidate"
+    },
+    {
+      "sourceKey": "2027-08-15",
+      "payload": {
+        "date": "2027-08-15",
+        "name": "Mariä Himmelfahrt"
+      },
+      "status": "candidate"
+    }
+  ],
+  "status": "preview"
+}

@@ -1,0 +1,543 @@
+{
+  "courses": [
+    {
+      "additionalText": "Vortragende*r:\nBouwman, Marinus\nHatzl, Stefanie\nJesenko, Berndt\nJiménez, Simon\nKapfer, Viktoria\nPuchleitner, Thomas\nRath, Walter\nResanovic, Daniel\nSoftic, Safet",
+      "code": "0835VD6SO1",
+      "courseId": "117739",
+      "lecturers": [
+        {
+          "name": "Bouwman, Marinus",
+          "personId": "C1C5A47BFD7EE532"
+        },
+        {
+          "name": "Hatzl, Stefanie",
+          "personId": "AD9C25620F917CAF"
+        },
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Jiménez, Simon",
+          "personId": "9EA890015EAF213F"
+        },
+        {
+          "name": "Kapfer, Viktoria",
+          "personId": "D1A879C956E9D2D6"
+        },
+        {
+          "name": "Puchleitner, Thomas",
+          "personId": "1506FB680D28DDBB"
+        },
+        {
+          "name": "Rath, Walter",
+          "personId": "F8CB6D695C40D551"
+        },
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        },
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Bachelorprüfung",
+      "courseType": "SO",
+      "displayedMetadata": "SO | 0 UE",
+      "sourceUnits": 0
+    },
+    {
+      "additionalText": "Vortragende*r:\nJesenko, Berndt",
+      "code": "0835VD4003",
+      "courseId": "117747",
+      "lecturers": [
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Betriebspraktische individuelle Vertiefung 2",
+      "courseType": "BP",
+      "displayedMetadata": "BP | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nJesenko, Berndt",
+      "code": "0835VD6005",
+      "courseId": "117980",
+      "lecturers": [
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Betriebspraktische individuelle Vertiefung 4",
+      "courseType": "BP",
+      "displayedMetadata": "BP | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nJiménez, Simon",
+      "code": "0835VD6009",
+      "courseId": "117976",
+      "lecturers": [
+        {
+          "name": "Jiménez, Simon",
+          "personId": "9EA890015EAF213F"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Cloud Computing",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nStettinger, Martin",
+      "code": "0835VD2005",
+      "courseId": "117894",
+      "lecturers": [
+        {
+          "name": "Stettinger, Martin",
+          "personId": "57AE0B5699CF034B"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Datenbankdesign",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 46.75 UE",
+      "sourceUnits": 46.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nKoitz-Hristov, Roxane",
+      "code": "0835VD2006",
+      "courseId": "117791",
+      "lecturers": [
+        {
+          "name": "Koitz-Hristov, Roxane",
+          "personId": "16DB2721A8B92422"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Datenstrukturen und Algorithmen",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 46.75 UE",
+      "sourceUnits": 46.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick",
+      "code": "0835VD4009",
+      "courseId": "117752",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Digitale Geschäftsmodelle 2",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nGrünwald, Stefan",
+      "code": "0835VD6001",
+      "courseId": "117938",
+      "lecturers": [
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Fallstudien der Wirtschaftsinformatik",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nResanovic, Daniel",
+      "code": "0835VD4011",
+      "courseId": "118116",
+      "lecturers": [
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Grundlagen Maschinelles Lernen und Künstliche Intelligenz",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBouwman, Marinus\nGerzic, Harris\nGrünwald, Stefan",
+      "code": "0835VD6007",
+      "courseId": "117978",
+      "lecturers": [
+        {
+          "name": "Bouwman, Marinus",
+          "personId": "C1C5A47BFD7EE532"
+        },
+        {
+          "name": "Gerzic, Harris",
+          "personId": "EB250C321C4BAB92"
+        },
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Grundlagen Mobile Computing",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick",
+      "code": "0835VD4002",
+      "courseId": "117753",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Informationssysteme",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nRandus, Christian",
+      "code": "0835VD6002",
+      "courseId": "117939",
+      "lecturers": [
+        {
+          "name": "Randus, Christian",
+          "personId": "5F5B3C6BFF9787FA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "IT-Service Management",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nGrünwald, Stefan\nHofer, Christian\nJesenko, Berndt\nResanovic, Daniel",
+      "code": "0835VD2007",
+      "courseId": "117949",
+      "lecturers": [
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        },
+        {
+          "name": "Hofer, Christian",
+          "personId": "99108567F747C915"
+        },
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Konfigurationsmanagement",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nRath, Walter",
+      "code": "0835VD4006",
+      "courseId": "117750",
+      "lecturers": [
+        {
+          "name": "Rath, Walter",
+          "personId": "F8CB6D695C40D551"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Marketing",
+      "courseType": "VO",
+      "displayedMetadata": "VO | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nSoftic, Safet",
+      "code": "0835VD4008",
+      "courseId": "117845",
+      "lecturers": [
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Markup Languages",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nEberhard, Lukas",
+      "code": "0835VD2001",
+      "courseId": "117863",
+      "lecturers": [
+        {
+          "name": "Eberhard, Lukas",
+          "personId": "B5555E345ED28DBB"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Mathematik für Informatik 2",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 59.5 UE",
+      "sourceUnits": 59.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nJesenko, Berndt\nSoftic, Safet\nStettinger, Martin",
+      "code": "0835VD2004",
+      "courseId": "117793",
+      "lecturers": [
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        },
+        {
+          "name": "Stettinger, Martin",
+          "personId": "57AE0B5699CF034B"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Objektorientierte Programmierung",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 59.5 UE",
+      "sourceUnits": 59.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nLindbichler, Georg",
+      "code": "0835VD2003",
+      "courseId": "117710",
+      "lecturers": [
+        {
+          "name": "Lindbichler, Georg",
+          "personId": "192F5B334A7D23E3"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Personalmanagement und Arbeitsrecht",
+      "courseType": "VO",
+      "displayedMetadata": "VO | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nBower, Hendrik",
+      "code": "0835VD6011",
+      "courseId": "117977",
+      "lecturers": [
+        {
+          "name": "Bower, Hendrik",
+          "personId": "AF3152B0E24DB28F"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Presentations",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 17 UE",
+      "sourceUnits": 17
+    },
+    {
+      "additionalText": "Vortragende*r:\nBower, Hendrik",
+      "code": "0835VD2002",
+      "courseId": "117711",
+      "lecturers": [
+        {
+          "name": "Bower, Hendrik",
+          "personId": "AF3152B0E24DB28F"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Professional English",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nKapfer, Viktoria",
+      "code": "0835VD4005",
+      "courseId": "117973",
+      "lecturers": [
+        {
+          "name": "Kapfer, Viktoria",
+          "personId": "D1A879C956E9D2D6"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Prozessmanagement 2",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nBouwman, Marinus",
+      "code": "0835VD4007",
+      "courseId": "117751",
+      "lecturers": [
+        {
+          "name": "Bouwman, Marinus",
+          "personId": "C1C5A47BFD7EE532"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Requirements Engineering",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nBower, Hendrik",
+      "code": "0835VD4004",
+      "courseId": "117749",
+      "lecturers": [
+        {
+          "name": "Bower, Hendrik",
+          "personId": "AF3152B0E24DB28F"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Scientific English",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nResanovic, Daniel",
+      "code": "0835VD6006",
+      "courseId": "117979",
+      "lecturers": [
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Servicebasierte Systeme",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nKraxberger, Stefan",
+      "code": "0835VD6008",
+      "courseId": "117781",
+      "lecturers": [
+        {
+          "name": "Kraxberger, Stefan",
+          "personId": "8072A685B46B8684"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Sicherheit von Webapplikationen",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nGerzic, Harris\nGrünwald, Stefan\nJesenko, Berndt",
+      "code": "0835VD6003",
+      "courseId": "117855",
+      "lecturers": [
+        {
+          "name": "Gerzic, Harris",
+          "personId": "EB250C321C4BAB92"
+        },
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        },
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Supply Chain Management",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nKoitz-Hristov, Roxane",
+      "code": "0835VD2008",
+      "courseId": "117792",
+      "lecturers": [
+        {
+          "name": "Koitz-Hristov, Roxane",
+          "personId": "16DB2721A8B92422"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Web Technologien & Usability",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 46.75 UE",
+      "sourceUnits": 46.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nPöcherstorfer, Winfried",
+      "code": "0835VD6004",
+      "courseId": "117856",
+      "lecturers": [
+        {
+          "name": "Pöcherstorfer, Winfried",
+          "personId": "E166F279DDF806AA"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Wirtschafts- und IT-Recht",
+      "courseType": "VO",
+      "displayedMetadata": "VO | 29.75 UE",
+      "sourceUnits": 29.75
+    },
+    {
+      "additionalText": "Vortragende*r:\nHatzl, Stefanie",
+      "code": "0835VD4001",
+      "courseId": "117748",
+      "lecturers": [
+        {
+          "name": "Hatzl, Stefanie",
+          "personId": "AD9C25620F917CAF"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Wissenschaftliches Arbeiten und Hypothesenbildung",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 29.75 UE",
+      "sourceUnits": 29.75
+    }
+  ],
+  "curriculum": "FH-Bachelorstudiengang Business Software Development Vollzeit [2018W V5], Bachelorstudium",
+  "pagination": [
+    "1 - 29 von 29"
+  ],
+  "semester": "2026 S",
+  "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=362&objTermId=124&orgId=1",
+  "capturedAt": "2026-11-03T10:50:54.797Z"
+}

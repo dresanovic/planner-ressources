@@ -1,0 +1,104 @@
+- complementary:
+  - generic: RP
+  - generic: Ressourcenplanung
+  - button "Navigation lösen":
+    - generic: Navigation lösen
+  - navigation "Hauptnavigation":
+    - button "Planung" [expanded]:
+      - generic: Planung
+      - generic: −
+    - button "Kalender": Kalender
+    - button "Versionen": Versionen
+    - button "Prüfungen": Prüfungen
+    - button "Abstimmung mit Lehrenden": Abstimmung mit Lehrenden
+    - button "Stammdaten" [expanded]:
+      - generic: Stammdaten
+      - generic: −
+    - button "Semester": Semester
+    - button "Feiertage": Feiertage
+    - button "Kohorten": Kohorten
+    - button "Lehrveranstaltungen": Lehrveranstaltungen
+    - button "Studienformen": Studienformen
+    - button "Zeitfenster": Zeitfenster
+    - button "Lehrende": Lehrende
+    - button "Räume": Räume
+    - button "Planer-Konten": Planer-Konten
+  - strong: daniel
+  - generic: daniel
+  - button "Passwort ändern"
+  - button "Abmelden"
+- 'main "Akademische Stammdaten: holidays" [active]':
+  - paragraph: Planungsverwaltung
+  - heading "Akademische Stammdaten" [level=1]
+  - region "Feiertage":
+    - heading "Feiertage" [level=2]
+    - list:
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 20.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 21.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 22.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 23.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 24.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 25.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 26.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 27.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Osterferien (unterrichtsfrei)
+      - generic: 28.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Ostermontag
+      - generic: 29.03.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Staatsfeiertag
+      - generic: 01.05.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Christi Himmelfahrt
+      - generic: 06.05.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Pfingstmontag
+      - generic: 17.05.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Fronleichnam
+      - generic: 27.05.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+      - strong: Mariä Himmelfahrt
+      - generic: 15.08.2027
+      - button "Bearbeiten"
+      - button "Löschen"
+  - form "Feiertag erstellen":
+    - heading "Feiertag erstellen" [level=2]
+    - generic: Datum
+    - 'textbox "Datum Format: TT.MM.JJJJ"':
+      - /placeholder: TT.MM.JJJJ
+    - generic: "Format: TT.MM.JJJJ"
+    - generic: Name
+    - textbox "Name"
+    - button "Feiertag erstellen"

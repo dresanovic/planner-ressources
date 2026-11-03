@@ -1,0 +1,1669 @@
+{
+  "schemaVersion": 1,
+  "semesterName": "2027 S",
+  "courses": [
+    {
+      "sourceCourseId": "117987",
+      "code": "0319BB2005",
+      "include": true,
+      "name": "Grundlagen der Netzwerktechnik [0319BB2005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35",
+        "campus02:4DFDE9782DB5540E",
+        "campus02:A025C4CF0CB99C00"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117988",
+      "code": "0319BB2006",
+      "include": true,
+      "name": "Relationale Datenbanken [0319BB2006] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A812E4A88F43EE99",
+        "campus02:81466E5E48396718"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117945",
+      "code": "0319BB2007",
+      "include": true,
+      "name": "Teamtraining [0319BB2007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:C2F31424322120EF",
+        "campus02:A667B751EC45FFEA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 17,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117735",
+      "code": "0319BB2008",
+      "include": true,
+      "name": "Algorithmen [0319BB2008] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:3937638AF47C6DBE",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:3937638AF47C6DBE"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117563",
+      "code": "0319BB2010",
+      "include": true,
+      "name": "Buchhaltung und Bilanzierung [0319BB2010] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35",
+        "campus02:A7F8F1C446D7DD60",
+        "campus02:E2CE8CA0FF23027E"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117970",
+      "code": "0319BB2017",
+      "include": true,
+      "name": "Erweiterte Themen der Softwareentwicklung [0319BB2017] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35",
+        "campus02:296474ACC3749EC1",
+        "campus02:A025C4CF0CB99C00",
+        "campus02:9DE745D2E4A0252E"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117971",
+      "code": "0319BB2018",
+      "include": true,
+      "name": "Software Design [0319BB2018] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:5959E1E78F716637",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:5959E1E78F716637"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117734",
+      "code": "0319BB2019",
+      "include": true,
+      "name": "Mathematik in der Betriebswirtschaft [0319BB2019] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:4B9FD052DF069DEC",
+        "campus02:6D8B808AB8A6FE7C",
+        "campus02:87386A33AA11E3F3",
+        "campus02:12A9C91896FA6E6D"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117562",
+      "code": "0319BB2020",
+      "include": true,
+      "name": "Einführung in die Betriebswirtschaftslehre [0319BB2020] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A7F8F1C446D7DD60",
+        "campus02:DDC8728DD3A3C28C"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 17,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117992",
+      "code": "0319BB2021",
+      "include": true,
+      "name": "Projekt zum Berufspraktikum [0319BB2021] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:8D880F8B1D500B35",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 9,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117993",
+      "code": "0319BB2022",
+      "include": true,
+      "name": "Laufendes Berufspraktikum im Unternehmen 2 [0319BB2022] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:010FF70CDC2146F1",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:010FF70CDC2146F1"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 9,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117946",
+      "code": "0319BB2023",
+      "include": true,
+      "name": "Präsentationstechniken [0319BB2023] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:B940C0935F222834",
+        "campus02:C2F31424322120EF",
+        "campus02:A667B751EC45FFEA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 17,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117647",
+      "code": "0319BB4005",
+      "include": true,
+      "name": "Erweiterte Themen der digitalen Geschäftsmodelle [0319BB4005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:8D880F8B1D500B35",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117580",
+      "code": "0319BB4011",
+      "include": true,
+      "name": "Softwareentwicklungsprojekt [0319BB4011] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:34FFA8D4A1C8CAFB",
+        "campus02:6D628EB4D3B90E98"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 17,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "118007",
+      "code": "0319BB4012",
+      "include": true,
+      "name": "Konfliktmanagement [0319BB4012] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:F8CB6D695C40D551",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:F8CB6D695C40D551"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 17,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117648",
+      "code": "0319BB4013",
+      "include": true,
+      "name": "Informationssysteme [0319BB4013] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:8D880F8B1D500B35",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117658",
+      "code": "0319BB4014",
+      "include": true,
+      "name": "Markup Languages [0319BB4014] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:066E22DC2C0CA454",
+        "campus02:E2CE8CA0FF23027E",
+        "campus02:A025C4CF0CB99C00"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "118008",
+      "code": "0319BB4015",
+      "include": true,
+      "name": "Wissenschaftliches Arbeiten [0319BB4015] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:DA83715465530449",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:DA83715465530449"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "118003",
+      "code": "0319BB4016",
+      "include": true,
+      "name": "IT Operations [0319BB4016] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:A025C4CF0CB99C00",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A025C4CF0CB99C00"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 26,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "118009",
+      "code": "0319BB4017",
+      "include": true,
+      "name": "Business English [0319BB4017] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:6E73DB80D1617246",
+        "campus02:A561A94C0347FF73"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117652",
+      "code": "0319BB4018",
+      "include": true,
+      "name": "Laufendes Berufspraktikum im Unternehmen 4 [0319BB4018] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:010FF70CDC2146F1",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:010FF70CDC2146F1"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 9,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117627",
+      "code": "0319BB4020",
+      "include": true,
+      "name": "Erweiterte Themen des Prozessmanagement [0319BB4020] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:D1A879C956E9D2D6",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:D1A879C956E9D2D6"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117579",
+      "code": "0319BB4021",
+      "include": true,
+      "name": "Requirements Engineering [0319BB4021] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:34FFA8D4A1C8CAFB",
+        "campus02:6D628EB4D3B90E98"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "118027",
+      "code": "0319BB6001",
+      "include": true,
+      "name": "Identity Management [0319BB6001] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:A5C3C0349668598F",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A5C3C0349668598F"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117519",
+      "code": "0319BB6002",
+      "include": true,
+      "name": "Virtualisierung [0319BB6002] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:E2F084FFC84CD939",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:E2F084FFC84CD939"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117524",
+      "code": "0319BB6003",
+      "include": true,
+      "name": "Sicherheit von Web Applikationen [0319BB6003] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:A5C3C0349668598F",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A5C3C0349668598F"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117518",
+      "code": "0319BB6004",
+      "include": true,
+      "name": "Erweiterte Web-Technologien [0319BB6004] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:CC60D01360A73BA2",
+        "campus02:217DE69AA0098C1C"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "118026",
+      "code": "0319BB6005",
+      "include": true,
+      "name": "Fallstudien der Wirtschaftsinformatik [0319BB6005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:EB250C321C4BAB92",
+        "campus02:066E22DC2C0CA454"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117517",
+      "code": "0319BB6006",
+      "include": true,
+      "name": "Wirtschaftsinformatik Projekt [0319BB6006] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:DA83715465530449",
+        "campus02:E2CE8CA0FF23027E"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 26,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117520",
+      "code": "0319BB6007",
+      "include": true,
+      "name": "Wirtschafts- und IT-Recht [0319BB6007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:E166F279DDF806AA",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:E166F279DDF806AA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117523",
+      "code": "0319BB6008",
+      "include": true,
+      "name": "Internet-Marketing [0319BB6008] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:F8CB6D695C40D551",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:F8CB6D695C40D551"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117516",
+      "code": "0319BB6009",
+      "include": true,
+      "name": "Grundlagen Maschinelles Lernen und künstliche Intelligenz [0319BB6009] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:12A9C91896FA6E6D",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117522",
+      "code": "0319BB6010",
+      "include": true,
+      "name": "Datenvisualisierung [0319BB6010] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:91DEB6D66C6E1E64",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117521",
+      "code": "0319BB6011",
+      "include": true,
+      "name": "Professional Meetings in English [0319BB6011] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:01F1C806C9A8937A",
+        "campus02:A837922C0DD9FD7E"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117515",
+      "code": "0319BB6012",
+      "include": true,
+      "name": "Laufendes Berufspraktikum im Unternehmen 6 [0319BB6012] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:010FF70CDC2146F1",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:010FF70CDC2146F1"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 9,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117891",
+      "code": "0320BB2001",
+      "include": true,
+      "name": "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:AD9C25620F917CAF",
+        "campus02:DA83715465530449"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 26,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117730",
+      "code": "0320BB2005",
+      "include": true,
+      "name": "Unternehmensgründung in der IT [0320BB2005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:FDE7AE35064DC868",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:FDE7AE35064DC868"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117548",
+      "code": "0320BB2006",
+      "include": true,
+      "name": "Communication & Presentation [0320BB2006] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:01F1C806C9A8937A",
+        "campus02:A837922C0DD9FD7E"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117556",
+      "code": "0320BB2007",
+      "include": true,
+      "name": "Operation Research [0320BB2007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35",
+        "campus02:4B9FD052DF069DEC",
+        "campus02:9CEE0DC1020F7AC3",
+        "campus02:12A9C91896FA6E6D"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117995",
+      "code": "0320BB2012",
+      "include": true,
+      "name": "Informationssicherheitsmanagement [0320BB2012] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:A5C3C0349668598F",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A5C3C0349668598F"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117905",
+      "code": "0320BB2018",
+      "include": true,
+      "name": "Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3",
+        "campus02:E2CE8CA0FF23027E"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117890",
+      "code": "0320BB2019",
+      "include": true,
+      "name": "Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:066E22DC2C0CA454",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:066E22DC2C0CA454"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117557",
+      "code": "0320BB2020",
+      "include": true,
+      "name": "Begleitendes FuE Projekt [0320BB2020] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:DA83715465530449",
+        "campus02:E2CE8CA0FF23027E"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117731",
+      "code": "0320BB2021",
+      "include": true,
+      "name": "Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:AD60EC1EBEA83942",
+        "campus02:639CA1D1F252796C"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117547",
+      "code": "0320BB2022",
+      "include": true,
+      "name": "Consulting Methoden [0320BB2022] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3",
+        "campus02:F8CB6D695C40D551"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 26,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117972",
+      "code": "0320BB2024",
+      "include": true,
+      "name": "Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Berufsbegleitend",
+      "lecturerReferenceCode": "campus02:C72B956A216E7641",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:C72B956A216E7641"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117860",
+      "code": "0864VZ2001",
+      "include": true,
+      "name": "Requirementsanalyse [0864VZ2001] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:12A9C91896FA6E6D",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 26,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117936",
+      "code": "0864VZ2002",
+      "include": true,
+      "name": "Algorithmen und Datenstrukturen [0864VZ2002] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:A7FF75B4D5ACE6B7",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A7FF75B4D5ACE6B7"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117937",
+      "code": "0864VZ2003",
+      "include": true,
+      "name": "Markupsprachen [0864VZ2003] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:91DEB6D66C6E1E64",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117857",
+      "code": "0864VZ2004",
+      "include": true,
+      "name": "Mathematik 2 [0864VZ2004] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:4B9FD052DF069DEC",
+        "campus02:87386A33AA11E3F3",
+        "campus02:C595F8F0D6E8B3CA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117858",
+      "code": "0864VZ2005",
+      "include": true,
+      "name": "Stochastik und Statistik [0864VZ2005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:C595F8F0D6E8B3CA",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:C595F8F0D6E8B3CA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117899",
+      "code": "0864VZ2006",
+      "include": true,
+      "name": "English 2 [0864VZ2006] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:A561A94C0347FF73",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A561A94C0347FF73"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 26,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117906",
+      "code": "0864VZ2007",
+      "include": true,
+      "name": "Betriebswirtschaftslehre [0864VZ2007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A7F8F1C446D7DD60",
+        "campus02:DDC8728DD3A3C28C"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117907",
+      "code": "0864VZ2008",
+      "include": true,
+      "name": "Business IT-Applications [0864VZ2008] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:EB250C321C4BAB92",
+        "campus02:741FCB0067DB5B9A"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 26,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117859",
+      "code": "0864VZ2009",
+      "include": true,
+      "name": "Software Design 2 [0864VZ2009] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:12A9C91896FA6E6D",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117900",
+      "code": "0864VZ2010",
+      "include": true,
+      "name": "Rhetorik und Präsentation [0864VZ2010] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:A7F8F1C446D7DD60",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A7F8F1C446D7DD60"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 26,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117846",
+      "code": "0864VZ4001",
+      "include": true,
+      "name": "Electronic und Mobile Business [0864VZ4001] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:75055F43A64C3544",
+        "campus02:87386A33AA11E3F3"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 60,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117916",
+      "code": "0864VZ4003",
+      "include": false,
+      "name": "Accompanying Project [0864VZ4003] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:741FCB0067DB5B9A",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:741FCB0067DB5B9A"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 0,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Zero UE: retained in source catalog, excluded from teaching import"
+    },
+    {
+      "sourceCourseId": "117884",
+      "code": "0864VZ4004",
+      "include": true,
+      "name": "Databases [0864VZ4004] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:A025C4CF0CB99C00",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A025C4CF0CB99C00"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 68,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117911",
+      "code": "0864VZ4005",
+      "include": true,
+      "name": "Internet Security [0864VZ4005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:34EE877A518FC99F",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:34EE877A518FC99F"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 51,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117943",
+      "code": "0864VZ4006",
+      "include": true,
+      "name": "Business English 2 [0864VZ4006] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:01F1C806C9A8937A",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:01F1C806C9A8937A"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117944",
+      "code": "0864VZ4007",
+      "include": true,
+      "name": "Managerial Communication und Leadership [0864VZ4007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:0D6019B9267012CC",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:0D6019B9267012CC"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 51,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "120737",
+      "code": "0864VZ4009",
+      "include": true,
+      "name": "Data Cleaning und Data Analytics [0864VZ4009] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:08FF124FA70CBBA2",
+        "campus02:C595F8F0D6E8B3CA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 47,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117642",
+      "code": "0864VZ6001",
+      "include": true,
+      "name": "Cloud Computing [0864VZ6001] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:91DEB6D66C6E1E64",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117932",
+      "code": "0864VZ6003",
+      "include": true,
+      "name": "Bachelorarbeit [0864VZ6003] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:91DEB6D66C6E1E64",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 17,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117588",
+      "code": "0864VZ6007",
+      "include": true,
+      "name": "Data Mining [0864VZ6007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:C595F8F0D6E8B3CA",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:C595F8F0D6E8B3CA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117655",
+      "code": "0864VZ6009",
+      "include": true,
+      "name": "Wissensmanagement und Semantic Web [0864VZ6009] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:91DEB6D66C6E1E64",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:91DEB6D66C6E1E64"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117863",
+      "code": "0835VD2001",
+      "include": true,
+      "name": "Mathematik für Informatik 2 [0835VD2001] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:B5555E345ED28DBB",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:B5555E345ED28DBB"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 60,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117711",
+      "code": "0835VD2002",
+      "include": true,
+      "name": "Professional English [0835VD2002] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:AF3152B0E24DB28F",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:AF3152B0E24DB28F"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117710",
+      "code": "0835VD2003",
+      "include": true,
+      "name": "Personalmanagement und Arbeitsrecht [0835VD2003] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:192F5B334A7D23E3",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:192F5B334A7D23E3"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117793",
+      "code": "0835VD2004",
+      "include": true,
+      "name": "Objektorientierte Programmierung [0835VD2004] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3",
+        "campus02:A025C4CF0CB99C00",
+        "campus02:57AE0B5699CF034B"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 60,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117894",
+      "code": "0835VD2005",
+      "include": true,
+      "name": "Datenbankdesign [0835VD2005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:57AE0B5699CF034B",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:57AE0B5699CF034B"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 47,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117791",
+      "code": "0835VD2006",
+      "include": true,
+      "name": "Datenstrukturen und Algorithmen [0835VD2006] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:16DB2721A8B92422",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:16DB2721A8B92422"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 47,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117949",
+      "code": "0835VD2007",
+      "include": true,
+      "name": "Konfigurationsmanagement [0835VD2007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:066E22DC2C0CA454",
+        "campus02:99108567F747C915",
+        "campus02:87386A33AA11E3F3",
+        "campus02:12A9C91896FA6E6D"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117792",
+      "code": "0835VD2008",
+      "include": true,
+      "name": "Web Technologien & Usability [0835VD2008] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:16DB2721A8B92422",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:16DB2721A8B92422"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 47,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117748",
+      "code": "0835VD4001",
+      "include": true,
+      "name": "Wissenschaftliches Arbeiten und Hypothesenbildung [0835VD4001] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:AD9C25620F917CAF",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:AD9C25620F917CAF"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117753",
+      "code": "0835VD4002",
+      "include": true,
+      "name": "Informationssysteme [0835VD4002] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:8D880F8B1D500B35",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117747",
+      "code": "0835VD4003",
+      "include": true,
+      "name": "Betriebspraktische individuelle Vertiefung 2 [0835VD4003] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:87386A33AA11E3F3",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117749",
+      "code": "0835VD4004",
+      "include": true,
+      "name": "Scientific English [0835VD4004] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:AF3152B0E24DB28F",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:AF3152B0E24DB28F"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117973",
+      "code": "0835VD4005",
+      "include": true,
+      "name": "Prozessmanagement 2 [0835VD4005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:D1A879C956E9D2D6",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:D1A879C956E9D2D6"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117750",
+      "code": "0835VD4006",
+      "include": true,
+      "name": "Marketing [0835VD4006] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:F8CB6D695C40D551",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:F8CB6D695C40D551"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117751",
+      "code": "0835VD4007",
+      "include": true,
+      "name": "Requirements Engineering [0835VD4007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:C1C5A47BFD7EE532",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:C1C5A47BFD7EE532"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117845",
+      "code": "0835VD4008",
+      "include": true,
+      "name": "Markup Languages [0835VD4008] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:A025C4CF0CB99C00",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:A025C4CF0CB99C00"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117752",
+      "code": "0835VD4009",
+      "include": true,
+      "name": "Digitale Geschäftsmodelle 2 [0835VD4009] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:8D880F8B1D500B35",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8D880F8B1D500B35"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "118116",
+      "code": "0835VD4011",
+      "include": true,
+      "name": "Grundlagen Maschinelles Lernen und Künstliche Intelligenz [0835VD4011] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:12A9C91896FA6E6D",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 34,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117938",
+      "code": "0835VD6001",
+      "include": true,
+      "name": "Fallstudien der Wirtschaftsinformatik [0835VD6001] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:066E22DC2C0CA454",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:066E22DC2C0CA454"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117939",
+      "code": "0835VD6002",
+      "include": true,
+      "name": "IT-Service Management [0835VD6002] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:5F5B3C6BFF9787FA",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:5F5B3C6BFF9787FA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117855",
+      "code": "0835VD6003",
+      "include": true,
+      "name": "Supply Chain Management [0835VD6003] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:EB250C321C4BAB92",
+        "campus02:066E22DC2C0CA454",
+        "campus02:87386A33AA11E3F3"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117856",
+      "code": "0835VD6004",
+      "include": true,
+      "name": "Wirtschafts- und IT-Recht [0835VD6004] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:E166F279DDF806AA",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:E166F279DDF806AA"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117980",
+      "code": "0835VD6005",
+      "include": true,
+      "name": "Betriebspraktische individuelle Vertiefung 4 [0835VD6005] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:87386A33AA11E3F3",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:87386A33AA11E3F3"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117979",
+      "code": "0835VD6006",
+      "include": true,
+      "name": "Servicebasierte Systeme [0835VD6006] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:12A9C91896FA6E6D",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:12A9C91896FA6E6D"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117978",
+      "code": "0835VD6007",
+      "include": true,
+      "name": "Grundlagen Mobile Computing [0835VD6007] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": null,
+      "suggestedLecturerReferenceCodes": [
+        "campus02:C1C5A47BFD7EE532",
+        "campus02:EB250C321C4BAB92",
+        "campus02:066E22DC2C0CA454"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117781",
+      "code": "0835VD6008",
+      "include": true,
+      "name": "Sicherheit von Webapplikationen [0835VD6008] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:8072A685B46B8684",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:8072A685B46B8684"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117976",
+      "code": "0835VD6009",
+      "include": true,
+      "name": "Cloud Computing [0835VD6009] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:9EA890015EAF213F",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:9EA890015EAF213F"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 30,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceCourseId": "117977",
+      "code": "0835VD6011",
+      "include": true,
+      "name": "Presentations [0835VD6011] – 2027 S",
+      "cohortName": null,
+      "studyTypeName": "Vollzeit",
+      "lecturerReferenceCode": "campus02:AF3152B0E24DB28F",
+      "suggestedLecturerReferenceCodes": [
+        "campus02:AF3152B0E24DB28F"
+      ],
+      "roomReferenceCode": null,
+      "totalUnits": 17,
+      "minSessionUnits": null,
+      "maxSessionUnits": null,
+      "note": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    }
+  ]
+}

@@ -1,0 +1,725 @@
+{
+  "kind": "courses",
+  "source": "C:\\Codex\\planner-resource\\artifacts\\export-import\\courses.json",
+  "sourceSha256": "a9127868b426d67d4a14d1497e87be4aefda948f9d0dac1b10401cad51d74fb2",
+  "mappingSha256": "f4c952648e3650eca129c3023060dab24da05c0b504612348dd45e523e21dbf2",
+  "baseUrl": null,
+  "apply": false,
+  "plan": [
+    {
+      "sourceKey": "117987",
+      "code": "0319BB2005",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117988",
+      "code": "0319BB2006",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117945",
+      "code": "0319BB2007",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117735",
+      "code": "0319BB2008",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117563",
+      "code": "0319BB2010",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117970",
+      "code": "0319BB2017",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117971",
+      "code": "0319BB2018",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117734",
+      "code": "0319BB2019",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117562",
+      "code": "0319BB2020",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117992",
+      "code": "0319BB2021",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117993",
+      "code": "0319BB2022",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117946",
+      "code": "0319BB2023",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117647",
+      "code": "0319BB4005",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117580",
+      "code": "0319BB4011",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "118007",
+      "code": "0319BB4012",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117648",
+      "code": "0319BB4013",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117658",
+      "code": "0319BB4014",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "118008",
+      "code": "0319BB4015",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "118003",
+      "code": "0319BB4016",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "118009",
+      "code": "0319BB4017",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117652",
+      "code": "0319BB4018",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117627",
+      "code": "0319BB4020",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117579",
+      "code": "0319BB4021",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "118027",
+      "code": "0319BB6001",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:A5C3C0349668598F",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Identity Management [0319BB6001] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117519",
+      "code": "0319BB6002",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:E2F084FFC84CD939",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Virtualisierung [0319BB6002] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117524",
+      "code": "0319BB6003",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:A5C3C0349668598F",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Sicherheit von Web Applikationen [0319BB6003] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117518",
+      "code": "0319BB6004",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:CC60D01360A73BA2",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Erweiterte Web-Technologien [0319BB6004] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "118026",
+      "code": "0319BB6005",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:EB250C321C4BAB92",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Fallstudien der Wirtschaftsinformatik [0319BB6005] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117517",
+      "code": "0319BB6006",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:DA83715465530449",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Wirtschaftsinformatik Projekt [0319BB6006] – 2027 S",
+        "totalUnits": 26,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117520",
+      "code": "0319BB6007",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:E166F279DDF806AA",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Wirtschafts- und IT-Recht [0319BB6007] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117523",
+      "code": "0319BB6008",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:F8CB6D695C40D551",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Internet-Marketing [0319BB6008] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117516",
+      "code": "0319BB6009",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:12A9C91896FA6E6D",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Grundlagen Maschinelles Lernen und künstliche Intelligenz [0319BB6009] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117522",
+      "code": "0319BB6010",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:91DEB6D66C6E1E64",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Datenvisualisierung [0319BB6010] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117521",
+      "code": "0319BB6011",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:01F1C806C9A8937A",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Professional Meetings in English [0319BB6011] – 2027 S",
+        "totalUnits": 34,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117515",
+      "code": "0319BB6012",
+      "status": "candidate",
+      "lookup": {
+        "semesterName": "2027 S",
+        "cohortName": "Wirtschaftsinformatik - 6.Semester",
+        "studyTypeName": "Berufsbegleitend",
+        "lecturerReferenceCode": "campus02:010FF70CDC2146F1",
+        "roomReferenceCode": "CZ108"
+      },
+      "payload": {
+        "name": "Laufendes Berufspraktikum im Unternehmen 6 [0319BB6012] – 2027 S",
+        "totalUnits": 9,
+        "minSessionUnits": 2,
+        "maxSessionUnits": 4
+      }
+    },
+    {
+      "sourceKey": "117891",
+      "code": "0320BB2001",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117730",
+      "code": "0320BB2005",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117548",
+      "code": "0320BB2006",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117556",
+      "code": "0320BB2007",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117995",
+      "code": "0320BB2012",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117905",
+      "code": "0320BB2018",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117890",
+      "code": "0320BB2019",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117557",
+      "code": "0320BB2020",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117731",
+      "code": "0320BB2021",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117547",
+      "code": "0320BB2022",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117972",
+      "code": "0320BB2024",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117860",
+      "code": "0864VZ2001",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117936",
+      "code": "0864VZ2002",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117937",
+      "code": "0864VZ2003",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117857",
+      "code": "0864VZ2004",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117858",
+      "code": "0864VZ2005",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117899",
+      "code": "0864VZ2006",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117906",
+      "code": "0864VZ2007",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117907",
+      "code": "0864VZ2008",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117859",
+      "code": "0864VZ2009",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117900",
+      "code": "0864VZ2010",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117846",
+      "code": "0864VZ4001",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117916",
+      "code": "0864VZ4003",
+      "status": "skipped",
+      "reason": "Zero UE: retained in source catalog, excluded from teaching import"
+    },
+    {
+      "sourceKey": "117884",
+      "code": "0864VZ4004",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117911",
+      "code": "0864VZ4005",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117943",
+      "code": "0864VZ4006",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117944",
+      "code": "0864VZ4007",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "120737",
+      "code": "0864VZ4009",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117642",
+      "code": "0864VZ6001",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117932",
+      "code": "0864VZ6003",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117588",
+      "code": "0864VZ6007",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117655",
+      "code": "0864VZ6009",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117863",
+      "code": "0835VD2001",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117711",
+      "code": "0835VD2002",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117710",
+      "code": "0835VD2003",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117793",
+      "code": "0835VD2004",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117894",
+      "code": "0835VD2005",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117791",
+      "code": "0835VD2006",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117949",
+      "code": "0835VD2007",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117792",
+      "code": "0835VD2008",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117748",
+      "code": "0835VD4001",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117753",
+      "code": "0835VD4002",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117747",
+      "code": "0835VD4003",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117749",
+      "code": "0835VD4004",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117973",
+      "code": "0835VD4005",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117750",
+      "code": "0835VD4006",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117751",
+      "code": "0835VD4007",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117845",
+      "code": "0835VD4008",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117752",
+      "code": "0835VD4009",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "118116",
+      "code": "0835VD4011",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117938",
+      "code": "0835VD6001",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117939",
+      "code": "0835VD6002",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117855",
+      "code": "0835VD6003",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117856",
+      "code": "0835VD6004",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117980",
+      "code": "0835VD6005",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117979",
+      "code": "0835VD6006",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117978",
+      "code": "0835VD6007",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117781",
+      "code": "0835VD6008",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117976",
+      "code": "0835VD6009",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    },
+    {
+      "sourceKey": "117977",
+      "code": "0835VD6011",
+      "status": "skipped",
+      "reason": "Confirm cohort, lecturer, eligible room, and session unit limits before import"
+    }
+  ],
+  "status": "preview"
+}

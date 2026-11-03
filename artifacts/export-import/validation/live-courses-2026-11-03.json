@@ -1,0 +1,848 @@
+[
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Algorithmen [0319BB2008] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Algorithmen und Datenstrukturen [0864VZ2002] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "26"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Bachelorarbeit [0864VZ6003] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "17"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Begleitendes FuE Projekt [0320BB2020] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Betriebspraktische individuelle Vertiefung 2 [0835VD4003] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Betriebspraktische individuelle Vertiefung 4 [0835VD6005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Betriebswirtschaftslehre [0864VZ2007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Buchhaltung und Bilanzierung [0319BB2010] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Business English 2 [0864VZ4006] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Business English [0319BB4017] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Business IT-Applications [0864VZ2008] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "26"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Cloud Computing [0835VD6009] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Cloud Computing [0864VZ6001] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Communication & Presentation [0320BB2006] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Consulting Methoden [0320BB2022] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "26"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Data Cleaning und Data Analytics [0864VZ4009] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "47"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Data Mining [0864VZ6007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Databases [0864VZ4004] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "68"
+  },
+  {
+    "cohortId": "Business Software Development – 2. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Datenbankdesign [0835VD2005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "47"
+  },
+  {
+    "cohortId": "Business Software Development – 2. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Datenstrukturen und Algorithmen [0835VD2006] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "47"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Datenvisualisierung [0319BB6010] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Digitale Geschäftsmodelle 2 [0835VD4009] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Einführung in die Betriebswirtschaftslehre [0319BB2020] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "17"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Electronic und Mobile Business [0864VZ4001] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "60"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "English 2 [0864VZ2006] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "26"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Erweiterte Themen der Softwareentwicklung [0319BB2017] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Erweiterte Themen der digitalen Geschäftsmodelle [0319BB4005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Erweiterte Themen des Prozessmanagement [0319BB4020] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Erweiterte Web-Technologien [0319BB6004] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Fallstudien der Wirtschaftsinformatik [0319BB6005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Fallstudien der Wirtschaftsinformatik [0835VD6001] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Grundlagen Maschinelles Lernen und Künstliche Intelligenz [0835VD4011] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Grundlagen Maschinelles Lernen und künstliche Intelligenz [0319BB6009] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Grundlagen Mobile Computing [0835VD6007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Grundlagen der Netzwerktechnik [0319BB2005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "IT Operations [0319BB4016] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "26"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "IT-Service Management [0835VD6002] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Identity Management [0319BB6001] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Informationssicherheitsmanagement [0320BB2012] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Informationssysteme [0319BB4013] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Informationssysteme [0835VD4002] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Internet Security [0864VZ4005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "51"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Internet-Marketing [0319BB6008] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 2. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Konfigurationsmanagement [0835VD2007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Konfliktmanagement [0319BB4012] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "17"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Laufendes Berufspraktikum im Unternehmen 2 [0319BB2022] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "9"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Laufendes Berufspraktikum im Unternehmen 4 [0319BB4018] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "9"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Laufendes Berufspraktikum im Unternehmen 6 [0319BB6012] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "9"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Managerial Communication und Leadership [0864VZ4007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "51"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Marketing [0835VD4006] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Markup Languages [0319BB4014] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Markup Languages [0835VD4008] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Markupsprachen [0864VZ2003] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Mathematik 2 [0864VZ2004] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 2. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Mathematik für Informatik 2 [0835VD2001] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "60"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Mathematik in der Betriebswirtschaft [0319BB2019] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 2. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Objektorientierte Programmierung [0835VD2004] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "60"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Operation Research [0320BB2007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 2. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Personalmanagement und Arbeitsrecht [0835VD2003] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Presentations [0835VD6011] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "17"
+  },
+  {
+    "cohortId": "Business Software Development – 2. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Professional English [0835VD2002] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Professional Meetings in English [0319BB6011] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Projekt zum Berufspraktikum [0319BB2021] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "9"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Prozessmanagement 2 [0835VD4005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Präsentationstechniken [0319BB2023] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "17"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Relationale Datenbanken [0319BB2006] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Requirements Engineering [0319BB4021] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Requirements Engineering [0835VD4007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Requirementsanalyse [0864VZ2001] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "26"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Rhetorik und Präsentation [0864VZ2010] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "26"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Scientific English [0835VD4004] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Servicebasierte Systeme [0835VD6006] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Sicherheit von Web Applikationen [0319BB6003] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Sicherheit von Webapplikationen [0835VD6008] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Software Design 2 [0864VZ2009] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Software Design [0319BB2018] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Softwareentwicklungsprojekt [0319BB4011] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "17"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Stochastik und Statistik [0864VZ2005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Supply Chain Management [0835VD6003] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Teamtraining [0319BB2007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "17"
+  },
+  {
+    "cohortId": "MA IT & Wirtschaftsinformatik - 2.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Unternehmensgründung in der IT [0320BB2005] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Virtualisierung [0319BB6002] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 2. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Web Technologien & Usability [0835VD2008] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "47"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Wirtschafts- und IT-Recht [0319BB6007] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 6. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Wirtschafts- und IT-Recht [0835VD6004] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Wirtschaftsinformatik Projekt [0319BB6006] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "26"
+  },
+  {
+    "cohortId": "Wirtschaftsinformatik - 4.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Wissenschaftliches Arbeiten [0319BB4015] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Berufsbegleitend",
+    "totalUnits": "34"
+  },
+  {
+    "cohortId": "Business Software Development – 4. Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Wissenschaftliches Arbeiten und Hypothesenbildung [0835VD4001] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "30"
+  },
+  {
+    "cohortId": "Business Analytics & AI - 6.Semester",
+    "maxSessionUnits": "4",
+    "minSessionUnits": "2",
+    "name": "Wissensmanagement und Semantic Web [0864VZ6009] – 2027 S",
+    "semesterId": "2027 S",
+    "studyTypeId": "Vollzeit",
+    "totalUnits": "34"
+  }
+]

@@ -1,0 +1,486 @@
+[
+  {
+    "capacityText": "Kapazität 56",
+    "label": "CC202 – Campus Classic · CC202"
+  },
+  {
+    "capacityText": "Kapazität 63",
+    "label": "CC203 – Campus Classic · CC203"
+  },
+  {
+    "capacityText": "Kapazität 36",
+    "label": "CC204 – Campus Classic · CC204"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CC205 – Campus Classic · CC205"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CC206 – Campus Classic · CC206"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CC207 – Campus Classic · CC207"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CC208 – Campus Classic · CC208"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CC209 – Campus Classic · CC209"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CC210 – Campus Classic · CC210"
+  },
+  {
+    "capacityText": "Kapazität 32",
+    "label": "CC211 – Campus Classic · CC211"
+  },
+  {
+    "capacityText": "Kapazität 56",
+    "label": "CC212 – Campus Classic · CC212"
+  },
+  {
+    "capacityText": "Kapazität 56",
+    "label": "CC213 – Campus Classic · CC213"
+  },
+  {
+    "capacityText": "Kapazität 56",
+    "label": "CC214 – Campus Classic · CC214"
+  },
+  {
+    "capacityText": "Kapazität 63",
+    "label": "CC215 – Campus Classic · CC215"
+  },
+  {
+    "capacityText": "Kapazität 120",
+    "label": "CC224 – Campus Classic · CC224"
+  },
+  {
+    "capacityText": "Kapazität 64",
+    "label": "CE201 – Center of Excellence · CE201"
+  },
+  {
+    "capacityText": "Kapazität 64",
+    "label": "CE202 – Center of Excellence · CE202"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CE203 – Center of Excellence · CE203"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CE204 – Center of Excellence · CE204"
+  },
+  {
+    "capacityText": "Kapazität 22",
+    "label": "CE301 – Center of Excellence · CE301"
+  },
+  {
+    "capacityText": "Kapazität 48",
+    "label": "CE302 – Center of Excellence · CE302"
+  },
+  {
+    "capacityText": "Kapazität 30",
+    "label": "CE303 – Center of Excellence · CE303"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "CE304 – Center of Excellence · CE304"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "CE305 – Center of Excellence · CE305"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "CE306 – Center of Excellence · CE306"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "CE404 – Center of Excellence · CE404"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "CE405 – Center of Excellence · CE405"
+  },
+  {
+    "capacityText": "Kapazität 16",
+    "label": "CE408 – Center of Excellence · CE408"
+  },
+  {
+    "capacityText": "Kapazität 9",
+    "label": "CR237 – Campus Rosenhof - Haus A & B · CR237"
+  },
+  {
+    "capacityText": "Kapazität 7",
+    "label": "CR238 – Campus Rosenhof - Haus A & B · CR238"
+  },
+  {
+    "capacityText": "Kapazität 6",
+    "label": "CR303 – Campus Rosenhof - Haus A & B · CR303"
+  },
+  {
+    "capacityText": "Kapazität 10",
+    "label": "CR309 – Campus Rosenhof - Haus A & B · CR309"
+  },
+  {
+    "capacityText": "Kapazität 8",
+    "label": "CR332 – Campus Rosenhof - Haus A & B · CR332"
+  },
+  {
+    "capacityText": "Kapazität 53",
+    "label": "CZ001 – Campus Zusertal · CZ001"
+  },
+  {
+    "capacityText": "Kapazität 48",
+    "label": "CZ002 – Campus Zusertal · CZ002"
+  },
+  {
+    "capacityText": "Kapazität 48",
+    "label": "CZ003 – Campus Zusertal · CZ003"
+  },
+  {
+    "capacityText": "Kapazität 45",
+    "label": "CZ004 – Campus Zusertal · CZ004"
+  },
+  {
+    "capacityText": "Kapazität 16",
+    "label": "CZ030 – Campus Zusertal · CZ030"
+  },
+  {
+    "capacityText": "Kapazität 51",
+    "label": "CZ100 – Campus Zusertal · CZ100"
+  },
+  {
+    "capacityText": "Kapazität 41",
+    "label": "CZ102 – Campus Zusertal · CZ102"
+  },
+  {
+    "capacityText": "Kapazität 39",
+    "label": "CZ103 – Campus Zusertal · CZ103"
+  },
+  {
+    "capacityText": "Kapazität 36",
+    "label": "CZ106 – Campus Zusertal · CZ106"
+  },
+  {
+    "capacityText": "Kapazität 45",
+    "label": "CZ107 – Campus Zusertal · CZ107"
+  },
+  {
+    "capacityText": "Kapazität 45",
+    "label": "CZ108 – Campus Zusertal · CZ108"
+  },
+  {
+    "capacityText": "Kapazität 53",
+    "label": "CZ109 – Campus Zusertal · CZ109"
+  },
+  {
+    "capacityText": "Kapazität 63",
+    "label": "CZ110 – Campus Zusertal · CZ110"
+  },
+  {
+    "capacityText": "Kapazität 30",
+    "label": "CZ129 – Campus Zusertal · CZ129"
+  },
+  {
+    "capacityText": "Kapazität 2",
+    "label": "CZ134 – Campus Zusertal · CZ134"
+  },
+  {
+    "capacityText": "Kapazität 49",
+    "label": "CZ138 – Campus Zusertal · CZ138"
+  },
+  {
+    "capacityText": "Kapazität 13",
+    "label": "CZ204 – Campus Zusertal · CZ204"
+  },
+  {
+    "capacityText": "Kapazität 2",
+    "label": "CZ228 – Campus Zusertal · CZ228"
+  },
+  {
+    "capacityText": "Kapazität 35",
+    "label": "CZ233 – Campus Zusertal · CZ233"
+  },
+  {
+    "capacityText": "Kapazität 16",
+    "label": "CZ330 – Campus Zusertal · CZ330"
+  },
+  {
+    "capacityText": "Kapazität 28",
+    "label": "RC402 – Campus Rosenhof - Haus C · RC402"
+  },
+  {
+    "capacityText": "Kapazität 72",
+    "label": "RC403 – Campus Rosenhof - Haus C · RC403"
+  },
+  {
+    "capacityText": "Kapazität 60",
+    "label": "RC404 – Campus Rosenhof - Haus C · RC404"
+  },
+  {
+    "capacityText": "Kapazität 78",
+    "label": "RC409 – Campus Rosenhof - Haus C · RC409"
+  },
+  {
+    "capacityText": "Kapazität 6",
+    "label": "RC410 – Campus Rosenhof - Haus C · RC410"
+  },
+  {
+    "capacityText": "Kapazität 8",
+    "label": "WF177 – WIFI Turm · WF177"
+  },
+  {
+    "capacityText": "Kapazität 8",
+    "label": "WF178 – WIFI Turm · WF178"
+  },
+  {
+    "capacityText": "Kapazität 8",
+    "label": "WF179 – WIFI Turm · WF179"
+  },
+  {
+    "capacityText": "Kapazität 8",
+    "label": "WF180 – WIFI Turm · WF180"
+  },
+  {
+    "capacityText": "Kapazität 8",
+    "label": "WF181 – WIFI Turm · WF181"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WF183 – WIFI Turm · WF183"
+  },
+  {
+    "capacityText": "Kapazität 48",
+    "label": "WF185 – WIFI Turm · WF185"
+  },
+  {
+    "capacityText": "Kapazität 18",
+    "label": "WF254 – WIFI Turm · WF254"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WF256 – WIFI Turm · WF256"
+  },
+  {
+    "capacityText": "Kapazität 12",
+    "label": "WF260 – WIFI Turm · WF260"
+  },
+  {
+    "capacityText": "Kapazität 12",
+    "label": "WF261 – WIFI Turm · WF261"
+  },
+  {
+    "capacityText": "Kapazität 12",
+    "label": "WF262 – WIFI Turm · WF262"
+  },
+  {
+    "capacityText": "Kapazität 12",
+    "label": "WF276 – WIFI Turm · WF276"
+  },
+  {
+    "capacityText": "Kapazität 12",
+    "label": "WF277 – WIFI Turm · WF277"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF278 – WIFI Turm · WF278"
+  },
+  {
+    "capacityText": "Kapazität 12",
+    "label": "WF279 – WIFI Turm · WF279"
+  },
+  {
+    "capacityText": "Kapazität 10",
+    "label": "WF280 – WIFI Turm · WF280"
+  },
+  {
+    "capacityText": "Kapazität 12",
+    "label": "WF281 – WIFI Turm · WF281"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF376 – WIFI Turm · WF376"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF377 – WIFI Turm · WF377"
+  },
+  {
+    "capacityText": "Kapazität 36",
+    "label": "WF378 – WIFI Turm · WF378"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WF379 – WIFI Turm · WF379"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF380 – WIFI Turm · WF380"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF381 – WIFI Turm · WF381"
+  },
+  {
+    "capacityText": "Kapazität 18",
+    "label": "WF476 – WIFI Turm · WF476"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF477 – WIFI Turm · WF477"
+  },
+  {
+    "capacityText": "Kapazität 48",
+    "label": "WF478 – WIFI Turm · WF478"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WF479 – WIFI Turm · WF479"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF480 – WIFI Turm · WF480"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF481 – WIFI Turm · WF481"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF554 – WIFI Turm · WF554"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF555 – WIFI Turm · WF555"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WF556 – WIFI Turm · WF556"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WF558 – WIFI Turm · WF558"
+  },
+  {
+    "capacityText": "Kapazität 64",
+    "label": "WF559 – WIFI Turm · WF559"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF560 – WIFI Turm · WF560"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WF576 – WIFI Turm · WF576"
+  },
+  {
+    "capacityText": "Kapazität 64",
+    "label": "WF577 – WIFI Turm · WF577"
+  },
+  {
+    "capacityText": "Kapazität 34",
+    "label": "WF578 – WIFI Turm · WF578"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WF579 – WIFI Turm · WF579"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "WF580 – WIFI Turm · WF580"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "WF581 – WIFI Turm · WF581"
+  },
+  {
+    "capacityText": "Kapazität 32",
+    "label": "WF676 – WIFI Turm · WF676"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WF677 – WIFI Turm · WF677"
+  },
+  {
+    "capacityText": "Kapazität 18",
+    "label": "WF678 – WIFI Turm · WF678"
+  },
+  {
+    "capacityText": "Kapazität 48",
+    "label": "WF679 – WIFI Turm · WF679"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "WF680 – WIFI Turm · WF680"
+  },
+  {
+    "capacityText": "Kapazität 396",
+    "label": "WK001 – Wirtschaftskammer · WK001"
+  },
+  {
+    "capacityText": "Kapazität 25",
+    "label": "WW912 – WIFI Werkstätten · WW912"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "WW913 – WIFI Werkstätten · WW913"
+  },
+  {
+    "capacityText": "Kapazität 27",
+    "label": "WW914 – WIFI Werkstätten · WW914"
+  },
+  {
+    "capacityText": "Kapazität 24",
+    "label": "WW915 – WIFI Werkstätten · WW915"
+  },
+  {
+    "capacityText": "Kapazität 18",
+    "label": "WW916 – WIFI Werkstätten · WW916"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WW923 – WIFI Werkstätten · WW923"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WW924 – WIFI Werkstätten · WW924"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WW954 – WIFI Werkstätten · WW954"
+  },
+  {
+    "capacityText": "Kapazität 21",
+    "label": "WW957 – WIFI Werkstätten · WW957"
+  },
+  {
+    "capacityText": "Kapazität 40",
+    "label": "WW969 – WIFI Werkstätten · WW969"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WW971 – WIFI Werkstätten · WW971"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WW972 – WIFI Werkstätten · WW972"
+  },
+  {
+    "capacityText": "Kapazität 10",
+    "label": "WW973 – WIFI Werkstätten · WW973"
+  },
+  {
+    "capacityText": "Kapazität 16",
+    "label": "WW974 – WIFI Werkstätten · WW974"
+  },
+  {
+    "capacityText": "Kapazität 20",
+    "label": "WW976 – WIFI Werkstätten · WW976"
+  }
+]

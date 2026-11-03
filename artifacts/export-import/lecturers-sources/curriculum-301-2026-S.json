@@ -1,0 +1,447 @@
+{
+  "courses": [
+    {
+      "additionalText": "Vortragende*r:\nHatzl, Stefanie\nHöber, Angelika",
+      "code": "0320BB2001",
+      "courseId": "117891",
+      "lecturers": [
+        {
+          "name": "Hatzl, Stefanie",
+          "personId": "AD9C25620F917CAF"
+        },
+        {
+          "name": "Höber, Angelika",
+          "personId": "DA83715465530449"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 25.5 UE",
+      "sourceUnits": 25.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nHöber, Angelika\nPrettenthaler, Elisabeth",
+      "code": "0320BB2020",
+      "courseId": "117557",
+      "lecturers": [
+        {
+          "name": "Höber, Angelika",
+          "personId": "DA83715465530449"
+        },
+        {
+          "name": "Prettenthaler, Elisabeth",
+          "personId": "E2CE8CA0FF23027E"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Begleitendes FuE Projekt",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBriscoe, Henry\nPhillips, Michael",
+      "code": "0320BB2006",
+      "courseId": "117548",
+      "lecturers": [
+        {
+          "name": "Briscoe, Henry",
+          "personId": "01F1C806C9A8937A"
+        },
+        {
+          "name": "Phillips, Michael",
+          "personId": "A837922C0DD9FD7E"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Communication & Presentation",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nJesenko, Berndt\nRath, Walter",
+      "code": "0320BB2022",
+      "courseId": "117547",
+      "lecturers": [
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Rath, Walter",
+          "personId": "F8CB6D695C40D551"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Consulting Methoden",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 25.5 UE",
+      "sourceUnits": 25.5
+    },
+    {
+      "additionalText": "Vortragende*r:\nMerth, Harald\nObermayr, Florian",
+      "code": "0320BB2021",
+      "courseId": "117731",
+      "lecturers": [
+        {
+          "name": "Merth, Harald",
+          "personId": "AD60EC1EBEA83942"
+        },
+        {
+          "name": "Obermayr, Florian",
+          "personId": "639CA1D1F252796C"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Gesellschafts- und Vertragsrecht",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nSchmid, Christian",
+      "code": "0320BB2012",
+      "courseId": "117995",
+      "lecturers": [
+        {
+          "name": "Schmid, Christian",
+          "personId": "A5C3C0349668598F"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Informationssicherheitsmanagement",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nGrabner, Johann",
+      "code": "0320BB2024",
+      "courseId": "117972",
+      "lecturers": [
+        {
+          "name": "Grabner, Johann",
+          "personId": "C72B956A216E7641"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Integration elekt. Geschäftsprozesse",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick\nGerzic, Harris\nGlinik, Martin\nGrasser, Michael Georg\nGrobelscheg, Lisa\nHatzl, Stefanie\nHöber, Angelika\nHollosi, Arno\nInnerhuber, Nikolaus\nIvković, Edin\nJesenko, Berndt\nJiménez, Simon\nKochauf, Stephan\nKröll, Mark\nPetelinc, Markus\nPrettenthaler, Elisabeth\nPuchleitner, Thomas\nRath, Walter\nResanovic, Daniel\nSoftic, Safet\nSoftic, Selver\nStreibl, Markus\nZeiringer, Johannes\nZwetti, Günther",
+      "code": "0320BB2023",
+      "courseId": "117914",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        },
+        {
+          "name": "Gerzic, Harris",
+          "personId": "EB250C321C4BAB92"
+        },
+        {
+          "name": "Glinik, Martin",
+          "personId": "75055F43A64C3544"
+        },
+        {
+          "name": "Grasser, Michael Georg",
+          "personId": "683936EF0C73C08F"
+        },
+        {
+          "name": "Grobelscheg, Lisa",
+          "personId": "7B535F25447DE522"
+        },
+        {
+          "name": "Hatzl, Stefanie",
+          "personId": "AD9C25620F917CAF"
+        },
+        {
+          "name": "Höber, Angelika",
+          "personId": "DA83715465530449"
+        },
+        {
+          "name": "Hollosi, Arno",
+          "personId": "08FF124FA70CBBA2"
+        },
+        {
+          "name": "Innerhuber, Nikolaus",
+          "personId": "9341DD2AEF1EF140"
+        },
+        {
+          "name": "Ivković, Edin",
+          "personId": "E5EDC4B26217CF9D"
+        },
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Jiménez, Simon",
+          "personId": "9EA890015EAF213F"
+        },
+        {
+          "name": "Kochauf, Stephan",
+          "personId": "296474ACC3749EC1"
+        },
+        {
+          "name": "Kröll, Mark",
+          "personId": "FEA1A0B4590D5D33"
+        },
+        {
+          "name": "Petelinc, Markus",
+          "personId": "5959E1E78F716637"
+        },
+        {
+          "name": "Prettenthaler, Elisabeth",
+          "personId": "E2CE8CA0FF23027E"
+        },
+        {
+          "name": "Puchleitner, Thomas",
+          "personId": "1506FB680D28DDBB"
+        },
+        {
+          "name": "Rath, Walter",
+          "personId": "F8CB6D695C40D551"
+        },
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        },
+        {
+          "name": "Softic, Safet",
+          "personId": "A025C4CF0CB99C00"
+        },
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        },
+        {
+          "name": "Streibl, Markus",
+          "personId": "8C15A95BE09D2F65"
+        },
+        {
+          "name": "Zeiringer, Johannes",
+          "personId": "8DDB25150DA3BD16"
+        },
+        {
+          "name": "Zwetti, Günther",
+          "personId": "8E50A1B3C8820F3B"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Masterarbeit 1",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 0 UE",
+      "sourceUnits": 0
+    },
+    {
+      "additionalText": "Vortragende*r:\nAmann-Langeder, Michael\nBeer, Patrick\nBriscoe, Henry\nDerado, Ivo\nGerzic, Harris\nGrünwald, Stefan\nHatzl, Johannes\nHöber, Angelika\nInnerhuber, Nikolaus\nIvković, Edin\nJesenko, Berndt\nJiménez, Simon\nLiu, Xiaoshan\nNeudorfer, Reinhard\nNeumann, Dominic\nPangerl, Christoph\nPetelinc, Markus\nPhillips, Michael\nPrettenthaler, Elisabeth\nPuchleitner, Thomas\nRath, Walter\nResanovic, Daniel\nSchmid, Christian\nSoftic, Selver\nStreibl, Markus\nZwetti, Günther",
+      "code": "0320BB4SO1",
+      "courseId": "117736",
+      "lecturers": [
+        {
+          "name": "Amann-Langeder, Michael",
+          "personId": "34FFA8D4A1C8CAFB"
+        },
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        },
+        {
+          "name": "Briscoe, Henry",
+          "personId": "01F1C806C9A8937A"
+        },
+        {
+          "name": "Derado, Ivo",
+          "personId": "C730AEC447334CF5"
+        },
+        {
+          "name": "Gerzic, Harris",
+          "personId": "EB250C321C4BAB92"
+        },
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        },
+        {
+          "name": "Hatzl, Johannes",
+          "personId": "4B9FD052DF069DEC"
+        },
+        {
+          "name": "Höber, Angelika",
+          "personId": "DA83715465530449"
+        },
+        {
+          "name": "Innerhuber, Nikolaus",
+          "personId": "9341DD2AEF1EF140"
+        },
+        {
+          "name": "Ivković, Edin",
+          "personId": "E5EDC4B26217CF9D"
+        },
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Jiménez, Simon",
+          "personId": "9EA890015EAF213F"
+        },
+        {
+          "name": "Liu, Xiaoshan",
+          "personId": "9CEE0DC1020F7AC3"
+        },
+        {
+          "name": "Neudorfer, Reinhard",
+          "personId": "FDE7AE35064DC868"
+        },
+        {
+          "name": "Neumann, Dominic",
+          "personId": "305B526ED618EBCD"
+        },
+        {
+          "name": "Pangerl, Christoph",
+          "personId": "12E612097445B8A1"
+        },
+        {
+          "name": "Petelinc, Markus",
+          "personId": "5959E1E78F716637"
+        },
+        {
+          "name": "Phillips, Michael",
+          "personId": "A837922C0DD9FD7E"
+        },
+        {
+          "name": "Prettenthaler, Elisabeth",
+          "personId": "E2CE8CA0FF23027E"
+        },
+        {
+          "name": "Puchleitner, Thomas",
+          "personId": "1506FB680D28DDBB"
+        },
+        {
+          "name": "Rath, Walter",
+          "personId": "F8CB6D695C40D551"
+        },
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        },
+        {
+          "name": "Schmid, Christian",
+          "personId": "A5C3C0349668598F"
+        },
+        {
+          "name": "Softic, Selver",
+          "personId": "91DEB6D66C6E1E64"
+        },
+        {
+          "name": "Streibl, Markus",
+          "personId": "8C15A95BE09D2F65"
+        },
+        {
+          "name": "Zwetti, Günther",
+          "personId": "8E50A1B3C8820F3B"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Masterprüfung",
+      "courseType": "SO",
+      "displayedMetadata": "SO | 0 UE",
+      "sourceUnits": 0
+    },
+    {
+      "additionalText": "Vortragende*r:\nBeer, Patrick\nHatzl, Johannes\nLiu, Xiaoshan\nResanovic, Daniel",
+      "code": "0320BB2007",
+      "courseId": "117556",
+      "lecturers": [
+        {
+          "name": "Beer, Patrick",
+          "personId": "8D880F8B1D500B35"
+        },
+        {
+          "name": "Hatzl, Johannes",
+          "personId": "4B9FD052DF069DEC"
+        },
+        {
+          "name": "Liu, Xiaoshan",
+          "personId": "9CEE0DC1020F7AC3"
+        },
+        {
+          "name": "Resanovic, Daniel",
+          "personId": "12A9C91896FA6E6D"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Operation Research",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nJesenko, Berndt\nPrettenthaler, Elisabeth",
+      "code": "0320BB2018",
+      "courseId": "117905",
+      "lecturers": [
+        {
+          "name": "Jesenko, Berndt",
+          "personId": "87386A33AA11E3F3"
+        },
+        {
+          "name": "Prettenthaler, Elisabeth",
+          "personId": "E2CE8CA0FF23027E"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Seminar zur Masterarbeit 1",
+      "courseType": "SE",
+      "displayedMetadata": "SE | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nGrünwald, Stefan",
+      "code": "0320BB2019",
+      "courseId": "117890",
+      "lecturers": [
+        {
+          "name": "Grünwald, Stefan",
+          "personId": "066E22DC2C0CA454"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Systems Engineering & Analytisches Denken",
+      "courseType": "PR",
+      "displayedMetadata": "PR | 34 UE",
+      "sourceUnits": 34
+    },
+    {
+      "additionalText": "Vortragende*r:\nNeudorfer, Reinhard",
+      "code": "0320BB2005",
+      "courseId": "117730",
+      "lecturers": [
+        {
+          "name": "Neudorfer, Reinhard",
+          "personId": "FDE7AE35064DC868"
+        }
+      ],
+      "teachingRolePresent": true,
+      "title": "Unternehmensgründung in der IT",
+      "courseType": "IL",
+      "displayedMetadata": "IL | 34 UE",
+      "sourceUnits": 34
+    }
+  ],
+  "curriculum": "FH-Masterstudiengang Informationstechnologien und Wirtschaftsinformatik Berufsbegleitend [2021W V1], Masterstudium",
+  "pagination": [
+    "1 - 13 von 13"
+  ],
+  "semester": "2026 S",
+  "url": "https://online.campus02.at/C02online/ee/ui/ca2/app/desktop/#/slc.tm.cp/student/courses?$ctx=lang=DE&$filter=&$skip=0&$top=100&curriculumVersionId=301&objTermId=124&orgId=1",
+  "capturedAt": "2026-11-03T10:50:43.438Z"
+}
