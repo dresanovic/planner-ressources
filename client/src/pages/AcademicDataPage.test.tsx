@@ -1,4 +1,4 @@
-import { act } from 'react'
+import { act, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -33,6 +33,7 @@ vi.mock('../components/HolidayAdministration', () => ({
   HolidayAdministration: ({ onChanged }: { onChanged: () => void }) => <section><h2>Holiday administration</h2><button onClick={onChanged}>Mock holiday mutation</button></section>,
 }))
 
+import { administrationCatalog, legacyCourse, otherSemesterCourse, laterPageCourses, targetCohort, otherCohort, emptyCohort, courseListSemester } from '../test/fixtures/courseLists'
 import { AcademicDataPage } from './AcademicDataPage'
 
 const usage = { recordId: 1, revision: 1, canDelete: true, dependentRecords: [], savedSchedules: { type: 'draft_schedule', count: 0 }, blockers: [] }
@@ -377,4 +378,76 @@ describe('AcademicDataPage', () => {
     expect(document.querySelector('[role="status"]')?.textContent).toContain('2 gespeicherte Termine in 1 Planung')
     expect(document.querySelector('[role="status"]')?.textContent).not.toContain('aktive Lehrveranstaltung')
   })
+})
+
+
+it('I-005 intersects full paginated course catalog with semester/cohort and preserves an open editor', async () => {
+  const catalog = [...laterPageCourses, ...administrationCatalog, legacyCourse, otherSemesterCourse]
+  mocks.listCourses.mockImplementation(async (_status, pageNumber) => page(catalog.slice((pageNumber - 1) * 200, pageNumber * 200), catalog.length, pageNumber))
+  mocks.listSemesters.mockResolvedValue(page([courseListSemester, { ...courseListSemester, id: 2, name: '2027 W' }]))
+  mocks.listCohorts.mockResolvedValue(page([targetCohort, otherCohort, emptyCohort]))
+  mocks.listStudyTypes.mockResolvedValue(page([{ id: 1, name: 'Vollzeit' }]))
+  function Harness() {
+    const [filters, setFilters] = useState<{semesterId: number | null; cohortId: number | null}>({semesterId: null, cohortId: null})
+    return <AcademicDataPage category="courses" onCatalogChanged={vi.fn()} courseFilters={filters} onCourseFiltersChange={setFilters} />
+  }
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  await act(async () => root.render(<Harness />))
+  expect(document.body.textContent).toContain('Legacy ohne Semester')
+  const semester = document.querySelector<HTMLSelectElement>('[aria-label="Semester filtern"]')!
+  const cohort = document.querySelector<HTMLSelectElement>('[aria-label="Kohorte filtern"]')!
+  expect(semester).not.toBeNull()
+  act(() => { semester.value = '1'; semester.dispatchEvent(new Event('change', {bubbles: true})); })
+  act(() => { cohort.value = String(targetCohort.id); cohort.dispatchEvent(new Event('change', {bubbles: true})); })
+  expect(document.querySelectorAll('.catalog-list li')).toHaveLength(11)
+  expect(document.body.textContent).not.toContain('Legacy ohne Semester')
+  await act(async () => document.querySelector<HTMLButtonElement>('.catalog-list button')!.click())
+  const name = document.querySelector<HTMLInputElement>('.catalog-grid section:nth-child(2) input')!
+  act(() => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(name, 'Unsaved course'); name.dispatchEvent(new Event('input', { bubbles: true })) })
+  act(() => { cohort.value = String(emptyCohort.id); cohort.dispatchEvent(new Event('change', {bubbles: true})); })
+  expect(document.querySelectorAll('.catalog-list li')).toHaveLength(0)
+  expect(name.value).toBe('Unsaved course')
+  expect(document.body.textContent).toContain('Keine Treffer')
+  act(() => button('Kohortenfilter zurücksetzen')!.click())
+  expect(document.querySelectorAll('.catalog-list li')).toHaveLength(204)
+  expect(name.value).toBe('Unsaved course')
+  expect(mocks.createCourse).not.toHaveBeenCalled()
+  expect(mocks.updateCourse).not.toHaveBeenCalled()
+  expect(mocks.setAcademicLifecycle).not.toHaveBeenCalled()
+  expect(mocks.listCourses).toHaveBeenCalledWith('all', 2, 200)
+  act(() => root.unmount())
+})
+
+
+it('I-005 does not report successful zero matches when course retrieval fails', async () => {
+  mocks.listCourses.mockRejectedValue(new Error('offline'))
+  await renderPage('courses')
+  expect(document.body.textContent).toContain('konnten nicht geladen werden')
+  expect(document.body.textContent).not.toContain('0 Treffer')
+  expect(document.body.textContent).not.toContain('Keine Lehrveranstaltungen in diesem Semester')
+})
+
+
+it('I-005 applies status retrieval alongside filters and resets cohort only on semester scope changes', async () => {
+  mocks.listCourses.mockImplementation(async (status) => page(administrationCatalog.filter((course) => status === 'all' || course.isActive === (status === 'active'))))
+  mocks.listSemesters.mockResolvedValue(page([courseListSemester, { ...courseListSemester, id: 2, name: '2027 W' }]))
+  mocks.listCohorts.mockResolvedValue(page([targetCohort, otherCohort, emptyCohort]))
+  function Harness() {
+    const [filters, setFilters] = useState<{semesterId: number | null; cohortId: number | null}>({semesterId: 1, cohortId: targetCohort.id})
+    return <AcademicDataPage category="courses" onCatalogChanged={vi.fn()} courseFilters={filters} onCourseFiltersChange={setFilters} />
+  }
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  await act(async () => root.render(<Harness />))
+  expect(document.querySelectorAll('.catalog-list li')).toHaveLength(11)
+  const status = document.querySelector<HTMLSelectElement>('.page-header select')!
+  await act(async () => { status.value = 'inactive'; status.dispatchEvent(new Event('change', {bubbles: true})) })
+  expect(mocks.listCourses).toHaveBeenLastCalledWith('inactive', 1, 200)
+  expect(document.querySelectorAll('.catalog-list li')).toHaveLength(0)
+  expect(document.querySelector<HTMLSelectElement>('[aria-label="Kohorte filtern"]')!.value).toBe('101')
+  const semester = document.querySelector<HTMLSelectElement>('[aria-label="Semester filtern"]')!
+  act(() => { semester.value = '2'; semester.dispatchEvent(new Event('change', {bubbles: true})) })
+  expect(document.querySelector<HTMLSelectElement>('[aria-label="Kohorte filtern"]')!.value).toBe('')
+  act(() => { semester.value = '1'; semester.dispatchEvent(new Event('change', {bubbles: true})) })
+  expect(document.querySelector<HTMLSelectElement>('[aria-label="Kohorte filtern"]')!.value).toBe('')
+  act(() => root.unmount())
 })

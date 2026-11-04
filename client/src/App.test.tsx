@@ -30,9 +30,9 @@ vi.mock('./pages/CourseSchedulePage', () => ({
   },
 }))
 vi.mock('./pages/AcademicDataPage', () => ({
-  AcademicDataPage: ({ category, onCatalogChanged }: { category: AcademicDataCategory; onCatalogChanged: () => void }) => {
+  AcademicDataPage: ({ category, onCatalogChanged, courseFilters, onCourseFiltersChange }: { category: AcademicDataCategory; onCatalogChanged: () => void; courseFilters: { semesterId: number | null; cohortId: number | null }; onCourseFiltersChange: (value: { semesterId: number | null; cohortId: number | null }) => void }) => {
     mocks.academic(category)
-    return <div><span>Academic category: {category}</span><button onClick={onCatalogChanged}>Mutate catalog</button></div>
+    return <div><span>Academic category: {category}</span><span>Course filters: {courseFilters?.semesterId ?? "all"}/{courseFilters?.cohortId ?? "all"}</span><button onClick={() => onCourseFiltersChange({semesterId: 1, cohortId: 101})}>Set course filters</button><button onClick={onCatalogChanged}>Mutate catalog</button></div>
   },
 }))
 
@@ -239,4 +239,24 @@ describe('App unified navigation', () => {
     expect(() => writeNavigationPinned(false)).not.toThrow()
     set.mockRestore()
   })
+})
+
+
+it('I-005 restores independent administration course filter props after navigation and resets on fresh mount', async () => {
+  const root = await renderApp()
+  act(() => button('Stammdaten').click())
+  act(() => button('Lehrveranstaltungen').click())
+  act(() => button('Set course filters').click())
+  expect(document.body.textContent).toContain('Course filters: 1/101')
+  act(() => button('Kalender').click())
+  act(() => button('Lehrveranstaltungen').click())
+  expect(document.body.textContent).toContain('Course filters: 1/101')
+  act(() => button('Semester').click())
+  act(() => button('Lehrveranstaltungen').click())
+  expect(document.body.textContent).toContain('Course filters: 1/101')
+  act(() => root.unmount())
+  await renderApp()
+  act(() => button('Stammdaten').click())
+  act(() => button('Lehrveranstaltungen').click())
+  expect(document.body.textContent).toContain('Course filters: all/all')
 })

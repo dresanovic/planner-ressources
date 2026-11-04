@@ -8,7 +8,7 @@ This document defines the overall development process using **Spec Kit** togethe
 - `$user-manual-creation`
 - `$code-refactor`
 
-The process has three different levels:
+The process has four different levels:
 
 1. **Project foundations**, normally established once
 2. **Product scope and slice management**, established initially and updated when necessary
@@ -39,37 +39,30 @@ docs/planning/Feature_slices.md
 ITERATIVE IMPLEMENTATION — REPEATED FOR EACH SLICE
 ──────────────────────────────────────────────────────────
 
-$speckit-specify
-        ↓
-$speckit-clarify
-        ↺ repeat until sufficiently clear
-        ↓
-optional $speckit-checklist
-        ↓
-$speckit-plan
-        ↓
-$speckit-tasks
-        ↓
-$speckit-analyze
-        ↺ correct findings and repeat until consistent
-        ↓
-$speckit-implement
-        ↓
-$speckit-converge
-        ↓
-material gaps found?
-        ├─ Yes → $speckit-implement
-        │          ↓
-        │    $speckit-converge
-        └─ No
-        ↓
-$code-review
-        ↓
-verify
-        ↓
-$user-manual-creation
-        ↓
-commit → merge
+Goal 1 — Specification Convergence
+  $speckit-specify → $speckit-clarify → optional $speckit-checklist
+  ↺ clarify and correct; maximum five correction cycles
+        ↓ report → HUMAN APPROVAL before planning; manually start Goal 2
+Goal 2 — Planning and Analysis Convergence
+  $speckit-plan → $speckit-tasks → $speckit-analyze
+  ↺ correct affected artifacts separately → analyze; maximum five cycles
+        ↓ report → HUMAN APPROVAL before implementation; manually start Goal 3
+Goal 3 — Implementation Convergence
+  $speckit-implement → $speckit-converge → relevant tests
+  ↺ implement appended gap tasks → converge → tests; maximum five cycles
+        ↓ report → human decision; manually start Goal 4
+Goal 4 — Code Review and Verification
+  $code-review (read-only) → verification
+  ↺ separate corrections → tests → review; maximum five cycles
+        ↓ report → human decision; manually start Goal 5
+Goal 5 — Documentation and Delivery
+  $user-manual-creation → validate manual → review Git diff and status
+  ↺ targeted documentation corrections → validate; maximum five cycles
+        ↓ report → HUMAN APPROVAL for each intended Git operation
+commit → approved push → review / pull request → approved merge
+
+Every Goal: stop early on success; after five unsuccessful correction
+cycles, stop and report non-convergence. No automatic Goal transitions.
 
 
 PERIODIC CODEBASE IMPROVEMENT
@@ -288,34 +281,148 @@ The current `Feature_slices.md` remains the product-level ground truth throughou
 
 # Phase 3: Iterative slice implementation
 
-The following workflow is repeated independently for every selected development slice:
+The five Goals below group the existing skills without changing their order or responsibilities. They are repeated independently for every selected development slice:
 
 ```text
-$speckit-specify
-        ↓
-$speckit-clarify
-        ↺
-optional $speckit-checklist
-        ↓
-$speckit-plan
-        ↓
-$speckit-tasks
-        ↓
-$speckit-analyze
-        ↺
-$speckit-implement
-        ↓
-$speckit-converge
-        ↺ implement remaining convergence tasks when necessary
-        ↓
-$code-review
-        ↓
-verify
-        ↓
-$user-manual-creation
+Goal 1: specify → clarify → optional checklist
+        ↓ report and human approval; manually start
+Goal 2: plan → tasks → analyze
+        ↓ report and human approval; manually start
+Goal 3: implement → converge → tests
+        ↓ report and human decision; manually start
+Goal 4: read-only code review → verification
+        ↓ report and human decision; manually start
+Goal 5: user manual → validate documentation → prepare delivery
+        ↓ explicit human approval before commit, push, or merge
+commit → push → review → merge
+
+Each Goal: assess → targeted correction → reassess (maximum five cycles).
+Stop early on success; stop and report if the limit is exhausted.
 ```
 
 Each slice should normally have its own feature branch and specification artifacts. The manual should be updated in the same slice when the implemented behavior changes the way users operate the system.
+
+---
+
+## Codex Goals: execution model and shared rules
+
+**Spec-Kit skills** perform individual activities and retain their own prerequisites, outputs, limits, and approval requirements. The custom review and documentation skills extend those activities. **Codex Goals** define an outcome, evidence required for completion, and bounded correction loops around those skills. **Spec-Kit Workflows** describe orchestration across commands and gates; they could eventually coordinate multiple Goals or stages.
+
+### Verified Goal syntax and current execution
+
+Checked on 2026-11-03: the installed CLI reports `codex-cli 0.150.1`, and `codex features list` reports `goals` as stable and enabled. Official OpenAI documentation describes `/goal <outcome>` in an interactive Codex session, plus `/goal` to inspect, `/goal pause`, `/goal resume`, and `/goal clear`. Goals persist an objective and can continue across turns; completion requires evidence. See [OpenAI: Using Goals in Codex](https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex).
+
+The examples below are interactive prompts, not shell commands. No `codex goal` subcommand or native five-cycle option is claimed. The cycle limit and approval gates are instructions in each Goal, not verified platform-enforced controls. Desktop command availability must be confirmed in the current client; if `/goal` is unavailable, ask Codex explicitly to create a Goal using the same objective and confirm that it became active.
+
+**Current process:** a human selects and starts one Goal at a time, reviews its report, and authorizes the next stage. Automation occurs inside the selected Goal. The installed `.specify/workflows/speckit/workflow.yml` sequences specify, plan, tasks, and implement with review gates; it does not implement this five-Goal process. End-to-end orchestration of these Goals is a future integration proposal, requiring separate validation of dispatch, counters, approval persistence, stop handling, and evidence transfer. No new workflow command or configuration is assumed here.
+
+### Rules applying to every Goal
+
+- Bind the Goal to one selected slice, its feature directory, branch, and approved inputs. Preserve approved requirements and architectural decisions; follow the project constitution and KISS principle.
+- Initial execution and assessment do not count as correction cycles. Allow at most **five correction cycles per Goal**. A cycle starts when addressing findings from a preceding assessment: announce cycle 1–5 and the findings in its correction batch before starting corrections. Multiple fixes in that batch count as one cycle; reassessment and relevant verification close it. Findings requiring another correction batch start the next cycle. This also applies to correction batches inside a skill invocation; invoking a skill does not define or reset a cycle. Internal skill limits, such as clarification question limits, still apply.
+- Running analysis, tests, or reviews without corrections does not increment the counter. Waiting for answers or approval and performing approved Git operations do not consume correction cycles. A test or review finding starts a cycle only when corrective work begins.
+- Preserve the completed-cycle count and any in-progress cycle across interruptions, context compaction, continuation turns, and fresh sessions of the same Goal. Resume an interrupted batch under its existing number; do not count it twice or silently reset the allowance. If previous state cannot be reconstructed reliably, stop and report the uncertainty before further corrections.
+- Stop immediately when the explicit completion criteria are satisfied. Prefer minimal targeted corrections to affected artifacts over regenerating valid specifications, plans, or tasks.
+- After the fifth unsuccessful correction cycle, stop substantive work and report non-convergence. Missing evidence, required human decisions, or unavailable checks can require an earlier stop. Do not mark the Goal successful because its cycle limit was reached.
+- A stop report alone is not proof that runtime continuation has stopped. At an intervention or exhausted-cycle boundary, request human action; use `/goal pause` or `/goal clear` as appropriate to prevent further automatic work. Do not resume corrections or reset the allowance without human direction. Runtime lifecycle restrictions still apply.
+- Do not advance to the next Goal automatically. Human approval is required before planning and implementation; all other transitions also require a human decision to start the next Goal. Completion of one Goal does not authorize the next.
+- Preserve skill boundaries: `$speckit-analyze` and `$code-review` report findings read-only. Corrections are separate, explicitly authorized work, never edits performed by the review itself. Respect checklist ownership and skill-specific gates. Inspect applicable extension hooks before execution; if a hook would cross a Goal boundary or commit, push, or merge without approval, stop for human resolution rather than bypassing it.
+- Do not change approved scope, architecture, or the constitution to force convergence. Escalate such decisions; after human approval, return to the affected earlier Goal and revalidate downstream artifacts.
+- Maintain the execution summary below and include it in every stop or completion report, with changed artifacts and unavailable checks. Separate successful completion from a blocked or exhausted attempt. Never claim success without supporting evidence.
+- Do not commit, push, or merge in any Goal without explicit human approval for the intended operation and reviewed changes. Delivery preparation does not grant that approval.
+
+### Execution summary and session continuity
+
+Use a concise summary in the current session after the initial assessment, at each cycle start and end, and before a handover or stop:
+
+```text
+Feature/slice: [identifier, feature-directory path, branch]
+Goal: [number and name]; status: [initial / correcting / awaiting input / complete / stopped]
+Cycles completed: [0–5]; current cycle: [1–5 in progress, or none]
+Findings: [resolved references; remaining references and current batch]
+Verification: [latest commands/results or artifact evidence; revision or files checked]
+Handover: [next action; readiness for next Goal; approval evidence or approval needed]
+```
+
+Prefer this session summary; do not create a tracking file routinely. Before moving to a fresh session, persist the summary if existing feature-local notes do not already preserve it reliably. Reuse suitable notes without changing their intended meaning; otherwise use one small `goal-progress.md` in the feature directory, retaining each Goal's latest state and explicit human decisions. Update it at cycle boundaries and before stopping while cross-session continuity is needed, as a separate process step outside read-only reviews or append-only convergence. Keep this process record separate from Spec-Kit's standard artifacts: do not add tracking fields, task entries, or checkbox meanings to `spec.md`, `plan.md`, `tasks.md`, or checklists. No database or orchestration framework is needed.
+
+In a fresh session, read this process, the selected feature's artifacts, and its execution summary before acting. Confirm the feature path and branch, recover the Goal, cycle count, unfinished batch, and approvals, and check that verification still applies to the current files. Do not infer cycle counts or human approvals from task markers, convergence-phase counts, or passing tests. If the record is missing or inconsistent and state cannot be reconstructed reliably, stop for human clarification; writing a new record cannot repair unknown history. Distinct Goals each start at zero; resuming the same Goal does not. Do not repeat completed creation skills just because a new session started.
+
+This summary and optional file are process instructions, not a claim that Codex natively persists correction counters or transfers Goal state between chats. A fresh chat needs an explicitly started Goal with the recovered context; it does not inherit the previous chat's runtime Goal automatically.
+
+For the copyable prompts, replace bracketed inputs before use. Each prompt incorporates the shared rules and continuity procedure above; load this document and recover the selected feature's state first. Starting a prompt authorizes only the work it describes, subject to the stated human gates. Stop immediately on evidenced completion, after five unsuccessful correction cycles, on a required human decision, or when execution state is uncertain; report the summary and never advance automatically.
+
+### Goal 1 — Specification Convergence
+
+**Purpose and sequence:** use `$speckit-specify` to define the selected slice, then `$speckit-clarify` iteratively, followed by optional `$speckit-checklist` for requirements quality. Reuse an existing specification for refinement rather than creating a duplicate feature.
+
+**Correction logic:** after the initial specification assessment, treat each batch of clarification-driven or other requirements corrections and its reassessment as one cycle under the shared rules. Asking questions or waiting for answers alone does not increment the count; integrating accepted answers into a corrective batch does. Unresolved business decisions require human input, not invented answers. Custom checklists remain reviewer-owned: generation leaves items unchecked; assistance evaluating them requires an explicit reviewer request. They assess requirements writing, not working software.
+
+**Completion criteria:** requirements and acceptance criteria are sufficiently clear, consistent, testable, and bounded; material decisions are resolved; the built-in spec-quality checklist supports readiness. Report custom-checklist status and any remaining nonblocking limitations.
+
+**Human intervention:** answer clarification questions and review optional custom checklists. Stop for explicit specification approval before planning; Goal 1 never starts Goal 2.
+
+```text
+/goal Achieve Specification Convergence for [slice and feature directory], using [slice description or existing spec]. Read docs/process/Spec-Driven-Development-Process-with-User-Manual.md and apply its shared rules, execution summary, continuity procedure, and Goal 1 criteria. Recover prior state first; for new work run $speckit-specify, then $speckit-clarify and optional $speckit-checklist. Refine existing artifacts without duplicate creation. Assess initially, then correct and reassess in at most five tracked cycles; stop immediately on evidenced completion or the shared stop conditions. Ask humans to resolve business decisions. Report the execution summary and readiness, requesting specification approval before planning. Do not plan, commit, push, merge, or start another Goal.
+```
+
+### Goal 2 — Planning and Analysis Convergence
+
+**Purpose and sequence:** after specification approval, run `$speckit-plan` → `$speckit-tasks` → `$speckit-analyze` to produce an implementation-ready technical path.
+
+**Correction logic:** analysis stays read-only. Its installed skill requires explicit approval before remediation edits; submitting this Goal prompt provides that authorization for targeted in-scope corrections outside analysis. If authorization is absent or ambiguous, stop for it. One logical correction batch may update the plan and dependent tasks before reassessment; it counts as one cycle, not one per artifact or skill. Rerun only skills needed to propagate the changes, then analyze again; do not regenerate valid artifacts. Do not silently alter approved requirements or architecture.
+
+**Completion criteria:** the plan includes the Simplicity Check; tasks are actionable, dependency-ordered, and traceable to requirements and necessary verification; analysis identifies no unresolved blocking inconsistency or constitution conflict. Report residual nonblocking findings and custom-checklist status.
+
+**Human intervention:** confirm specification approval before starting. Escalate requirement or architectural changes and unresolved analysis issues. Require explicit approval of the implementation-ready plan and tasks before implementation.
+
+```text
+/goal Achieve Planning and Analysis Convergence for [feature directory] after [specification approval reference]. Read docs/process/Spec-Driven-Development-Process-with-User-Manual.md and apply its shared rules, execution summary, continuity procedure, and Goal 2 criteria. Recover prior state first; initially run $speckit-plan → $speckit-tasks → read-only $speckit-analyze as needed for the recovered state. I authorize separate targeted in-scope remediation outside analysis. Propagate only affected changes and reanalyze, at most five tracked correction cycles. Stop immediately on evidenced implementation readiness or the shared stop conditions. Report the execution summary and request plan/task approval before implementation. Do not implement, commit, push, merge, or start another Goal.
+```
+
+### Goal 3 — Implementation Convergence
+
+**Purpose and sequence:** after plan/task approval, run `$speckit-implement` → `$speckit-converge`, then verify relevant tests. Convergence assesses the present implementation against spec, plan, tasks, and constitution; it is not a Git comparison or a code-quality review.
+
+**Correction logic:** the local `$speckit-converge` definition permits only appending a new `## Phase N: Convergence` section with new sequential task IDs at the bottom of `tasks.md`; it never rewrites, renumbers, reorders, or deletes existing tasks, or modifies code, spec, or plan. A clean run leaves `tasks.md` byte-for-byte unchanged. Appending gap tasks records assessment findings; the correction cycle starts when `$speckit-implement` begins addressing them. Complete the appended in-scope tasks, then reassess with convergence and tests. Tests alone do not consume cycles. Investigate test failures within approved scope rather than weakening requirements or tests.
+
+**Completion criteria:** approved tasks and any in-scope convergence tasks are implemented; acceptance criteria are evidenced; convergence reports no actionable gaps; relevant tests pass; unrelated changes are identified. Checked task markers alone do not establish completion.
+
+**Human intervention:** respect implementation checklist gates and obtain decisions on scope changes or gaps that contradict approved intent. Report readiness and wait for the human to start Goal 4.
+
+```text
+/goal Achieve Implementation Convergence for [feature directory] after [plan/task approval reference]. Read docs/process/Spec-Driven-Development-Process-with-User-Manual.md and apply its shared rules, execution summary, continuity procedure, and Goal 3 criteria. Recover prior state first; preserve $speckit-implement → $speckit-converge and relevant tests. Implement appended in-scope gap tasks, then reassess with convergence and tests in at most five tracked correction cycles. Preserve converge's append-only contract and implementation checklist gates. Stop immediately when tasks and acceptance criteria are evidenced, convergence is clean, and relevant tests pass, or on the shared stop conditions. Report the execution summary and readiness for Goal 4; wait for human direction. Do not review, commit, push, merge, or start another Goal.
+```
+
+### Goal 4 — Code Review and Verification
+
+**Purpose and sequence:** run read-only `$code-review`, classify findings, and verify the completed slice using relevant automated checks and acceptance evidence.
+
+**Correction logic:** perform corrective implementation, test completion, or authorized artifact correction separately from review; rerun tests and `$code-review` after corrections, for at most five cycles. Use `$code-refactor` only for a justified behavior-preserving structural problem, followed by targeted tests, relevant broader verification, and review. If corrections affect completeness, recheck convergence; if they invalidate approved intent, stop and return to the affected earlier Goal with human direction.
+
+**Completion criteria:** no unresolved blocking findings, relevant automated checks passing, adequate acceptance traceability, and reviewed changes consistent with approved requirements and architecture. Document nonblocking findings, verification limits, and the review recommendation; passing tests alone do not replace review.
+
+**Human intervention:** obtain decisions on changed intent, disputed findings, or unavailable essential verification. Report readiness and wait for the human to start Goal 5.
+
+```text
+/goal Complete Code Review and Verification for [feature directory and Git review scope]. Read docs/process/Spec-Driven-Development-Process-with-User-Manual.md and apply its shared rules, execution summary, continuity procedure, and Goal 4 criteria. Recover prior state first; run read-only $code-review and relevant verification. I authorize separate targeted in-scope corrections and test completion, followed by verification and a fresh $code-review, in at most five tracked correction cycles. Follow Goal 4 rules for justified $code-refactor and completeness rechecks. Stop immediately when no blocking findings remain and current verification supports completion, or on the shared stop conditions. Report the execution summary and readiness for Goal 5; wait for human direction. Do not commit, push, merge, or start another Goal.
+```
+
+### Goal 5 — Documentation and Delivery
+
+**Purpose and sequence:** run `$user-manual-creation` after verified implementation, validate Quick Start and Detailed Guide against actual behavior and passing tests, review all Git changes, and prepare the commit and merge proposal.
+
+**Correction logic:** after initial documentation creation/update and validation, count each batch of documentation improvements addressing findings and its revalidation as one correction cycle. Waiting for delivery approval and Git operations do not consume cycles. Preserve accurate content and report unavailable functionality or conflicting evidence. Product defects discovered here require a human-directed return to implementation/review, not code changes hidden in documentation work.
+
+**Completion criteria:** user-facing behavior is accurately documented (or a justified no-change result is evidenced), documentation gaps and limitations are explicit, final Git diff/status have been reviewed, relevant checks remain valid for the final changes, and proposed commit scope/message and merge target are ready for approval. Goal completion means **delivery preparation is complete**, not that Git operations occurred.
+
+**Human intervention:** review the documentation and delivery proposal. Explicit approval is required before each intended commit, push, or merge; approval may cover clearly specified operations together. If changes invalidate the reviewed evidence or approved scope, revalidate and obtain renewed approval. Stop after preparation; never infer authorization from starting Goal 5.
+
+```text
+/goal Complete Documentation and Delivery preparation for [feature directory] after [review/verification evidence]. Read docs/process/Spec-Driven-Development-Process-with-User-Manual.md and apply its shared rules, execution summary, continuity procedure, and Goal 5 criteria. Recover prior state first; use $user-manual-creation and validate Quick Start and Detailed Guide against verified implementation and tests. Assess initially, then make targeted documentation corrections and revalidate in at most five tracked cycles. Stop immediately on evidenced documentation and delivery readiness, or on the shared stop conditions. Report the execution summary, final Git diff/status, proposed commit scope/message, and merge target. Request explicit human approval for intended Git operations. Do not commit, push, merge, or start another Goal; preparation is not authorization.
+```
+
+The numbered activities below remain the detailed methodology for these Goals. Any local repetition diagram is subject to the shared five-cycle ceiling and manual Goal transitions above.
 
 ---
 
@@ -417,7 +524,7 @@ update specification
         ↓
 $speckit-clarify
         ↓
-repeat until sufficiently clear
+repeat until sufficiently clear (Goal 1: maximum five correction cycles)
 ```
 
 The goal is not to eliminate every possible future question. The goal is to remove ambiguities that could materially affect planning, implementation, testing, or acceptance.
@@ -590,10 +697,12 @@ correct spec, plan, or tasks
         ↓
 $speckit-analyze
         ↓
-repeat until sufficiently consistent
+repeat until sufficiently consistent (Goal 2: maximum five correction cycles)
 ```
 
 Implementation should not begin while material consistency problems remain unresolved.
+
+`$speckit-analyze` is read-only. Apply remediation outside the skill with explicit authorization, then repeat analysis. Goal 2 ends with a report and human approval of the plan and tasks before implementation.
 
 ---
 
@@ -685,6 +794,8 @@ $code-review
 
 Run convergence once after completing a slice and repeat only if it identifies additional work.
 
+Within Goal 3, allow at most five correction cycles, then stop and report if convergence is still not achieved. Convergence appends remaining work to `tasks.md`; `$speckit-implement` performs it. A clean report and passing relevant tests are required before reporting readiness for Goal 4, which the human starts separately.
+
 ---
 
 ## 14. Review the implementation
@@ -738,7 +849,7 @@ run tests
 $code-review
 ```
 
-This cycle may be repeated until no blocking findings remain.
+Within Goal 4, repeat this cycle until no blocking findings remain, with at most five correction cycles. Stop and report non-convergence when the limit is exhausted. Corrections are separate from the read-only review.
 
 ---
 
@@ -876,7 +987,9 @@ review Quick Start as a first-time user
         ↓
 inspect documentation diff
         ↓
-commit
+report delivery readiness
+        ↓
+explicit human approval → commit
 ```
 
 The skill must not:
@@ -894,6 +1007,8 @@ The user manual should be updated after every slice that changes user-visible be
 
 ## 17. Commit, review, and merge
 
+Goal 5 prepares delivery and stops for explicit human approval before committing, pushing, or merging. This applies to specification and planning commits as well as implementation and documentation commits. Human approval to start a Goal does not authorize these Git operations.
+
 Only commit the slice when:
 
 - the specification is complete enough;
@@ -908,17 +1023,17 @@ Only commit the slice when:
 Typical workflow:
 
 ```text
-commit specification artifacts
+human approval → commit specification artifacts
         ↓
-commit planning artifacts
+human approval → commit planning artifacts
         ↓
-commit implementation
+human approval → commit implementation and documentation
         ↓
-push branch
+human approval → push branch
         ↓
 create or inspect pull request
         ↓
-merge into main
+human approval → merge into main
 ```
 
 For a small solo project, some commits may be combined. However, specification, planning, and implementation changes should remain understandable from the Git history.
@@ -1007,7 +1122,7 @@ $code-review
         ↓
 verify behavior and diff
         ↓
-commit separately
+explicit human approval → commit separately
 ```
 
 Refactoring should normally be performed in a dedicated branch or dedicated commit so that structural changes are not mixed unnecessarily with feature behavior.
@@ -1099,40 +1214,31 @@ SLICE IMPLEMENTATION
 
 Create feature branch
         ↓
-$speckit-specify
+Goal 1: $speckit-specify → $speckit-clarify → optional $speckit-checklist
+        ↺ targeted corrections and reassessment, maximum five cycles
+        ↓ report → human approval before planning; manually start
+Goal 2: $speckit-plan → $speckit-tasks → $speckit-analyze
+        ↺ separate artifact corrections → analyze, maximum five cycles
+        ↓ report → human approval before implementation; manually start
+Goal 3: $speckit-implement → $speckit-converge → tests
+        ↺ implement gap tasks → converge → tests, maximum five cycles
+        ↓ report → human decision; manually start
+Goal 4: $code-review (read-only) → verify
+        ↺ separate corrections → tests → review, maximum five cycles
+        ↓ report → human decision; manually start
+Goal 5: $user-manual-creation → validate → review complete Git diff
+        ↺ documentation corrections → validate, maximum five cycles
+        ↓ report and delivery proposal
+explicit human approval → commit
         ↓
-$speckit-clarify
-        ↺ until sufficiently clear
-        ↓
-optional $speckit-checklist
-        ↓
-$speckit-plan
-        ↓
-$speckit-tasks
-        ↓
-$speckit-analyze
-        ↺ until sufficiently consistent
-        ↓
-$speckit-implement
-        ↓
-run tests and inspect diff
-        ↓
-$code-review
-        ↺ correct and review again when needed
-        ↓
-verify
-        ↓
-$user-manual-creation
-        ↓
-review documentation diff
-        ↓
-commit
-        ↓
-push
+explicit human approval → push
         ↓
 pull request or direct review
         ↓
-merge into main
+explicit human approval → merge into main
+
+All Goals stop early on success or report non-convergence after five
+unsuccessful correction cycles. No automatic transitions between Goals.
 
 
 CONTINUOUS PRODUCT DEVELOPMENT
@@ -1172,27 +1278,26 @@ Architecture exploration may also be run before the constitution when the techno
 1. Start from the latest main branch
 2. Select the next slice from Feature_slices.md
 3. Create a feature branch
-4. Run $speckit-specify
-5. Run $speckit-clarify until sufficiently clear
-6. Optionally run $speckit-checklist
-7. Run $speckit-plan
-8. Run $speckit-tasks
-9. Run $speckit-analyze
-10. Correct findings and repeat analysis when necessary
-11. Run $speckit-implement
-12. Run $speckit-converge
-13. If convergence reports gaps, implement them and run convergence again
-14. Run tests and inspect the Git diff
-15. Run $code-review
-16. Correct blocking review findings
-17. Repeat tests and code review where necessary
-18. Run `$user-manual-creation` for user-visible changes
-19. Review `User_Manual.md` as a first-time user
-20. Inspect the documentation diff and report
-21. Commit and push the branch
-22. Review through a pull request or direct diff inspection
-23. Merge into main
-24. Update the slice status in Feature_slices.md
+4. Start Goal 1: specify → clarify → optional requirements-quality checklist
+5. Review its evidence and explicitly approve the specification before planning
+6. Manually start Goal 2: plan → tasks → read-only analysis
+7. Correct authorized findings separately and repeat analysis
+8. Review its evidence and explicitly approve the plan/tasks before implementation
+9. Manually start Goal 3: implement → converge → relevant tests and diff inspection
+10. Implement appended convergence tasks and reassess when needed
+11. Review the outcome and manually start Goal 4
+12. Run read-only code review → separate corrections → tests → repeat review
+13. Review verification evidence and manually start Goal 5
+14. Create/update the user manual for user-visible changes; validate actual behavior
+15. Review User_Manual.md as a first-time user and inspect all Git changes
+16. Report delivery readiness, proposed commits, and merge target
+17. Obtain explicit human approval before committing and pushing
+18. Review through a pull request or direct diff inspection
+19. Obtain explicit human approval before merging into main
+20. Update the slice status in Feature_slices.md based on verified delivery
+
+Each Goal: initial assessment, then at most five correction cycles;
+stop early on success, otherwise stop and report. Never advance automatically.
 ```
 
 ## Before a release or handover
@@ -1203,7 +1308,7 @@ Architecture exploration may also be run before the constitution when the techno
 3. Review advanced scenarios, edge cases, and troubleshooting
 4. Remove or mark outdated and unavailable behavior
 5. Review recommended screenshots and documentation gaps
-6. Commit documentation updates
+6. Obtain explicit human approval before committing documentation updates
 ```
 
 ## Periodically
@@ -1213,7 +1318,7 @@ Architecture exploration may also be run before the constitution when the techno
 2. Run $code-refactor when justified
 3. Run tests
 4. Run $code-review
-5. Commit the refactoring separately
+5. Obtain explicit human approval before committing the refactoring separately
 ```
 
 ## When product scope changes

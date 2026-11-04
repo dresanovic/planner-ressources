@@ -77,6 +77,7 @@ vi.mock('../api/lecturerReview', async (importOriginal) => ({
   replaceLecturerReviewLink: mocks.replaceLecturerReviewLink,
 }))
 
+import { generationCatalog, targetCohort, otherCohort, emptyCohort, courseListSemester } from '../test/fixtures/courseLists'
 import { CourseSchedulePage } from './CourseSchedulePage'
 import type { ScheduleDestination } from '../components/ApplicationNavigation'
 import type { IssuedLecturerReviewLink } from '../api/lecturerReview'
@@ -1723,6 +1724,9 @@ describe('CourseSchedulePage multi-course mode', () => {
     act(() => button('Plan erzeugen')?.click())
     const boxes = document.querySelectorAll<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click() })
+    const cohortFilter = document.querySelector<HTMLSelectElement>('.multi-course-panel select')!
+    act(() => { cohortFilter.value = '2'; cohortFilter.dispatchEvent(new Event('change', {bubbles: true})) })
+    expect(document.body.textContent).toContain('1 durch den Kohortenfilter verborgen')
     await act(async () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -1755,6 +1759,9 @@ describe('CourseSchedulePage multi-course mode', () => {
     act(() => button('Plan erzeugen')?.click())
     const boxes = document.querySelectorAll<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')
     act(() => { boxes[0].click(); boxes[1].click() })
+    const cohortFilter = document.querySelector<HTMLSelectElement>('.multi-course-panel select')!
+    act(() => { cohortFilter.value = '2'; cohortFilter.dispatchEvent(new Event('change', {bubbles: true})) })
+    expect(document.body.textContent).toContain('1 durch den Kohortenfilter verborgen')
     await act(async () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -2124,4 +2131,157 @@ describe('CourseSchedulePage complete draft clearing', () => {
     expect(document.querySelector('[role="dialog"]')).toBeNull()
     expect(document.body.textContent).toContain('Löschdialog erneut')
   })
+})
+
+
+it('I-005 filters the semester catalog and prepares exactly eleven explicitly selected IDs', async () => {
+  mocks.getPlanningOptions.mockResolvedValue({ ...options, courses: generationCatalog, cohorts: [targetCohort, otherCohort, emptyCohort], semesters: [courseListSemester] })
+  mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
+  mocks.generateBatch.mockResolvedValue(directSavedGenerationFixture)
+  await renderPage()
+  act(() => button('Plan erzeugen')?.click())
+  const filter = document.querySelector<HTMLSelectElement>('.multi-course-panel [aria-label="Kohorte filtern"]')!
+  expect(filter).not.toBeNull()
+  act(() => { filter.value = String(targetCohort.id); filter.dispatchEvent(new Event('change', { bubbles: true })) })
+  expect(mocks.prepare).not.toHaveBeenCalled()
+  expect(document.querySelectorAll('.multi-course-panel .course-picker input')).toHaveLength(11)
+  for (const box of document.querySelectorAll<HTMLInputElement>('.multi-course-panel .course-picker input')) act(() => box.click())
+  await act(async () => { document.querySelector<HTMLButtonElement>('.multi-course-panel .generate-button')!.click() })
+  expect(mocks.prepare).toHaveBeenCalledWith(1, 11, Array.from({length: 11}, (_, index) => index + 1), [])
+})
+
+
+it('I-005 preserves hidden saved-course scope and captured I-004 evidence during filtering and cancel', async () => {
+  mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
+  mocks.generateBatch.mockResolvedValue(decisionRequiredGenerationFixture)
+  await renderPage()
+  act(() => button('Plan erzeugen')?.click())
+  for (const box of document.querySelectorAll<HTMLInputElement>('.multi-course-panel .course-picker input')) act(() => box.click())
+  const filter = document.querySelector<HTMLSelectElement>('.multi-course-panel select')!
+  act(() => { filter.value = '2'; filter.dispatchEvent(new Event('change', {bubbles: true})) })
+  expect(document.body.textContent).toContain('1 durch den Kohortenfilter verborgen')
+  await act(async () => document.querySelector<HTMLButtonElement>('.multi-course-panel .generate-button')!.click())
+  expect(mocks.prepare).toHaveBeenCalledWith(1, 11, [1, 2], [])
+  expect(mocks.generateBatch).toHaveBeenCalledWith(optimizationPreparationFixture)
+  act(() => { filter.value = '1'; filter.dispatchEvent(new Event('change', {bubbles: true})) })
+  expect(mocks.generateBatch).toHaveBeenCalledTimes(1)
+  expect(mocks.acceptBatch).not.toHaveBeenCalled()
+  expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+  await act(async () => button('Abbrechen')!.click())
+  expect(document.querySelector('[role="dialog"]')).toBeNull()
+  expect(mocks.acceptBatch).not.toHaveBeenCalled()
+})
+
+
+it('I-005 retains full selection after failed planning refresh, blocks generation, and recovers', async () => {
+  const root = await renderPage()
+  act(() => button('Plan erzeugen')?.click())
+  act(() => document.querySelector<HTMLInputElement>('.multi-course-panel .course-picker input')!.click())
+  const filter = document.querySelector<HTMLSelectElement>('.multi-course-panel select')!
+  act(() => { filter.value = '2'; filter.dispatchEvent(new Event('change', {bubbles: true})) })
+  mocks.getPlanningOptions.mockRejectedValueOnce(new Error('offline'))
+  await act(async () => root.render(<CourseSchedulePage catalogRevision={1} />))
+  expect(document.querySelectorAll('.course-selection-review li')).toHaveLength(1)
+  expect(document.body.textContent).toContain('Planungsoptionen konnten nicht aktualisiert werden')
+  expect(document.querySelector<HTMLButtonElement>('.multi-course-panel .generate-button')!.disabled).toBe(true)
+  expect(mocks.prepare).not.toHaveBeenCalled()
+  await act(async () => root.render(<CourseSchedulePage catalogRevision={2} />))
+  expect(document.querySelectorAll('.course-selection-review li')).toHaveLength(1)
+  expect(document.querySelector<HTMLSelectElement>('.multi-course-panel select')!.value).toBe('2')
+  expect(document.body.textContent).not.toContain('Planungsoptionen konnten nicht aktualisiert werden')
+})
+
+it('I-005 resets generation cohort only on committed semester scope and never revives it', async () => {
+  mocks.getPlanningOptions.mockResolvedValue({ ...options, semesters: [...options.semesters, { ...options.semesters[0], id: 2, name: 'Other' }] })
+  await renderPage()
+  act(() => button('Plan erzeugen')?.click())
+  const filter = document.querySelector<HTMLSelectElement>('.multi-course-panel select')!
+  act(() => { filter.value = '1'; filter.dispatchEvent(new Event('change', {bubbles: true})) })
+  act(() => button('Kursdetails')?.click())
+  act(() => button('Plan erzeugen')?.click())
+  expect(filter.value).toBe('1')
+  const semester = document.querySelector<HTMLSelectElement>('.planning-inputs select') ?? [...document.querySelectorAll<HTMLSelectElement>('select')].find(s => s.options[0]?.textContent === 'Fall 2026')!
+  await act(async () => { semester.value = '2'; semester.dispatchEvent(new Event('change', {bubbles: true})) })
+  expect(filter.value).toBe('')
+  await act(async () => { semester.value = '1'; semester.dispatchEvent(new Event('change', {bubbles: true})) })
+  expect(filter.value).toBe('')
+})
+
+
+it('I-005 distinguishes pending initial options, initial failure and successful empty recovery', async () => {
+  const pending = deferred<typeof options>()
+  mocks.getPlanningOptions.mockReturnValueOnce(pending.promise)
+  const root = await renderPage()
+  act(() => button('Plan erzeugen')?.click())
+  expect(document.body.textContent).toContain('Planungsoptionen werden geladen')
+  await act(async () => pending.reject(new Error('offline')))
+  expect(document.body.textContent).toContain('Planungsoptionen sind nicht verfügbar')
+  expect(document.querySelector('.multi-course-panel')).toBeNull()
+  mocks.getPlanningOptions.mockResolvedValue({ ...options, courses: [] })
+  await act(async () => root.render(<CourseSchedulePage catalogRevision={1} />))
+  expect(document.body.textContent).toContain('Keine Lehrveranstaltungen in diesem Semester')
+  expect(document.querySelector<HTMLButtonElement>('.multi-course-panel .generate-button')!.disabled).toBe(true)
+})
+
+it('I-005 retains a disappeared cohort and missing selected ID without broadening or substituting', async () => {
+  const root = await renderPage()
+  act(() => button('Plan erzeugen')?.click())
+  act(() => document.querySelectorAll<HTMLInputElement>('.multi-course-panel .course-picker input')[1].click())
+  const filter = document.querySelector<HTMLSelectElement>('.multi-course-panel select')!
+  act(() => { filter.value = '2'; filter.dispatchEvent(new Event('change', {bubbles: true})) })
+  mocks.getPlanningOptions.mockResolvedValue({ ...options, cohorts: [options.cohorts[0]], courses: [options.courses[0]] })
+  await act(async () => root.render(<CourseSchedulePage catalogRevision={1} />))
+  expect(filter.value).toBe('2')
+  expect(document.body.textContent).toContain('Kohorte #2 — nicht verfügbar')
+  expect(document.body.textContent).toContain('Lehrveranstaltung #2 — nicht verfügbar')
+  expect(document.querySelectorAll('.multi-course-panel .course-picker input')).toHaveLength(0)
+  expect(document.body.textContent).toContain('1 ausgewählt')
+})
+
+
+it('I-005 prevents retry from stale planning options without altering selection', async () => {
+  mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
+  mocks.generateBatch.mockResolvedValue({
+    ...directSavedGenerationFixture,
+    summary: { ...directSavedGenerationFixture.summary, stale: 1, complete: 0 },
+    outcomes: [{ courseId: 1, courseName: 'Course 1', status: 'stale', saved: false, scheduledUnits: 0, remainingUnits: 8, reasons: [], errors: [] }],
+  })
+  const root = await renderPage()
+  act(() => button('Plan erzeugen')!.click())
+  act(() => document.querySelector<HTMLInputElement>('.multi-course-panel .course-picker input')!.click())
+  await act(async () => document.querySelector<HTMLButtonElement>('.multi-course-panel .generate-button')!.click())
+  mocks.getPlanningOptions.mockRejectedValueOnce(new Error('offline'))
+  await act(async () => root.render(<CourseSchedulePage catalogRevision={1} />))
+  expect(button('Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen')).toBeDefined()
+  await act(async () => button('Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen')!.click())
+  expect(mocks.prepare).toHaveBeenCalledTimes(1)
+  expect(document.body.textContent).toContain('1 ausgewählt')
+})
+
+
+it('I-005 keeps cohort and selection on cancelled guarded semester navigation and resets only on commit', async () => {
+  mocks.getPlanningOptions.mockResolvedValue({...options, semesters: [...options.semesters, {...options.semesters[0], id: 2, name: 'Other'}]})
+  mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+  await renderPage()
+  act(() => button('Plan erzeugen')!.click())
+  const cohort = document.querySelector<HTMLSelectElement>('.multi-course-panel select')!
+  act(() => { cohort.value = '1'; cohort.dispatchEvent(new Event('change', {bubbles:true})) })
+  act(() => document.querySelector<HTMLInputElement>('.multi-course-panel .course-picker input')!.click())
+  const calendarDate = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
+  await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(calendarDate, '05.10.2026'); calendarDate.dispatchEvent(new Event('change', {bubbles:true})) })
+  const occurrence = [...document.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')].find(item => item.textContent?.includes('Lehrtermin'))!
+  await act(async () => occurrence.click())
+  await act(async () => button('Termin bearbeiten')!.click())
+  const editorDate = document.querySelector<HTMLInputElement>('.session-pane input[inputmode="numeric"]')!
+  act(() => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(editorDate, '06.10.2026'); editorDate.dispatchEvent(new Event('input', {bubbles:true})); editorDate.dispatchEvent(new Event('change', {bubbles:true})) })
+  const semester = document.querySelector<HTMLSelectElement>('.planning-selectors select')!
+  await act(async () => { semester.value = '2'; semester.dispatchEvent(new Event('change', {bubbles:true})) })
+  expect(document.body.textContent).toContain('Ungespeicherte Änderungen verwerfen?')
+  await act(async () => button('Weiter bearbeiten')!.click())
+  expect(cohort.value).toBe('1')
+  expect(document.body.textContent).toContain('1 ausgewählt')
+  await act(async () => { semester.value = '2'; semester.dispatchEvent(new Event('change', {bubbles:true})) })
+  await act(async () => document.querySelector<HTMLButtonElement>('.discard-changes-dialog .destructive-button')!.click())
+  expect(cohort.value).toBe('')
+  expect(document.body.textContent).toContain('0 ausgewählt')
 })

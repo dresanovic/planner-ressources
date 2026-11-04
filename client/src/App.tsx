@@ -10,7 +10,7 @@ import {
   CourseSchedulePage,
   type ScheduleNavigationRequest,
 } from './pages/CourseSchedulePage'
-import { AcademicDataPage } from './pages/AcademicDataPage'
+import { AcademicDataPage, type CourseListFilters } from './pages/AcademicDataPage'
 import {
   readNavigationPinned,
   writeNavigationPinned,
@@ -27,6 +27,7 @@ function App({ currentAccount, onCurrentAccountChange, onLogout, onPasswordChang
   const [academicExpanded, setAcademicExpanded] = useState(false)
   const [navigationOpen, setNavigationOpen] = useState(false)
   const [navigationPinned, setNavigationPinned] = useState(readNavigationPinned)
+  const [courseFilters, setCourseFilters] = useState<CourseListFilters>({ semesterId: null, cohortId: null })
   const [catalogRevision, setCatalogRevision] = useState(0)
   const contentRef = useRef<HTMLElement>(null)
   const focusContent = useRef(false)
@@ -134,7 +135,7 @@ function App({ currentAccount, onCurrentAccountChange, onLogout, onPasswordChang
         inert={navigationOpen || undefined}
       >
         <div hidden={activeView !== 'schedule'}><CourseSchedulePage active={activeView === 'schedule'} catalogRevision={catalogRevision} destination={scheduleDestination} onNavigationRequesterChange={setScheduleNavigationRequester} onScheduleDestinationChange={commitScheduleDestination} /></div>
-        {activeView === 'academic' && <AcademicDataPage category={selectedCategory} onCatalogChanged={() => setCatalogRevision((value) => value + 1)} />}
+        {activeView === 'academic' && <AcademicDataPage courseFilters={courseFilters} onCourseFiltersChange={setCourseFilters} category={selectedCategory} onCatalogChanged={() => setCatalogRevision((value) => value + 1)} />}
         {activeView === 'accounts' && currentAccount?.isAdministrator && <PlannerAccountsPage currentAccount={currentAccount} onCurrentAccountChange={onCurrentAccountChange} />}
       </main>
     </div>
