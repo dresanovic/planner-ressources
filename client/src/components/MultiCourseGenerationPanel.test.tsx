@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { MultiCourseGenerationPanel } from './MultiCourseGenerationPanel'
+import { generationCatalog, targetCohort, otherCohort, emptyCohort } from '../test/fixtures/courseLists'
 import type { CourseOption } from '../api/planningOptions'
 
 const entity = (id: number, name: string) => ({ id, name })
@@ -101,4 +102,82 @@ describe('MultiCourseGenerationPanel', () => {
     expect(document.body.textContent).not.toContain('werden optimiert')
     expect(document.querySelector<HTMLButtonElement>('.generate-button')?.disabled).toBe(true)
   })
+})
+
+
+describe('I-005 generation discovery', () => {
+  it('matches eleven of 94 by cohort identity without selecting, and resets visibility only', () => {
+    const changed = vi.fn()
+    function Harness() {
+      const [cohort, setCohort] = useState<number | null>(null)
+      return <MultiCourseGenerationPanel courses={generationCatalog} cohorts={[targetCohort, otherCohort, emptyCohort]} cohortId={cohort} onCohortChange={setCohort} semesterName="2027 S" selectedCourseIds={[12, 13]} onChange={changed} onGenerate={vi.fn()} />
+    }
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    act(() => root.render(<Harness />))
+    const filter = document.querySelector<HTMLSelectElement>('[aria-label="Kohorte filtern"]')!
+    expect(filter).not.toBeNull()
+    act(() => { filter.value = String(targetCohort.id); filter.dispatchEvent(new Event('change', { bubbles: true })) })
+    expect(document.querySelectorAll('.course-picker input')).toHaveLength(11)
+    expect(document.body.textContent).toContain('2 durch den Kohortenfilter verborgen')
+    expect(document.body.textContent).toContain('Lehrveranstaltung 12')
+    expect(document.body.textContent).toContain('2027 S')
+    expect(changed).not.toHaveBeenCalled()
+    act(() => document.querySelector<HTMLInputElement>('.course-picker input')!.click())
+    expect(changed).toHaveBeenCalledWith([12, 13, 1])
+    act(() => [...document.querySelectorAll('button')].find(b => b.textContent === 'Kohortenfilter zurücksetzen')!.click())
+    expect(document.querySelectorAll('.course-picker input')).toHaveLength(94)
+    expect(changed).toHaveBeenCalledTimes(1)
+    act(() => root.unmount())
+  })
+})
+
+
+it.each([0, 1, 20, 21])('I-005 retains complete selection validation at %i IDs, including all hidden', (count) => {
+  const selected = Array.from({length: count}, (_, index) => index + 1)
+  const changed = vi.fn()
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  act(() => root.render(<MultiCourseGenerationPanel courses={generationCatalog} cohorts={[emptyCohort]} cohortId={emptyCohort.id} onCohortChange={vi.fn()} selectedCourseIds={selected} onChange={changed} onGenerate={vi.fn()} />))
+  expect(document.querySelectorAll('.course-picker input')).toHaveLength(0)
+  expect(document.body.textContent).toContain(`${count} durch den Kohortenfilter verborgen`)
+  expect(document.querySelectorAll('.course-selection-review li')).toHaveLength(count)
+  expect(document.querySelector<HTMLButtonElement>('.generate-button')!.disabled).toBe(count === 0 || count > 20)
+  if (count) act(() => [...document.querySelectorAll('button')].find(b => b.textContent === 'Auswahl aufheben')!.click())
+  if (count) expect(changed).toHaveBeenCalledWith([])
+  act(() => root.unmount())
+})
+
+it('I-005 blocks new unavailable/21st choices, permits removal, and exposes missing identity', () => {
+  const changed = vi.fn()
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  act(() => root.render(<MultiCourseGenerationPanel courses={generationCatalog} selectedCourseIds={[94, 9999]} onChange={changed} onGenerate={vi.fn()} />))
+  expect(document.body.textContent).toContain('Lehrveranstaltung #9999 — nicht verfügbar')
+  const unavailable = document.querySelectorAll<HTMLInputElement>('.course-picker input')[93]
+  expect(unavailable.disabled).toBe(false)
+  act(() => unavailable.click())
+  expect(changed).toHaveBeenCalledWith([9999])
+  act(() => root.render(<MultiCourseGenerationPanel courses={generationCatalog} selectedCourseIds={Array.from({length: 20}, (_, i) => i + 1)} onChange={changed} onGenerate={vi.fn()} />))
+  expect(document.querySelectorAll<HTMLInputElement>('.course-picker input')[20].disabled).toBe(true)
+  expect(document.querySelectorAll<HTMLInputElement>('.course-picker input')[0].disabled).toBe(false)
+  act(() => root.unmount())
+})
+
+
+it('I-005 distinguishes retained failed freshness from successful results and blocks generation', () => {
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  act(() => root.render(<MultiCourseGenerationPanel courses={generationCatalog} selectedCourseIds={[1]} freshness="error" onChange={vi.fn()} onGenerate={vi.fn()} />))
+  expect(document.body.textContent).toContain('Planungsoptionen konnten nicht aktualisiert werden')
+  expect(document.body.textContent).not.toContain('94 Treffer')
+  expect(document.querySelector<HTMLButtonElement>('.generate-button')!.disabled).toBe(true)
+  expect(document.querySelectorAll('.course-selection-review li')).toHaveLength(1)
+  act(() => root.unmount())
+})
+
+it('I-005 keeps meaningful focus when a focused course disappears during refresh', () => {
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  const props = { selectedCourseIds: [], onChange: vi.fn(), onGenerate: vi.fn(), onCohortChange: vi.fn() }
+  act(() => root.render(<MultiCourseGenerationPanel {...props} courses={generationCatalog} />))
+  act(() => document.querySelector<HTMLInputElement>('.course-picker input')!.focus())
+  act(() => root.render(<MultiCourseGenerationPanel {...props} courses={generationCatalog.slice(1)} />))
+  expect(document.activeElement?.getAttribute('aria-label')).toBe('Kohorte filtern')
+  act(() => root.unmount())
 })

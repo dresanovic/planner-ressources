@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 import sqlite3
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -52,15 +53,16 @@ def backup_database(source: Path, backup_dir: Path) -> Path:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     target = backup_dir / f"{source.stem}-{timestamp}{source.suffix}"
 
-    with sqlite3.connect(source) as source_connection:
-        with sqlite3.connect(target) as target_connection:
-            source_connection.backup(target_connection)
+    with closing(sqlite3.connect(source)) as source_connection:
+        with closing(sqlite3.connect(target)) as target_connection:
+            with target_connection:
+                source_connection.backup(target_connection)
 
-    with sqlite3.connect(target) as backup_connection:
+    with closing(sqlite3.connect(target)) as backup_connection:
         result = backup_connection.execute("PRAGMA integrity_check").fetchone()
-        if result is None or result[0] != "ok":
-            target.unlink(missing_ok=True)
-            raise RuntimeError(f"Backup integrity check failed: {result}")
+    if result is None or result[0] != "ok":
+        target.unlink(missing_ok=True)
+        raise RuntimeError(f"Backup integrity check failed: {result}")
 
     return target
 

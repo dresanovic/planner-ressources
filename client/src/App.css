@@ -669,6 +669,23 @@ button:disabled[aria-busy='true'] {
   margin-top: 18px;
 }
 
+.course-list-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; min-width: 0; }
+.course-list-filters label { display: grid; gap: 6px; min-width: 0; max-width: 100%; flex: 1 1 180px; }
+.course-list-filters select { width: 100%; min-width: 0; }
+.course-list-filters p { flex-basis: 100%; margin: 0; overflow-wrap: anywhere; }
+.multi-course-panel, .course-selection-review, .course-catalog-grid > section { min-width: 0; overflow-wrap: anywhere; }
+.multi-course-panel .section-heading { flex-wrap: wrap; }
+.multi-course-panel .course-checkbox { flex-wrap: wrap; }
+.multi-course-panel .course-checkbox-name { overflow-wrap: anywhere; flex-basis: 65%; }
+.multi-course-panel .course-draft-status { white-space: normal; }
+.course-record-metadata { display: block; color: #526071; }
+.course-catalog-grid .catalog-list li { flex-wrap: wrap; gap: 8px; }
+.course-catalog-grid .catalog-list li > span { min-width: 0; overflow-wrap: anywhere; }
+.course-catalog-grid .catalog-record-actions { justify-content: flex-start; }
+.course-catalog-grid .catalog-editor { grid-template-columns: minmax(0, 1fr); }
+.course-catalog-grid .catalog-field, .course-catalog-grid .catalog-field input, .course-catalog-grid .catalog-field select { min-width: 0; max-width: 100%; }
+.course-list-filters :focus-visible, .multi-course-panel :focus-visible, .course-catalog-grid .catalog-list :focus-visible { outline: 3px solid #075fc4; outline-offset: 2px; }
+
 .constraint-note,
 .selection-count,
 .batch-counts,

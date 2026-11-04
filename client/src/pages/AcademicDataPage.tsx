@@ -35,6 +35,9 @@ type DisplayRecord = CatalogAudit & { id: number; name: string; usage: UsageSumm
 type Option = { id: number; name: string }
 type Options = { semesters: Option[]; cohorts: Option[]; studyTypes: Option[]; lecturers: Option[]; rooms: Option[] }
 const emptyOptions: Options = { semesters: [], cohorts: [], studyTypes: [], lecturers: [], rooms: [] }
+export type CourseListFilters = { semesterId: number | null; cohortId: number | null }
+const unfilteredCourses: CourseListFilters = { semesterId: null, cohortId: null }
+
 type CatalogStatus = 'all' | 'active' | 'inactive'
 
 async function loadAllPages<T>(request: (page: number, pageSize: number) => Promise<CatalogPage<T>>): Promise<T[]> {
@@ -53,11 +56,17 @@ async function loadAllResourcePages<T>(request: (page: number, pageSize: number)
   return loadAllPages(request)
 }
 
-export function AcademicDataPage({ category, onCatalogChanged }: { category: AcademicDataCategory; onCatalogChanged: () => void }) {
+export function AcademicDataPage({ category, onCatalogChanged, courseFilters = unfilteredCourses, onCourseFiltersChange }: { category: AcademicDataCategory; onCatalogChanged: () => void; courseFilters?: CourseListFilters; onCourseFiltersChange?: (filters: CourseListFilters) => void }) {
   const [records, setRecords] = useState<DisplayRecord[]>([])
   const [options, setOptions] = useState<Options>(emptyOptions)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [loadFailed, setLoadFailed] = useState(false)
+  const courseFilterRef = useRef<HTMLSelectElement>(null)
+  const focusedCourseAction = useRef<HTMLElement | null>(null)
+  useLayoutEffect(() => {
+    if (focusedCourseAction.current && !focusedCourseAction.current.isConnected && document.activeElement === document.body) { courseFilterRef.current?.focus(); focusedCourseAction.current = null }
+  })
   const [status, setStatus] = useState<CatalogStatus>('all')
   const [resourceStatus, setResourceStatus] = useState<CatalogStatus>('active')
   const [selected, setSelected] = useState<DisplayRecord | null>(null)
@@ -76,6 +85,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
 
   const load = useCallback(async (selected: PageCategory) => {
     setLoading(true)
+    setLoadFailed(false)
     try {
       if (selected === 'lecturers') {
         setResourceRecords(await loadAllResourcePages((page, pageSize) => listLecturers({ status: resourceStatus, query: resourceQuery, page, pageSize })))
@@ -112,7 +122,7 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
           rooms: planning.rooms.filter((resource) => resource.isActive),
         })
       }
-    } finally { setLoading(false) }
+    } catch (error) { setLoadFailed(true); throw error } finally { setLoading(false) }
   }, [resourceQuery, resourceStatus, status])
 
   if (renderedCategory !== category) {
@@ -355,6 +365,10 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     return { studyTypeId: record.studyTypeId as number, weekday: record.weekday as number, startTime: record.startTime as string, endTime: record.endTime as string }
   }
 
+  const semesterRecords = records.filter((record) => courseFilters.semesterId == null || (record.semester as Option | null)?.id === courseFilters.semesterId)
+  const visibleRecords = category === 'courses' ? semesterRecords.filter((record) => courseFilters.cohortId == null || (record.cohort as Option | null)?.id === courseFilters.cohortId) : records
+  const semesterContext = courseFilters.semesterId == null ? 'Alle Semester' : options.semesters.find((item) => item.id === courseFilters.semesterId)?.name ?? `Semester #${courseFilters.semesterId} — nicht verfügbar`
+  const cohortContext = courseFilters.cohortId == null ? 'Alle Kohorten' : options.cohorts.find((item) => item.id === courseFilters.cohortId)?.name ?? `Kohorte #${courseFilters.cohortId} — nicht verfügbar`
   const current = categories.find((item) => item.id === category)!
   if (category === 'holidays') return <HolidayAdministration onChanged={onCatalogChanged} />
   if (category === 'lecturers' || category === 'rooms') return <>
@@ -369,5 +383,21 @@ export function AcademicDataPage({ category, onCatalogChanged }: { category: Aca
     </section>
     {removingResource && <ResourceRemovalDialog resourceName={`${removingResource.record.name} · ${removingResource.record.referenceCode}`} assessment={removingResource.assessment} onClose={() => setRemovingResource(null)} onConfirm={() => void confirmResourceRemoval()} />}
   </>
-  return <><section className="workbench"><header className="page-header"><div><p className="eyebrow">Planungsverwaltung</p><h1>{label('academicData.heading')}</h1></div><label className="catalog-field">Anzeigen<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">Alle Datensätze</option><option value="active">Aktiv</option><option value="inactive">Inaktiv</option></select></label></header>{message && <p role="status">{message}</p>}<div className="catalog-grid"><section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Wird geladen…</p> : <AcademicCatalogList records={records} emptyLabel={`Noch keine ${current.label}`} onEdit={(record) => void selectAcademicRecord(record as DisplayRecord)} onDelete={(record) => setDeleting(record as DisplayRecord)} onLifecycle={(record) => void lifecycle(record as DisplayRecord)} />}</section><section className="planner-panel"><h2>{selected ? 'Bearbeiten:' : 'Erstellen:'} {current.singular}</h2>{selected?.nameRepairRequired === true && <p role="alert">Dieser übernommene Name steht im Konflikt mit einem anderen Datensatz. Geben Sie einen eindeutigen Namen ein.</p>}{category === 'courses' && selected && selected.semester == null && <p role="alert">Ordnen Sie vor dem Speichern dieser {label('course.singular')} ein Semester zu.</p>}<AcademicRecordEditor key={`${category}-${selected?.id ?? 'new'}-${selected?.revision ?? 0}-${editorGeneration}`} category={category as AcademicCategory} options={options} initialValues={selected ? editValues(selected) : {}} submitLabel={selected ? 'Änderungen speichern' : 'Erstellen'} includeCourseResources={!selected} onSubmit={save} />{selected && <button type="button" className="secondary-button" onClick={() => setSelected(null)}>Bearbeitung abbrechen</button>}{category === 'courses' && selected && courseResources?.courseId === selected.id && <CourseResourceEligibilityEditor key={`${courseResources.courseId}-${courseResources.courseRevision}`} configuration={courseResources} onSave={saveCourseResources} onCancel={() => void selectAcademicRecord(selected)} />}</section></div></section>{deleting && <ProtectedDeleteDialog name={deleting.name} usage={deleting.usage} canArchive={deleting.isActive} onClose={() => setDeleting(null)} onArchive={() => void lifecycle(deleting).then((changed) => { if (changed) setDeleting(null) })} onDelete={() => void remove(deleting)} />}</>
+  return <><section className="workbench"><header className="page-header"><div><p className="eyebrow">Planungsverwaltung</p><h1>{label('academicData.heading')}</h1></div><label className="catalog-field">Anzeigen<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">Alle Datensätze</option><option value="active">Aktiv</option><option value="inactive">Inaktiv</option></select></label></header>{message && <p role="status">{message}</p>}{category === 'courses' && <div className="course-list-filters">
+    <label>Semester filtern<select aria-label="Semester filtern" value={courseFilters.semesterId ?? ''} onChange={(event) => onCourseFiltersChange?.({ semesterId: event.target.value === '' ? null : Number(event.target.value), cohortId: null })}>
+      <option value="">Alle Semester</option>
+      {courseFilters.semesterId != null && !options.semesters.some((item) => item.id === courseFilters.semesterId) && <option value={courseFilters.semesterId}>{semesterContext}</option>}
+      {options.semesters.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+    </select></label>
+    <label>Kohorte filtern<select ref={courseFilterRef} aria-label="Kohorte filtern" value={courseFilters.cohortId ?? ''} onChange={(event) => onCourseFiltersChange?.({ ...courseFilters, cohortId: event.target.value === '' ? null : Number(event.target.value) })}>
+      <option value="">Alle Kohorten</option>
+      {courseFilters.cohortId != null && !options.cohorts.some((item) => item.id === courseFilters.cohortId) && <option value={courseFilters.cohortId}>{cohortContext}</option>}
+      {options.cohorts.map((item) => <option key={item.id} value={item.id}>{item.name} · #{item.id}</option>)}
+    </select></label>
+    <button type="button" className="secondary-button" onClick={() => onCourseFiltersChange?.({ ...courseFilters, cohortId: null })}>Kohortenfilter zurücksetzen</button>
+    <p role="status">{semesterContext} · {cohortContext} · {loading ? 'Wird geladen…' : loadFailed ? 'Stammdaten konnten nicht geladen werden. Laden Sie die Seite erneut.' : `${visibleRecords.length} Treffer`}</p>
+  </div>}<div className={category === 'courses' ? 'catalog-grid course-catalog-grid' : 'catalog-grid'} onFocusCapture={(event) => { focusedCourseAction.current = category === 'courses' && event.target.closest('.catalog-list') ? event.target as HTMLElement : null }}><section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Wird geladen…</p> : loadFailed && category === 'courses' ? <p role="alert">Stammdaten konnten nicht geladen werden. Laden Sie die Seite erneut.</p> : <AcademicCatalogList records={visibleRecords} renderMetadata={category === 'courses' ? (record) => {
+    const course = record as DisplayRecord
+    return <small className="course-record-metadata">{(course.cohort as Option | null)?.name ?? 'Keine Kohorte'} · {(course.semester as Option | null)?.name ?? 'Ohne Semester'} · #{course.id}</small>
+  } : undefined} emptyLabel={category === 'courses' ? (semesterRecords.length === 0 ? 'Keine Lehrveranstaltungen in diesem Semester / Status.' : 'Keine Treffer. Setzen Sie den Kohortenfilter zurück.') : `Noch keine ${current.label}`} onEdit={(record) => void selectAcademicRecord(record as DisplayRecord)} onDelete={(record) => setDeleting(record as DisplayRecord)} onLifecycle={(record) => void lifecycle(record as DisplayRecord)} />}</section><section className="planner-panel"><h2>{selected ? 'Bearbeiten:' : 'Erstellen:'} {current.singular}</h2>{selected?.nameRepairRequired === true && <p role="alert">Dieser übernommene Name steht im Konflikt mit einem anderen Datensatz. Geben Sie einen eindeutigen Namen ein.</p>}{category === 'courses' && selected && selected.semester == null && <p role="alert">Ordnen Sie vor dem Speichern dieser {label('course.singular')} ein Semester zu.</p>}<AcademicRecordEditor key={`${category}-${selected?.id ?? 'new'}-${selected?.revision ?? 0}-${editorGeneration}`} category={category as AcademicCategory} options={options} initialValues={selected ? editValues(selected) : {}} submitLabel={selected ? 'Änderungen speichern' : 'Erstellen'} includeCourseResources={!selected} onSubmit={save} />{selected && <button type="button" className="secondary-button" onClick={() => setSelected(null)}>Bearbeitung abbrechen</button>}{category === 'courses' && selected && courseResources?.courseId === selected.id && <CourseResourceEligibilityEditor key={`${courseResources.courseId}-${courseResources.courseRevision}`} configuration={courseResources} onSave={saveCourseResources} onCancel={() => void selectAcademicRecord(selected)} />}</section></div></section>{deleting && <ProtectedDeleteDialog name={deleting.name} usage={deleting.usage} canArchive={deleting.isActive} onClose={() => setDeleting(null)} onArchive={() => void lifecycle(deleting).then((changed) => { if (changed) setDeleting(null) })} onDelete={() => void remove(deleting)} />}</>
 }

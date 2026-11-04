@@ -156,6 +156,7 @@ export function CourseSchedulePage({
   const [schedules, setSchedules] = useState<DraftSchedule[]>([])
   const [planningInputsVisible, setPlanningInputsVisible] = useState(true)
   const [planningInputTab, setPlanningInputTab] = useState<'course' | 'generation'>('course')
+  const [generationCohortId, setGenerationCohortId] = useState<number | null>(null)
   const [selectedBatchCourseIds, setSelectedBatchCourseIds] = useState<number[]>([])
   const [errors, setErrors] = useState<GenerationFailure[]>([])
   const [batchErrors, setBatchErrors] = useState<OptimizationError[]>([])
@@ -163,6 +164,8 @@ export function CourseSchedulePage({
   const [batchResult, setBatchResult] = useState<OptimizationGenerationResult | null>(null)
   const [unavailableDatesInput, setUnavailableDatesInput] = useState('')
   const [optionsLoading, setOptionsLoading] = useState(true)
+  const [optionsOutcome, setOptionsOutcome] = useState<{ revision: number; status: 'ready' | 'error' }>({ revision: -1, status: 'error' })
+  const optionsFreshness = optionsOutcome.revision !== catalogRevision ? 'loading' : optionsOutcome.status
   const [constraintsLoading, setConstraintsLoading] = useState(false)
   const [constraintsDirty, setConstraintsDirty] = useState(false)
   const [overviewLoading, setOverviewLoading] = useState(false)
@@ -466,6 +469,7 @@ export function CourseSchedulePage({
     void getPlanningOptions()
       .then((options) => {
         if (!current) return
+        setOptionsOutcome({ revision: catalogRevision, status: 'ready' })
         const currentCourseId = selectedCourseIdRef.current
         const currentSemesterId = selectedSemesterIdRef.current
         const courseMissing = currentCourseId != null && !options.courses.some((course) => course.id === currentCourseId)
@@ -486,7 +490,7 @@ export function CourseSchedulePage({
         setSelectedSemesterId((value) => value ?? initialSemesterId)
         setSelectedCourseId((value) => value ?? options.courses.find((course) => course.semesterId == null || course.semesterId === initialSemesterId)?.id ?? null)
       })
-      .catch(() => current && setErrors([{ code: 'REQUEST_FAILED', message: 'Die Planungsoptionen konnten nicht geladen werden. Prüfen Sie die Verbindung und laden Sie die Seite erneut.' }]))
+      .catch(() => { if (current) { setOptionsOutcome({ revision: catalogRevision, status: 'error' }); setErrors([{ code: 'REQUEST_FAILED', message: 'Die Planungsoptionen konnten nicht geladen werden. Prüfen Sie die Verbindung und laden Sie die Seite erneut.' }]) } })
       .finally(() => current && setOptionsLoading(false))
     return () => { current = false }
   }, [catalogRevision])
@@ -838,7 +842,7 @@ export function CourseSchedulePage({
   }
 
   async function startBatch(courseIds = selectedBatchCourseIds) {
-    if (!selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty || batchPreview) return
+    if (optionsFreshness !== 'ready' || !selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty || batchPreview) return
     setBatchPreparing(true)
     setBatchErrors([])
     try {
@@ -896,7 +900,7 @@ export function CourseSchedulePage({
   }
 
   async function retryFailedCourses() {
-    if (!batchResult) return
+    if (!batchResult || optionsFreshness !== 'ready') return
     const failedIds = batchResult.outcomes.filter((outcome) => outcome.status === 'failed' || outcome.status === 'stale').map((outcome) => outcome.courseId)
     setSelectedSemesterId(batchResult.semesterId)
     setSelectedBatchCourseIds(failedIds)
@@ -904,7 +908,7 @@ export function CourseSchedulePage({
   }
 
   async function startBatchForSemester(semesterId: number, courseIds: number[]) {
-    if (constraintsLoading || constraintsDirty) return
+    if (optionsFreshness !== 'ready' || constraintsLoading || constraintsDirty) return
     setBatchPreparing(true)
     setBatchErrors([])
     try {
@@ -1169,6 +1173,7 @@ export function CourseSchedulePage({
         setBatchPreview(null)
         setSelectedSemesterId(semesterId)
         setSelectedBatchCourseIds([])
+        setGenerationCohortId(null)
       },
       focusAfterCommit: () => scheduleContextHeadingRef.current?.focus({ preventScroll: true }),
     })
@@ -1517,7 +1522,7 @@ export function CourseSchedulePage({
                   aria-labelledby="planning-tab-generation"
                   hidden={planningInputTab !== 'generation'}
                 >
-                  <MultiCourseGenerationPanel courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading || batchPreview != null} busy={batchPreparing || batchExecuting} disabledReason={batchPreview ? 'Entscheiden oder verwerfen Sie zuerst den geöffneten Vergleich.' : constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
+                  <MultiCourseGenerationPanel freshness={optionsFreshness} cohorts={planningOptions.cohorts} cohortId={generationCohortId} onCohortChange={setGenerationCohortId} semesterName={selectedSemester?.name} courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={setUnavailableDatesInput} onChange={setSelectedBatchCourseIds} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading || batchPreview != null} busy={batchPreparing || batchExecuting} disabledReason={batchPreview ? 'Entscheiden oder verwerfen Sie zuerst den geöffneten Vergleich.' : constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
                   {batchErrors.length > 0 && <ErrorList errors={batchErrors} />}
                 </section>
               </>
@@ -1596,7 +1601,7 @@ export function CourseSchedulePage({
               {!selectedLifecycleRevision && <p>Wählen Sie eine Arbeitsrevision oder die aktuelle Veröffentlichung, um die Zugänge der {label('lecturer.plural')} zu prüfen.</p>}
             </section>
             <section className="schedule-workspace-region calendar-feedback-region" aria-label="Kalender-Rückmeldungen" hidden={destination !== 'calendar'} inert={destination !== 'calendar' || undefined}>
-            {batchResult && <BatchResultSummary result={batchResult} retryDisabled={writeBusy || constraintsDirty || constraintsLoading} onRetryFailed={() => void retryFailedCourses()} />}
+            {batchResult && <BatchResultSummary result={batchResult} retryDisabled={optionsFreshness !== 'ready' || writeBusy || constraintsDirty || constraintsLoading} onRetryFailed={() => void retryFailedCourses()} />}
             {overviewRefreshError && (
               <div className="refresh-error" role="alert">
                 <span>Die Übersicht der {label('course.plural')} konnte nicht aktualisiert werden. Die zuletzt vollständig geladenen Planungen bleiben sichtbar.</span>

@@ -366,12 +366,13 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 24 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
 | 25 | FS-022 | Authenticated Lecturer Access | Reuse lecturer collaboration through ongoing authenticated identity | FS-015, FS-016, FS-020, FS-021 | Deferred |
 | 26 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
-| 27 | I-005 | Filterable Course Lists for Generation and Administration | Find cohort-specific courses directly in both course-list workflows | FS-007, FS-019, I-003 | Proposed — requirements recorded; not implemented |
+| 27 | I-005 | Filterable Course Lists for Generation and Administration | Find cohort-specific courses directly in both course-list workflows | FS-007, FS-019, I-003 | Implemented — automated verification passed; user acceptance PASS on 2026-11-03 |
 | 28 | I-006 | Configurable Optimization Time and Valid Incumbent Acceptance | Use longer optimization runs and consciously accept valid results without an optimality proof | I-003, I-004, FS-013, FS-019 | Proposed — requirements recorded; not implemented |
 
 **Improvement sequence:** `I-001` through `I-004`, with detailed artifacts in their matching `specs/I-.../` directories.
 
-**New improvement backlog:** `I-005` and `I-006` record requirements only.
+**New improvement backlog:** `I-005` is specified in
+`specs/I-005 - filter-course-plan-list/`; `I-006` records requirements only.
 Their delivery priority relative to other open slices is not yet assigned.
 They are independent improvements on the implemented baseline: course-list
 filtering and optimization time/result handling respectively.
@@ -3504,7 +3505,7 @@ existing calendar session filters do not address this need.
 - Raising the generation limit, automatically splitting a selection into runs,
   or automatically generating the filtered courses.
 - A general redesign of all application lists or calendar session filters.
-- Implementation, detailed specifications, plans, and tasks in this update.
+- Implementation, plans, and tasks in the current specification-only update.
 
 #### Main workflow
 
@@ -3548,7 +3549,9 @@ None.
   demonstrated use case.
 - Additional filters such as study type or search by course name/code are
   proposals for clarification, not confirmed requirements.
-- The user explicitly requested requirements only, with no implementation now.
+- The initial backlog request authorized requirements only. On 2026-11-03,
+  the user explicitly authorized I-005 specification work; implementation is
+  not started by that authorization.
 
 #### Dependencies
 
@@ -3567,12 +3570,25 @@ silently change the set submitted for generation.
 - Whether to add grouping as well as filtering; a grouped/tree layout is not
   yet a confirmed requirement.
 - Optional selection of all visible matches within the existing limit.
-- Filter persistence and reset behavior on semester changes or navigation.
+- Resolved during clarification on 2026-11-03: each course list independently
+  remembers its cohort filter during the current session and unchanged semester
+  scope, including navigation away and back. Semester change, page reload, and
+  explicit filter reset discard the remembered choice. Existing generation
+  selection lifecycle rules, including clearing on semester change, remain
+  unchanged; restoring a filter does not restore selection.
 
 #### Specification status
 
-Proposed — requirements recorded; not specified or implemented. Delivery
-priority and additional filter dimensions remain open.
+Implemented on `codex/i-005-filter-course-plan-list` — automated verification
+passed; user gave acceptance PASS on 2026-11-03. Browser/screen-reader versions
+and per-check observations were not supplied; evidence provenance is recorded
+in quickstart.md. Two implementation/convergence correction cycles completed. Artifacts and quality
+checklist: `specs/I-005 - filter-course-plan-list/`. The directory includes the product slice identifier and descriptive name
+at the user's explicit request. Specification
+work was explicitly requested on 2026-11-03. Delivery priority and additional
+filter dimensions remain open; search, grouping, and bulk selection are not
+included in the specification. Academic Data retains its all-semester catalog
+and can be scoped to a semester for cohort discovery.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -3820,6 +3836,8 @@ Keep the specification consistent with docs/planning/Feature_slices.md. Define m
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-11-03 | Implementation preparation completed | I-005 | Completed two plan/tasks/analyze cycles. Added design, response/UI contracts, validation guide and 34 test-first tasks; corrected parent-owned generation retrieval-state coverage. Final consistency review found no remaining findings. No implementation started. | Prepare the confirmed cohort-discovery scope for the next implementation phase while preserving selection, editor state, session filter memory and I-004 safeguards. |
+| 2026-11-03 | Specification authorized and created | I-005 | Created `specs/I-005 - filter-course-plan-list/spec.md` and its quality checklist for cohort discovery in both course lists, explicit and hidden selection, accessibility, and preserved generation safeguards. Documented local filter lifetime defaults; search, grouping, and bulk selection remain deferred. No implementation started. | The user explicitly requested starting I-005 after the requirements-only backlog entry. |
 | 2026-11-03 | New improvement slice, optimization-result policy change | I-006, FS-010, I-003, I-004 | Recorded a longer configurable optimization budget and explicit atomic acceptance of hard-valid candidates without complete optimality proof, with honest quality/bound reporting and unchanged hard constraints; five minutes remains the proposed default. Requirements only. | Larger first-plan selections exhausted the 60-second deadline and discarded any potential useful result; the user approved increasing the limit and offering valid unproven results for conscious acceptance. |
 | 2026-11-03 | New improvement slice, product-level usability scope change | I-005 | Recorded cohort-based course-list filtering for both teaching-generation selection and Academic Data course administration; additional filter dimensions remain clarification topics. Requirements only, no specification or implementation started. | First-plan preparation required identifying eleven Master courses in a flat list of 94 courses; the user requested direct filtering in both views. |
 | 2026-08-14 | Split slice, new deferred slice, reordered slice, product-scope and authentication-boundary change | FS-016, FS-022, FS-020, FS-021, FS-017 | Narrowed FS-016 to self-contained named planner authentication with exactly one account administrator, one active session per account, one-time startup bootstrap and recovery, manually delivered setup/reset access, and minimal account lifecycle visibility; moved authenticated lecturer access to new deferred FS-022; made FS-016 the recommended next slice. | Protect powerful planner work without depending on VPN, SSO, or email while keeping the first implementation simple and preserving existing accountless lecturer capabilities. |

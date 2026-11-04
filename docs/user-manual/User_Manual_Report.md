@@ -1,5 +1,86 @@
 # User Manual Update Report
 
+## I-005 update — 2026-11-04
+
+Scope: focused update for filterable generation and administration course lists on `codex/i-005-filter-course-plan-list`. The user invoked user-manual-creation after Goal 4 completed. This authorizes the documentation work; no new runtime Goal was created and no Git operation is authorized. Application code, specifications, slice statuses, and task markers were not changed.
+
+### Evidence and slice inclusion
+
+Inspected the current scope map, existing manual/report, I-005 reviewed implementation and acceptance record, specification/design contract, native control labels, generation navigation, exact-record administration handlers, and behavioral tests. Goal 4's [review](../../specs/I-005%20-%20filter-course-plan-list/code-review.md) establishes no blocking findings with 475 frontend tests, 106 backend regressions, TypeScript/Vite build, ESLint and diff checks passing on 2026-11-03. The [feature evidence](../../specs/I-005%20-%20filter-course-plan-list/quickstart.md) retains the user's overall acceptance PASS and its limits.
+
+The following inventory uses current slice identifiers. For older slices, classifications retain prior verified baseline evidence rather than claiming a new product-wide acceptance audit. Only I-005 and the directly connected teaching-generation instructions were updated. `request-verification` denotes a gap in current evidence/documentation, not a newly discovered product defect.
+
+| Slice | Status | Intended user | Entry point | Main use case | Evidence | Limitations | Manual action |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FS-001 | implemented | Planner | Kalender | Generate one course | Prior manual evidence; unchanged generation integration | No new slice-wide audit | include-quick-start-and-detailed |
+| FS-002 | implemented | Planner | Kalender | Review sessions | Prior manual evidence | No new slice-wide audit | include-quick-start-and-detailed |
+| FS-003 | implemented | Planner | Kursdetails | Set constraints | Prior evidence; current generation inputs | No new slice-wide audit | include-detailed-only |
+| FS-004 | implemented | Planner | Calendar session | Edit a session | Prior manual evidence | Historical manual acceptance gaps retained | include-with-limitation |
+| FS-005 | implemented | Planner | Calendar warnings | Inspect conflicts | Prior manual evidence | No automatic repair | include-detailed-only |
+| FS-006 | implemented | Planner | Plan erzeugen | Select several courses | Prior evidence; I-005 integration tests | Superseded visible workflow documented under unified generation | include-quick-start-and-detailed |
+| FS-007 | implemented | Planner | Stammdaten | Maintain records | Prior evidence; fresh AcademicDataPage tests | No new full catalog acceptance audit | include-quick-start-and-detailed |
+| FS-008 | implemented | Planner | Stammdaten | Maintain resources | Prior manual evidence | Historical responsive/usability gaps retained | include-with-limitation |
+| FS-009 | implemented | Planner | Kalender | Manage sessions | Prior manual evidence | Historical acceptance gaps retained | include-with-limitation |
+| FS-010 | implemented | Planner | Plan erzeugen | Optimize selections | Prior evidence; fresh API/page tests | No new optimizer audit | include-quick-start-and-detailed |
+| FS-011 | implemented | Planner | Feiertage | Maintain holidays | Prior manual evidence | Full-date institution calendar | include-detailed-only |
+| FS-012 | implemented | Planner | Prüfungen | Plan exams | Prior manual evidence | No new exam acceptance audit | include-quick-start-and-detailed |
+| FS-013 | implemented | Planner | Versionen | Publish revisions | Prior manual evidence | Historical acceptance gaps retained | include-with-limitation |
+| FS-014 | implemented | Planner | Kalender | Review semester | Prior manual evidence | Historical AT/browser gaps retained | include-with-limitation |
+| FS-015 | implemented | Planner/Lecturer | Abstimmung mit Lehrenden | Review and give feedback | Prior evidence and current scope map | Manual/deployment acceptance pending | include-with-limitation |
+| FS-016 | implemented | Planner/Administrator | Anmelden; Planer-Konten | Manage planner access | Prior implementation/test evidence | Current scope-map status conflicts with older verified implementation; not re-audited | include-with-limitation |
+| FS-017 | not-implemented | Planner | None verified | External synchronization | Proposed in scope map | Excluded from usage | exclude |
+| FS-018 | implemented | Planner | Navigation | Reach destinations | Prior evidence; fresh App tests | No new full navigation acceptance audit | include-quick-start-and-detailed |
+| FS-019 | implemented | Planner | Kalender | Focus planning work | Prior evidence; fresh page tests | Manual acceptance pending in scope map | include-with-limitation |
+| FS-020 | unclear | Lecturer | Prior report has no verified entry point | Export iCalendar | Current scope map says implemented; old report says not implemented | Release acceptance pending; export not inspected in this I-005 update | request-verification |
+| FS-021 | not-implemented | Planner/Lecturer | None verified | Submit unavailability | Ready for specification in scope map | Excluded from usage | exclude |
+| FS-022 | not-implemented | Lecturer | None verified | Authenticated lecturer access | Deferred in current scope map | Older report used this ID for presentation work now named I-002 | exclude |
+| I-001 | implemented | Operator | Container startup | Run application | Prior manual evidence | No new deployment audit | include-detailed-only |
+| I-002 | partially-implemented | Planner/Lecturer/Operator | Current UI | Consistent labels, dates, messages | Prior report under former FS-022 label; current scope map | Inventory, browser and participant follow-ups remain | include-with-limitation |
+| I-003 | implemented | Planner | Plan erzeugen | Unified generation | Current controls and passing I-005/API tests; Goal 4 | Only directly connected instructions refreshed | include-quick-start-and-detailed |
+| I-004 | implemented | Planner | Generation comparison | Accept/cancel full replacement | Passing hidden-selection accept/cancel/stale tests; Goal 4 | Broader manual acceptance pending in scope map | include-with-limitation |
+| I-005 | implemented | Planner | Plan erzeugen; Stammdaten > Lehrveranstaltungen | Discover cohort courses and retain explicit selection | Reviewed source, 119 fresh focused tests, prior 475/106 checks, user PASS | No new manual AT/authenticated-layout run; browser/version observations unspecified | include-quick-start-and-detailed |
+| I-006 | not-implemented | Planner | None | Configure longer optimization / incumbent acceptance | Requirements-only scope entry | Do not document as available | exclude |
+
+### Changes made
+
+- Updated the generation Quick Start to the actual **Kursdetails**, **Plan erzeugen**, and **Stundenpläne erzeugen** labels; added cohort filtering and complete-selection review.
+- Added a short administration course-discovery procedure with expected results.
+- Added full-selection/hidden-course instructions, the 20-total limit, exact reset versus clear-selection effects, and unavailable/missing identity recovery.
+- Documented independent session-only filter memory, semester/reload reset behavior, editor preservation and current-status intersection.
+- Added symptom-based course-list troubleshooting and the single-cohort/no-search/no-bulk limitation.
+- Updated the directly connected generation comparison instructions to current behavior without changing the approved product scope.
+
+### Verification and quality assessment
+
+Fresh command on 2026-11-04: `npm --prefix client test -- src/components/MultiCourseGenerationPanel.test.tsx src/pages/CourseSchedulePage.test.tsx src/pages/AcademicDataPage.test.tsx src/App.test.tsx src/api/conflictAwareGeneration.test.ts` — **PASS, 5 files / 119 tests**. Approved execution outside the sandbox was used because Vite process spawning required it. The existing Node/npm compatibility warning remains nonblocking. No dependency changes.
+
+The numbered Quick Start was checked against current navigation/labels and passing tests for discovery, exact eleven-ID preparation, full hidden selections, editor retention and status/scope changes. Detailed recovery instructions were checked against actual rendered message branches and freshness guards. Markdown links, documentation whitespace, scope of changes, and consistency of reset/clear wording were checked. No new manual browser or screen-reader pass is claimed. The prior full checks are supporting historical evidence; the fresh focused run is the current verification for this documentation update.
+
+Quality checklist: scope map reviewed; all current slice identifiers inventoried; I-005 included only on reviewed/passing evidence; no planned search/bulk selection documented; Quick Start retains prerequisites/access, numbered workflows and expected results; advanced lifetime/validation/recovery rules live in the Detailed Guide; existing role separation retained; UI terms checked; no secrets or implementation identifiers added to normal instructions. No screenshot is required for the native labelled filters. If visual guidance is later needed, capture current authenticated generation and administration surfaces rather than reusing the isolated fixture as production evidence.
+
+### Coverage and outstanding gaps
+
+- Newly documented slice: **I-005 (1 implemented)**. Directly connected existing I-003/I-004 instructions refreshed.
+- Inventory: **22 implemented**, **1 partially implemented** (I-002), **4 excluded** (FS-017, FS-021, FS-022, I-006), **1 requiring verification** (FS-020). These are inventory counts, not 22 newly verified slices.
+- The old report's FS-022 presentation label now maps to I-002. Current FS-022 means deferred authenticated lecturer access. The historical sections below are retained as dated evidence and must not be read as a current identifier/status inventory.
+- Current FS-016 scope status says ready for specification while the older report records working authentication and extensive passing tests. Existing access instructions are retained under the skill's evidence priority; a full current reconciliation was outside I-005.
+- Current FS-020 says implemented with release acceptance pending; the historical exclusion is superseded as a current status claim. Export remains undocumented in this focused update until its UI, tests and acceptance evidence are inspected. Do not infer that export is unavailable from the historical section below.
+- Earlier unrelated release/accessibility/deployment gaps remain open; this update does not close them. I-005 acceptance remains the user's overall PASS with browser/screen-reader details unspecified.
+
+Recommended next action: read the two updated Quick Start procedures as a first-time planner; for a later broader manual refresh, verify FS-020 and reconcile FS-016/I-002 scope evidence. No blocking I-005 documentation gap was identified.
+
+### Delivery handover
+
+Documentation outputs: this report and `User_Manual.md`. Application code, tests and specifications remain untouched by this skill invocation. Existing unrelated backend/process changes are preserved.
+
+Suggested future commit scope: I-005 frontend changes/tests/fixture, I-005 feature artifacts and review report, feature pointer, I-005-only planning changes, and these two manual files. Suggested message: `feat: add cohort filters to course lists and document selection safety`. Exclude unrelated backup/restore/process edits and the I-006 planning hunks; review a selective staged diff before any commit. Proposed base: local `master`, subject to the human's delivery choice; no fetch or remote freshness claim was made.
+
+No commit, push, merge, or further Goal was started. This is the authorized manual skill's completed output, not a claim that a separately started runtime Goal 5 was completed.
+
+## Historical report — 2026-08-25
+
+The remainder is the earlier manual update record. Counts, slice names, excluded functionality and test results below refer to that historical assessment; use the current inventory and conflicts above for this I-005 handover.
+
 ## Summary
 
 The user manual was updated on 25.08.2026 to reflect the current verified Resource Planner, including implemented FS-016 named planner authentication and account administration, the implemented container distribution, the implemented portions of FS-022, and the accountless lecturer-review workflow.

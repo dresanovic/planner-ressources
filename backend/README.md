@@ -14,6 +14,48 @@ Draft Session responses include coded per-session Lecturer/Room identities and s
 
 ## Setup
 
+### Local SQLite backup and restore
+
+From the repository root, create a consistent, integrity-checked backup:
+
+```powershell
+.\backend\.venv\Scripts\python.exe backend/scripts/backup_sqlite_db.py --database C:/Codex/planner-resource/backend/planner.db --output-dir C:/Codex/planner-resource/backend/backups
+```
+
+Keep local and downloaded backups in `backend/backups`. Preview a restore:
+
+```powershell
+.\backend\.venv\Scripts\python.exe backend/scripts/restore_sqlite_db.py --backup backend/backups/planner-20261103-125742.db --database C:/Codex/planner-resource/backend/planner.db
+```
+
+Stop every backend or other process using the target database before applying:
+
+```powershell
+.\backend\.venv\Scripts\python.exe backend/scripts/restore_sqlite_db.py --backup backend/backups/planner-20261103-125742.db --database C:/Codex/planner-resource/backend/planner.db --apply --backend-stopped
+```
+
+The restore validates the SQLite backup and planner tables, prepares a standalone
+candidate, saves the previous database in a unique `backend/backups/before-restore-*`
+directory, and replaces the target atomically. The source backup stays unchanged.
+Without `--apply`, no files change. `--backend-stopped` is your confirmation of an
+offline restore: a lock check cannot detect every idle application connection.
+Existing WAL, SHM, or journal files cause an abort; stop the backend cleanly and
+resolve SQLite state rather than deleting files that may contain unsaved data.
+Restart the backend after success and verify login and semester data. Accounts,
+passwords, sessions, and links revert to their state in the backup as well.
+
+Both scripts default to `DATABASE_URL`, or to `backend/planner.db` when it is
+unset. The application itself defaults to `./planner.db` relative to its startup
+directory, so prefer the explicit absolute database path shown above. For another
+checkout, adjust that path. Restore supports local SQLite files only and does not
+start or stop the application automatically.
+
+Run restore checks with Python's standard library:
+
+```powershell
+.\backend\.venv\Scripts\python.exe -m unittest discover -s backend/tests/scripts -p test_restore_sqlite_db.py
+```
+
 Install the development and test dependencies from `backend/requirements.txt`.
 
 ```text

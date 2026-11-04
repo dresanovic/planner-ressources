@@ -197,12 +197,21 @@ If planning data already exists, skip this section.
 
 1. Open **Planung > Kalender** and select **Planungseingaben anzeigen** if necessary.
 2. Select the Semester and a focused Lehrveranstaltung to review its details.
-3. Under **Eingaben für den nächsten Entwurf**, review the inherited or custom date boundaries and the read-only Studienart time windows. If you change the dates, select **Datumsgrenzen speichern** before continuing.
-4. Under **Konfliktfreie Semesteroptimierung**, select between 1 and 20 Lehrveranstaltungen.
-5. Optionally enter future unavailable dates as comma-separated `TT.MM.JJJJ` values.
-6. Select **Ausgewählte Lehrveranstaltungen optimieren**. If an existing draft would be replaced, review and confirm the preparation.
+3. Under **Kursdetails**, review the inherited or custom date boundaries and the read-only Studienart time windows. If you change the dates, select **Datumsgrenzen speichern** before continuing.
+4. Open **Plan erzeugen**. Under **Stundenpläne erzeugen**, choose a cohort in **Kohorte filtern** to narrow the list, or leave **Alle Kohorten** selected.
+5. Select each intended Lehrveranstaltung individually, up to 20 in total. Open **Gesamte Auswahl prüfen** to check every selected course, including courses hidden by the current filter.
+6. Optionally enter future unavailable dates as comma-separated `TT.MM.JJJJ` values, then select **Ausgewählte Lehrveranstaltungen optimieren**. If a comparison opens for existing sessions, review it before accepting or cancelling.
 
 **Expected result:** The same conflict-aware workflow handles both one and several selected Lehrveranstaltungen. It saves valid complete or improved partial results, keeps protected schedules unchanged, and explains remaining units or failures for each selection. If the prepared input becomes stale, no result from that preparation is saved.
+
+#### Find a cohort's Lehrveranstaltungen for editing
+
+1. Open **Stammdaten > Lehrveranstaltungen**.
+2. In **Semester filtern**, choose the intended semester. In **Kohorte filtern**, choose the cohort.
+3. Check the displayed semester, cohort, and **Treffer** count. Identify the intended course by its name, cohort, semester, and `#` number.
+4. Select **Bearbeiten** on that course to open its existing editor.
+
+**Expected result:** The list shows courses matching the semester, cohort, and current **Anzeigen** restriction. Filtering changes no records. **Kohortenfilter zurücksetzen** reveals the other courses in the same semester/status scope.
 
 #### Review and correct a session in the Kalender
 
@@ -479,6 +488,16 @@ Use **Stammdaten** to create, edit, archive, reactivate, and safely delete the r
 
 Lehrveranstaltungen, Kohorten, and Räume require positive whole-number values where applicable. A Lehrveranstaltung's minimum session size cannot exceed its maximum.
 
+#### Find a course before editing it
+
+In **Stammdaten > Lehrveranstaltungen**, use **Semester filtern** and **Kohorte filtern** together. **Alle Semester** includes records without a semester; choosing a particular semester excludes those records. **Anzeigen** adds its existing active/inactive restriction to both filters.
+
+The context line shows the current scope and match count. Names may repeat: use the displayed cohort, semester, and course `#` number to distinguish records. Cohort options also include a `#` number so similarly named cohorts can be distinguished.
+
+Select **Bearbeiten**, **Archivieren**, **Reaktivieren**, or **Löschen** on the exact course you intend to act on. Filtering does not perform these actions. Changing or resetting a filter while an editor is open preserves that editor and its unsaved values, even if its course disappears from the list. Save or cancel the edit explicitly.
+
+**Kohortenfilter zurücksetzen** changes only the cohort to **Alle Kohorten**. It keeps the semester and **Anzeigen** restriction. See [Remembered filters](#remembered-course-list-filters) for navigation and reload behavior.
+
 #### Archive, reactivate, or delete a record
 
 1. Select the record.
@@ -567,12 +586,12 @@ Select **Benutzerdefinierte Regeln zurücksetzen**. The Lehrveranstaltung immedi
 
 One unified conflict-aware workflow is used for every teaching-generation request, including a selection containing only one Lehrveranstaltung.
 
-1. Open **Konfliktfreie Semesteroptimierung** under **Planungseingaben**.
-2. Select 1 to 20 Lehrveranstaltungen.
+1. Open **Planung > Kalender**, show the planning inputs if necessary, and choose **Plan erzeugen**.
+2. Under **Stundenpläne erzeugen**, optionally narrow the list with **Kohorte filtern**, then select 1 to 20 Lehrveranstaltungen individually. Review **Gesamte Auswahl prüfen** before proceeding.
 3. Optionally enter comma-separated future unavailable dates in `TT.MM.JJJJ` format, for example `26.10.2026, 02.11.2026`.
 4. Select **Ausgewählte Lehrveranstaltungen optimieren**.
-5. Review the prepared constraints, existing drafts, and replacement requirements.
-6. Confirm when one or more existing drafts would be replaced.
+5. If a comparison opens, review the current and proposed schedules for the complete selection, including hidden selected courses.
+6. Accept the alternative only if you want to replace the selected saved teaching sessions, including any manual edits. Choose **Abbrechen** to keep all current sessions.
 
 The optimizer:
 
@@ -591,6 +610,36 @@ An approved replacement may replace manual edits in a selected Lehrveranstaltung
 After the operation, review **Gespeichertes Optimierungsergebnis**. It separates complete, improved partial, unchanged, failed, and stale outcomes. Blocking evidence distinguishes a teaching appointment from an active exam and identifies lecturer, Raum, Kohorte, or the active-exam teaching boundary. Use **Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen** to prepare affected records again from current data.
 
 The optimality statement applies only to the prepared snapshot. If any selected input becomes stale before saving, no selected result from that preparation is saved and current drafts remain unchanged. Refresh the input and prepare the complete selection again.
+
+#### Select courses across cohorts safely
+
+1. Choose a cohort in **Kohorte filtern** and select the courses you need.
+2. Switch to another cohort and select any additional courses. The previous selection remains intact.
+3. Check the total **ausgewählt** and **durch den Kohortenfilter verborgen** counts. Open **Gesamte Auswahl prüfen** to review every selected name, cohort, and course number.
+4. To remove a hidden course, return to its cohort or select **Kohortenfilter zurücksetzen**, then clear that course's checkbox.
+5. To start the selection again, select **Auswahl aufheben**. This clears every selected course while keeping the current cohort filter.
+
+**Expected result:** Generation uses all explicitly selected courses, including those hidden by the filter. Filtering never selects courses automatically. The 20-course limit applies to the full selection across all cohorts; deselect a course before adding another when the limit is reached.
+
+| Action | Effect |
+| --- | --- |
+| **Kohortenfilter zurücksetzen** | Shows all cohorts within the current semester; preserves every selected course. |
+| **Auswahl aufheben** | Clears the complete generation selection; preserves the cohort filter. |
+| Change generation **Semester** | After any unsaved-change confirmation is accepted, resets both the cohort filter and generation selection. Cancelling the transition preserves them. |
+
+An unavailable course shows its reason and cannot be newly selected. If a selected course later becomes missing or unavailable, it remains represented in the selection review, possibly as **Lehrveranstaltung #… — nicht verfügbar**. A filter does not repair that selection. Reveal and deselect the unavailable course when possible, or use **Auswahl aufheben** and select the intended available courses again. The existing validation prevents invalid input from being silently reduced to a different selection.
+
+Changing the cohort filter during preparation or comparison does not change the courses covered by that operation. Decide or cancel the open comparison before starting another generation.
+
+#### Remembered course-list filters
+
+The generation and Stammdaten lists remember their own cohort choices independently while the page remains open. Returning from another destination, changing a Stammdaten category, or closing and reopening the planning inputs restores the applicable list's filter within the same semester scope. The generation filter does not change Stammdaten or Kalender appointment filters.
+
+Changing a list's semester scope resets its cohort choice. Returning to the previous semester does not revive the discarded choice. An explicit cohort reset is also remembered. A page reload starts both lists unfiltered; filter restoration does not restore generation selections.
+
+In Stammdaten, **Semester filtern** is independent of the planning semester. Changing it resets that list's cohort choice but preserves an open course editor.
+
+Use the labelled dropdowns and buttons with the keyboard. Result counts and total/hidden selection counts are announced through the page's status information; **Gesamte Auswahl prüfen** expands the full selection for inspection.
 
 ### Review the Kalender
 
@@ -912,11 +961,22 @@ Open **Planung > Versionen** or Kalender and select **Entwurf starten**. Publish
 
 #### A Lehrveranstaltung is missing or unavailable
 
-1. Confirm the selected Semester matches the Lehrveranstaltung.
-2. Confirm the Lehrveranstaltung, Semester, Kohorte, and Studienform are active.
-3. Confirm an active Zeitfenster exists.
-4. Confirm the Lehrveranstaltung has an active eligible lecturer and usable eligible Raum.
-5. Correct the record in Stammdaten and return to Planung.
+1. Check **Kohorte filtern** and use **Kohortenfilter zurücksetzen** if necessary. In Stammdaten also check **Semester filtern** and **Anzeigen**.
+2. Confirm the selected Semester matches the Lehrveranstaltung.
+3. Confirm the Lehrveranstaltung, Semester, Kohorte, and Studienform are active.
+4. Confirm an active Zeitfenster exists.
+5. Confirm the Lehrveranstaltung has an active eligible lecturer and usable eligible Raum.
+6. Correct the record in Stammdaten and return to Planung.
+
+#### A course list has no matches or cannot load
+
+- **Keine Treffer:** Courses exist in the current scope, but none match the cohort. Select **Kohortenfilter zurücksetzen**; in Stammdaten also check **Semester filtern** and **Anzeigen**. Hidden generation selections remain selected and can be inspected in **Gesamte Auswahl prüfen**.
+- **Keine Lehrveranstaltungen in diesem Semester** or the Stammdaten semester/status empty message: The loaded scope itself contains no courses. Check the semester/status and maintain the required records in Stammdaten.
+- **Wird geladen…** or **Planungsoptionen werden geladen…:** Wait for retrieval to finish before relying on the result count.
+- A loading-failure message: Follow its instruction to reload the page. Failed planning-option refreshes preserve the displayed selection but block generation and failed-course retry. A full page reload resets the cohort filters; recheck your intended selection afterwards. If retrieval keeps failing, contact the installation operator with the visible message.
+- **Kohorte #… — nicht verfügbar** or **Semester #… — nicht verfügbar:** The remembered choice is no longer in the loaded options. The application keeps that context instead of silently showing another scope. Reset the cohort or explicitly choose an available semester, then review the results and selection.
+
+Course-list discovery currently supports one cohort at a time. Free-text course search, grouping, and selecting a whole cohort in one action are not provided by these filters.
 
 #### Teaching generation fails
 
