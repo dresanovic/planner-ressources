@@ -11,7 +11,7 @@ COPY client/ ./
 RUN npm run build
 
 
-FROM python:3.12.15-slim-trixie@sha256:cb33f7f771ecec2ef1225cf39b159591a040391bd73e4c01f00fdfc4c47611d2 AS python-dependencies
+FROM python:3.12.16-slim-trixie@sha256:b18b261e1b4974b4f321451ad5251ded85abb22c2b8b262da527dda1d031ab30 AS python-dependencies
 
 WORKDIR /build/backend
 
@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         -r requirements-runtime.txt
 
 
-FROM python:3.12.15-slim-trixie@sha256:cb33f7f771ecec2ef1225cf39b159591a040391bd73e4c01f00fdfc4c47611d2 AS runtime
+FROM python:3.12.16-slim-trixie@sha256:b18b261e1b4974b4f321451ad5251ded85abb22c2b8b262da527dda1d031ab30 AS runtime
 
 ARG VERSION=""
 ARG VCS_REF=""
