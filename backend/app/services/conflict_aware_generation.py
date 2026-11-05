@@ -38,6 +38,7 @@ from app.schemas.conflict_aware_generation import (
     PreparedOptimizationCourseInput,
     RegenerationComparison,
     ResolvedWarning,
+    CandidateProof, ObjectiveProof, OBJECTIVE_KEYS,
 )
 from app.services.academic_catalog import planning_eligibility_reasons
 from app.services.draft_schedule_repository import (
@@ -65,8 +66,11 @@ from app.services.semester_optimization import (
     SemesterOptimizationResult,
     intervals_overlap,
     optimize_semester,
+    valid_unit_upper_bound,
 )
 from app.services.schedule_lifecycle import claim_active_working_revision
+from app.services.optimization_config import load_optimization_policy
+from app.services.resource_rules import resource_is_unavailable
 
 
 OPERATION_DEADLINE_SECONDS = 60.0
@@ -90,6 +94,58 @@ class StaleOptimizationCandidate(RuntimeError):
 
 class CandidateNotReproducible(RuntimeError):
     pass
+
+
+class InvalidExactCandidate(ValueError):
+    pass
+
+
+def validate_exact_candidate(courses, fixed_sessions, unavailable_dates, holidays, candidates):
+    """Check detached exact assignments independently of solver status, without writes."""
+    expected = {course.course_id: course for course in courses}
+    ids = [candidate.course_id for candidate in candidates]
+    if len(ids) != len(set(ids)) or set(ids) != set(expected):
+        raise InvalidExactCandidate("Candidate must represent every selected course exactly once")
+    occupancy = list(fixed_sessions)
+    unavailable = frozenset(unavailable_dates)
+    for candidate in candidates:
+        course = expected[candidate.course_id]
+        total = sum(session.units for session in candidate.sessions)
+        if total != candidate.scheduled_units or total > course.total_units or total < 0:
+            raise InvalidExactCandidate("Invalid course unit total")
+        dates = set()
+        lecturers = {item.id: item for item in course.lecturers if item.active}
+        rooms = {item.id: item for item in course.rooms if item.active and (item.capacity or 0) >= course.cohort_size}
+        for session in candidate.sessions:
+            if (not isinstance(session.units, int) or isinstance(session.units, bool)
+                or not course.min_session_units <= session.units <= course.max_session_units):
+                raise InvalidExactCandidate("Invalid session units")
+            if (session.date in dates or session.date in unavailable or session.date in holidays
+                or not course.planning_period.start_date <= session.date <= course.planning_period.end_date):
+                raise InvalidExactCandidate("Invalid teaching date")
+            dates.add(session.date)
+            start = datetime.combine(session.date, session.start_time)
+            end = datetime.combine(session.date, session.end_time)
+            if end - start != timedelta(minutes=session_duration_minutes(session.units)):
+                raise InvalidExactCandidate("Session duration does not match units and breaks")
+            if course.latest_teaching_end is not None and end > course.latest_teaching_end:
+                raise InvalidExactCandidate("Teaching extends beyond active same-course exam")
+            if not any(
+                window.weekday == session.date.weekday()
+                and window.start_time <= session.start_time < session.end_time <= window.end_time
+                and window.id == session.time_window_id
+                and window.constraint_window_index == session.constraint_window_index
+                for window in course.windows
+            ):
+                raise InvalidExactCandidate("Session is outside its allowed teaching window")
+            for resource, resource_id in ((lecturers, session.lecturer_id), (rooms, session.room_id)):
+                item = resource.get(resource_id)
+                if item is None or resource_is_unavailable(item.unavailable_periods, session.date, session.start_time, session.end_time):
+                    raise InvalidExactCandidate("Ineligible, inactive, unavailable or insufficient resource")
+            if not _exact_sessions_valid((session,), course.cohort_id, occupancy):
+                raise InvalidExactCandidate("Candidate overlaps selected or protected occupancy")
+            occupancy.append(FixedSession(course.course_id, course.cohort_id,
+                session.lecturer_id, session.room_id, session.date, session.start_time, session.end_time))
 
 
 @dataclass(frozen=True)
@@ -126,6 +182,7 @@ def prepare_optimization(
     schedule_revision_id: int | None = None,
 ) -> OptimizationPreparationResponse:
     _validate_selection(course_ids)
+    budget_policy = load_optimization_policy()
     loaded = load_operation(
         db, semester_id, course_ids, unavailable_dates, schedule_revision_id
     )
@@ -178,6 +235,7 @@ def prepare_optimization(
         sharedSnapshotToken=loaded.shared_snapshot_token,
         courses=prepared,
         replacementCourseIds=replacement_ids,
+        budgetPolicy=budget_policy,
     )
 
 
@@ -655,6 +713,7 @@ def load_operation(
             total_units=course.total_units,
             min_session_units=course.min_session_units,
             max_session_units=course.max_session_units,
+            preferred_session_units=course.preferred_session_units,
             cohort_id=course.cohort_id,
             cohort_size=plan.cohort_size,
             planning_period=constraints.planning_period,
@@ -764,7 +823,24 @@ def _decision_required_result(
                 ],
             )
         )
+    fingerprint = candidate_fingerprint(solution, {item.course.id: item.course.cohort_id for item in loaded.courses})
+    scope = _fingerprint({'shared': shared_snapshot_token,
+        'courses': [item.model_dump(mode='json', by_alias=True) for item in sorted(prepared_courses, key=lambda c:c.course_id)]})
+    objective_by_key = {item.objective_key: item for item in solution.objectives}
+    objectives = [ObjectiveProof(objectiveKey=key, direction='max' if key in ('total_units','retained_drafts') else 'min',
+        proofStatus=objective_by_key[key].proof_status if key in objective_by_key else 'not_attempted',
+        value=objective_by_key[key].value if key in objective_by_key else None,
+        candidateFingerprint=fingerprint, preparedSnapshotToken=scope) for key in OBJECTIVE_KEYS]
+    coverage_proven = objectives[0].proof_status == 'proven'
+    upper = generated_total if coverage_proven else valid_unit_upper_bound(generated_total, required_total, solution.unit_upper_bound)
+    proof = CandidateProof(preparedSnapshotToken=scope, candidateFingerprint=fingerprint,
+        selectedCourseIds=[item.course.id for item in loaded.courses], requiredUnits=required_total, scheduledUnits=generated_total,
+        coverageProven=coverage_proven, preferencesProven=all(o.proof_status == 'proven' for o in objectives),
+        objectives=objectives, unitUpperBound=upper, additionalPossibleUnits=upper-generated_total if upper is not None else None,
+        gapKnown=upper is not None)
     return OptimizationDecisionRequiredResult(
+        proof=proof,
+        hasSavedSessions=any(item.draft and item.draft.sessions for item in loaded.courses),
         candidateFingerprint=candidate_fingerprint(
             solution,
             {item.course.id: item.course.cohort_id for item in loaded.courses},
@@ -1141,7 +1217,7 @@ def _course_payload(course, plan, constraints):
         "revision": course.revision,
         "active": course.is_active,
         "semester": course.current_semester_id,
-        "units": [course.total_units, course.min_session_units, course.max_session_units],
+        "units": [course.total_units, course.min_session_units, course.max_session_units, course.preferred_session_units],
         "cohort": [course.cohort_id, plan.cohort_size, course.cohort.is_active],
         "studyType": [course.study_type_id, course.study_type.is_active],
         "lecturers": [[item.id, item.normalized_code, item.active, _period_payload(item.unavailable_periods)] for item in plan.lecturer_candidates],

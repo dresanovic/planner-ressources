@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 from time import monotonic
-from typing import Iterable, Mapping, Sequence
+from typing import Callable, Iterable, Mapping, Sequence
+from threading import Event, Thread
+from math import ceil, isfinite
 
 from ortools.sat.python import cp_model
 
@@ -20,21 +22,21 @@ from app.services.schedule_generation import (
 
 
 REASON_MESSAGES = {
-    "LECTURER_OCCUPIED": "Eligible lecturers are occupied by fixed semester sessions.",
-    "ROOM_OCCUPIED": "Eligible rooms are occupied by fixed semester sessions.",
-    "COHORT_OCCUPIED": "The cohort is occupied by fixed semester sessions.",
-    "ACTIVE_EXAM_BOUNDARY": "Teaching must end no later than the selected course's active exam begins.",
-    "STUDY_TYPE_WINDOW_UNAVAILABLE": "The current study type has no active teaching window long enough for the minimum session.",
-    "LECTURER_UNAVAILABLE": "Eligible lecturers are unavailable in otherwise allowed slots.",
-    "ROOM_UNAVAILABLE": "Eligible rooms are unavailable in otherwise allowed slots.",
-    "NO_ELIGIBLE_LECTURER": "The course has no active eligible lecturer.",
-    "NO_ELIGIBLE_ROOM": "The course has no active eligible room.",
-    "INSUFFICIENT_ROOM_CAPACITY": "No eligible active room has sufficient cohort capacity.",
-    "UNAVAILABLE_DATE": "Planner-supplied unavailable dates removed otherwise allowed dates.",
-    "NO_ALLOWED_DATE_OR_WINDOW": "No date and allowed teaching window can host a session.",
-    "COURSE_CONSTRAINT": "The course planning constraints prevent additional placement.",
-    "SELECTED_COURSE_COMPETITION": "Other selected courses use the same limited semester capacity.",
-    "INVALID_PLANNING_INPUT": "The course planning input is invalid or incomplete.",
+    "LECTURER_OCCUPIED": "Zulässige Lehrpersonen sind durch feste Termine belegt.",
+    "ROOM_OCCUPIED": "Zulässige Räume sind durch feste Termine belegt.",
+    "COHORT_OCCUPIED": "Die Kohorte ist durch feste Termine belegt.",
+    "ACTIVE_EXAM_BOUNDARY": "Lehrtermine müssen vor Beginn der aktiven Prüfung enden.",
+    "STUDY_TYPE_WINDOW_UNAVAILABLE": "Kein aktives Studienzeitfenster ist lang genug für die minimale Termingröße.",
+    "LECTURER_UNAVAILABLE": "Zulässige Lehrpersonen sind in sonst erlaubten Zeitfenstern nicht verfügbar.",
+    "ROOM_UNAVAILABLE": "Zulässige Räume sind in sonst erlaubten Zeitfenstern nicht verfügbar.",
+    "NO_ELIGIBLE_LECTURER": "Keine aktive zulässige Lehrperson ist zugeordnet.",
+    "NO_ELIGIBLE_ROOM": "Kein aktiver zulässiger Raum ist zugeordnet.",
+    "INSUFFICIENT_ROOM_CAPACITY": "Kein aktiver zulässiger Raum bietet genügend Plätze für die Kohorte.",
+    "UNAVAILABLE_DATE": "Die ausgeschlossenen Tage schränken die sonst erlaubten Termine ein.",
+    "NO_ALLOWED_DATE_OR_WINDOW": "Kein erlaubter Tag mit passendem Zeitfenster steht zur Verfügung.",
+    "COURSE_CONSTRAINT": "Die Planungsgrenzen verhindern weitere Termine.",
+    "SELECTED_COURSE_COMPETITION": "Andere ausgewählte Lehrveranstaltungen nutzen dieselben begrenzten Ressourcen.",
+    "INVALID_PLANNING_INPUT": "Die Planungsdaten sind ungültig oder unvollständig.",
 }
 
 
@@ -42,12 +44,42 @@ class OptimalResultNotProven(RuntimeError):
     pass
 
 
+class OptimizationCancelled(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class OptimizationSearchControl:
+    deadline: float
+    cancelled: Callable[[], bool] = lambda: False
+    clock: Callable[[], float] = monotonic
+    progress: Callable[[str], None] = lambda objective: None
+    checkpoint: Callable[["SemesterOptimizationResult"], None] | None = None
+
+    def check(self):
+        if self.cancelled():
+            raise OptimizationCancelled("Optimization cancelled")
+        if self.clock() >= self.deadline:
+            raise OptimalResultNotProven("The optimization search allowance is exhausted.")
+
+
 class OptimizationModelInvalid(RuntimeError):
     pass
 
 
 class NoGeneratedAlternative(RuntimeError):
-    pass
+    def __init__(self, message, *, courses=()):
+        super().__init__(message)
+        self.courses = courses
+
+
+def valid_unit_upper_bound(scheduled, required, bound, *, objective_key='total_units', same_problem=True):
+    if objective_key != 'total_units' or not same_problem or isinstance(bound, bool) or not isinstance(bound, (int, float)):
+        return None
+    if (isinstance(bound, float) and not isfinite(bound)) or bound < scheduled:
+        return None
+    tightened = min(ceil(bound), required)
+    return tightened if tightened >= scheduled else None
 
 
 @dataclass(frozen=True)
@@ -86,6 +118,12 @@ class OptimizationCourse:
     current_sessions: tuple[CurrentSession, ...] = ()
     latest_teaching_end: datetime | None = None
     latest_teaching_source_id: int | None = None
+    preferred_session_units: float | None = None
+
+    @property
+    def preferred_size_twice(self) -> int:
+        return (round(2 * self.preferred_session_units) if self.preferred_session_units is not None
+                else self.min_session_units + self.max_session_units)
 
 
 @dataclass(frozen=True)
@@ -133,6 +171,14 @@ class CourseOptimization:
 
 
 @dataclass(frozen=True)
+class ObjectiveEvidence:
+    objective_key: str
+    direction: str
+    proof_status: str
+    value: int | None
+
+
+@dataclass(frozen=True)
 class SemesterOptimizationResult:
     courses: tuple[CourseOptimization, ...]
     total_units: int
@@ -142,6 +188,9 @@ class SemesterOptimizationResult:
     retained_drafts: int
     elapsed_milliseconds: int
     optimal: bool = True
+    objectives: tuple[ObjectiveEvidence, ...] = ()
+    unit_upper_bound: int | None = None
+    search_exhausted: bool = False
 
 
 @dataclass
@@ -181,11 +230,71 @@ def intervals_overlap(
     return first_date == second_date and first_start < second_end and second_start < first_end
 
 
+def _time_ticks(value: time) -> int:
+    return ((value.hour * 60 + value.minute) * 60 + value.second) * 1_000_000 + value.microsecond
+
+
+def _candidate_start_times(courses, fixed_sessions, day, control=None) -> tuple[time, ...]:
+    """Event closure contains a left-shifted representative of every feasible packing.
+
+    A session can move earlier until a window, fixed/retained session or resource
+    availability boundary, or the end of another chosen session. Close all such
+    boundaries under every allowed session duration. No arbitrary time grid or
+    rounding excludes sub-minute availability boundaries.
+    """
+    windows = []
+    seeds = set()
+    durations = set()
+    for course in courses:
+        if control is not None: control.check()
+        if not course.planning_period.start_date <= day <= course.planning_period.end_date:
+            continue
+        matching = [w for w in course.windows if w.weekday == day.weekday()]
+        windows.extend(matching)
+        seeds.update(_time_ticks(w.start_time) for w in matching)
+        for units in range(max(1, course.min_session_units), course.max_session_units + 1):
+            if control is not None: control.check()
+            duration = session_duration_minutes(units) * 60_000_000
+            if any(duration <= _time_ticks(w.end_time) - _time_ticks(w.start_time) for w in matching):
+                durations.add(duration)
+        for current in course.current_sessions:
+            if current.date == day:
+                seeds.update((_time_ticks(current.start_time), _time_ticks(current.end_time)))
+        for resource in (*course.lecturers, *course.rooms):
+            for period in resource.unavailable_periods:
+                if ((period.kind == 'recurring' and day.weekday() in {w.weekday for w in period.weekdays})
+                    or (period.kind != 'recurring' and period.end_date == day)):
+                    seeds.add(_time_ticks(period.end_time))
+    if not windows or not durations:
+        return ()
+    for fixed in fixed_sessions:
+        if control is not None: control.check()
+        if fixed.date == day:
+            seeds.add(_time_ticks(fixed.end_time))
+    latest = max(_time_ticks(w.end_time) for w in windows) - min(durations)
+    starts = {value for value in seeds if 0 <= value <= latest}
+    pending = deque(sorted(starts))
+    ordered_durations = sorted(durations)
+    while pending:
+        if control is not None: control.check()
+        start = pending.popleft()
+        for duration in ordered_durations:
+            value = start + duration
+            if value <= latest and value not in starts:
+                starts.add(value)
+                pending.append(value)
+    midnight = datetime.combine(day, time.min)
+    return tuple((midnight + timedelta(microseconds=value)).time() for value in sorted(starts))
+
+
 def generate_candidates(
     course: OptimizationCourse,
     fixed_sessions: Sequence[FixedSession],
     unavailable_dates: frozenset[date],
     holidays: Mapping[date, HolidayReference] | None = None,
+    *,
+    control: OptimizationSearchControl | None = None,
+    start_times_for_date: Callable[[date], tuple[time, ...]] | None = None,
 ) -> CandidateSet:
     holidays = holidays or {}
     counts: Counter[str] = Counter()
@@ -230,7 +339,11 @@ def generate_candidates(
     raw: list[tuple] = []
     permitted_temporal_slot_found = False
     while cursor <= course.planning_period.end_date:
+        if control is not None:
+            control.check()
         matching = [window for window in ordered_windows if window.weekday == cursor.weekday()]
+        starts = (start_times_for_date(cursor) if start_times_for_date else
+            _candidate_start_times((course,), fixed_sessions, cursor, control)) if matching else ()
         if cursor in holidays:
             if _holiday_removes_feasible_candidate(
                 course,
@@ -239,6 +352,8 @@ def generate_candidates(
                 matching,
                 active_lecturers,
                 capacity_rooms,
+                starts,
+                control,
             ):
                 holiday_counts[(cursor, holidays[cursor].name)] = 1
             cursor += timedelta(days=1)
@@ -249,35 +364,28 @@ def generate_candidates(
             cursor += timedelta(days=1)
             continue
         for window in matching:
-            for units in range(course.min_session_units, course.max_session_units + 1):
-                end_dt = datetime.combine(cursor, window.start_time) + timedelta(minutes=session_duration_minutes(units))
-                end_time = end_dt.time()
-                if end_dt.date() != cursor or end_time > window.end_time:
-                    counts["COURSE_CONSTRAINT"] += 1
+            for start_time in starts:
+                if not window.start_time <= start_time < window.end_time:
                     continue
-                if course.latest_teaching_end is not None and end_dt > course.latest_teaching_end:
-                    counts["ACTIVE_EXAM_BOUNDARY"] += 1
-                    if course.latest_teaching_source_id is not None:
-                        protected_sources[(
-                            "ACTIVE_EXAM_BOUNDARY",
-                            "active_exam",
-                            course.latest_teaching_source_id,
-                        )] += 1
-                    continue
-                permitted_temporal_slot_found = True
-                cohort_blocked, lecturers, rooms = _candidate_resources(
-                    course,
-                    fixed_sessions,
-                    cursor,
-                    window.start_time,
-                    end_time,
-                    active_lecturers,
-                    capacity_rooms,
-                    counts,
-                    protected_sources,
-                )
-                if not cohort_blocked and lecturers and rooms:
-                    raw.append((cursor, window.start_time, end_time, units, window, lecturers, rooms))
+                for units in range(course.min_session_units, course.max_session_units + 1):
+                    if control is not None:
+                        control.check()
+                    end_dt = datetime.combine(cursor, start_time) + timedelta(minutes=session_duration_minutes(units))
+                    end_time = end_dt.time()
+                    if end_dt.date() != cursor or end_time > window.end_time:
+                        counts["COURSE_CONSTRAINT"] += 1
+                        continue
+                    if course.latest_teaching_end is not None and end_dt > course.latest_teaching_end:
+                        counts["ACTIVE_EXAM_BOUNDARY"] += 1
+                        if course.latest_teaching_source_id is not None:
+                            protected_sources[("ACTIVE_EXAM_BOUNDARY", "active_exam", course.latest_teaching_source_id)] += 1
+                        continue
+                    permitted_temporal_slot_found = True
+                    cohort_blocked, lecturers, rooms = _candidate_resources(
+                        course, fixed_sessions, cursor, start_time, end_time,
+                        active_lecturers, capacity_rooms, counts, protected_sources)
+                    if not cohort_blocked and lecturers and rooms:
+                        raw.append((cursor, start_time, end_time, units, window, lecturers, rooms))
         cursor += timedelta(days=1)
 
     if not raw and not permitted_temporal_slot_found:
@@ -302,7 +410,7 @@ def generate_candidates(
         BlockingEvidence(
             "INSTITUTION_HOLIDAY",
             count,
-            f"{name} on {day.isoformat()} removed an otherwise allowed date.",
+            f"Der unterrichtsfreie Tag „{name}“ am {day:%d.%m.%Y} wurde als mögliche Terminoption ausgeschlossen.",
             day,
             name,
         )
@@ -318,23 +426,24 @@ def _holiday_removes_feasible_candidate(
     windows: Sequence[TimeWindowPlan],
     active_lecturers: Sequence[ResourceCandidatePlan],
     capacity_rooms: Sequence[ResourceCandidatePlan],
+    starts: Sequence[time],
+    control=None,
 ) -> bool:
     for window in windows:
-        for units in range(course.min_session_units, course.max_session_units + 1):
-            end_dt = datetime.combine(candidate_date, window.start_time) + timedelta(minutes=session_duration_minutes(units))
-            if end_dt.date() != candidate_date or end_dt.time() > window.end_time:
+        for start_time in starts:
+            if not window.start_time <= start_time < window.end_time:
                 continue
-            cohort_blocked, lecturers, rooms = _candidate_resources(
-                course,
-                fixed_sessions,
-                candidate_date,
-                window.start_time,
-                end_dt.time(),
-                active_lecturers,
-                capacity_rooms,
-            )
-            if not cohort_blocked and lecturers and rooms:
-                return True
+            for units in range(course.min_session_units, course.max_session_units + 1):
+                if control is not None: control.check()
+                end_dt = datetime.combine(candidate_date, start_time) + timedelta(minutes=session_duration_minutes(units))
+                if (end_dt.date() != candidate_date or end_dt.time() > window.end_time
+                    or (course.latest_teaching_end is not None and end_dt > course.latest_teaching_end)):
+                    continue
+                cohort_blocked, lecturers, rooms = _candidate_resources(
+                    course, fixed_sessions, candidate_date, start_time, end_dt.time(),
+                    active_lecturers, capacity_rooms)
+                if not cohort_blocked and lecturers and rooms:
+                    return True
     return False
 
 
@@ -502,21 +611,33 @@ def optimize_semester(
     holidays: Mapping[date, HolidayReference] | None = None,
     deadline_seconds: float = 60.0,
     generated_only: bool = False,
+    control: OptimizationSearchControl | None = None,
+    allow_unproven: bool = False,
 ) -> SemesterOptimizationResult:
     started = monotonic()
+    control = control or OptimizationSearchControl(deadline=started + deadline_seconds)
+    control.check()
     unavailable = frozenset(unavailable_dates)
     model = cp_model.CpModel()
     course_vars: dict[int, _CourseVariables] = {}
     all_temporal: list[tuple[TemporalCandidate, cp_model.IntVar]] = []
     lecturer_assignments: dict[int, list[tuple[TemporalCandidate, cp_model.IntVar]]] = defaultdict(list)
     room_assignments: dict[int, list[tuple[TemporalCandidate, cp_model.IntVar]]] = defaultdict(list)
+    starts_by_date = {}
+    def start_times_for_date(day):
+        if day not in starts_by_date:
+            starts_by_date[day] = _candidate_start_times(courses, fixed_sessions, day, control)
+        return starts_by_date[day]
 
     for course in sorted(courses, key=lambda item: item.course_id):
-        candidate_set = generate_candidates(course, fixed_sessions, unavailable, holidays)
+        control.check()
+        candidate_set = generate_candidates(course, fixed_sessions, unavailable, holidays, control=control,
+            start_times_for_date=start_times_for_date)
         variables = _CourseVariables(course=course, candidate_set=candidate_set)
         course_vars[course.course_id] = variables
         by_date: dict[date, list[cp_model.IntVar]] = defaultdict(list)
         for candidate in candidate_set.candidates:
+            control.check()
             selected = model.new_bool_var(f"course_{course.course_id}_candidate_{candidate.candidate_id}")
             variables.temporal[candidate.candidate_id] = selected
             all_temporal.append((candidate, selected))
@@ -575,11 +696,11 @@ def optimize_semester(
                 model.add(retain == 1)
             else:
                 model.add(generated_units >= current_units * (1 - retain))
-        _add_continuity(model, variables, lecturer=True)
-        _add_continuity(model, variables, lecturer=False)
+        _add_continuity(model, variables, lecturer=True, control=control)
+        _add_continuity(model, variables, lecturer=False, control=control)
 
-    _add_selected_conflict_constraints(model, all_temporal, lecturer_assignments, room_assignments)
-    conflict_terms = _add_retained_alternatives(model, course_vars, fixed_sessions)
+    _add_selected_conflict_constraints(model, all_temporal, lecturer_assignments, room_assignments, control=control)
+    conflict_terms = _add_retained_alternatives(model, course_vars, fixed_sessions, control=control)
 
     total_units_terms = []
     lecturer_change_terms = []
@@ -591,16 +712,16 @@ def optimize_semester(
     canonical_resource_terms = []
     max_session_size_deviation = 0
     for variables in course_vars.values():
-        preferred_size_twice = (
-            variables.course.min_session_units + variables.course.max_session_units
-        )
+        control.check()
+        preferred_size_twice = variables.course.preferred_size_twice
         max_generated_sessions = (
             variables.course.total_units // variables.course.min_session_units
             if variables.course.min_session_units > 0
             else 0
         )
-        course_size_deviation_bound = max_generated_sessions * (
-            variables.course.max_session_units - variables.course.min_session_units
+        course_size_deviation_bound = max_generated_sessions * max(
+            abs(2 * variables.course.min_session_units - preferred_size_twice),
+            abs(2 * variables.course.max_session_units - preferred_size_twice),
         )
         for candidate in variables.candidate_set.candidates:
             selected = variables.temporal[candidate.candidate_id]
@@ -647,6 +768,7 @@ def optimize_semester(
             retain_terms.append(variables.retain)
         max_session_size_deviation += course_size_deviation_bound
 
+    room_change_terms.extend(_cohort_day_room_penalties(model, course_vars, room_assignments, fixed_sessions, control))
     schedule_shape_terms = (
         sum(weekly_concentration_terms) * (max_session_size_deviation + 1)
         + sum(session_size_deviation_terms)
@@ -662,16 +784,152 @@ def optimize_semester(
         ("canonical_temporal", "min", sum(canonical_temporal_terms)),
         ("canonical_resource", "min", sum(canonical_resource_terms)),
     ]
+    def decode(solver, proofs, stage, fully_proven=False, unit_bound=None):
+        values = {key: int(solver.value(expression)) for key, _direction, expression in objectives}
+        results: list[CourseOptimization] = []
+        for course_id, variables in sorted(course_vars.items()):
+            retained = variables.retain is not None and bool(solver.value(variables.retain))
+            sessions: list[GeneratedSession] = []
+            if retained:
+                sessions = [
+                    GeneratedSession(
+                        date=item.date,
+                        start_time=item.start_time,
+                        end_time=item.end_time,
+                        units=item.units,
+                        time_window_id=item.time_window_id,
+                        constraint_window_index=item.constraint_window_index,
+                        lecturer_id=item.lecturer_id,
+                        room_id=item.room_id,
+                    )
+                    for item in sorted(variables.course.current_sessions, key=lambda session: (session.date, session.start_time, session.lecturer_id, session.room_id))
+                ]
+            else:
+                for candidate in variables.candidate_set.candidates:
+                    if not solver.value(variables.temporal[candidate.candidate_id]):
+                        continue
+                    lecturer_id = next(item for item in candidate.lecturer_ids if solver.value(variables.lecturer[(candidate.candidate_id, item)]))
+                    room_id = next(item for item in candidate.room_ids if solver.value(variables.room[(candidate.candidate_id, item)]))
+                    sessions.append(GeneratedSession(
+                        date=candidate.date,
+                        start_time=candidate.start_time,
+                        end_time=candidate.end_time,
+                        units=candidate.units,
+                        time_window_id=candidate.time_window_id,
+                        constraint_window_index=candidate.constraint_window_index,
+                        lecturer_id=lecturer_id,
+                        room_id=room_id,
+                    ))
+            sessions.sort(key=lambda item: (item.date, item.start_time, item.lecturer_id or 0, item.room_id or 0))
+            evidence = list(variables.candidate_set.evidence)
+            scheduled = sum(item.units for item in sessions)
+            results.append(CourseOptimization(
+                course_id=course_id,
+                sessions=tuple(sessions),
+                retained_current=retained,
+                scheduled_units=scheduled,
+                lecturer_changes=_count_generated_changes(sessions, "lecturer_id"),
+                room_changes=_count_generated_changes(sessions, "room_id"),
+                evidence=tuple(_deduplicate_evidence(evidence)),
+            ))
+        result_by_course = {item.course_id: item for item in results}
+        for index, course_result in enumerate(results):
+            variables = course_vars[course_result.course_id]
+            if course_result.scheduled_units >= variables.course.total_units:
+                continue
+            evidence = list(course_result.evidence)
+            competing = any(
+                candidate.course_id == course_result.course_id
+                and any(
+                    other_id != course_result.course_id
+                    and any(
+                        intervals_overlap(candidate.date, candidate.start_time, candidate.end_time, session.date, session.start_time, session.end_time)
+                        and (
+                            candidate.cohort_id == course_vars[other_id].course.cohort_id
+                            or session.lecturer_id in candidate.lecturer_ids
+                            or session.room_id in candidate.room_ids
+                        )
+                        for session in other_result.sessions
+                    )
+                    for other_id, other_result in result_by_course.items()
+                )
+                for candidate in variables.candidate_set.candidates
+            )
+            if competing:
+                evidence.append(BlockingEvidence(
+                    "SELECTED_COURSE_COMPETITION",
+                    1,
+                    REASON_MESSAGES["SELECTED_COURSE_COMPETITION"],
+                ))
+            if not evidence and fully_proven:
+                evidence.append(BlockingEvidence(
+                    "COURSE_CONSTRAINT",
+                    1,
+                    REASON_MESSAGES["COURSE_CONSTRAINT"],
+                ))
+            results[index] = replace(
+                course_result,
+                evidence=tuple(_deduplicate_evidence(evidence)),
+            )
+        if generated_only and values["total_units"] <= 0:
+            course_details = []
+            for course_result in results:
+                course = course_vars[course_result.course_id].course
+                name = course.course_name or f"Course {course.course_id}"
+                reasons = ", ".join(item.message for item in course_result.evidence)
+                course_details.append(f"{name}: {reasons}")
+            raise NoGeneratedAlternative(
+                "No non-empty valid generated alternative exists. "
+                + "; ".join(course_details), courses=tuple(results)
+            )
+        return SemesterOptimizationResult(
+            courses=tuple(results),
+            optimal=fully_proven,
+            objectives=tuple(ObjectiveEvidence(key, direction, 'proven' if key in proofs else 'unfinished' if index == stage else 'not_attempted', values[key])
+                for index,(key,direction,_expression) in enumerate(objectives)),
+            unit_upper_bound=(values['total_units'] if 'total_units' in proofs else
+                valid_unit_upper_bound(values['total_units'], sum(c.total_units for c in courses), unit_bound)),
+            total_units=values["total_units"],
+            conflicts=values["conflicts"],
+            lecturer_changes=values["lecturer_changes"],
+            room_changes=values["room_changes"],
+            retained_drafts=values["retained_drafts"],
+            elapsed_milliseconds=max(int((monotonic() - started) * 1000), 0),
+            search_exhausted=control.clock() >= control.deadline,
+        )
+
     solver: cp_model.CpSolver | None = None
     tracked_vars = [var for variables in course_vars.values() for var in (
         list(variables.temporal.values()) + list(variables.lecturer.values()) + list(variables.room.values()) + ([variables.retain] if variables.retain is not None else [])
     )]
     objective_values: dict[str, int] = {}
-    for objective_name, direction, expression in objectives:
-        elapsed = monotonic() - started
-        remaining = deadline_seconds - elapsed
-        if remaining <= 0:
-            raise OptimalResultNotProven("The optimization deadline elapsed before every comparison stage was proven optimal.")
+    # Try the course's preferred size first, then fall back without excluding any
+    # allowed size. Keep canonical ranks and the coverage-first objectives intact.
+    preferred_decisions = sorted(all_temporal, key=lambda item: (
+        abs(2 * item[0].units - course_vars[item[0].course_id].course.preferred_size_twice),
+        item[0].date, item[0].start_time, item[0].course_id, item[0].units,
+    ))
+    if preferred_decisions:
+        model.add_decision_strategy([var for _, var in preferred_decisions],
+                                    cp_model.CHOOSE_FIRST, cp_model.SELECT_MAX_VALUE)
+    last_candidate = None
+    unit_bound = None
+    def unfinished(candidate, stage):
+        candidate = replace(candidate, optimal=False, objectives=tuple(
+            replace(evidence, proof_status='unfinished') if index == stage else evidence
+            for index, evidence in enumerate(candidate.objectives)))
+        if control.checkpoint is not None:
+            control.checkpoint(candidate)
+        return candidate
+    for stage, (objective_name, direction, expression) in enumerate(objectives):
+        try:
+            control.check()
+        except OptimalResultNotProven:
+            if allow_unproven and last_candidate is not None:
+                return unfinished(last_candidate, stage)
+            raise
+        control.progress(objective_name)
+        remaining = control.deadline - control.clock()
         model.clear_objective()
         if direction == "max":
             model.maximize(expression)
@@ -682,148 +940,95 @@ def optimize_semester(
         solver.parameters.num_search_workers = 1
         solver.parameters.random_seed = 0
         solver.parameters.cp_model_presolve = True
-        status = solver.solve(model)
+        if stage == 0:
+            solver.parameters.search_branching = cp_model.FIXED_SEARCH
+        finished = Event()
+        def watch_search(active_solver=solver):
+            while not finished.wait(.05):
+                if control.cancelled() or control.clock() >= control.deadline:
+                    active_solver.stop_search()
+                    return
+        watcher = Thread(target=watch_search, daemon=True)
+        watcher.start()
+        class Checkpoint(cp_model.CpSolverSolutionCallback):
+            last_sent = -float('inf')
+            def on_solution_callback(self):
+                nonlocal last_candidate
+                if control.cancelled():
+                    self.stop_search()
+                    return
+                if monotonic() - self.last_sent < .25:
+                    return
+                self.last_sent = monotonic()
+                try:
+                    last_candidate = decode(self, objective_values, stage, unit_bound=unit_bound)
+                    if control.checkpoint is not None:
+                        control.checkpoint(last_candidate)
+                except NoGeneratedAlternative:
+                    pass
+        try:
+            status = solver.solve(model, Checkpoint()) if allow_unproven and control.checkpoint is not None else solver.solve(model)
+        finally:
+            finished.set()
+            watcher.join()
+        if control.cancelled():
+            raise OptimizationCancelled("Optimization cancelled")
         if status == cp_model.MODEL_INVALID:
             raise OptimizationModelInvalid("The semester optimization model is invalid.")
+        if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            value = int(round(solver.objective_value))
+            if objective_name == 'total_units':
+                unit_bound = solver.best_objective_bound
+            if status == cp_model.OPTIMAL:
+                objective_values[objective_name] = value
+            if allow_unproven or stage == len(objectives)-1:
+                last_candidate = decode(solver, objective_values, stage,
+                    fully_proven=status == cp_model.OPTIMAL and stage == len(objectives)-1,
+                    unit_bound=unit_bound)
+                if control.checkpoint is not None:
+                    control.checkpoint(last_candidate)
         if status != cp_model.OPTIMAL:
+            if allow_unproven and last_candidate is not None:
+                return unfinished(last_candidate, stage)
             raise OptimalResultNotProven(
-                f"A fully optimal semester result was not proven for {objective_name} "
-                "within the operation deadline."
+                f"A fully optimal semester result was not proven for {objective_name} within the operation deadline."
             )
-        value = int(round(solver.objective_value))
-        objective_values[objective_name] = value
         model.add(expression == value)
         model.clear_hints()
         for variable in tracked_vars:
             model.add_hint(variable, solver.value(variable))
 
-    assert solver is not None
-    results: list[CourseOptimization] = []
-    for course_id, variables in sorted(course_vars.items()):
-        retained = variables.retain is not None and bool(solver.value(variables.retain))
-        sessions: list[GeneratedSession] = []
-        if retained:
-            sessions = [
-                GeneratedSession(
-                    date=item.date,
-                    start_time=item.start_time,
-                    end_time=item.end_time,
-                    units=item.units,
-                    time_window_id=item.time_window_id,
-                    constraint_window_index=item.constraint_window_index,
-                    lecturer_id=item.lecturer_id,
-                    room_id=item.room_id,
-                )
-                for item in sorted(variables.course.current_sessions, key=lambda session: (session.date, session.start_time, session.lecturer_id, session.room_id))
-            ]
-        else:
-            for candidate in variables.candidate_set.candidates:
-                if not solver.value(variables.temporal[candidate.candidate_id]):
-                    continue
-                lecturer_id = next(item for item in candidate.lecturer_ids if solver.value(variables.lecturer[(candidate.candidate_id, item)]))
-                room_id = next(item for item in candidate.room_ids if solver.value(variables.room[(candidate.candidate_id, item)]))
-                sessions.append(GeneratedSession(
-                    date=candidate.date,
-                    start_time=candidate.start_time,
-                    end_time=candidate.end_time,
-                    units=candidate.units,
-                    time_window_id=candidate.time_window_id,
-                    constraint_window_index=candidate.constraint_window_index,
-                    lecturer_id=lecturer_id,
-                    room_id=room_id,
-                ))
-        sessions.sort(key=lambda item: (item.date, item.start_time, item.lecturer_id or 0, item.room_id or 0))
-        evidence = list(variables.candidate_set.evidence)
-        scheduled = sum(item.units for item in sessions)
-        results.append(CourseOptimization(
-            course_id=course_id,
-            sessions=tuple(sessions),
-            retained_current=retained,
-            scheduled_units=scheduled,
-            lecturer_changes=_count_generated_changes(sessions, "lecturer_id"),
-            room_changes=_count_generated_changes(sessions, "room_id"),
-            evidence=tuple(_deduplicate_evidence(evidence)),
-        ))
-    result_by_course = {item.course_id: item for item in results}
-    for index, course_result in enumerate(results):
-        variables = course_vars[course_result.course_id]
-        if course_result.scheduled_units >= variables.course.total_units:
-            continue
-        evidence = list(course_result.evidence)
-        competing = any(
-            candidate.course_id == course_result.course_id
-            and any(
-                other_id != course_result.course_id
-                and any(
-                    intervals_overlap(candidate.date, candidate.start_time, candidate.end_time, session.date, session.start_time, session.end_time)
-                    and (
-                        candidate.cohort_id == course_vars[other_id].course.cohort_id
-                        or session.lecturer_id in candidate.lecturer_ids
-                        or session.room_id in candidate.room_ids
-                    )
-                    for session in other_result.sessions
-                )
-                for other_id, other_result in result_by_course.items()
-            )
-            for candidate in variables.candidate_set.candidates
-        )
-        if competing:
-            evidence.append(BlockingEvidence(
-                "SELECTED_COURSE_COMPETITION",
-                1,
-                REASON_MESSAGES["SELECTED_COURSE_COMPETITION"],
-            ))
-        if not evidence:
-            evidence.append(BlockingEvidence(
-                "COURSE_CONSTRAINT",
-                1,
-                REASON_MESSAGES["COURSE_CONSTRAINT"],
-            ))
-        results[index] = replace(
-            course_result,
-            evidence=tuple(_deduplicate_evidence(evidence)),
-        )
-    if generated_only and objective_values["total_units"] <= 0:
-        course_details = []
-        for course_result in results:
-            course = course_vars[course_result.course_id].course
-            name = course.course_name or f"Course {course.course_id}"
-            reasons = ", ".join(item.message for item in course_result.evidence)
-            course_details.append(f"{name}: {reasons}")
-        raise NoGeneratedAlternative(
-            "No non-empty valid generated alternative exists. "
-            + "; ".join(course_details)
-        )
-    return SemesterOptimizationResult(
-        courses=tuple(results),
-        total_units=objective_values["total_units"],
-        conflicts=objective_values["conflicts"],
-        lecturer_changes=objective_values["lecturer_changes"],
-        room_changes=objective_values["room_changes"],
-        retained_drafts=objective_values["retained_drafts"],
-        elapsed_milliseconds=min(int((monotonic() - started) * 1000), 60000),
-    )
+
+    assert last_candidate is not None
+    return last_candidate
 
 
-def _add_selected_conflict_constraints(model, all_temporal, lecturer_assignments, room_assignments):
-    for index, (first, first_var) in enumerate(all_temporal):
-        for second, second_var in all_temporal[index + 1:]:
-            if first.course_id == second.course_id or not intervals_overlap(first.date, first.start_time, first.end_time, second.date, second.start_time, second.end_time):
-                continue
-            if first.cohort_id == second.cohort_id:
-                model.add(first_var + second_var <= 1)
-    for assignments in (lecturer_assignments, room_assignments):
-        for items in assignments.values():
-            for index, (first, first_var) in enumerate(items):
-                for second, second_var in items[index + 1:]:
-                    if first.course_id != second.course_id and intervals_overlap(first.date, first.start_time, first.end_time, second.date, second.start_time, second.end_time):
-                        model.add(first_var + second_var <= 1)
+
+def _add_selected_conflict_constraints(model, all_temporal, lecturer_assignments, room_assignments, *, control=None):
+    cohorts = defaultdict(list)
+    for candidate, selected in all_temporal:
+        cohorts[candidate.cohort_id].append((candidate, selected))
+    for kind, assignments in (('cohort', cohorts), ('lecturer', lecturer_assignments), ('room', room_assignments)):
+        for resource_id, items in assignments.items():
+            days = defaultdict(list)
+            for candidate, selected in items:
+                if control is not None: control.check()
+                start = _time_ticks(candidate.start_time)
+                duration = _time_ticks(candidate.end_time) - start
+                interval = model.new_optional_fixed_size_interval_var(start, duration, selected,
+                    f'{kind}_{resource_id}_{candidate.date}_{candidate.course_id}_{candidate.candidate_id}')
+                days[candidate.date].append(interval)
+            for intervals in days.values():
+                if control is not None: control.check()
+                model.add_no_overlap(intervals)
 
 
-def _add_retained_alternatives(model, course_vars, fixed_sessions):
+def _add_retained_alternatives(model, course_vars, fixed_sessions, *, control=None):
     conflict_terms = []
     retained = [item for item in course_vars.values() if item.retain is not None]
     for variables in retained:
+        if control is not None:
+            control.check()
         assert variables.retain is not None
         fixed_conflicts = 0
         for current in variables.course.current_sessions:
@@ -868,7 +1073,38 @@ def _add_retained_alternatives(model, course_vars, fixed_sessions):
     return conflict_terms
 
 
-def _add_continuity(model, variables: _CourseVariables, *, lecturer: bool):
+def _cohort_day_room_penalties(model, course_vars, room_assignments, fixed_sessions, control):
+    """Soft cost for each additional room used by a cohort on one date."""
+    groups = defaultdict(lambda: defaultdict(list))
+    cohorts = {variables.course.cohort_id for variables in course_vars.values()}
+    for room_id, assignments in room_assignments.items():
+        for candidate, assigned in assignments:
+            control.check()
+            groups[(candidate.cohort_id, candidate.date)][room_id].append(assigned)
+    for variables in course_vars.values():
+        if variables.retain is not None:
+            for session in variables.course.current_sessions:
+                groups[(variables.course.cohort_id, session.date)][session.room_id].append(variables.retain)
+    for session in fixed_sessions:
+        if session.cohort_id in cohorts:
+            groups[(session.cohort_id, session.date)][session.room_id].append(1)
+    penalties = []
+    for index, rooms in enumerate(groups.values()):
+        control.check()
+        if len(rooms) < 2:
+            continue
+        used_rooms = []
+        for room_id, assignments in rooms.items():
+            used = model.new_bool_var(f'cohort_day_{index}_room_{room_id}_used')
+            model.add_max_equality(used, assignments)
+            used_rooms.append(used)
+        extra = model.new_int_var(0, len(rooms) - 1, f'cohort_day_{index}_extra_rooms')
+        model.add_max_equality(extra, [sum(used_rooms) - 1, 0])
+        penalties.append(extra)
+    return penalties
+
+
+def _add_continuity(model, variables: _CourseVariables, *, lecturer: bool, control=None):
     candidates = variables.candidate_set.candidates
     if not candidates:
         return
@@ -882,6 +1118,8 @@ def _add_continuity(model, variables: _CourseVariables, *, lecturer: bool):
     changes = variables.lecturer_changes if lecturer else variables.room_changes
     assignments = variables.lecturer if lecturer else variables.room
     for date_index, (session_date, date_candidates) in enumerate(sorted(by_date.items())):
+        if control is not None:
+            control.check()
         has_session = model.new_bool_var(f"course_{variables.course.course_id}_{'lecturer' if lecturer else 'room'}_has_{date_index}")
         temporal_vars = [variables.temporal[item.candidate_id] for item in date_candidates]
         model.add(has_session == sum(temporal_vars))

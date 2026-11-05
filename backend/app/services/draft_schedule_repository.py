@@ -663,7 +663,10 @@ def update_draft_session(
     end_time,
     lecturer_id: int | None = None,
     room_id: int,
+    units: int | None = None,
 ) -> DraftSchedule:
+    if units is not None and (isinstance(units, bool) or not isinstance(units, int) or units < 1):
+        raise DraftSessionEditValidationError("INVALID_SESSION_UNITS", "Lehreinheiten müssen eine positive ganze Zahl sein.")
     session = db.get(DraftSession, session_id)
     if session is None:
         raise PlanningInputNotFoundError("Draft Session not found.")
@@ -753,6 +756,8 @@ def update_draft_session(
     session.end_time = end_time
     session.lecturer_id = requested_lecturer_id
     session.room_id = room_id
+    if units is not None:
+        session.units = units
     draft.revision += 1
     db.flush()
     db.expire(draft, ["sessions"])

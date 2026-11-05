@@ -36,6 +36,31 @@ function button(label: string) {
 }
 
 describe('CalendarPlanningWorkspace', () => {
+  it('shows lecturer names and room reference codes in occurrence details', () => {
+    const workspace: LoadedCalendarWorkspace = loadedCalendarWorkspaceFixture()
+    workspace.filterFacets = { ...workspace.filterFacets,
+      lecturers: [{ value: 'lecturer:1', label: 'Ada Lovelace' }],
+      rooms: [{ value: 'room:1', label: 'CAMPUS-055' }],
+    }
+    const host = renderWorkspace(workspace)
+    const dateInput = host.querySelector<HTMLInputElement>('input[inputmode="numeric"]')!
+    for (const [kind, date] of [['Lehrtermin', '05.10.2026'], ['Prüfungstermin', '10.12.2026']]) {
+      act(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(dateInput, date)
+        dateInput.dispatchEvent(new Event('change', { bubbles: true }))
+      })
+      const occurrence = [...host.querySelectorAll<HTMLButtonElement>('.calendar-occurrence')]
+        .find((item) => item.textContent?.includes(kind))!
+      expect(occurrence.textContent).toContain('Raum: CAMPUS-055')
+      act(() => occurrence.click())
+      const details = host.querySelector('.occurrence-detail')!
+      const valueFor = (label: string) => [...details.querySelectorAll('dt')]
+        .find((item) => item.textContent === label)?.nextElementSibling?.textContent
+      expect(valueFor('Lehrende Person')).toBe('Ada Lovelace')
+      expect(valueFor('Raum')).toBe('CAMPUS-055')
+    }
+  })
+
   it('shows revision identity, five truthful summaries, and teaching/exam distinction', () => {
     renderWorkspace(loadedCalendarWorkspaceFixture() as CalendarWorkspace)
 
@@ -133,6 +158,7 @@ describe('CalendarPlanningWorkspace', () => {
         courseIds: [1],
         teachingSessionIds: [1],
         examIds: [],
+        teachingCoverage: [{ courseId: 1, requiredUnits: 4, plannedUnits: 2, remainingUnits: 2 }],
       },
     })
     expect(onTraceCourse).toHaveBeenCalledWith(1)

@@ -3,16 +3,40 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { BatchResultSummary } from './BatchResultSummary'
-import { mixedOptimizationResultFixture } from '../test/optimizationFixtures'
+import { mixedOptimizationResultFixture, optimizationResultFixture, candidateProofFixture } from '../test/optimizationFixtures'
 
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('BatchResultSummary', () => {
+  it('describes zero-unit saved coverage and excluded holidays without claiming improvement or a failed save',()=>{
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    const result={...optimizationResultFixture,
+      outcomes:[{...optimizationResultFixture.outcomes[0],status:'improved_partial' as const,
+        courseName:'Communication & Presentation',scheduledUnits:0,remainingUnits:34,improvement:null,
+        reasons:[{code:'INSTITUTION_HOLIDAY',message:'Excluded date.',relatedCount:1,holidayDate:'2027-03-20',holidayName:'Osterferien'},
+          {code:'SELECTED_COURSE_COMPETITION',message:'Shared capacity.',relatedCount:1}]}],
+      summary:{...optimizationResultFixture.summary,total:1,complete:0,improvedPartial:1,scheduledUnits:0,remainingUnits:34}}
+    act(()=>root.render(<BatchResultSummary result={result} onRetryFailed={vi.fn()}/>))
+    expect(document.body.textContent).toContain('1 unvollständig')
+    expect(document.body.textContent).not.toContain('verbessert')
+    expect(document.body.textContent).toContain('als mögliche Lehrtermine ausgeschlossen')
+    expect(document.body.textContent).toContain('gemeinsame Zeitfenster oder Ressourcen')
+    expect(document.body.textContent).not.toContain('Ein betroffener Termin liegt auf einem Feiertag')
+    expect(document.body.textContent).not.toContain('Die Aktion konnte nicht abgeschlossen werden')
+  })
+  it('keeps accepted unproven work saved and retains the original proof scope',()=>{
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    act(()=>root.render(<BatchResultSummary result={{...optimizationResultFixture,proof:candidateProofFixture,
+      summary:{...optimizationResultFixture.summary,optimalForPreparedSnapshot:false}}} onRetryFailed={vi.fn()}/>))
+    expect(document.body.textContent).toContain('Gespeichert nach ausdrücklicher Übernahme')
+    expect(document.body.textContent).toContain('höchstens 10 zusätzliche Lehreinheiten')
+    expect(document.body.textContent).not.toContain('Eingaben nicht gelöst werden konnten')
+  })
   it('shows all outcome counts, progress, reasons, proof scope, and retry action', () => {
     const retry = vi.fn()
     const root = createRoot(document.body.appendChild(document.createElement('div')))
     act(() => root.render(<BatchResultSummary result={mixedOptimizationResultFixture} onRetryFailed={retry} />))
-    expect(document.body.textContent).toContain('1 vollständig · 1 teilweise verbessert · 1 unverändert · 1 fehlgeschlagen · 1 veraltet')
+    expect(document.body.textContent).toContain('1 vollständig · 1 unvollständig · 1 unverändert · 1 fehlgeschlagen · 1 veraltet')
     expect(document.body.textContent).toContain('Raumkonflikt')
     expect(document.body.textContent).toContain('Blockierende aktive Prüfung #44')
     expect(document.body.textContent).toContain('Für den vorbereiteten Datenstand als optimal nachgewiesen')

@@ -1,0 +1,25 @@
+# Later-start correction: search-space completeness
+
+Goal3 correction4,2026-11-05. This restores the approved maximization/within-window intent (FR001/009/010/015/016), without changing hard rules, priorities, per-course one-session/date, or adding fairness. No dependency, configuration or planner control is added. The original window-start-only enumeration omitted hard-valid sequential assignments and could therefore give an unsound full-problem coverage claim.
+
+## Finite candidate set without a time grid
+
+For each date, collect starts of every applicable selected-course window; ends of fixed sessions; starts/ends of current sessions (possible retained alternatives); and ends of applicable lecturer/room unavailability. Include exact seconds/microseconds, not rounded minutes.
+
+Collect every allowed session duration that fits an applicable window across the selected courses. Starting from these boundary times, repeatedly add those durations, bounded by the latest window end minus the smallest usable duration. This finite event closure is shared across courses on that date. Each course then filters candidate starts/durations through its own window, dates, resource eligibility/activity/capacity/availability, fixed occupancy and exam boundaries. Holidays/unavailable dates are still excluded. Shared construction matters: the end of a different course with a different session size can define a start.
+
+## Why this suffices for the existing objectives
+
+Take any feasible joint assignment and fix its courses, dates, session sizes, resource choices and retained alternatives. All current preceding objectives depend on these facts, not on the precise time within a date: total units, conflicts, weekly distribution/size, adjacent resource transitions and retained-draft choices. Move generated sessions earlier while preserving the temporal order of every pair sharing a cohort, lecturer or room, and remaining in their applicable free window/resource segment. A generated session stops at a window start, an unavailable/fixed/retained interval end, or another generated session's end. Following predecessor ends must terminate because every session duration is positive. Consequently every start in such a left-shifted assignment is one of the boundary seeds plus a finite sum of allowed durations. The event closure contains it.
+
+Thus every feasible assignment of the preceding objective facts has an at-least-as-early representative in the enumerated set. The canonical temporal objective cannot get worse when moving starts earlier; candidate temporal rank is monotone in date/start, including exact sub-minute boundaries. Canonical resource values are preserved by retaining resource choices. The bounded closure therefore preserves an optimum under the existing priority order, rather than treating an arbitrary minute/five-minute grid as complete. Unproven native search still yields only unproven evidence; the correction does not promote FEASIBLE/UNKNOWN to optimal.
+
+This argument relies on the existing rules (positive fixed session duration; allowed windows/resource intervals; no additional soft preferred exact time or minimum inter-session break). Such new rules would require revisiting this representation rather than silently assuming this proof covers them. Internal teaching-unit breaks remain included in each session duration.
+
+## Model and verification
+
+Expanded temporal choices use native optional fixed-size intervals grouped by date and cohort/lecturer/room. NoOverlap replaces pairwise overlap inequalities while preserving the same half-open interval rule: a session may begin exactly when another ends. Integer microseconds preserve non-rounded boundaries. Resource choice remains conditional, and course/date at-most-one is unchanged. Deadline/cancel checks cover closure, candidate enumeration and interval construction.
+
+Test-first evidence: two one-day sequential-course cases failed at3of7 and2of8units before correction; five fixed cohort/lecturer/room/recurring/dated-release cases failed with no candidate. After correction all seven pass, including exact09:07:30 starts. Four independent exhaustive minute-by-minute oracles compare maximum units and earliest-time representatives in those small cases under varied windows/protected intervals; all pass. These are behavioral oracles, not assertions that mirror the closure implementation. Existing affected solver/validator/worker/operation/API222tests passed before the additional oracle cases; full current regression/performance is recorded in acceptance.md.
+
+User data has been cleared to master data by the user:94courses and zero drafts/sessions/exams/operations/revisions at observation. The real11course300second trial uses a SQLite backup under .tmp, detached spawned solver input and independent exact validation. No user planning data is restored or written. Its actual result/proof/timing are recorded separately in real-11courses-cycle4.json; incomplete search must remain provisional even if it exceeds the old192bound.

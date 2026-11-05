@@ -3,6 +3,8 @@ import type {
   OptimizationGenerationResult,
   OptimizationPreparation,
   RegenerationComparison,
+  OptimizationOperationStatus,
+  CandidateProof,
 } from '../api/conflictAwareGeneration'
 
 const effectiveConstraints = {
@@ -17,6 +19,7 @@ const effectiveConstraints = {
 }
 
 export const optimizationPreparationFixture: OptimizationPreparation = {
+  budgetPolicy: { defaultSeconds: 300, ceilingSeconds: 1800, policyFingerprint: 'c'.repeat(64) },
   semesterId: 1,
   scheduleRevisionId: 11,
   unavailableDates: ['2026-10-26'],
@@ -96,4 +99,72 @@ export const decisionRequiredGenerationFixture: OptimizationDecisionRequiredResu
 
 export const directSavedGenerationFixture: OptimizationGenerationResult = {
   ...optimizationResultFixture,
+}
+
+export const operationIdFixture = '00000000-0000-4000-8000-000000000001'
+export const contextSecretFixture = 'ab'.repeat(32)
+export const budgetPolicyFixture = {
+  defaultSeconds: 300,
+  ceilingSeconds: 1800,
+  policyFingerprint: 'c'.repeat(64),
+}
+
+export const operationStatusFixture: OptimizationOperationStatus = {
+  operationId: operationIdFixture,
+  semesterId: 1,
+  scheduleRevisionId: 11,
+  selectedCourseIds: [1, 2],
+  selectionCount: 2,
+  phase: 'optimizing',
+  budgetSeconds: 300,
+  elapsedMilliseconds: 65001,
+  budgetExhausted: false,
+  currentObjectiveKey: 'total_units',
+  saved: false,
+  canAccept: false,
+  canFinalize: false,
+  review: null,
+  result: null,
+  errors: [],
+  terminalCode: null,
+}
+
+/** A controllable transport response for polling, navigation and decision races. */
+export function deferredResponse<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, resolve, reject }
+}
+
+export const objectiveKeysFixture = [
+  'total_units', 'conflicts', 'schedule_shape', 'lecturer_changes',
+  'room_changes', 'retained_drafts', 'canonical_temporal', 'canonical_resource',
+] as const
+
+export function objectiveEvidenceFixture(unfinishedIndex = 0) {
+  return objectiveKeysFixture.map((objectiveKey, index) => ({
+    objectiveKey,
+    direction: objectiveKey === 'total_units' || objectiveKey === 'retained_drafts' ? 'maximize' : 'minimize',
+    proofStatus: index < unfinishedIndex ? 'proven' : index === unfinishedIndex ? 'unfinished' : 'not_attempted',
+    value: index === 0 ? 80 : null,
+    preparedSnapshotToken: 'd'.repeat(64),
+    candidateFingerprint: 'a'.repeat(64),
+    condition: null,
+  }))
+}
+
+export const candidateProofFixture: CandidateProof = {
+  preparedSnapshotToken:'d'.repeat(64), candidateFingerprint:'a'.repeat(64),
+  selectedCourseIds:[1,2], requiredUnits:100, scheduledUnits:80,
+  coverageProven:false,preferencesProven:false,
+  objectives:objectiveKeysFixture.map((objectiveKey,index)=>({
+    objectiveKey,direction:objectiveKey==='total_units'||objectiveKey==='retained_drafts'?'max':'min',
+    proofStatus:index===0?'unfinished':'not_attempted',value:index===0?80:null,
+    preparedSnapshotToken:'d'.repeat(64),candidateFingerprint:'a'.repeat(64),condition:null,
+  })),
+  unitUpperBound:90,additionalPossibleUnits:10,gapKnown:true,
 }

@@ -21,11 +21,15 @@ def initialize_database(engine: Engine) -> None:
             connection.commit()
         with connection.begin():
             inspector = inspect(connection)
+            if "optimization_operations" in inspector.get_table_names() and not _has_complete_optimization_schema(inspector):
+                raise UnsupportedSchemaStateError("Incomplete optimization operation schema; back up and inspect migration 0011.")
             if not inspector.get_table_names():
                 Base.metadata.create_all(bind=connection)
                 inspector = inspect(connection)
             elif not _is_current_schema(inspector):
-                if _is_pre_planner_authentication_schema(inspector):
+                if _is_fs016_schema(inspector):
+                    pass  # Complete predecessor; apply 0011 below.
+                elif _is_pre_planner_authentication_schema(inspector):
                     migration = _load_migration("0010_planner_authentication.py")
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
@@ -128,10 +132,20 @@ def initialize_database(engine: Engine) -> None:
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
 
-                if not _is_current_schema(inspect(connection)):
-                    raise UnsupportedSchemaStateError(
-                        "FS-016 database migration completed without producing the expected schema."
-                    )
+                inspector = inspect(connection)
+                if _is_fs016_schema(inspector) and "optimization_operations" not in inspector.get_table_names():
+                    migration = _load_migration("0011_optimization_operations.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+
+            if "preferred_session_units" not in _column_names(inspect(connection), "courses"):
+                migration = _load_migration("0012_preferred_session_units.py")
+                migration.op = Operations(MigrationContext.configure(connection))
+                migration.upgrade()
+            if not _is_current_schema(inspect(connection)):
+                raise UnsupportedSchemaStateError(
+                    "Database migration completed without producing the expected schema."
+                )
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=ON")
             connection.commit()
@@ -139,6 +153,28 @@ def initialize_database(engine: Engine) -> None:
 
 
 def _is_current_schema(inspector) -> bool:
+    return (_is_fs016_schema(inspector) and _has_complete_optimization_schema(inspector)
+            and "preferred_session_units" in _column_names(inspector, "courses"))
+
+
+def _has_complete_optimization_schema(inspector) -> bool:
+    table = _planning.OptimizationOperation.__table__
+    if not set(table.columns.keys()).issubset(_column_names(inspector, table.name)):
+        return False
+    columns = {column["name"]: column for column in inspector.get_columns(table.name)}
+    expected_checks = {constraint.name for constraint in table.constraints if constraint.__class__.__name__ == "CheckConstraint"}
+    actual_checks = {constraint["name"] for constraint in inspector.get_check_constraints(table.name)}
+    return (
+        inspector.get_pk_constraint(table.name)["constrained_columns"] == ["operation_id"]
+        and all(columns[column.name]["nullable"] == column.nullable for column in table.columns)
+        and expected_checks.issubset(actual_checks)
+        and {"owner_account_id", "semester_id", "schedule_revision_id"}.issubset({
+            item["constrained_columns"][0] for item in inspector.get_foreign_keys(table.name)
+        })
+    )
+
+
+def _is_fs016_schema(inspector) -> bool:
     return (
         _has_complete_lecturer_review_schema(inspector)
         and _has_complete_planner_authentication_schema(inspector)

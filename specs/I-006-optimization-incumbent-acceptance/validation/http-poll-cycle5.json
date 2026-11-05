@@ -1,0 +1,927 @@
+{
+  "isolatedDatabase": "C:\\Codex\\planner-resource\\.tmp\\i006-http-poll-10bde828\\planner.db",
+  "selectionCount": 11,
+  "samples": [
+    {
+      "wallSeconds": 0.047,
+      "requestSeconds": 0.0,
+      "phase": "preparing",
+      "elapsedMilliseconds": 46
+    },
+    {
+      "wallSeconds": 2.062,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 2046
+    },
+    {
+      "wallSeconds": 4.047,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 4046
+    },
+    {
+      "wallSeconds": 6.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 6061
+    },
+    {
+      "wallSeconds": 8.078,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 8061
+    },
+    {
+      "wallSeconds": 10.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 10061
+    },
+    {
+      "wallSeconds": 12.078,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 12078
+    },
+    {
+      "wallSeconds": 14.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 14061
+    },
+    {
+      "wallSeconds": 16.078,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 16078
+    },
+    {
+      "wallSeconds": 18.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 18061
+    },
+    {
+      "wallSeconds": 20.078,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 20078
+    },
+    {
+      "wallSeconds": 22.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 22061
+    },
+    {
+      "wallSeconds": 24.078,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 24061
+    },
+    {
+      "wallSeconds": 26.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 26061
+    },
+    {
+      "wallSeconds": 28.078,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 28061
+    },
+    {
+      "wallSeconds": 30.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 30061
+    },
+    {
+      "wallSeconds": 32.078,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 32061
+    },
+    {
+      "wallSeconds": 34.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 34061
+    },
+    {
+      "wallSeconds": 36.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 36061
+    },
+    {
+      "wallSeconds": 38.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 38061
+    },
+    {
+      "wallSeconds": 40.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 40061
+    },
+    {
+      "wallSeconds": 42.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 42061
+    },
+    {
+      "wallSeconds": 44.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 44061
+    },
+    {
+      "wallSeconds": 46.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 46061
+    },
+    {
+      "wallSeconds": 48.078,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 48061
+    },
+    {
+      "wallSeconds": 50.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 50061
+    },
+    {
+      "wallSeconds": 52.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 52061
+    },
+    {
+      "wallSeconds": 54.062,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 54061
+    },
+    {
+      "wallSeconds": 56.094,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 56094
+    },
+    {
+      "wallSeconds": 58.094,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 58078
+    },
+    {
+      "wallSeconds": 60.078,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 60078
+    },
+    {
+      "wallSeconds": 62.094,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 62078
+    },
+    {
+      "wallSeconds": 64.078,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 64078
+    },
+    {
+      "wallSeconds": 66.094,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 66094
+    },
+    {
+      "wallSeconds": 68.078,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 68078
+    },
+    {
+      "wallSeconds": 70.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 70094
+    },
+    {
+      "wallSeconds": 72.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 72094
+    },
+    {
+      "wallSeconds": 74.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 74109
+    },
+    {
+      "wallSeconds": 76.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 76094
+    },
+    {
+      "wallSeconds": 78.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 78109
+    },
+    {
+      "wallSeconds": 80.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 80094
+    },
+    {
+      "wallSeconds": 82.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 82094
+    },
+    {
+      "wallSeconds": 84.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 84094
+    },
+    {
+      "wallSeconds": 86.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 86109
+    },
+    {
+      "wallSeconds": 88.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 88094
+    },
+    {
+      "wallSeconds": 90.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 90109
+    },
+    {
+      "wallSeconds": 92.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 92094
+    },
+    {
+      "wallSeconds": 94.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 94094
+    },
+    {
+      "wallSeconds": 96.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 96094
+    },
+    {
+      "wallSeconds": 98.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 98094
+    },
+    {
+      "wallSeconds": 100.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 100109
+    },
+    {
+      "wallSeconds": 102.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 102109
+    },
+    {
+      "wallSeconds": 104.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 104109
+    },
+    {
+      "wallSeconds": 106.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 106109
+    },
+    {
+      "wallSeconds": 108.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 108109
+    },
+    {
+      "wallSeconds": 110.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 110109
+    },
+    {
+      "wallSeconds": 112.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 112109
+    },
+    {
+      "wallSeconds": 114.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 114109
+    },
+    {
+      "wallSeconds": 116.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 116094
+    },
+    {
+      "wallSeconds": 118.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 118094
+    },
+    {
+      "wallSeconds": 120.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 120094
+    },
+    {
+      "wallSeconds": 122.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 122109
+    },
+    {
+      "wallSeconds": 124.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 124094
+    },
+    {
+      "wallSeconds": 126.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 126094
+    },
+    {
+      "wallSeconds": 128.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 128109
+    },
+    {
+      "wallSeconds": 130.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 130094
+    },
+    {
+      "wallSeconds": 132.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 132094
+    },
+    {
+      "wallSeconds": 134.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 134109
+    },
+    {
+      "wallSeconds": 136.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 136094
+    },
+    {
+      "wallSeconds": 138.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 138094
+    },
+    {
+      "wallSeconds": 140.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 140109
+    },
+    {
+      "wallSeconds": 142.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 142094
+    },
+    {
+      "wallSeconds": 144.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 144094
+    },
+    {
+      "wallSeconds": 146.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 146109
+    },
+    {
+      "wallSeconds": 148.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 148094
+    },
+    {
+      "wallSeconds": 150.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 150094
+    },
+    {
+      "wallSeconds": 152.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 152094
+    },
+    {
+      "wallSeconds": 154.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 154109
+    },
+    {
+      "wallSeconds": 156.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 156094
+    },
+    {
+      "wallSeconds": 158.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 158094
+    },
+    {
+      "wallSeconds": 160.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 160109
+    },
+    {
+      "wallSeconds": 162.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 162094
+    },
+    {
+      "wallSeconds": 164.109,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 164109
+    },
+    {
+      "wallSeconds": 166.094,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 166094
+    },
+    {
+      "wallSeconds": 168.109,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 168109
+    },
+    {
+      "wallSeconds": 170.125,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 170125
+    },
+    {
+      "wallSeconds": 172.125,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 172109
+    },
+    {
+      "wallSeconds": 174.109,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 174109
+    },
+    {
+      "wallSeconds": 176.109,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 176109
+    },
+    {
+      "wallSeconds": 178.125,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 178125
+    },
+    {
+      "wallSeconds": 180.125,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 180109
+    },
+    {
+      "wallSeconds": 182.109,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 182109
+    },
+    {
+      "wallSeconds": 184.109,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 184109
+    },
+    {
+      "wallSeconds": 186.125,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 186125
+    },
+    {
+      "wallSeconds": 188.109,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 188109
+    },
+    {
+      "wallSeconds": 190.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 190125
+    },
+    {
+      "wallSeconds": 192.141,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 192125
+    },
+    {
+      "wallSeconds": 194.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 194125
+    },
+    {
+      "wallSeconds": 196.141,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 196125
+    },
+    {
+      "wallSeconds": 198.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 198125
+    },
+    {
+      "wallSeconds": 200.141,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 200140
+    },
+    {
+      "wallSeconds": 202.219,
+      "requestSeconds": 0.094,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 202125
+    },
+    {
+      "wallSeconds": 204.141,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 204140
+    },
+    {
+      "wallSeconds": 206.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 206125
+    },
+    {
+      "wallSeconds": 208.141,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 208140
+    },
+    {
+      "wallSeconds": 210.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 210125
+    },
+    {
+      "wallSeconds": 212.141,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 212140
+    },
+    {
+      "wallSeconds": 214.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 214125
+    },
+    {
+      "wallSeconds": 216.141,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 216140
+    },
+    {
+      "wallSeconds": 218.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 218125
+    },
+    {
+      "wallSeconds": 220.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 220125
+    },
+    {
+      "wallSeconds": 222.125,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 222125
+    },
+    {
+      "wallSeconds": 224.141,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 224140
+    },
+    {
+      "wallSeconds": 226.156,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 226155
+    },
+    {
+      "wallSeconds": 228.156,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 228140
+    },
+    {
+      "wallSeconds": 230.141,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 230140
+    },
+    {
+      "wallSeconds": 232.156,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 232155
+    },
+    {
+      "wallSeconds": 234.156,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 234155
+    },
+    {
+      "wallSeconds": 236.172,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 236171
+    },
+    {
+      "wallSeconds": 238.187,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 238186
+    },
+    {
+      "wallSeconds": 240.172,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 240171
+    },
+    {
+      "wallSeconds": 242.172,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 242171
+    },
+    {
+      "wallSeconds": 244.187,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 244171
+    },
+    {
+      "wallSeconds": 246.172,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 246171
+    },
+    {
+      "wallSeconds": 248.187,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 248186
+    },
+    {
+      "wallSeconds": 250.172,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 250171
+    },
+    {
+      "wallSeconds": 252.187,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 252186
+    },
+    {
+      "wallSeconds": 254.172,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 254171
+    },
+    {
+      "wallSeconds": 256.187,
+      "requestSeconds": 0.015,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 256186
+    },
+    {
+      "wallSeconds": 258.172,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 258171
+    },
+    {
+      "wallSeconds": 260.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 260186
+    },
+    {
+      "wallSeconds": 262.203,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 262186
+    },
+    {
+      "wallSeconds": 264.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 264186
+    },
+    {
+      "wallSeconds": 266.203,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 266186
+    },
+    {
+      "wallSeconds": 268.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 268186
+    },
+    {
+      "wallSeconds": 270.203,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 270186
+    },
+    {
+      "wallSeconds": 272.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 272186
+    },
+    {
+      "wallSeconds": 274.203,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 274186
+    },
+    {
+      "wallSeconds": 276.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 276186
+    },
+    {
+      "wallSeconds": 278.203,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 278203
+    },
+    {
+      "wallSeconds": 280.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 280186
+    },
+    {
+      "wallSeconds": 282.203,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 282186
+    },
+    {
+      "wallSeconds": 284.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 284186
+    },
+    {
+      "wallSeconds": 286.203,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 286186
+    },
+    {
+      "wallSeconds": 288.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 288186
+    },
+    {
+      "wallSeconds": 290.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 290186
+    },
+    {
+      "wallSeconds": 292.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 292186
+    },
+    {
+      "wallSeconds": 294.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 294186
+    },
+    {
+      "wallSeconds": 296.203,
+      "requestSeconds": 0.016,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 296203
+    },
+    {
+      "wallSeconds": 298.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 298186
+    },
+    {
+      "wallSeconds": 300.187,
+      "requestSeconds": 0.0,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 300186
+    },
+    {
+      "wallSeconds": 302.187,
+      "requestSeconds": 0.0,
+      "phase": "awaiting_decision",
+      "elapsedMilliseconds": 302186
+    }
+  ],
+  "errors": [],
+  "saved": false,
+  "budgetSeconds": 300,
+  "phaseBeforeTestCleanup": "awaiting_decision",
+  "reachedReview": true,
+  "elapsedSeconds": 302.187,
+  "candidateUnits": 316,
+  "coverageProven": false,
+  "cleanupPhase": "cancelled"
+}

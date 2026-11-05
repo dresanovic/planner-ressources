@@ -15,6 +15,7 @@ class CourseOptionResponse(BaseModel):
     total_units: int = Field(alias="totalUnits")
     min_session_units: int = Field(alias="minSessionUnits")
     max_session_units: int = Field(alias="maxSessionUnits")
+    preferred_session_units: float | None = Field(default=None, alias="preferredSessionUnits")
     semester_id: int = Field(alias="semesterId")
     availability: AvailabilityResponse
     lecturer: PlanningEntityResponse | None

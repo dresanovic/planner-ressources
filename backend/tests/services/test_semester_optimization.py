@@ -10,6 +10,254 @@ from app.services.semester_optimization import CurrentSession, FixedSession, NoG
 from tests.optimization_fixtures import SEMESTER_START, optimization_course
 
 
+def test_same_cohort_same_day_prefers_shared_room_across_courses():
+    courses = [replace(optimization_course(i, total_units=2, min_units=2, max_units=2,
+        cohort_id=1, room_ids=rooms), planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START))
+        for i, rooms in [(1, (1, 2)), (2, (2,))]]
+    result = optimize_semester(courses, [], generated_only=True, deadline_seconds=10)
+    assert result.total_units == 4 and result.optimal
+    assert {s.room_id for c in result.courses for s in c.sessions} == {2}
+
+
+def test_same_day_room_preference_includes_fixed_occupancy_but_allows_fallback():
+    course = replace(optimization_course(1, total_units=2, min_units=2, max_units=2,
+        cohort_id=1, room_ids=(1, 2)), planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START))
+    fixed = [FixedSession(99, 1, 99, 2, SEMESTER_START, time(8), time(8, 45))]
+    preferred = optimize_semester([course], fixed, generated_only=True, deadline_seconds=10)
+    assert preferred.courses[0].sessions[0].room_id == 2
+    fallback = optimize_semester([replace(course, rooms=(course.rooms[0],))], fixed,
+                                generated_only=True, deadline_seconds=10)
+    assert fallback.total_units == 2 and fallback.courses[0].sessions[0].room_id == 1
+
+
+def test_first_search_candidate_tries_preferred_three_units_before_fallback_sizes():
+    from app.services.semester_optimization import OptimizationSearchControl, OptimizationCancelled, monotonic
+    checkpoints = []
+    course = replace(optimization_course(1, total_units=8),
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START + timedelta(days=14)))
+    control = OptimizationSearchControl(deadline=monotonic() + 10,
+        checkpoint=checkpoints.append, cancelled=lambda: bool(checkpoints))
+    with pytest.raises(OptimizationCancelled):
+        optimize_semester([course], [], generated_only=True, control=control, allow_unproven=True)
+    sessions = sorted(checkpoints[0].courses[0].sessions, key=lambda item: (item.date, item.start_time))
+    assert [item.units for item in sessions] == [3, 3, 2]
+
+
+def test_explicit_preferred_size_overrides_midpoint_in_first_candidate():
+    from app.services.semester_optimization import OptimizationSearchControl, OptimizationCancelled, monotonic
+    checkpoints = []
+    course = replace(optimization_course(1, total_units=6, min_units=2, max_units=6),
+        preferred_session_units=3,
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START + timedelta(days=7)))
+    control = OptimizationSearchControl(deadline=monotonic() + 10,
+        checkpoint=checkpoints.append, cancelled=lambda: bool(checkpoints))
+    with pytest.raises(OptimizationCancelled):
+        optimize_semester([course], [], generated_only=True, control=control, allow_unproven=True)
+    assert [item.units for item in checkpoints[0].courses[0].sessions] == [3, 3]
+
+
+@pytest.mark.parametrize('preferred,total,expected', [(2, 8, [2, 2, 2, 2]), (4, 8, [4, 4]), (3.5, 7, [3, 4])])
+def test_shape_objective_uses_explicit_preference_and_half_unit_ties(preferred, total, expected):
+    course = replace(optimization_course(1, total_units=total, min_units=2, max_units=5),
+        preferred_session_units=preferred,
+        planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START + timedelta(days=21)),
+        windows=(TimeWindowPlan(1, 0, time(8), time(14)),))
+    result = optimize_semester([course], [], generated_only=True, deadline_seconds=10)
+    assert result.optimal and result.total_units == total
+    assert sorted(item.units for item in result.courses[0].sessions) == expected
+
+
+@pytest.mark.parametrize('minutes,required',[(360,(2,2,3)),(405,(2,2,2,2))])
+def test_later_starts_fill_shared_cohort_window_with_sequential_courses(minutes,required):
+    end=(datetime.combine(SEMESTER_START,time(8))+timedelta(minutes=minutes)).time()
+    courses=[replace(optimization_course(i,total_units=units,min_units=units,max_units=units,
+        cohort_id=1,lecturer_ids=(1,),room_ids=(1,)),
+        planning_period=PlanningPeriodPlan(SEMESTER_START,SEMESTER_START),
+        windows=(TimeWindowPlan(1,0,time(8),end),)) for i,units in enumerate(required,1)]
+    result=optimize_semester(courses,[],generated_only=True,deadline_seconds=10)
+    assert result.optimal and result.total_units==sum(required)
+    sessions=sorted((s for c in result.courses for s in c.sessions),key=lambda s:s.start_time)
+    assert all(left.end_time<=right.start_time for left,right in zip(sessions,sessions[1:]))
+
+
+@pytest.mark.parametrize('blocked_by',['cohort','lecturer','room','recurring','dated'])
+def test_later_start_respects_exact_fixed_and_availability_end_boundary(blocked_by):
+    from app.models.planning import ResourceUnavailabilityPeriod,ResourceUnavailabilityWeekday
+    course=replace(optimization_course(1,total_units=2,min_units=2,max_units=2),
+        planning_period=PlanningPeriodPlan(SEMESTER_START,SEMESTER_START))
+    boundary=time(9,7,30)
+    fixed=[]
+    if blocked_by in ('cohort','lecturer','room'):
+        fixed=[FixedSession(99,1 if blocked_by=='cohort' else 99,
+            1 if blocked_by=='lecturer' else 99,1 if blocked_by=='room' else 99,
+            SEMESTER_START,time(8),boundary)]
+    else:
+        period=ResourceUnavailabilityPeriod(kind=blocked_by,start_time=time(8),end_time=boundary,
+            start_date=SEMESTER_START,end_date=SEMESTER_START,
+            weekdays=[ResourceUnavailabilityWeekday(weekday=0)] if blocked_by=='recurring' else [])
+        course=replace(course,lecturers=(replace(course.lecturers[0],unavailable_periods=(period,)),))
+    result=optimize_semester([course],fixed,generated_only=True,deadline_seconds=10)
+    assert result.total_units==2
+    assert result.courses[0].sessions[0].start_time==boundary
+
+
+@pytest.mark.parametrize('ranges,blocked',[
+    (((0,120),(15,150),(5,180)),(50,65)),
+    (((7,110),(20,130),(0,90)),(45,70)),
+    (((0,60),(10,75),(20,100)),(30,50)),
+    (((0,180),(0,180),(0,180)),(45,60)),
+])
+def test_temporal_event_closure_matches_independent_minute_exhaustive_oracle(ranges,blocked):
+    # Tiny exact oracle considers every minute, rather than using production candidates.
+    duration=45
+    best=(-1,float('inf'))
+    def visit(index,chosen):
+        nonlocal best
+        if index==len(ranges):
+            score=(len(chosen),sum(chosen))
+            if score[0]>best[0] or (score[0]==best[0] and score[1]<best[1]):best=score
+            return
+        visit(index+1,chosen)
+        begin,end=ranges[index]
+        for start in range(begin,end-duration+1):
+            if start<blocked[1] and blocked[0]<start+duration:continue
+            if any(start<other+duration and other<start+duration for other in chosen):continue
+            visit(index+1,(*chosen,start))
+    visit(0,())
+    at=lambda minutes:(datetime.combine(SEMESTER_START,time(8))+timedelta(minutes=minutes)).time()
+    courses=[replace(optimization_course(i,total_units=1,min_units=1,max_units=1,cohort_id=1,
+        lecturer_ids=(1,),room_ids=(1,)),planning_period=PlanningPeriodPlan(SEMESTER_START,SEMESTER_START),
+        windows=(TimeWindowPlan(i,0,at(begin),at(end)),)) for i,(begin,end) in enumerate(ranges,1)]
+    fixed=[FixedSession(99,1,1,1,SEMESTER_START,at(blocked[0]),at(blocked[1]))]
+    if best[0]==0:
+        with pytest.raises(NoGeneratedAlternative):optimize_semester(courses,fixed,generated_only=True)
+    else:
+        result=optimize_semester(courses,fixed,generated_only=True,deadline_seconds=10)
+        starts=[s.start_time.hour*60+s.start_time.minute-8*60 for c in result.courses for s in c.sessions]
+        assert (result.total_units,sum(starts))==best
+
+
+def test_shared_deadline_stops_candidate_enumeration_before_solver(monkeypatch):
+    from app.services import semester_optimization as service
+    from tests.optimization_fixtures import OptimizationClock
+    clock = OptimizationClock()
+    control = service.OptimizationSearchControl(deadline=2, clock=clock)
+    original = service._candidate_resources
+    calls = []
+    def consume_time(*args, **kwargs):
+        calls.append(1)
+        clock.advance(1)
+        return original(*args, **kwargs)
+    monkeypatch.setattr(service, "_candidate_resources", consume_time)
+    with pytest.raises(service.OptimalResultNotProven):
+        service.optimize_semester([optimization_course(1)], [], control=control)
+    assert 0 < len(calls) <= 2
+
+
+def test_registered_cancellation_prevents_model_build_and_solve(monkeypatch):
+    from app.services import semester_optimization as service
+    control = service.OptimizationSearchControl(deadline=float('inf'), cancelled=lambda: True)
+    def forbidden():
+        pytest.fail("Cancellation must be checked before model creation")
+    monkeypatch.setattr(service.cp_model, "CpModel", forbidden)
+    with pytest.raises(service.OptimizationCancelled):
+        service.optimize_semester([optimization_course(1)], [], control=control)
+
+
+def test_native_search_is_stopped_when_cancellation_registers(monkeypatch):
+    from threading import Event
+    from app.services import semester_optimization as service
+    cancelled = Event()
+    stopped = Event()
+    class ControlledSolver:
+        def __init__(self):
+            from types import SimpleNamespace
+            self.parameters = SimpleNamespace()
+        def solve(self, model):
+            cancelled.set()
+            assert stopped.wait(2), "Native solve was not interrupted"
+            return service.cp_model.UNKNOWN
+        def stop_search(self):
+            stopped.set()
+    monkeypatch.setattr(service.cp_model, "CpSolver", ControlledSolver)
+    control = service.OptimizationSearchControl(
+        deadline=service.monotonic() + 30, cancelled=cancelled.is_set,
+    )
+    with pytest.raises(service.OptimizationCancelled):
+        service.optimize_semester([optimization_course(1)], [], control=control)
+    assert stopped.is_set()
+
+
+def solver_statuses(monkeypatch, statuses):
+    from app.services import semester_optimization as service
+    original = service.cp_model.CpSolver
+    remaining = iter(statuses)
+    calls = []
+    class ControlledStatusSolver:
+        def __init__(self):
+            self.real=original()
+            self.parameters=self.real.parameters
+            self.reported=None
+        def solve(self, model, callback=None):
+            self.reported=next(remaining)
+            calls.append(self.reported)
+            if self.reported in (service.cp_model.UNKNOWN, service.cp_model.MODEL_INVALID): return self.reported
+            self.real.solve(model, callback)
+            return self.reported
+        def value(self, variable):
+            assert self.reported != service.cp_model.UNKNOWN, 'UNKNOWN is not an assignment'
+            return self.real.value(variable)
+        @property
+        def objective_value(self): return self.real.objective_value
+        @property
+        def best_objective_bound(self): return self.real.best_objective_bound
+        def stop_search(self): self.real.stop_search()
+    monkeypatch.setattr(service.cp_model,'CpSolver',ControlledStatusSolver)
+    return calls
+
+
+def test_feasible_candidate_is_retained_without_later_search_or_fabricated_proof(monkeypatch):
+    from app.services import semester_optimization as service
+    calls=solver_statuses(monkeypatch,[service.cp_model.FEASIBLE])
+    result=optimize_semester([optimization_course(1,total_units=2)],[],generated_only=True,allow_unproven=True)
+    assert result.total_units == 2 and not result.optimal
+    assert [o.proof_status for o in result.objectives] == ['unfinished']+['not_attempted']*7
+    assert calls == [service.cp_model.FEASIBLE]
+
+
+def test_later_unknown_preserves_earlier_exact_candidate_with_its_evidence(monkeypatch):
+    from app.services import semester_optimization as service
+    calls=solver_statuses(monkeypatch,[service.cp_model.OPTIMAL,service.cp_model.UNKNOWN])
+    checkpoints=[]
+    control=service.OptimizationSearchControl(deadline=service.monotonic()+30,checkpoint=checkpoints.append)
+    result=optimize_semester([optimization_course(1,total_units=2)],[],generated_only=True,control=control,allow_unproven=True)
+    assert not result.optimal and result.total_units == 2
+    assert result.objectives[0].proof_status == 'proven'
+    assert result.objectives[1].proof_status == 'unfinished'
+    assert result.unit_upper_bound == 2
+    assert checkpoints and checkpoints[-1].courses == result.courses
+    assert calls == [service.cp_model.OPTIMAL,service.cp_model.UNKNOWN]
+
+
+def test_unknown_without_assignment_is_not_decoded(monkeypatch):
+    from app.services import semester_optimization as service
+    solver_statuses(monkeypatch,[service.cp_model.UNKNOWN])
+    with pytest.raises(service.OptimalResultNotProven):
+        optimize_semester([optimization_course(1)],[],generated_only=True)
+
+
+@pytest.mark.parametrize('bound,objective,same_problem,expected', [
+    (90,'total_units',True,90), (90.2,'total_units',True,91),
+    (120,'total_units',True,100), (79,'total_units',True,None),
+    (float('inf'),'total_units',True,None), (float('nan'),'total_units',True,None),
+    (90,'conflicts',True,None), (90,'total_units',False,None),
+    (None,'total_units',True,None), (True,'total_units',True,None),
+])
+def test_coverage_bound_requires_finite_matching_coverage_evidence(bound,objective,same_problem,expected):
+    from app.services.semester_optimization import valid_unit_upper_bound
+    assert valid_unit_upper_bound(80,100,bound,objective_key=objective,same_problem=same_problem) == expected
+
+
 def test_candidate_generation_obeys_unavailable_dates_sizes_windows_and_resource_eligibility():
     course = replace(
         optimization_course(1, total_units=4, min_units=2, max_units=3),

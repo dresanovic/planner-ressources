@@ -173,6 +173,7 @@ function DraftSchedulePanelStateful({
         endTime: session.endTime,
         lecturerId: session.lecturerId,
         roomId: session.roomId,
+        units: session.units,
       })
       setEditErrors([])
       onRequestedEditHandled?.()
@@ -219,6 +220,13 @@ function DraftSchedulePanelStateful({
         >
           <strong>Betroffener Datensatz</strong>
           <span>{workspaceListContext.traceTarget.label}</span>
+          {workspaceListContext.traceTarget.teachingCoverage?.map((coverage, _, all) => (
+            <span key={coverage.courseId}>
+              {all.length > 1 && `${coverage.courseName}: `}
+              Benötigt: {coverage.requiredUnits} LE · Geplant: {coverage.plannedUnits} LE · Offen: {coverage.remainingUnits} LE
+              {' '}(gesamte Lehrveranstaltung)
+            </span>
+          ))}
           {workspaceListContext.traceTarget.teachingSessionIds.length === 0
             && workspaceListContext.traceTarget.examIds.length === 0
             && <span>Kein geplanter Termin entspricht den aktiven Filtern. Verwenden Sie die vorhandenen Planungsfelder für diese {label('course.singular')}.</span>}
@@ -289,10 +297,11 @@ function DraftSchedulePanelStateful({
             visibleExams.length === 0 && <p className="empty-state">Keine Termine entsprechen den aktiven Filtern.</p>
           ) : viewMode === 'list' ? (
             <div className="session-table" aria-label="Entwurfstermine">
+              <p>1 LE = 45 Minuten Unterricht. Die Dauer von Beginn bis Ende enthält auch die Pausen zwischen den LE.</p>
               <div className="session-row teaching-session-row session-header">
                 <span>Datum</span>
                 <span>Zeit</span>
-                <span>Dauer</span>
+                <span>Dauer / LE</span>
                 <span>{label('course.tableHeading')}</span>
                 <span>{label('cohort.tableHeading')}</span>
                 <span>{label('lecturer.tableHeading')}</span>
@@ -326,7 +335,7 @@ function DraftSchedulePanelStateful({
                       <SessionAlerts alerts={session.validationAlerts} lecturerName={resourceLabel(session.lecturer)} roomName={resourceLabel(session.room)} cohortName={session.context.cohort.name} />
                     </span>
                     <span data-label="Zeit">{session.startTime}-{session.endTime}</span>
-                    <span data-label="Dauer">{derivedLengthLabel(session.startTime, session.endTime)}</span>
+                    <span data-label="Dauer / LE">{derivedLengthLabel(session.startTime, session.endTime)} · {session.units} LE</span>
                     <span data-label={label('course.tableHeading')}>{session.context.course.name}</span>
                     <span data-label={label('cohort.tableHeading')}>{session.context.cohort.name}</span>
                     <span data-label={label('lecturer.tableHeading')}>{resourceLabel(session.lecturer)}</span>

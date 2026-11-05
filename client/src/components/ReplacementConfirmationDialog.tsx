@@ -1,16 +1,27 @@
-import { useEffect, useRef, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
 import type {
+  BlockingReason,
   CoverageFacts,
   OptimizationDecisionRequiredResult,
 } from '../api/conflictAwareGeneration'
 import { label } from '../config/terminology'
+import { OptimizationProofFacts } from './OptimizationProofFacts'
+import { formatCalendarDate } from '../utils/datePresentation'
 
 type Props = {
   preview: OptimizationDecisionRequiredResult
   disabled?: boolean
   onAccept: () => void
   onCancel: () => void
+  onRetry?: () => void
+}
+
+function remainingReasonText(reason: BlockingReason): string {
+  if (reason.code === 'INSTITUTION_HOLIDAY' && reason.holidayDate) {
+    return `Unterrichtsfreie Tage wurden als mögliche Lehrtermine ausgeschlossen. ${reason.holidayName ? `Feiertag „${reason.holidayName}“, ` : ''}betroffenes Datum: ${formatCalendarDate(reason.holidayDate)}. Dies beschreibt keinen gespeicherten Termin auf einem Feiertag.`
+  }
+  return reason.message
 }
 
 export function ReplacementConfirmationDialog({
@@ -18,8 +29,15 @@ export function ReplacementConfirmationDialog({
   disabled = false,
   onAccept,
   onCancel,
+  onRetry,
 }: Props) {
   const dialogRef = useRef<HTMLElement>(null)
+  const [retryConfirmation,setRetryConfirmation]=useState(false)
+
+  useEffect(()=>{
+    if(retryConfirmation) dialogRef.current?.querySelector<HTMLButtonElement>('[data-retry-back]')?.focus()
+    else dialogRef.current?.querySelector<HTMLButtonElement>('[data-retry-open]')?.focus()
+  },[retryConfirmation])
 
   useEffect(() => {
     const returnFocus = document.activeElement instanceof HTMLElement
@@ -36,6 +54,7 @@ export function ReplacementConfirmationDialog({
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === 'Escape' && !disabled) {
       event.preventDefault()
+      if(retryConfirmation) {setRetryConfirmation(false);return}
       onCancel()
       return
     }
@@ -83,9 +102,9 @@ export function ReplacementConfirmationDialog({
         <h2 id="regeneration-comparison-title">Stundenpläne vergleichen</h2>
         <p id="regeneration-comparison-description">
           Für die gesamte Auswahl ist eine gemeinsame Entscheidung erforderlich.
-          Beim Übernehmen werden alle ausgewählten gespeicherten Termine ersetzt,
-          einschließlich plannerseitig erstellter oder bearbeiteter Termine.
+          {preview.hasSavedSessions === false ? ' Keine gespeicherten Lehrtermine in dieser Auswahl. Die Übernahme erstellt die erzeugten Stundenpläne.' : ' Beim Übernehmen werden alle ausgewählten gespeicherten Termine ersetzt, einschließlich plannerseitig erstellter oder bearbeiteter Termine.'}
         </p>
+        {preview.proof && <><p role="status"><strong>Noch nicht gespeichert.</strong> Die gesamte Auswahl bleibt bis zur ausdrücklichen Übernahme vorläufig. Auch eine geringere Abdeckung darf übernommen werden.</p><OptimizationProofFacts proof={preview.proof}/></>}
 
         <ComparisonPair
           current={preview.comparison.current}
@@ -121,23 +140,33 @@ export function ReplacementConfirmationDialog({
                   <h4>Gründe für verbleibende Lehreinheiten</h4>
                   <ul>
                     {course.remainingReasons.map((reason, index) => (
-                      <li key={`${reason.code}-${index}`}>{reason.message}</li>
+                      <li key={`${reason.code}-${index}`}>{remainingReasonText(reason)}</li>
                     ))}
                   </ul>
                 </div>
               )}
+              {course.generated.remainingUnits > 0 && course.remainingReasons.length === 0 && <p>Für die verbleibenden Lehreinheiten liegen keine belegten Gründe vor. Daraus folgt nicht, dass weitere Termine unmöglich sind.</p>}
+              {preview.proof && !preview.proof.coverageProven && course.generated.remainingUnits > 0 && <p>Diese Angaben sind beobachtete Einschränkungen. Ein Nachweis, dass weitere Einheiten unmöglich sind, fehlt.</p>}
             </section>
           ))}
         </div>
 
-        <div className="dialog-actions">
+        {retryConfirmation ? <section className="retry-confirmation" aria-label="Neuen Versuch bestätigen">
+          <h3>Aktuellen Vorschlag verwerfen?</h3>
+          <p>Der neue Versuch startet mit den aktuellen gespeicherten Eingaben und setzt diese Suche nicht fort. Er kann schlechter ausfallen oder kein Ergebnis liefern. Das aktuelle konfigurierte Zeitbudget wird vor dem neuen Start angezeigt. Für mehr Zeit kann die Installationsbetreuung die Konfiguration ändern; alternativ wählen Sie weniger Lehrveranstaltungen.</p>
+          <div className="dialog-actions">
+            <button type="button" data-retry-back onClick={()=>setRetryConfirmation(false)} disabled={disabled}>Zurück zum Vergleich</button>
+            <button type="button" onClick={onRetry} disabled={disabled}>Verwerfen und neuen Versuch vorbereiten</button>
+          </div>
+        </section> : <div className="dialog-actions">
           <button type="button" className="secondary-button" onClick={onCancel} disabled={disabled}>
             Abbrechen
           </button>
           <button type="button" onClick={onAccept} disabled={disabled}>
             {disabled ? 'Wird übernommen…' : 'Neu erzeugten Stundenplan übernehmen'}
           </button>
-        </div>
+          {onRetry && <button type="button" data-retry-open className="secondary-button" disabled={disabled} onClick={()=>setRetryConfirmation(true)}>Erneut optimieren</button>}
+        </div>}
       </section>
     </div>
   )

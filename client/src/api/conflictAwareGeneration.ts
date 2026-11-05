@@ -39,6 +39,80 @@ export type OptimizationPreparation = {
   sharedSnapshotToken: string
   courses: PreparedOptimizationCourse[]
   replacementCourseIds: number[]
+  budgetPolicy: OptimizationBudgetPolicy
+}
+
+export type OptimizationBudgetPolicy = {
+  defaultSeconds: number
+  ceilingSeconds: number
+  policyFingerprint: string
+}
+
+export type OptimizationOperationPhase =
+  | 'preparing' | 'optimizing' | 'checking' | 'ready_to_save' | 'awaiting_decision'
+  | 'saving' | 'saved' | 'cancelled' | 'timeout_no_candidate' | 'failed' | 'stale' | 'interrupted'
+
+/** Live authority is memory-only and never part of a status or saved receipt. */
+export type OptimizationOperationContext = { operationId: string; contextSecret: string }
+export type OptimizationOutcomeIdentity = { operationId: string }
+export type OptimizationOperationStatus = {
+  operationId: string
+  semesterId: number
+  scheduleRevisionId: number
+  selectedCourseIds: number[]
+  selectionCount: number
+  phase: OptimizationOperationPhase
+  budgetSeconds: number
+  elapsedMilliseconds: number
+  budgetExhausted: boolean
+  currentObjectiveKey: string | null
+  saved: boolean
+  canAccept: boolean
+  canFinalize: boolean
+  review: OptimizationDecisionRequiredResult | null
+  result: OptimizationGenerationResult | null
+  errors: OptimizationError[]
+  terminalCode: string | null
+}
+
+export type OptimizationOperationStart = OptimizationOperationContext & {
+  policyFingerprint: string
+  preparation: PreparedGenerationEvidence
+}
+
+export async function startOptimizationOperation(preparation: OptimizationPreparation, context: OptimizationOperationContext, signal?: AbortSignal): Promise<OptimizationOperationStatus> {
+  validateSelection(preparation.courses.map(course=>course.courseId))
+  return operationRequest('/operations', {
+    method:'POST', signal, body:JSON.stringify({...context,policyFingerprint:preparation.budgetPolicy.policyFingerprint,
+      preparation:{semesterId:preparation.semesterId,scheduleRevisionId:preparation.scheduleRevisionId,
+        unavailableDates:preparation.unavailableDates,sharedSnapshotToken:preparation.sharedSnapshotToken,
+        courses:preparation.courses.map(course=>({courseId:course.courseId,expectedDraftScheduleId:course.draftScheduleId,
+          expectedDraftRevision:course.draftRevision,inputSnapshotToken:course.inputSnapshotToken}))}}),
+  }, true)
+}
+
+export function getOptimizationOperation(operationId: string, secret?: string, signal?: AbortSignal): Promise<OptimizationOperationStatus> {
+  return operationRequest(`/operations/${encodeURIComponent(operationId)}`, {
+    signal, headers:secret ? {'X-Optimization-Context':secret} : {},
+  })
+}
+
+export function decideOptimizationOperation(context: OptimizationOperationContext, candidateFingerprint: string, finalize=false, signal?: AbortSignal): Promise<OptimizationOperationStatus> {
+  return operationRequest(`/operations/${encodeURIComponent(context.operationId)}/${finalize ? 'finalize' : 'accept'}`, {
+    method:'POST',signal,body:JSON.stringify({contextSecret:context.contextSecret,candidateFingerprint}),
+  }, true)
+}
+
+export function cancelOptimizationOperation(operationId: string, reason='cancel', keepalive=false): Promise<OptimizationOperationStatus> {
+  return operationRequest(`/operations/${encodeURIComponent(operationId)}/cancel`,{
+    method:'POST',body:JSON.stringify({reason}),keepalive,
+  },true)
+}
+
+async function operationRequest(path: string, init: RequestInit, activity=false): Promise<OptimizationOperationStatus> {
+  const response=await plannerFetch(`/api/draft-schedules/optimization${path}`, {...init,...(activity ? {activity:'user' as const} : {})})
+  if (!response.ok) throw await parseOptimizationError(response)
+  return response.json()
 }
 
 export type ArrangementImprovement = {
@@ -63,6 +137,7 @@ export type CourseOptimizationOutcome = {
 }
 
 export type OptimizationGenerationResult = {
+  proof?: CandidateProof | null
   mode: 'direct_saved'
   semesterId: number
   summary: {
@@ -121,11 +196,37 @@ export type PreparedGenerationEvidence = {
 }
 
 export type OptimizationDecisionRequiredResult = {
+  proof?: CandidateProof | null
+  hasSavedSessions?: boolean
   mode: 'decision_required'
   saved: false
   candidateFingerprint: string
   preparedEvidence: PreparedGenerationEvidence
   comparison: RegenerationComparison
+}
+
+export type ObjectiveProof = {
+  objectiveKey: string
+  direction: 'max' | 'min'
+  proofStatus: 'proven' | 'unfinished' | 'not_attempted' | 'conditional'
+  value: number | null
+  preparedSnapshotToken: string
+  candidateFingerprint: string
+  condition: Record<string, number> | null
+}
+
+export type CandidateProof = {
+  preparedSnapshotToken: string
+  candidateFingerprint: string
+  selectedCourseIds: number[]
+  requiredUnits: number
+  scheduledUnits: number
+  coverageProven: boolean
+  preferencesProven: boolean
+  objectives: ObjectiveProof[]
+  unitUpperBound: number | null
+  additionalPossibleUnits: number | null
+  gapKnown: boolean
 }
 
 export type OptimizationGenerationResponse =

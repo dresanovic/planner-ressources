@@ -102,6 +102,7 @@ class CourseDetailsInput(BaseModel):
     total_units: int = Field(alias="totalUnits")
     min_session_units: int = Field(alias="minSessionUnits")
     max_session_units: int = Field(alias="maxSessionUnits")
+    preferred_session_units: float | None = Field(default=None, alias="preferredSessionUnits", strict=True, allow_inf_nan=False, multiple_of=0.5)
     semester_id: int = Field(alias="semesterId")
     cohort_id: int = Field(alias="cohortId")
     study_type_id: int = Field(alias="studyTypeId")
@@ -192,6 +193,7 @@ class CourseResponse(BaseModel):
     total_units: int = Field(alias="totalUnits")
     min_session_units: int = Field(alias="minSessionUnits")
     max_session_units: int = Field(alias="maxSessionUnits")
+    preferred_session_units: float | None = Field(default=None, alias="preferredSessionUnits")
     semester: EntitySummaryResponse | None
     cohort: EntitySummaryResponse
     study_type: EntitySummaryResponse = Field(alias="studyType")

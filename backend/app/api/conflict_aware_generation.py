@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -30,12 +30,57 @@ from app.services.semester_optimization import NoGeneratedAlternative, OptimalRe
 from app.services.schedule_lifecycle import LifecycleFailure, require_active_working_revision
 from app.api.schedule_lifecycle import lifecycle_failure_response
 from app.services.planning_outcomes import retain_planning_outcome
+from app.services.optimization_config import OptimizationConfigurationError
+from app.services import optimization_operations as operations
+from app.schemas.conflict_aware_generation import (
+    OptimizationOperationStart, OptimizationOperationDecision, OptimizationOperationCancel,
+    OptimizationOperationStatus,
+)
 
 
 router = APIRouter(
     prefix="/api/draft-schedules/optimization",
     tags=["conflict-aware semester optimization"],
 )
+
+
+def _operation_call(callback):
+    try:
+        return callback()
+    except operations.OperationFailure as exc:
+        return JSONResponse(status_code=exc.status, content={'errors': [{'code': exc.code, 'message': exc.message}]})
+    except OptimizationConfigurationError as exc:
+        return JSONResponse(status_code=503, content={'errors':[{'code':'OPTIMIZATION_CONFIGURATION_INVALID','message':str(exc)}]})
+    except LifecycleFailure as exc:
+        return lifecycle_failure_response(exc)
+
+
+@router.post('/operations', response_model=OptimizationOperationStatus, status_code=202)
+def start_optimization_operation(body: OptimizationOperationStart, request: Request, db: Session = Depends(get_db)):
+    return _operation_call(lambda: operations.start_operation(db, body, request.state.planner_auth))
+
+
+@router.get('/operations/{operation_id}', response_model=OptimizationOperationStatus)
+def read_optimization_operation(operation_id: str, request: Request, db: Session = Depends(get_db)):
+    return _operation_call(lambda: operations.get_status(db, operation_id, request.state.planner_auth,
+        request.headers.get('X-Optimization-Context')))
+
+
+@router.post('/operations/{operation_id}/accept', response_model=OptimizationOperationStatus)
+def accept_optimization_operation(operation_id: str, body: OptimizationOperationDecision, request: Request, db: Session = Depends(get_db)):
+    return _operation_call(lambda: operations.apply_operation(db, operation_id, request.state.planner_auth,
+        body.context_secret, body.candidate_fingerprint))
+
+
+@router.post('/operations/{operation_id}/finalize', response_model=OptimizationOperationStatus)
+def finalize_optimization_operation(operation_id: str, body: OptimizationOperationDecision, request: Request, db: Session = Depends(get_db)):
+    return _operation_call(lambda: operations.apply_operation(db, operation_id, request.state.planner_auth,
+        body.context_secret, body.candidate_fingerprint, finalize=True))
+
+
+@router.post('/operations/{operation_id}/cancel', response_model=OptimizationOperationStatus)
+def cancel_optimization_operation(operation_id: str, body: OptimizationOperationCancel, request: Request, db: Session = Depends(get_db)):
+    return _operation_call(lambda: operations.cancel_operation(db, operation_id, request.state.planner_auth))
 
 
 @router.post("/prepare", response_model=OptimizationPreparationResponse)
@@ -52,6 +97,10 @@ def prepare_conflict_aware_generation(
             request.unavailable_dates,
             request.schedule_revision_id,
         )
+    except OptimizationConfigurationError as exc:
+        return JSONResponse(status_code=503, content={"errors": [{
+            "code": "OPTIMIZATION_CONFIGURATION_INVALID", "message": str(exc),
+        }]})
     except LifecycleFailure as exc:
         return lifecycle_failure_response(exc)
     except SemesterNotFoundError as exc:
@@ -69,58 +118,7 @@ def generate_conflict_aware_drafts(
     request: OptimizationGenerationRequest,
     db: Session = Depends(get_db),
 ):
-    course_ids = [item.course_id for item in request.courses]
-    if len(set(course_ids)) != len(course_ids):
-        return _request_failure("DUPLICATE_COURSE_SELECTION", "Select each course only once.")
-    if list(canonical_unavailable_dates(request.unavailable_dates)) != request.unavailable_dates:
-        return _request_failure(
-            "INVALID_PREPARED_SNAPSHOT",
-            "Unavailable dates must echo the canonical deduplicated preparation values.",
-        )
-    try:
-        require_active_working_revision(db, request.semester_id, request.schedule_revision_id)
-        result = generate_optimization(
-            db,
-            request.semester_id,
-            request.courses,
-            request.unavailable_dates,
-            request.shared_snapshot_token,
-            request.schedule_revision_id,
-        )
-        if isinstance(result, OptimizationDecisionRequiredResult):
-            db.rollback()
-            return result
-        _retain_saved_outcomes(db, request.schedule_revision_id, result)
-        db.commit()
-        return result
-    except SemesterNotFoundError as exc:
-        db.rollback()
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except LifecycleFailure as exc:
-        db.rollback()
-        return lifecycle_failure_response(exc)
-    except InvalidOptimizationSelection as exc:
-        db.rollback()
-        return _request_failure(exc.code, exc.message)
-    except StaleOptimizationCandidate as exc:
-        db.rollback()
-        return _conflict_failure("STALE_PLANNING_INPUT", str(exc))
-    except NoGeneratedAlternative as exc:
-        db.rollback()
-        return _operation_failure("NO_VALID_ALTERNATIVE", str(exc), status.HTTP_503_SERVICE_UNAVAILABLE)
-    except OptimalResultNotProven as exc:
-        db.rollback()
-        return _operation_failure("OPTIMAL_RESULT_NOT_PROVEN", str(exc), status.HTTP_503_SERVICE_UNAVAILABLE)
-    except OptimizationModelInvalid as exc:
-        db.rollback()
-        return _operation_failure("OPTIMIZATION_MODEL_INVALID", str(exc), status.HTTP_503_SERVICE_UNAVAILABLE)
-    except Exception:
-        db.rollback()
-        return _operation_failure(
-            "OPTIMIZATION_OPERATION_FAILED",
-            "The optimization operation failed. No uncommitted result was saved.",
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    return _conflict_failure('OPERATION_API_REQUIRED', 'Bitte den Optimierungslauf über die aktuelle Oberfläche starten.')
 
 
 @router.post(
@@ -132,61 +130,7 @@ def accept_conflict_aware_drafts(
     request: AcceptRegenerationRequest,
     db: Session = Depends(get_db),
 ):
-    course_ids = [item.course_id for item in request.courses]
-    if len(set(course_ids)) != len(course_ids):
-        return _request_failure("DUPLICATE_COURSE_SELECTION", "Select each course only once.")
-    if list(canonical_unavailable_dates(request.unavailable_dates)) != request.unavailable_dates:
-        return _request_failure(
-            "INVALID_PREPARED_SNAPSHOT",
-            "Unavailable dates must echo the canonical deduplicated preparation values.",
-        )
-    try:
-        require_active_working_revision(
-            db, request.semester_id, request.schedule_revision_id
-        )
-        result = accept_optimization(
-            db,
-            request.semester_id,
-            request.courses,
-            request.unavailable_dates,
-            request.shared_snapshot_token,
-            request.schedule_revision_id,
-            request.candidate_fingerprint,
-        )
-        _retain_saved_outcomes(db, request.schedule_revision_id, result)
-        db.commit()
-        return result
-    except SemesterNotFoundError as exc:
-        db.rollback()
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except LifecycleFailure as exc:
-        db.rollback()
-        return lifecycle_failure_response(exc)
-    except InvalidOptimizationSelection as exc:
-        db.rollback()
-        return _request_failure(exc.code, exc.message)
-    except StaleOptimizationCandidate as exc:
-        db.rollback()
-        return _conflict_failure("STALE_PLANNING_INPUT", str(exc))
-    except CandidateNotReproducible as exc:
-        db.rollback()
-        return _conflict_failure("CANDIDATE_NOT_REPRODUCIBLE", str(exc))
-    except NoGeneratedAlternative as exc:
-        db.rollback()
-        return _operation_failure("NO_VALID_ALTERNATIVE", str(exc), status.HTTP_503_SERVICE_UNAVAILABLE)
-    except OptimalResultNotProven as exc:
-        db.rollback()
-        return _operation_failure("OPTIMAL_RESULT_NOT_PROVEN", str(exc), status.HTTP_503_SERVICE_UNAVAILABLE)
-    except OptimizationModelInvalid as exc:
-        db.rollback()
-        return _operation_failure("OPTIMIZATION_MODEL_INVALID", str(exc), status.HTTP_503_SERVICE_UNAVAILABLE)
-    except Exception:
-        db.rollback()
-        return _operation_failure(
-            "OPTIMIZATION_OPERATION_FAILED",
-            "The accepted optimization operation failed. No result was saved.",
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    return _conflict_failure('OPERATION_API_REQUIRED', 'Bitte den Optimierungslauf über die aktuelle Oberfläche starten.')
 
 
 def _request_failure(code: str, message: str):

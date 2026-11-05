@@ -19,6 +19,7 @@ class FailureCode(StrEnum):
 
 
 class SessionEditFailureCode(StrEnum):
+    INVALID_SESSION_UNITS = "INVALID_SESSION_UNITS"
     INVALID_SESSION_DATE = "INVALID_SESSION_DATE"
     INVALID_SESSION_TIME_RANGE = "INVALID_SESSION_TIME_RANGE"
     INSUFFICIENT_ROOM_CAPACITY = "INSUFFICIENT_ROOM_CAPACITY"
@@ -53,6 +54,7 @@ class UpdateDraftSessionRequest(BaseModel):
     end_time: str = Field(alias="endTime")
     lecturer_id: int | None = Field(default=None, alias="lecturerId")
     room_id: int = Field(alias="roomId")
+    units: int | None = Field(default=None, strict=True, ge=1)
 
 
 class PlanningPeriodInput(BaseModel):

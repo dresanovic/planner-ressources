@@ -361,7 +361,7 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
     if (category === 'semesters') return { name: record.name, startDate: record.startDate as string, endDate: record.endDate as string }
     if (category === 'cohorts') return { name: record.name, studentCount: record.studentCount as number }
     if (category === 'study-types') return { name: record.name }
-    if (category === 'courses') return { name: record.name, totalUnits: record.totalUnits as number, minSessionUnits: record.minSessionUnits as number, maxSessionUnits: record.maxSessionUnits as number, semesterId: (record.semester as Option | null)?.id ?? '', cohortId: (record.cohort as Option).id, studyTypeId: (record.studyType as Option).id }
+    if (category === 'courses') return { name: record.name, totalUnits: record.totalUnits as number, minSessionUnits: record.minSessionUnits as number, maxSessionUnits: record.maxSessionUnits as number, preferredSessionUnits: (record.preferredSessionUnits as number | null) ?? '', semesterId: (record.semester as Option | null)?.id ?? '', cohortId: (record.cohort as Option).id, studyTypeId: (record.studyType as Option).id }
     return { studyTypeId: record.studyTypeId as number, weekday: record.weekday as number, startTime: record.startTime as string, endTime: record.endTime as string }
   }
 

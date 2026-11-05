@@ -189,8 +189,8 @@ export function SessionPane({
             <div><dt>Studienart</dt><dd>{course?.studyType ?? 'Nicht verfügbar'}</dd></div>
             <div><dt>Datum und Uhrzeit</dt><dd>{formatCalendarDate(occurrence.date)}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
             <div><dt>{label('cohort.singular')}</dt><dd>{occurrence.cohort}</dd></div>
-            <div><dt>{label('lecturer.singular')}</dt><dd>{occurrence.lecturerRefs.join(', ')}</dd></div>
-            <div><dt>{label('room.singular')}</dt><dd>{occurrence.kind === 'exam' ? `${occurrence.assignedRoomName} (${occurrence.roomRef})` : occurrence.roomRef}</dd></div>
+            <div><dt>{label('lecturer.singular')}</dt><dd>{occurrence.lecturerRefs.map((ref) => workspace.filterFacets.lecturers.find((item) => item.value === ref)?.label ?? 'Nicht verfügbar').join(', ')}</dd></div>
+            <div><dt>{label('room.singular')}</dt><dd>{workspace.filterFacets.rooms.find((item) => item.value === occurrence.roomRef)?.label ?? (occurrence.kind === 'exam' ? occurrence.assignedRoomName : 'Nicht verfügbar')}</dd></div>
             {occurrence.kind === 'teaching' ? (
               <>
                 <div><dt>Lehreinheiten</dt><dd>{occurrence.teachingUnits}</dd></div>

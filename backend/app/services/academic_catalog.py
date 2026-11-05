@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import time
+from math import isfinite
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
@@ -42,7 +43,7 @@ def normalize_name(value: str) -> str:
     return value.strip().casefold()
 
 
-def validate_course_units(total: int, minimum: int, maximum: int) -> None:
+def validate_course_units(total: int, minimum: int, maximum: int, preferred: float | None = None) -> None:
     errors: list[CatalogErrorItem] = []
     for field, value in (
         ("totalUnits", total),
@@ -55,6 +56,12 @@ def validate_course_units(total: int, minimum: int, maximum: int) -> None:
         errors.append(CatalogErrorItem("VALIDATION_ERROR", "Minimum session units cannot exceed maximum session units.", "minSessionUnits"))
     if not errors and maximum > total:
         errors.append(CatalogErrorItem("VALIDATION_ERROR", "Maximum session units cannot exceed total units.", "maxSessionUnits"))
+    if preferred is not None and (
+        isinstance(preferred, bool) or not isinstance(preferred, (int, float))
+        or not isfinite(preferred) or preferred * 2 != int(preferred * 2)
+        or not minimum <= preferred <= maximum
+    ):
+        errors.append(CatalogErrorItem("VALIDATION_ERROR", "Wählen Sie ganze oder halbe LE innerhalb des Minimums und Maximums.", "preferredSessionUnits"))
     if errors:
         raise AcademicCatalogError(422, errors)
 
@@ -202,11 +209,11 @@ def create_time_window(db: Session, study_type_id: int, *, weekday: int, start_t
     return row
 
 
-def create_course(db: Session, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, lecturer_id: int, room_id: int) -> Course:
+def create_course(db: Session, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, lecturer_id: int, room_id: int, preferred_session_units: float | None = None) -> Course:
     errors: list[CatalogErrorItem] = []
     name_status = 422
     try:
-        validate_course_units(total_units, min_session_units, max_session_units)
+        validate_course_units(total_units, min_session_units, max_session_units, preferred_session_units)
     except AcademicCatalogError as exc:
         errors.extend(exc.errors)
     try:
@@ -234,7 +241,7 @@ def create_course(db: Session, *, name: str, total_units: int, min_session_units
         raise AcademicCatalogError(name_status if len(errors) == 1 else 422, errors)
     row = Course(
         name=display, normalized_name=canonical, normalized_name_key=canonical,
-        total_units=total_units, min_session_units=min_session_units, max_session_units=max_session_units,
+        total_units=total_units, min_session_units=min_session_units, max_session_units=max_session_units, preferred_session_units=preferred_session_units,
         current_semester_id=semester_id, cohort_id=cohort_id, study_type_id=study_type_id,
         eligible_lecturers=[CourseEligibleLecturer(lecturer_id=lecturer_id)],
         eligible_rooms=[CourseEligibleRoom(room_id=room_id)],
@@ -474,12 +481,12 @@ def update_time_window(db: Session, row: StudyTypeTimeWindow, *, weekday: int, s
     row.revision += 1; db.flush(); return row
 
 
-def update_course(db: Session, row: Course, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, expected_revision: int) -> Course:
+def update_course(db: Session, row: Course, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, expected_revision: int, preferred_session_units: float | None = None) -> Course:
     require_revision(row, expected_revision)
     errors: list[CatalogErrorItem] = []
     name_status = 422
     try:
-        validate_course_units(total_units, min_session_units, max_session_units)
+        validate_course_units(total_units, min_session_units, max_session_units, preferred_session_units)
     except AcademicCatalogError as exc:
         errors.extend(exc.errors)
     try:
@@ -494,6 +501,7 @@ def update_course(db: Session, row: Course, *, name: str, total_units: int, min_
     row.name, row.normalized_name, row.normalized_name_key = display, canonical, canonical
     row.name_repair_required = False
     row.total_units, row.min_session_units, row.max_session_units = total_units, min_session_units, max_session_units
+    row.preferred_session_units = preferred_session_units
     row.current_semester_id, row.cohort_id, row.study_type_id = semester_id, cohort_id, study_type_id
     row.revision += 1; db.flush(); return row
 

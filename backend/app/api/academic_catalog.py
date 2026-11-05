@@ -108,7 +108,7 @@ def _course(db: Session, row: Course) -> CourseResponse:
     summary = lambda value: EntitySummaryResponse(id=value.id, name=value.name)
     return CourseResponse(
         id=row.id, name=row.name, nameRepairRequired=row.name_repair_required,
-        totalUnits=row.total_units, minSessionUnits=row.min_session_units, maxSessionUnits=row.max_session_units,
+        totalUnits=row.total_units, minSessionUnits=row.min_session_units, maxSessionUnits=row.max_session_units, preferredSessionUnits=row.preferred_session_units,
         semester=summary(row.current_semester) if row.current_semester else None,
         cohort=summary(row.cohort), studyType=summary(row.study_type), lecturer=summary(row.lecturer) if row.lecturer else None, room=summary(row.room) if row.room else None,
         isActive=row.is_active, revision=row.revision,
@@ -224,7 +224,7 @@ def list_courses(page: int = Query(1, ge=1), pageSize: int = Query(50, ge=1, le=
 @router.post("/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
 def post_course(payload: CourseInput, db: Session = Depends(get_db)):
     try:
-        row = create_course(db, name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, lecturer_id=payload.lecturer_id, room_id=payload.room_id)
+        row = create_course(db, name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, lecturer_id=payload.lecturer_id, room_id=payload.room_id)
         db.commit()
         row = db.get(Course, row.id, options=COURSE_OPTIONS)
         return _course(db, row)
@@ -291,7 +291,7 @@ def patch_time_window(record_id: int, payload: TimeWindowUpdate, db: Session = D
 
 @router.patch("/courses/{record_id}", response_model=CourseResponse)
 def patch_course(record_id: int, payload: CourseUpdate, db: Session = Depends(get_db)):
-    return _commit_or_error(db, lambda: update_course(db, require_record(db, Course, record_id), name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, expected_revision=payload.expected_revision), lambda row: _course(db, row))
+    return _commit_or_error(db, lambda: update_course(db, require_record(db, Course, record_id), name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, expected_revision=payload.expected_revision), lambda row: _course(db, row))
 
 
 RESOURCE_MODELS = {

@@ -55,6 +55,7 @@ def test_planner_apis_default_deny_before_validation_and_mutation(tmp_path, monk
     )
     initialize_database(engine)
     factory = sessionmaker(bind=engine)
+    monkeypatch.setattr(app_main, "engine", engine)
     monkeypatch.setattr(app_main, "SessionLocal", factory)
     with TestClient(app_main.app) as client:
         for cookie in (None, "malformed", "unknown-session-secret"):
@@ -87,6 +88,7 @@ def test_planner_apis_default_deny_before_validation_and_mutation(tmp_path, monk
 def test_unsafe_public_auth_routes_have_only_exact_exceptions(tmp_path, monkeypatch):
     engine = create_engine(f"sqlite:///{tmp_path / 'exact-public.db'}", connect_args={"check_same_thread": False})
     initialize_database(engine)
+    monkeypatch.setattr(app_main, "engine", engine)
     monkeypatch.setattr(app_main, "SessionLocal", sessionmaker(bind=engine))
     with TestClient(app_main.app) as client:
         assert client.post(
@@ -105,6 +107,7 @@ def test_unsafe_public_auth_routes_have_only_exact_exceptions(tmp_path, monkeypa
 def test_every_registered_planner_operation_denies_every_invalid_session_state(tmp_path, monkeypatch):
     engine = create_engine(f"sqlite:///{tmp_path / 'authorization-matrix.db'}", connect_args={"check_same_thread": False})
     initialize_database(engine); factory = sessionmaker(bind=engine)
+    monkeypatch.setattr(app_main, "engine", engine)
     monkeypatch.setattr(app_main, "SessionLocal", factory)
     operations = _registered_protected_operations()
     assert len(operations) >= 50
@@ -153,6 +156,7 @@ def test_every_registered_planner_operation_rejects_every_stored_lecturer_state_
     )
     initialize_database(engine)
     factory = sessionmaker(bind=engine)
+    monkeypatch.setattr(app_main, "engine", engine)
     monkeypatch.setattr(app_main, "SessionLocal", factory)
     operations = _registered_protected_operations()
     now = datetime.now(timezone.utc)

@@ -93,6 +93,7 @@ export function createTeachingSessionDraft(
     endTime: session.endTime,
     lecturerId: session.lecturerId,
     roomId: session.roomId,
+    units: session.units,
   }
 }
 
@@ -105,6 +106,16 @@ export function teachingDraftsEqual(
     && left.endTime === right.endTime
     && left.lecturerId === right.lecturerId
     && left.roomId === right.roomId
+    && left.units === right.units
+}
+
+export function teachingEndTime(startTime: string, units: number): string {
+  if (!/^\d{2}:\d{2}$/.test(startTime) || !Number.isSafeInteger(units) || units <= 0) return ''
+  const [hour, minute] = startTime.split(':').map(Number)
+  if (hour > 23 || minute > 59) return ''
+  const end = hour * 60 + minute + units * 45 + (units - 1) * 10
+  if (end >= 24 * 60) return ''
+  return `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
 }
 
 export function resourceLabel(resource: { name: string; referenceCode?: string | null }): string {

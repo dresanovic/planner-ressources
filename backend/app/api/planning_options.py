@@ -92,6 +92,7 @@ def read_planning_options(
                 totalUnits=course.total_units,
                 minSessionUnits=course.min_session_units,
                 maxSessionUnits=course.max_session_units,
+                preferredSessionUnits=course.preferred_session_units,
                 semesterId=course.current_semester_id,
                 availability=AvailabilityResponse(
                     available=not (reasons := availability_for_course(

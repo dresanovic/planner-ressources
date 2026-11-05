@@ -1,0 +1,168 @@
+import { act } from 'react'
+import { createRoot } from 'react-dom/client'
+import { afterEach, expect, it, vi } from 'vitest'
+import { PLANNER_AUTH_INVALIDATED_EVENT } from '../api/plannerFetch'
+import { useOptimizationOperation } from './useOptimizationOperation'
+import * as api from '../api/conflictAwareGeneration'
+import { deferredResponse, operationStatusFixture, optimizationPreparationFixture, decisionRequiredGenerationFixture, directSavedGenerationFixture } from '../test/optimizationFixtures'
+
+vi.mock('../api/conflictAwareGeneration', async (original) => ({
+  ...await original<typeof api>(), startOptimizationOperation: vi.fn(), getOptimizationOperation: vi.fn(),
+  decideOptimizationOperation: vi.fn(), cancelOptimizationOperation: vi.fn(),
+}))
+let root: ReturnType<typeof createRoot> | undefined
+afterEach(() => { act(() => root?.unmount()); vi.clearAllMocks(); vi.useRealTimers(); sessionStorage.clear(); document.body.innerHTML='' })
+
+function mount() {
+  let value!: ReturnType<typeof useOptimizationOperation>
+  function Probe({active}: {active:boolean}) { value=useOptimizationOperation(active, '1:11'); return <div>{value.busy ? 'busy' : 'idle'}</div> }
+  root=createRoot(document.body.appendChild(document.createElement('div')))
+  act(()=>root!.render(<Probe active />))
+  return { current:()=>value, hide:()=>act(()=>root!.render(<Probe active={false}/>)) }
+}
+
+it('acknowledges start immediately and cancels a late result after navigation', async()=>{
+  const response=deferredResponse<api.OptimizationOperationStatus>()
+  vi.mocked(api.startOptimizationOperation).mockReturnValue(response.promise)
+  vi.mocked(api.cancelOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'cancelled'})
+  const hook=mount()
+  let started!: Promise<void>
+  act(()=>{ started=hook.current().start(optimizationPreparationFixture) })
+  expect(hook.current().busy).toBe(true)
+  const context=vi.mocked(api.startOptimizationOperation).mock.calls[0][1]
+  expect(context.contextSecret).toMatch(/^[0-9a-f]{64}$/)
+  expect(JSON.stringify(sessionStorage)).not.toContain(context.contextSecret)
+  hook.hide()
+  await act(async()=>{response.resolve({...operationStatusFixture,operationId:context.operationId,phase:'awaiting_decision',review:decisionRequiredGenerationFixture,canAccept:true});await started})
+  expect(hook.current().status?.review).toBeFalsy()
+  expect(api.cancelOptimizationOperation).toHaveBeenCalled()
+})
+
+it('automatically finalizes a fully proven new selection without another click', async()=>{
+  vi.mocked(api.startOptimizationOperation).mockImplementation(async(_prep,ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'ready_to_save',canFinalize:true,review:decisionRequiredGenerationFixture}))
+  vi.mocked(api.decideOptimizationOperation).mockImplementation(async(ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'saved',saved:true,result:directSavedGenerationFixture}))
+  const hook=mount()
+  await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+  expect(vi.mocked(api.decideOptimizationOperation).mock.calls[0].slice(1,3)).toEqual(['a'.repeat(64),true])
+  expect(hook.current().status?.saved).toBe(true)
+})
+
+it('abandons action authority on unconfirmed transport and reconciles outcome only', async()=>{
+  vi.mocked(api.startOptimizationOperation).mockRejectedValue(new Error('lost response'))
+  vi.mocked(api.cancelOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'cancelled'})
+  vi.mocked(api.getOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'cancelled'})
+  const hook=mount()
+  await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+  expect(api.decideOptimizationOperation).not.toHaveBeenCalled()
+  expect(api.getOptimizationOperation).toHaveBeenCalledWith(expect.any(String), undefined, expect.anything())
+})
+
+it('blocks a new start while the previous receipt remains unknown',async()=>{
+  const receipt=deferredResponse<api.OptimizationOperationStatus>()
+  vi.mocked(api.startOptimizationOperation).mockRejectedValue(new Error('response lost'))
+  vi.mocked(api.getOptimizationOperation).mockReturnValue(receipt.promise)
+  vi.mocked(api.cancelOptimizationOperation).mockReturnValue(receipt.promise)
+  const hook=mount()
+  await act(async()=>{void hook.current().start(optimizationPreparationFixture);await Promise.resolve()})
+  expect(hook.current().unknown).toBe(true)
+  expect(hook.current().busy).toBe(true)
+  await act(async()=>{void hook.current().start(optimizationPreparationFixture);await Promise.resolve()})
+  expect(api.startOptimizationOperation).toHaveBeenCalledTimes(1)
+  await act(async()=>receipt.resolve({...operationStatusFixture,phase:'cancelled'}))
+})
+
+it.each(['BUDGET_POLICY_CHANGED','revision_not_editable','working_revision_required','stale_lifecycle_state','semester_not_found'])('treats definitive rejected start %s as re-preparation, without polling a missing receipt',async(code)=>{
+  vi.mocked(api.startOptimizationOperation).mockRejectedValue([{code,message:'Bitte neu vorbereiten.'}])
+  vi.mocked(api.cancelOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'cancelled'})
+  vi.mocked(api.getOptimizationOperation).mockRejectedValue([{code:'OPERATION_NOT_FOUND',message:'Lauf nicht gefunden.'}])
+  const hook=mount()
+  await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+  expect(hook.current().unknown).toBe(false)
+  expect(hook.current().busy).toBe(false)
+  expect(api.getOptimizationOperation).not.toHaveBeenCalled()
+  expect(sessionStorage.length).toBe(0)
+})
+
+it('marks a stalled decision unknown within five seconds of the last confirmed status',async()=>{
+  vi.useFakeTimers()
+  const decision=deferredResponse<api.OptimizationOperationStatus>()
+  const receipt=deferredResponse<api.OptimizationOperationStatus>()
+  vi.mocked(api.startOptimizationOperation).mockImplementation(async(_prep,ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'ready_to_save',canFinalize:true,review:decisionRequiredGenerationFixture}))
+  vi.mocked(api.decideOptimizationOperation).mockReturnValue(decision.promise)
+  vi.mocked(api.getOptimizationOperation).mockReturnValue(receipt.promise)
+  vi.mocked(api.cancelOptimizationOperation).mockReturnValue(receipt.promise)
+  const hook=mount()
+  await act(async()=>{void hook.current().start(optimizationPreparationFixture);await Promise.resolve()})
+  expect(hook.current().action).toBe('saving')
+  await act(async()=>{vi.advanceTimersByTime(5001);await Promise.resolve()})
+  expect(hook.current().unknown).toBe(true)
+  await act(async()=>{receipt.resolve({...operationStatusFixture,phase:'cancelled'});decision.resolve({...operationStatusFixture,phase:'cancelled'})})
+})
+
+it.each(['pagehide','hidden','auth'])('invalidates review authority on %s and ignores late decision availability',async(boundary)=>{
+  const response=deferredResponse<api.OptimizationOperationStatus>()
+  vi.mocked(api.startOptimizationOperation).mockReturnValue(response.promise)
+  vi.mocked(api.cancelOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'cancelled'})
+  const hook=mount()
+  let pending!:Promise<void>
+  act(()=>{pending=hook.current().start(optimizationPreparationFixture)})
+  const context=vi.mocked(api.startOptimizationOperation).mock.calls[0][1]
+  act(()=>{
+    if(boundary==='hidden') {
+      vi.spyOn(document,'hidden','get').mockReturnValue(true)
+      document.dispatchEvent(new Event('visibilitychange'))
+    } else window.dispatchEvent(new Event(boundary==='auth'?PLANNER_AUTH_INVALIDATED_EVENT:'pagehide'))
+  })
+  await act(async()=>{response.resolve({...operationStatusFixture,operationId:context.operationId,phase:'ready_to_save',canFinalize:true,review:decisionRequiredGenerationFixture});await pending})
+  expect(api.cancelOptimizationOperation).toHaveBeenCalledWith(context.operationId,'context_lost',true)
+  expect(api.decideOptimizationOperation).not.toHaveBeenCalled()
+  expect(hook.current().status?.review).toBeFalsy()
+  vi.restoreAllMocks()
+})
+
+it('reconciles refresh by identifier without recovering a secret or acceptance authority',async()=>{
+  sessionStorage.setItem('teaching-optimization-operation-id',operationStatusFixture.operationId)
+  vi.mocked(api.cancelOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'cancelled'})
+  vi.mocked(api.getOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'saved',saved:true,result:directSavedGenerationFixture})
+  const hook=mount()
+  await act(async()=>{await Promise.resolve()})
+  expect(api.getOptimizationOperation).toHaveBeenCalledWith(operationStatusFixture.operationId,undefined,expect.anything())
+  expect(hook.current().status?.saved).toBe(true)
+  expect(hook.current().status?.review).toBeNull()
+  expect(api.decideOptimizationOperation).not.toHaveBeenCalled()
+})
+
+it('does not add the polling delay to the five-second unconfirmed limit',async()=>{
+  vi.useFakeTimers()
+  const pending=deferredResponse<api.OptimizationOperationStatus>()
+  vi.mocked(api.startOptimizationOperation).mockImplementation(async(_p,c)=>({...operationStatusFixture,operationId:c.operationId,phase:'optimizing'}))
+  vi.mocked(api.getOptimizationOperation).mockReturnValue(pending.promise)
+  vi.mocked(api.cancelOptimizationOperation).mockReturnValue(pending.promise)
+  const hook=mount()
+  await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+  await act(async()=>{vi.advanceTimersByTime(4999);await Promise.resolve()})
+  expect(hook.current().unknown).toBe(false)
+  await act(async()=>{vi.advanceTimersByTime(2);await Promise.resolve()})
+  expect(hook.current().unknown).toBe(true)
+  await act(async()=>pending.resolve({...operationStatusFixture,phase:'cancelled'}))
+})
+
+it('guards duplicate acceptance and reconciles a lost decision response to the saved receipt',async()=>{
+  const decision=deferredResponse<api.OptimizationOperationStatus>()
+  vi.mocked(api.startOptimizationOperation).mockImplementation(async(_p,c)=>({...operationStatusFixture,operationId:c.operationId,phase:'awaiting_decision',canAccept:true,review:decisionRequiredGenerationFixture}))
+  vi.mocked(api.decideOptimizationOperation).mockReturnValue(decision.promise)
+  vi.mocked(api.cancelOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'saved',saved:true,result:directSavedGenerationFixture})
+  let id=''
+  vi.mocked(api.getOptimizationOperation).mockImplementation(async()=>({...operationStatusFixture,operationId:id,phase:'saved',saved:true,result:directSavedGenerationFixture}))
+  const hook=mount()
+  await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+  id=vi.mocked(api.startOptimizationOperation).mock.calls[0][1].operationId
+  let saving!:Promise<api.OptimizationError[]|undefined|void>
+  act(()=>{saving=hook.current().accept();void hook.current().accept()})
+  expect(api.decideOptimizationOperation).toHaveBeenCalledTimes(1)
+  expect(hook.current().action).toBe('saving')
+  await act(async()=>{decision.reject(new Error('response lost'));await saving})
+  expect(hook.current().status?.saved).toBe(true)
+  expect(hook.current().unknown).toBe(false)
+  expect(hook.current().status?.review).toBeNull()
+})
