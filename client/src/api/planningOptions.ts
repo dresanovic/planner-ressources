@@ -8,6 +8,7 @@ export type CourseOption = {
   name: string
   totalUnits: number
   minSessionUnits: number
+  preferredSessionUnits?: number | null
   maxSessionUnits: number
   semesterId?: number
   availability?: Availability

@@ -1,0 +1,86 @@
+{
+  "endpoint": "https://localhost:18767",
+  "proxyUpstreamTimeoutSeconds": 5,
+  "tlsCertificateVerified": true,
+  "samples": [
+    {
+      "seconds": 2.047,
+      "phase": "optimizing",
+      "requestSeconds": 2.047,
+      "noStore": true
+    },
+    {
+      "seconds": 8.157,
+      "phase": "optimizing",
+      "requestSeconds": 2.079,
+      "noStore": true
+    },
+    {
+      "seconds": 14.266,
+      "phase": "optimizing",
+      "requestSeconds": 2.031,
+      "noStore": true
+    },
+    {
+      "seconds": 20.375,
+      "phase": "optimizing",
+      "requestSeconds": 2.031,
+      "noStore": true
+    },
+    {
+      "seconds": 26.469,
+      "phase": "optimizing",
+      "requestSeconds": 2.062,
+      "noStore": true
+    },
+    {
+      "seconds": 32.563,
+      "phase": "optimizing",
+      "requestSeconds": 2.047,
+      "noStore": true
+    },
+    {
+      "seconds": 38.672,
+      "phase": "optimizing",
+      "requestSeconds": 2.047,
+      "noStore": true
+    },
+    {
+      "seconds": 44.782,
+      "phase": "optimizing",
+      "requestSeconds": 2.063,
+      "noStore": true
+    },
+    {
+      "seconds": 50.86,
+      "phase": "optimizing",
+      "requestSeconds": 2.047,
+      "noStore": true
+    },
+    {
+      "seconds": 57.0,
+      "phase": "optimizing",
+      "requestSeconds": 2.093,
+      "noStore": true
+    },
+    {
+      "seconds": 63.157,
+      "phase": "optimizing",
+      "requestSeconds": 2.094,
+      "noStore": true
+    }
+  ],
+  "startSeconds": 2.1089999999967404,
+  "budgetSeconds": 300,
+  "cancelSeconds": 2.327999999994063,
+  "longRunCancelled": true,
+  "savedStatePreserved": true,
+  "abruptRestart": {
+    "phase": "interrupted",
+    "saved": false,
+    "review": null,
+    "canAccept": false,
+    "canFinalize": false
+  },
+  "savedStateAfterRestartPreserved": true
+}

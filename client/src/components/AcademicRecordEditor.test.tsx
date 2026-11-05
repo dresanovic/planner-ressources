@@ -5,6 +5,24 @@ import { expect, it, vi } from 'vitest'
 import { AcademicRecordEditor } from './AcademicRecordEditor'
 import { AcademicCatalogApiError } from '../api/academicCatalog'
 
+it('round-trips optional preferred units and allows clearing to the midpoint default', async () => {
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  const onSubmit = vi.fn().mockResolvedValue(undefined)
+  await act(async () => root.render(<AcademicRecordEditor category="courses" includeCourseResources={false}
+    initialValues={{ minSessionUnits: 2, maxSessionUnits: 6, preferredSessionUnits: 3 }} onSubmit={onSubmit} />))
+  const input = document.querySelector<HTMLInputElement>('input[name="preferredSessionUnits"]')!
+  expect(input.value).toBe('3')
+  expect(input.required).toBe(false)
+  expect(input.step).toBe('0.5')
+  expect(input.min).toBe('2')
+  expect(input.max).toBe('6')
+  await act(async () => document.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+  expect(onSubmit).toHaveBeenLastCalledWith(expect.objectContaining({ preferredSessionUnits: 3 }))
+  act(() => { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })) })
+  await act(async () => document.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+  expect(onSubmit.mock.lastCall?.[0]).not.toHaveProperty('preferredSessionUnits')
+})
+
 it('retains controlled values and renders required course relationships', async () => {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   const onSubmit = vi.fn().mockRejectedValue(new Error('invalid'))

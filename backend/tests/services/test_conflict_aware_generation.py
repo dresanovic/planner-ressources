@@ -35,6 +35,80 @@ from app.services.semester_optimization import CourseOptimization, SemesterOptim
 from tests.optimization_fixtures import active_exam, past_exam, seed_optimization_planner
 
 
+def exact_candidate_fixture():
+    from tests.optimization_fixtures import optimization_course
+    course = optimization_course(1, total_units=4)
+    session = GeneratedSession(date=date(2026, 9, 7), start_time=time(8), end_time=time(9, 40),
+        units=2, time_window_id=1, constraint_window_index=0, lecturer_id=1, room_id=1)
+    result = CourseOptimization(1, (session,), False, 2, 0, 0, ())
+    return course, result
+
+
+def test_exact_candidate_passes_without_inserting_provisional_records():
+    course, candidate = exact_candidate_fixture()
+    conflict_aware_service.validate_exact_candidate((course,), (), (), {}, (candidate,))
+
+
+@pytest.mark.parametrize('mutation', [
+    'outside_dates', 'wrong_weekday', 'too_short', 'too_long', 'bad_duration',
+    'wrong_lecturer', 'wrong_room', 'wrong_window', 'wrong_window_index',
+    'wrong_sum', 'duplicate_date', 'missing_course', 'duplicate_course',
+    'holiday', 'unavailable_date', 'fixed_overlap', 'exam_boundary',
+    'inactive_lecturer', 'inactive_room', 'lecturer_unavailable', 'room_unavailable',
+    'insufficient_capacity', 'too_many_units',
+])
+def test_exact_candidate_rejects_each_hard_rule(mutation):
+    from dataclasses import replace
+    from datetime import datetime
+    from tests.optimization_fixtures import fixed_session
+    course, candidate = exact_candidate_fixture()
+    session = candidate.sessions[0]
+    fixed, unavailable, holidays = (), (), {}
+    if mutation == 'outside_dates': session = replace(session, date=date(2025, 9, 1))
+    if mutation == 'wrong_weekday': session = replace(session, date=date(2026, 9, 8))
+    if mutation == 'too_short': session = replace(session, units=1, end_time=time(8, 45))
+    if mutation == 'too_long': session = replace(session, units=5)
+    if mutation == 'bad_duration': session = replace(session, end_time=time(10))
+    if mutation == 'wrong_lecturer': session = replace(session, lecturer_id=99)
+    if mutation == 'wrong_room': session = replace(session, room_id=99)
+    if mutation == 'wrong_window': session = replace(session, time_window_id=99)
+    if mutation == 'wrong_window_index': session = replace(session, constraint_window_index=99)
+    if mutation == 'exam_boundary': course = replace(course, latest_teaching_end=datetime(2026,9,7,9))
+    if mutation == 'inactive_lecturer': course = replace(course, lecturers=(replace(course.lecturers[0], active=False),))
+    if mutation == 'inactive_room': course = replace(course, rooms=(replace(course.rooms[0], active=False),))
+    if mutation in ('lecturer_unavailable', 'room_unavailable'):
+        period = ResourceUnavailabilityPeriod(kind='recurring', start_time=time(8), end_time=time(12),
+            weekdays=[ResourceUnavailabilityWeekday(weekday=0)])
+        if mutation == 'lecturer_unavailable': course = replace(course, lecturers=(replace(course.lecturers[0], unavailable_periods=(period,)),))
+        else: course = replace(course, rooms=(replace(course.rooms[0], unavailable_periods=(period,)),))
+    if mutation == 'insufficient_capacity': course = replace(course, rooms=(replace(course.rooms[0], capacity=1),))
+    if mutation == 'too_many_units': course = replace(course, total_units=1)
+    if mutation == 'holiday': holidays = {session.date: object()}
+    if mutation == 'unavailable_date': unavailable = (session.date,)
+    if mutation == 'fixed_overlap': fixed = (fixed_session(lecturer_id=1),)
+    candidate = replace(candidate, sessions=(session,))
+    if mutation == 'wrong_sum': candidate = replace(candidate, scheduled_units=3)
+    if mutation == 'duplicate_date': candidate = replace(candidate, sessions=(session, session), scheduled_units=4)
+    candidates = (candidate,)
+    if mutation == 'missing_course': candidates = ()
+    if mutation == 'duplicate_course': candidates = (candidate, candidate)
+    with pytest.raises(conflict_aware_service.InvalidExactCandidate):
+        conflict_aware_service.validate_exact_candidate((course,), fixed, unavailable, holidays, candidates)
+
+
+@pytest.mark.parametrize('shared', ['lecturer', 'room', 'cohort'])
+def test_exact_candidate_rejects_joint_selected_course_resource_collisions(shared):
+    from dataclasses import replace
+    from tests.optimization_fixtures import optimization_course
+    first, candidate = exact_candidate_fixture()
+    second = optimization_course(2, lecturer_ids=(1,) if shared == 'lecturer' else (2,),
+        room_ids=(1,) if shared == 'room' else (2,), cohort_id=1 if shared == 'cohort' else 2)
+    session = replace(candidate.sessions[0], lecturer_id=second.lecturers[0].id, room_id=second.rooms[0].id)
+    other = replace(candidate, course_id=2, sessions=(session,))
+    with pytest.raises(conflict_aware_service.InvalidExactCandidate):
+        conflict_aware_service.validate_exact_candidate((first, second), (), (), {}, (candidate, other))
+
+
 def make_session():
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Base.metadata.create_all(engine)
@@ -230,6 +304,18 @@ def test_unproven_solver_result_preserves_all_existing_state(monkeypatch):
     assert [(row.date, row.start_time, row.end_time) for row in preserved.sessions] == [
         (date(2026, 9, 7), time(8), time(9, 40))
     ]
+
+
+def test_preference_is_captured_and_invalidates_prepared_course_identity():
+    db = make_session()
+    seed_optimization_planner(db, course_count=1)
+    first = prepare_optimization(db, 1, [1], [])
+    db.get(Course, 1).preferred_session_units = 3
+    db.commit()
+    second = prepare_optimization(db, 1, [1], [])
+    assert first.courses[0].input_snapshot_token != second.courses[0].input_snapshot_token
+    loaded = load_operation(db, 1, [1], [])
+    assert loaded.courses[0].optimization.preferred_session_units == 3
 
 
 def test_preparation_tokens_are_bound_to_the_schedule_revision():
@@ -689,24 +775,6 @@ def test_mutual_save_dependency_rolls_back_the_atomic_cycle(monkeypatch):
 
     assert drafts[1].revision == 1
     assert drafts[2].revision == 1
-
-
-def test_solver_budget_reserves_time_for_revalidation_and_saving(monkeypatch):
-    db = make_session()
-    seed_optimization_planner(db, course_count=1, total_units=4)
-    prepared = prepare_optimization(db, 1, [1], [])
-    import app.services.conflict_aware_generation as service
-    original = service.optimize_semester
-    solver_budgets = []
-
-    def record_budget(*args, **kwargs):
-        solver_budgets.append(kwargs["deadline_seconds"])
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(service, "optimize_semester", record_budget)
-    generate_optimization(db, 1, execution_courses(prepared), [], prepared.shared_snapshot_token)
-
-    assert solver_budgets and solver_budgets[0] <= 55.0
 
 
 def test_equal_unit_replacement_uses_lexicographic_arrangement_priorities():

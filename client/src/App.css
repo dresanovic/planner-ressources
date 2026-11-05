@@ -2407,3 +2407,14 @@ button:disabled[aria-busy='true'] {
     width: 100%;
   }
 }
+.optimization-operation-status, .optimization-proof, .retry-confirmation {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.optimization-objectives { padding-inline-start: 1.5rem; }
+.optimization-objectives li { margin-block: .5rem; }
+.retry-confirmation .dialog-actions { flex-wrap: wrap; }
+@media (max-width: 40rem) {
+  .regeneration-comparison-dialog .dialog-actions { flex-direction: column; align-items: stretch; }
+  .regeneration-comparison-dialog .dialog-actions button { white-space: normal; max-width: 100%; }
+}

@@ -27,6 +27,12 @@ people who can reach its planner pages and APIs. Network reachability therefore
 permits powerful planning and accountless-link management actions without an
 application-level planner access decision.
 
+Regular weekly teaching windows alone do not express intensive weeks in which
+cohorts may attend on additional specific dates. Planners need dated teaching
+opportunities without extending the ordinary timetable to unrelated weeks.
+Entering similar windows separately for several Studienformen also creates
+avoidable administration work (I-009).
+
 ### Why now
 
 The planner scheduling, administration, publication, calendar workspace,
@@ -45,6 +51,10 @@ With the scheduling baseline and accountless lecturer-review surface now
 implemented, planner access itself is the next selected security boundary: the
 application must protect planner work even when no VPN or institutional SSO is
 available.
+
+On 05.11.2026 the user requested intensive-week support and refined it to
+date-specific teaching windows, each assigned to one Studienform, with a copy
+action to speed up similar entries. No specific delivery deadline was stated.
 
 ### Product-level success
 
@@ -73,6 +83,13 @@ available.
 - Only active named planner accounts can reach planner pages and APIs; exactly
   one system administrator manages planner access, while accountless lecturer
   links retain their existing minimum capabilities.
+- Planners can prepare intensive-week dates without changing ordinary weekly
+  hours, and copy similar Zeitfenster across independently maintained
+  Studienformen instead of repeatedly entering the same values (I-009).
+- Marked intensive windows attract as much scheduled teaching as possible
+  without reducing total permitted teaching coverage. Within those priorities,
+  planners receive a mix of different LVs per cohort/day where feasible; a
+  single-LV day remains valid when a mix is not possible (I-009).
 
 ### Product goal
 
@@ -116,11 +133,18 @@ synchronization remain later releases.
 ### Main user outcomes
 
 - Maintain the academic and resource data needed for scheduling without developer intervention.
+- Maintain dated additional teaching opportunities for one Studienform at a
+  time and independently copy existing Zeitfenster (I-009).
 - Generate complete or maximally complete semester schedules for one or several courses.
 - Compare a valid regenerated alternative with the current selected schedules
   and make the final operation-wide replacement decision.
 - Avoid lecturer, room, and cohort conflicts while respecting availability and capacity.
 - Understand remaining unscheduled units and why they could not be placed.
+- Before generation, compare selected teaching demand with timetable capacity,
+  distinguish proven shortages from unresolved search, and review additional
+  planning-slot proposals (I-007).
+- Explicitly approve a narrowly scoped five-minute-break alternative when it
+  enables additional valid teaching; ten minutes remains the default (I-008).
 - Correct schedules manually without losing saved generation constraints.
 - Avoid institution-wide public holidays and schedule course exams.
 - Review conflicts, remaining work, failures, and schedule states in a filterable calendar workspace.
@@ -145,6 +169,12 @@ synchronization remain later releases.
 - Cohort-based filtering of course lists in both teaching-generation selection
   and Academic Data course administration (I-005).
 - Course-semester generation constraints and default teaching windows.
+- Date-specific additional teaching windows for intensive weeks, exactly one
+  Studienform per window, and independent copying of existing weekly or dated
+  Zeitfenster (I-009).
+- An explicit Intensivwoche indicator on dated windows and teaching-generation
+  preferences for intensive-window use and daily LV variety within the
+  applicable cohort, after maximizing total teaching coverage (I-009).
 - Semester-wide list and calendar review with filters.
 - Manual editing of existing Draft Sessions and non-blocking validation alerts.
 - Manual administration of academic records, resources, availability, holidays, and exam requirements.
@@ -152,10 +182,15 @@ synchronization remain later releases.
 - Manual Draft Session creation and deletion, complete course-schedule deletion, and remaining-unit tracking.
 - Global conflict-aware generation that maximizes scheduled units across the selected courses.
 - Persisted partial plans with understandable unscheduled-unit reasons.
+- Pre-generation calendar-capacity assessment, evidence-based gap explanations,
+  and planner-approved additional-slot proposals (I-007).
+- Explicitly approved five-minute-break alternatives, without automatic or
+  institution-wide relaxation of the ten-minute default (I-008).
 - Longer configurable teaching-optimization budgets and explicit planner
   acceptance of hard-valid results whose optimality is unproven (I-006).
 - Post-generation comparison and planner-controlled atomic replacement when at
-  least one selected course already has teaching sessions.
+  least one selected course already has teaching sessions, extended by I-006
+  to unproven timeout candidates even for previously unplanned selections.
 - Institution-wide holiday avoidance.
 - Conflict-aware exam generation for explicitly enabled courses.
 - Versioned `Draft → Ready for review → Published` lifecycle controlled by the planner.
@@ -213,6 +248,8 @@ synchronization remain later releases.
 - Runtime language switching, translation management, an administrator-facing
   label editor, or a full localization platform.
 - Full production or room-booking execution outside the planning and publication workflow.
+- Shared multi-Studienform windows, synchronized copies, and compulsory teaching
+  for every cohort or date merely because additional windows exist (I-009).
 
 ### Possible later scope
 
@@ -335,6 +372,17 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 - A generated alternative must satisfy every currently active hard scheduling
   constraint. Planner authority permits retaining an older warned schedule; it
   does not permit the generator to offer a newly invalid candidate.
+- I-009 adds dated opportunities to the ordinary windows for one Studienform.
+  Copies are independent records. Dated opportunities do not implicitly relax
+  explicit course restrictions, semester bounds, holidays, resource constraints,
+  or planner-controlled replacement and publication rules.
+- For I-009, maximize total permitted scheduled teaching units first, then
+  teaching units inside explicitly marked intensive windows, then prefer
+  different LVs per cohort on each used intensive date. These preferences
+  precede the existing once-per-week, session-size-midpoint, weekly-concentration,
+  and resource-continuity preferences. Hard session-size rules remain binding.
+  Daily variety is not a requirement for two LVs or a reason to reject valid
+  single-LV days. Unmarked dated windows gain no intensive scheduling priority.
 
 ## Slice map
 
@@ -367,17 +415,39 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 25 | FS-022 | Authenticated Lecturer Access | Reuse lecturer collaboration through ongoing authenticated identity | FS-015, FS-016, FS-020, FS-021 | Deferred |
 | 26 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 | 27 | I-005 | Filterable Course Lists for Generation and Administration | Find cohort-specific courses directly in both course-list workflows | FS-007, FS-019, I-003 | Implemented — automated verification passed; user acceptance PASS on 2026-11-03 |
-| 28 | I-006 | Configurable Optimization Time and Valid Incumbent Acceptance | Use longer optimization runs and consciously accept valid results without an optimality proof | I-003, I-004, FS-013, FS-019 | Proposed — requirements recorded; not implemented |
+| 28 | I-006 | Configurable Optimization Time and Valid Incumbent Acceptance | Use longer optimization runs and consciously accept valid results without an optimality proof | I-003, I-004, FS-013, FS-019 | Implemented |
+| 29 | I-007 | Calendar Capacity Diagnostics and Additional Planning Slots | Understand open LE and approve useful extra timetable opportunities | I-003, I-004, I-006, FS-003, FS-008, FS-011, FS-019 | Ready for specification — requirements confirmed 2026-11-05 |
+| 30 | I-008 | Planner-Approved Shorter Break Alternatives | Recover feasible teaching time through explicit five-minute-break approval | I-007, I-006, FS-004, FS-009, FS-013 | Ready for specification — after I-007 |
+| 31 | I-009 | Dated Windows, Copying and Intensive-Week Scheduling | Copy independent Zeitfenster and prioritize teaching with daily LV variety in marked intensive windows | FS-007, FS-005, FS-011, FS-019, I-003, I-004 | Ready for specification — requirements confirmed 2026-11-05 |
 
 **Improvement sequence:** `I-001` through `I-004`, with detailed artifacts in their matching `specs/I-.../` directories.
 
 **New improvement backlog:** `I-005` is specified in
-`specs/I-005 - filter-course-plan-list/`; `I-006` records requirements only.
+`specs/I-005 - filter-course-plan-list/`; `I-006` is specified in
+`specs/I-006-optimization-incumbent-acceptance/` following explicit authorization
+on 04.11.2026. Its numeric directory follows the active Spec Kit numbering policy
+and does not change its product identifier, I-006.
 Their delivery priority relative to other open slices is not yet assigned.
 They are independent improvements on the implemented baseline: course-list
 filtering and optimization time/result handling respectively.
 
 **Recommended next slice:** `FS-016 – Authenticated Planner Access and Account Administration`.
+
+**Confirmed 05.11.2026 capacity initiative:** first specify I-007, then I-008.
+This local dependency order does not silently reconcile or reprioritize the
+older release roadmap or waive pending acceptance of existing slices. The new
+initiative adds calendar-capacity reasoning and optional rule exceptions; it
+does not restart the exhausted I-006 Goal 3 correction loop.
+
+**Confirmed 05.11.2026 intensive-week increment:** I-009 is the first and only
+slice for dated windows, copying and intensive scheduling priorities. It builds
+on the implemented baseline and has no dependency on I-007, I-008, or I-006's
+timeout extension.
+I-007 may consume the additional windows when both capabilities are present;
+capacity diagnosis is not a prerequisite for window administration or use.
+The existing initiative's IDs, scope and order remain unchanged. I-009's
+backlog position does not change the older global release recommendation.
+The user explicitly confirmed I-009 as its identifier.
 
 ## Development slices
 
@@ -3642,9 +3712,9 @@ and safe handling of valid results at timeout address one coherent outcome.
 
 #### In scope
 
-- Increase the default optimization budget beyond 60 seconds and make the
-  budget configurable. Five minutes is the proposed starting default; its exact
-  value and configuration surface remain clarification topics.
+- Use a five-minute default optimization budget and a thirty-minute initial
+  ceiling, both configurable by the installation operator without rebuilding.
+  The planner sees the effective budget but has no per-run override.
 - Communicate the effective budget, elapsed time, and understandable running,
   timeout, result-review, and failure states without requiring browser DevTools.
 - On budget exhaustion, distinguish an available hard-valid candidate from
@@ -3674,7 +3744,8 @@ and safe handling of valid results at timeout address one coherent outcome.
   94-course solve in this slice.
 - Automatically repartitioning runs, moving unselected/protected sessions,
   mandatory parallel solving, or prescribing a new solver/architecture.
-- Implementation, detailed specifications, plans, or tasks in this update.
+- Production implementation, implementation plans, or tasks in this
+  specification update; genuine solver continuation and planner budget overrides.
 
 #### Main workflow
 
@@ -3684,13 +3755,16 @@ available hard-valid candidate is presented as provisional and explicitly not
 proven optimal, with coverage and quality information. The planner accepts the
 complete candidate or cancels to retain the saved state. If no valid candidate
 exists, the application explains that nothing was saved and offers a fresh run
-with a larger budget or a smaller selection.
+with a larger operator-configured budget or a smaller selection.
 
 #### Business rules
 
 - Feasibility and optimality are separate claims: all active semester, course,
   time-window, holiday, capacity, eligibility, availability, teaching-overlap,
   and active-exam constraints remain authoritative for every offered candidate.
+- An unproven timeout result must schedule at least one teaching unit across
+  the selection to be offered for acceptance. An entirely empty result preserves
+  saved work and offers recovery; individual courses may still have zero units.
 - No optimality proof is required to offer a hard-valid incumbent after timeout;
   this deliberately supersedes the FS-010/I-003 all-stages-optimal-or-no-save
   baseline for explicitly accepted candidates only.
@@ -3728,10 +3802,19 @@ details remain implementation choices.
 
 - Confirmed: increase and configure the limit; permit conscious acceptance of
   valid unproven candidates; disclose the quality trade-offs.
-- Five minutes is a recommendation rather than a separately confirmed default.
+- Confirmed on 04.11.2026: five-minute default and thirty-minute initial ceiling,
+  both operator-configurable; no planner per-run override.
+- A direct retry starts a fresh attempt from current saved inputs and discards
+  the provisional candidate after an explicit discard explanation. A longer
+  budget requires operator configuration; retry does not resume the solver or
+  guarantee improvement.
+- Running cancellation and deliberate navigation out of the generation context
+  cancel and discard provisional work. Registered cancellation before commit
+  preserves saved work; a commit that already completed is reported accurately.
 - No assumption that an incumbent exists at every timeout or that longer
   calculation always improves it.
-- Requirements only; no implementation is authorized by this document update.
+- Specification work was explicitly authorized on 04.11.2026; production
+  implementation remains a separate phase.
 
 #### Dependencies
 
@@ -3746,21 +3829,30 @@ accept it atomically. Cancellation, stale acceptance, and absence of a valid
 candidate preserve saved work. Representative larger selections are validated
 without claiming that any course count guarantees timely completion.
 
-#### Open clarification topics
+#### Clarification decisions and specification defaults
 
-- Default budget (proposed: five minutes), maximum budget, configuration owner,
-  and whether a planner can override it per run.
-- Whether to offer `Weiter optimieren` directly, and whether that means resume
-  or a new run; genuine solver continuation is not yet a confirmed requirement.
-- Progress update frequency, cancellation during computation, and behavior
-  after navigation or reconnection.
-- Candidate review validity duration and quality-bound presentation where only
-  some objective stages are proven.
+- Budget ownership, shipped values, fresh retry, and running cancellation were
+  resolved with the user on 04.11.2026 as recorded above.
+- Connected elapsed/status updates occur at least every five seconds, with
+  visible start/cancel acknowledgement within one second under documented
+  acceptance conditions. No invented solution percentage is shown.
+- Review has no fixed elapsed-time expiry during its current uninterrupted
+  context; relevant input changes reject acceptance as stale. Leaving or losing
+  that review invalidates its candidate; a discarded review is not silently
+  recovered after refresh/reconnection.
+- Objective proofs retain their priority and prepared-selection scope. A sound
+  total-unit bound describes at most the additional possible coverage; absent
+  trustworthy evidence, the gap is unknown. Complete coverage alone does not
+  establish preference optimality.
+- Longer configured runs supersede conflicting thirty-/sixty-second completion
+  requirements in earlier generation specs, without promising timely completion.
 
 #### Specification status
 
-Proposed — requirements recorded; not specified or implemented. Exact budget
-and optional continuation interaction remain open.
+Specified — ready for planning; not implemented. Detailed specification and
+quality checklist are in `specs/I-006-optimization-incumbent-acceptance/`.
+The ready-to-copy prompt below retains the historical requirements-only input;
+the decisions above and the detailed specification resolve its open topics.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -3781,6 +3873,571 @@ Completion: A budget above 60 seconds is usable; timeout with a valid candidate 
 Clarification: Five minutes is the proposed default, not a separately confirmed exact value. Resolve maximum/configuration ownership, per-run override, optional Weiter optimieren and its semantics, running cancellation/navigation, progress, and candidate validity.
 
 Keep the specification consistent with docs/planning/Feature_slices.md. Define measurable scenarios including valid feasible-only timeout, timeout with no candidate, later-objective timeout, fully proven results, stale acceptance, and cancellation without prescribing implementation. This backlog entry authorizes no specification or implementation work by itself.
+```
+
+### I-007: Calendar Capacity Diagnostics and Additional Planning Slots
+
+#### User or business outcome
+
+Before generation, a planner can see whether the selected teaching demand fits
+the available timetable opportunities. After an incomplete run, the planner can
+understand evidenced causes, distinguish uncertainty, and review additional
+slots instead of seeing only an unexplained count of open LE.
+
+#### Rationale for this slice boundary
+
+The user reported many open LE without an actionable explanation on 05.11.2026.
+The desired outcome is a decision about calendar capacity and realistic recovery,
+not merely a larger solver budget. Diagnosis and slot proposals form one usable
+planning workflow. Changing break rules is independently useful and belongs to
+I-008 so the first release retains the current ten-minute-break calculation.
+
+#### Primary actors and preconditions
+
+Planner user, with one selected semester/revision and explicit course selection.
+Existing teaching windows, course sizes/preferences, holidays, fixed occupancy,
+eligible resources and availability supply the planning context. No external
+system or new actor is introduced.
+
+#### In scope
+
+- A visible capacity check before starting the selected-course optimization.
+- Required, planned and remaining LE plus teaching minutes, break minutes and
+  usable timetable time, with clear units, selection and cohort/date scope.
+- Correct handling of shared cohort time, overlapping windows, course periods,
+  holidays, fixed teaching/exams, allowed session sizes and resource restrictions;
+  do not count the same shared time independently for every selected course.
+- Distinguish a proven calendar-capacity shortfall, observed resource/date/size
+  restrictions, and unresolved feasibility or optimality after a search timeout.
+- Explain assumptions and limitations of optimistic capacity bounds. Enough raw
+  minutes or a passing necessary check never guarantees a feasible complete plan.
+- Explain open LE at selection and course level using relevant dated/window or
+  resource context where substantiated. Observed exclusions are not automatically
+  the exact cause of every missing LE; joint-selection bounds are not per-course
+  maxima. A missing one-LE remainder may require redistribution because of allowed
+  session sizes rather than appending a standalone one-LE session.
+- Suggest concrete additional or extended teaching opportunities when more
+  timetable time could help, prioritizing existing teaching days and displaying
+  other weekdays as clearly marked alternatives, as confirmed by the user.
+- Each proposal identifies dates/times, affected courses/cohorts, required rule
+  or window changes, plausible benefit and remaining resource/feasibility checks.
+  Label estimates separately from a validated alternative and proven shortfalls.
+- Explicit planner approval before changing allowed planning opportunities;
+  refresh the capacity assessment and prepare a fresh generation attempt afterward.
+- Reuse result, remaining-work drilldown and comparison surfaces for consistent
+  explanations. Keep useful partial generation available after a shortage warning.
+
+#### Out of scope
+
+Automatic window changes, automatic acceptance, moving protected sessions,
+changing holidays or resource availability without their established authority,
+break shortening (I-008), guaranteed complete solutions, increased course limits,
+new solver/transport architecture, new integrations, or silent retry/batching.
+
+#### Main workflow and business rules
+
+The planner selects courses, reads the capacity check, and either continues
+under current rules or inspects extra-slot proposals. The planner approves a
+specific displayed change or keeps current constraints. Generation uses freshly
+prepared inputs and existing hard validation, stale protection and operation-wide
+acceptance. Incomplete results explain what is established and what is unknown,
+with an action matched to the evidence. Diagnostics/proposals alone save nothing.
+
+Calendar time is distinct from computational search time. Increasing the latter
+does not create timetable slots. No guessed cause is presented as proven; a
+capacity warning is not permission to invalidate an existing plan. Published
+revisions remain immutable. No new generated plan is saved merely because a
+capacity or slot proposal was approved.
+
+#### Data, UI and integration context
+
+Inputs are the existing selected planning snapshot and subsequent candidate/proof
+evidence. Outputs are scoped capacity metrics, source-grounded explanations,
+reviewable slot alternatives and any explicitly approved opportunity change.
+There is no external integration. Reuse generation preparation, I-006 review,
+remaining-LE drilldowns, the affected-record panel and calendar. The user's
+05.11.2026 open-LE observations are the motivating UI material; no new mockup exists.
+
+#### Dependencies and completion outcome
+
+I-003, I-004, I-006, FS-003, FS-008, FS-011 and FS-019. Implement this outcome
+before I-008. A planner can distinguish lack of calendar capacity from unfinished
+search, see concrete evidence or explicit uncertainty for open LE, and approve
+an additional opportunity without silently changing saved plans.
+
+#### Status and remaining clarification topics
+
+Ready for specification; not specified or implemented by this requirements
+update. Product intent and two-slice order confirmed by the user on 05.11.2026.
+Specification must resolve proposal ranking/limits, the exact approval scope for
+recurring versus dated additions, and freshness/latency/uncertainty presentation.
+These do not authorize unrestricted weekday, semester or institutional changes.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify for I-007: Calendar Capacity Diagnostics and Additional Planning Slots.
+Problem: Planners see open LE without knowing whether calendar time, resource restrictions, session packing or unfinished search caused the gap. More solver seconds cannot create timetable time.
+Outcome: Before generation, assess the selected courses' timetable capacity; after partial generation, show evidenced reasons or explicit uncertainty and offer reviewable additional-slot proposals.
+Actor: Planner. No external integration.
+Scope: Demand/available-time/LE metrics with teaching and breaks distinguished; shared cohort/calendar time without double counting; active periods/windows/holidays/fixed occupancy/resource and size restrictions; optimistic-bound assumptions; distinguish proven shortfall, observed restrictions and timeout uncertainty; traceable selection/course explanations; extra or extended slots on existing teaching days first, other weekdays as marked alternatives; show affected scope, required changes and estimated versus validated benefit; explicit approval, fresh preparation and refreshed assessment; retain useful partial generation and existing atomic acceptance.
+Rules: Passing necessary capacity checks is not feasibility proof. A timeout is not infeasibility proof. Never invent a cause or independent per-course maximum. No automatic constraint changes, saved-plan mutations or candidate acceptance. Fixed occupancy and all unmodified hard rules remain authoritative. Calendar minutes and search seconds are different quantities.
+Exclusions: Shorter breaks (I-008), automatic batching, increased selection limits, guaranteed completeness, new architecture/integrations and unapproved changes to holidays/resources/semester boundaries.
+Dependencies: I-003/I-004/I-006, FS-003/008/011/019. Reuse existing preparation/results/drilldown/calendar UI. User confirmed this scope on 05.11.2026.
+Completion: A planner understands the capacity warning and result uncertainty and can safely approve a concrete added opportunity before a fresh generation attempt.
+Clarify: Proposal ranking/limits, recurring versus dated approval scope, freshness and measurable diagnosis responsiveness. Keep detailed requirements consistent with docs/planning/Feature_slices.md; do not implement or prescribe architecture in this specification step.
+```
+
+### I-008: Planner-Approved Shorter Break Alternatives
+
+#### User or business outcome
+
+A planner can review whether five-minute inter-unit breaks would enable more
+valid teaching and explicitly approve a narrowly identified alternative rather
+than the system silently shortening the normal ten-minute break.
+
+#### Rationale for this slice boundary
+
+This changes an authoritative duration rule and requires consistent proposal,
+validation, editing, saving and historical display. It follows I-007 diagnosis
+instead of mixing rule exceptions into the initial calendar-capacity release.
+The user explicitly requested these proposals and approval on 05.11.2026.
+
+#### Primary actors and preconditions
+
+Planner user, with an I-007 diagnostic context and existing generation/review and
+manual correction workflows. Ten-minute breaks remain the baseline.
+
+#### In scope
+
+- Assess a five-minute-break alternative without modifying current rules or plans.
+- Show affected session/course/date scope, normal versus proposed break lengths,
+  resulting times, gained minutes and any actually demonstrated LE benefit.
+- Require explicit approval of the displayed exception scope before it can be
+  used in a fresh generated alternative or an authorized manual correction.
+- Validate the entire changed timetable against the approved break rule and all
+  other active hard rules; reuse atomic candidate acceptance and stale protection.
+- Keep break assumptions understandable in duration/LE display and editing.
+  An LE remains 45 teaching minutes; shorter breaks never manufacture teaching LE.
+- Preserve the established one-way editor rule: explicit LE/start changes derive
+  end using the applicable approved break, while manual end edits preserve LE.
+- Preserve published/historical timing facts and current saved work unless the
+  planner explicitly approves an applicable change through the established flow.
+
+#### Out of scope
+
+Automatic break shortening, a new institution-wide five-minute default, breaks
+shorter than five minutes, changing LE duration or session-size limits, automatic
+movement of protected work, silent one-LE session exceptions, guaranteed completion,
+or an automatic claim that a five-minute saving recovers one LE.
+
+#### Main workflow and business rules
+
+The planner reviews current-rule diagnostics and a concrete five-minute-break
+proposal, inspects its scope and benefit, then approves or rejects it. Rejection
+preserves the current context. Approval allows only the displayed exception;
+fresh validation/generation and any required final plan acceptance still apply.
+No global rule is relaxed implicitly. An unvalidated estimate stays an estimate.
+If shorter breaks do not help, say so and retain I-007 additional-slot options.
+
+#### Data, UI and integration context
+
+Inputs are current course/session durations, I-007 evidence, proposed break scope
+and the planner's decision. Outputs are a reviewable alternative and, only after
+approval and validation, an explicitly authorized exception or schedule change.
+Reuse the existing calendar/session editor and I-006 comparison. No external
+system or new mockup is required.
+
+#### Dependencies and completion outcome
+
+I-007, I-006, FS-004, FS-009 and FS-013. A planner can approve or reject a
+five-minute-break proposal, see its actual or uncertain benefit, and trust that
+generation, validation, persistence and later display agree about the exception.
+
+#### Status and remaining clarification topics
+
+Ready for specification after I-007; not specified or implemented by this update.
+Resolve exception lifetime and exact displayed scope, mixed-break representation,
+interaction with manual overrides and later retries, and comparison of slot
+extensions versus shorter breaks during specification. None permits changing
+unselected sessions or unrelated institutional policy without explicit authority.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify for I-008: Planner-Approved Shorter Break Alternatives, after I-007.
+Problem/outcome: Some open teaching may fit with shorter breaks, but the system must not silently change the ten-minute rule or claim that five minutes creates a 45-minute LE. Let a planner inspect and explicitly approve a concrete five-minute-break exception.
+Actor: Planner. No external integration.
+Scope: Non-mutating comparison under current versus five-minute breaks; affected sessions/courses/dates; gained minutes and validated versus estimated LE benefit; explicit approval of narrow scope; fresh generation/validation, atomic final acceptance and stale protection; consistent duration/LE/editor behavior and historical timing preservation. Explicit LE/start changes derive end from the approved break; end-only edits preserve LE.
+Rules: Ten minutes remains default. One LE remains45teachingminutes. All other hard constraints, selected/unselected boundaries, publication immutability and planner acceptance remain intact. No automatic or global relaxation. Do not present a speculative improvement as a proved usable timetable. Offer extra-slot alternatives when shortening cannot help.
+Exclusions: Breaks below five minutes, automatic approval/replanning, changed session-size limits, standalone one-LE exceptions, changes to protected sessions, guaranteed completion or a new institutional default.
+Dependencies: I-007/I-006, FS-004/009/013. Reuse their diagnostic, review and manual-edit surfaces.
+Completion: The approved exception is understandable and consistently honored from generation through saved display; rejecting it preserves current work.
+Clarify: Scope/lifetime, mixed-break representation, manual-end overrides, retries and proposal comparison. Follow docs/planning/Feature_slices.md. Define requirements and measurable scenarios without prescribing implementation or starting production changes.
+```
+
+### I-009: Dated Windows, Copying and Intensive-Week Scheduling
+
+#### User or business outcome
+
+A planner can add teaching opportunities on specific dates for a Studienform,
+enabling Monday-through-Saturday intensive-week teaching for its cohorts even
+when their ordinary timetable, such as Berufsbegleitend, permits only Fridays
+and Saturdays. Copying reduces repeated entry when other Studienformen need
+similar windows, while each entry remains independently editable.
+The planner explicitly marks intensive windows so generation actively prefers
+teaching there and favours different LVs in each cohort's intensive day, with
+single-LV days allowed where a valid mix is not possible.
+
+#### Rationale for this slice boundary
+
+Dated-window administration, copying, intensive scheduling preferences, and
+consistent validation deliver one usable intensive-week outcome. The user
+simplified the initial shared-week idea to dated Zeitfenster and explicitly
+selected exactly one Studienform per record plus independent copying. This requires neither
+I-007's capacity diagnosis/proposals nor I-008's break exceptions.
+The later requested indicator and scheduling priorities stay within I-009
+because they make the same intensive-week opportunities useful without a
+separate planning workflow or independently valuable new slice.
+
+#### Primary actors
+
+- Planner user maintaining Zeitfenster and generating teaching schedules.
+- Cohorts benefit through existing Studienform/course relationships; no new
+  student-facing workflow, role or permissions are introduced.
+
+#### Preconditions
+
+Academic Data provides Studienformen and weekly Zeitfenster. Existing course
+and cohort relationships determine the applicable Studienform. Teaching
+generation, validation, holiday avoidance and controlled replacement exist.
+
+#### In scope
+
+- Create, view, edit and delete additional windows with a full calendar date,
+  start time, end time and exactly one Studienform.
+- Distinguish dated from weekly windows in existing Zeitfenster administration.
+  Keep ordinary weekly windows available.
+- Make each dated window an additional teaching opportunity only on its exact
+  date for courses using its Studienform, across the relevant cohorts.
+- Represent an intensive week through individual Monday-through-Saturday
+  entries. Copy matching entries to other Studienformen when needed.
+- Allow the planner to mark a dated window with an explicit Intensivwoche
+  indicator and show that status in window administration. Only marked windows
+  receive intensive scheduling priority; marking one does not implicitly mark
+  other windows or the entire calendar week for every Studienform.
+- Copy an existing weekly or dated Zeitfenster into a new editable entry,
+  prefilled with its scheduling values and Studienform. Retain its weekly or
+  dated kind; allow changing the target Studienform, date or weekday as
+  applicable, and hours before explicit save.
+- For a dated copy, also prefill the intensive indicator and allow changing it
+  independently before save. Existing weekly windows do not become intensive
+  through copying or merely sharing a weekday with an intensive date.
+- Save each copy as an independent record assigned to one Studienform. Later
+  edits/deletion of either record never propagate to the other.
+- Cancel creation/copying without changing the source or saving a new record.
+- Apply dated opportunities consistently in teaching generation and current
+  window validation. An otherwise valid dated session must not be flagged
+  solely for falling outside the ordinary weekly windows.
+- Refresh affected current draft alerts after changes without silently creating,
+  moving, replacing or deleting saved sessions.
+- In generation, maximize total permitted teaching coverage first, then maximize
+  teaching units in applicable marked intensive windows, then favour a mix of
+  different LVs per cohort/day before applying lower-priority existing placement
+  and continuity preferences. Preserve valid single-LV days when a mix is not
+  feasible under the higher priorities and hard constraints.
+
+#### Out of scope
+
+- Multi-Studienform mappings, shared/linked records, inheritance and synchronized
+  edits; copying does not create a continuing relationship between records.
+- A dedicated intensive-week entity, annual recurrence, or bulk creation of a
+  whole week or copies for every Studienform in one action.
+- Mandatory teaching for every cohort/day, guaranteed complete scheduling,
+  automatic generation or replacement after window changes.
+- Requiring two or more LVs per intensive day, reducing total scheduled teaching
+  for intensive use or daily variety, and relaxing hard constraints to fill a day.
+- New exam-window policy, break exceptions, capacity diagnosis/proposal features,
+  changed course limits and external integrations.
+
+#### Main workflow
+
+In Stammdaten > Zeitfenster, the planner creates a dated window for one
+Studienform and marks it Intensivwoche when intensive priority is intended.
+To reuse values, the planner copies a weekly or dated window,
+adjusts the target form or other scheduling fields, and explicitly saves the
+independent entry. Repeating this prepares the intensive-week dates for the
+intended Studienformen. Teaching generation seeks the greatest total permitted
+coverage, favours marked intensive dates, and then prefers different LVs within
+each cohort's intensive day where feasible. Replacement still uses the established
+planner review/acceptance workflow.
+
+#### Business rules
+
+- Dates include a year and apply only on that day, not every matching weekday
+  or the same date in later years.
+- Exactly one Studienform is required per saved window. The same date/hours
+  may legitimately exist as separate records for different Studienformen.
+- Copy only window values, never sessions, assignments, courses or cohorts.
+  Source and copy have independent identity and independent later maintenance.
+- Dated windows supplement weekly opportunities; overlapping windows do not
+  create additional physical capacity or authorize double-booking.
+- The intensive indicator is an explicit property of a dated window. Ordinary
+  weekly and unmarked dated opportunities remain usable without that priority.
+- Measure intensive use by scheduled teaching units (LE), not by number of
+  sessions, distinct courses, break minutes, or necessarily complete LVs. A
+  valid LV may be taught partly in the intensive week and partly elsewhere.
+- The observable preference order is: greatest total permitted LE across the
+  selected courses; greatest LE in their applicable marked intensive windows;
+  daily LV variety for each cohort using those windows; then the existing
+  placement/continuity preferences in their existing relative order.
+- This explicitly extends I-003/FS-010's preference order: once-per-week
+  placement, proximity to preferred session size, reduced weekly concentration
+  and resource continuity cannot defeat intensive-window use or daily variety
+  at equal higher-priority coverage. Multiple days of one LV in the intensive
+  week may therefore be preferred. Existing at-most-one-session-per-LV-per-date
+  and hard minimum/maximum session-size rules remain in force.
+- Daily variety concerns different LVs attended by the same cohort on the same
+  intensive date; courses for unrelated cohorts do not satisfy that preference.
+  A day containing only one LV remains valid. Do not leave otherwise schedulable
+  LE open or reduce intensive LE merely to create a two-LV day.
+- Count each scheduled LE once even if ordinary and intensive windows overlap.
+  A session must fit the applicable permitted windows; the precise diversity
+  scoring and overlap accounting are specified within this priority order.
+- If no applicable marked windows exist, retain the existing scheduling
+  preference order. The marker changes preferences, not generated validity.
+- Explicit course-specific restrictions remain authoritative. A dated
+  study-form window must not silently bypass a deliberately narrower course
+  restriction; any required change uses existing explicit constraint controls.
+- Semester/course periods, holidays, availability, eligibility, room capacity,
+  active-exam rules, session-size/break rules and lecturer/room/cohort
+  non-overlap remain applicable to generation.
+- Windows permit teaching; they neither create sessions nor require placement
+  for every cohort or on all six days. Ordinary weekly hours elsewhere remain.
+- Existing save severity, stale protection, atomic replacement and publication
+  rules remain in force. Source-window changes do not rewrite historical or
+  published schedule facts or automatically alter current sessions.
+
+#### Data inputs and outputs
+
+Inputs: one Studienform, full date or weekly weekday, start/end times, the
+dated window's intensive indicator, source window and planner edit/save/cancel
+actions. Outputs: independent window records, applicable teaching opportunities,
+intensive-aware preference outcomes and refreshed validation context. Saving
+or copying a window creates no schedule session or resource assignment.
+
+#### Integrations
+
+None. Manual product-owned planning-data administration remains authoritative.
+
+#### UI references
+
+Reuse the existing Academic Data > Time windows / Stammdaten > Zeitfenster
+list/editor, Studienform selector, and create/save/cancel patterns. Put copying
+with the existing window actions and expose the dated window's Intensivwoche
+indicator in the list/editor. Reuse generation and calendar/list validation
+surfaces and existing German wording/European date conventions. No new mockup
+was supplied; the conversation's dated-window and editable-copy workflow is
+the requirement-level UI reference.
+
+#### Constraints and assumptions
+
+- Confirmed on 05.11.2026: concrete date-based opportunities, one Studienform
+  mapping per window, no sharing, and copying existing Zeitfenster to reduce
+  redundant entry with independent later edits.
+- Subsequently confirmed on 05.11.2026: explicitly identify intensive windows,
+  prefer as much teaching there as possible, and favour different LVs within a
+  day while allowing one LV when a valid mix is impossible. The agreed planning
+  interpretation maximizes total LE, then intensive LE, then daily LV variety.
+- The original intensive-week solution is simplified into dated entries. There
+  is no separate one-week-per-semester limit or obligation to fill every date.
+- Cohort applicability follows existing Studienform/course relationships;
+  individual student planning remains excluded.
+- No new architecture, storage model or external boundary is prescribed.
+
+#### Dependencies
+
+- FS-007: existing Studienform and time-window administration.
+- FS-005 and FS-011: consistent window validation and holiday rules.
+- FS-019: current planner workspace.
+- I-003 and I-004: unified teaching generation and controlled atomic replacement,
+  including inherited course/resource constraints and revision protection.
+- **No dependency on I-007 or I-008.** Creation, copying and use of dated windows
+  work without capacity diagnosis, proposals or shorter-break functionality.
+- No dependency on I-006's new timeout handling. When I-006/I-007/I-008 are
+  present, they consume the same applicable windows and retain their own
+  approval and acceptance boundaries; this is compatibility, not delivery order.
+
+#### Completion outcome
+
+A normally Friday/Saturday Studienform can receive eligible teaching on a
+specifically added Monday without opening other Mondays. The planner can
+prepare Monday-through-Saturday intensive-week entries and copy them individually
+to other Studienformen without re-entering unchanged values. Editing/deleting
+a copy leaves its source unchanged. Generation and validation agree while
+preserving all other active constraints and saved-plan protections.
+Given two valid arrangements with the same total LE, generation prefers the
+one with more LE in marked intensive windows. At equal total and intensive LE,
+it favours different LVs per cohort/day over a less varied alternative, even
+when this needs multiple teaching days for an LV in that week. A valid single-LV
+day remains usable when no suitable mix exists. Unmarked windows do not acquire
+intensive priority, and an overlap never counts teaching twice.
+
+#### Open clarification topics
+
+- Copy-action placement/default focus and same-form exact-duplicate feedback.
+- Dated/weekly ordering, overlap messages and field validation details.
+- Protected-deletion feedback following existing catalog conventions, without
+  silently changing saved sessions.
+- Detailed cross-surface refresh and freshness behavior after window changes.
+- Exact measurable daily-variety score and tie-breaking for multiple intensive
+  dates, respecting total LE and intensive LE as higher priorities, without
+  introducing a minimum number of LVs per day.
+- Exact accounting for overlapping marked windows and presentation of intensive
+  use/preferences and their proven versus unproven status where supported.
+
+These are specification-level details, not unresolved product-scope decisions.
+
+#### Specification status
+
+Ready for specification — requirements and identifier I-009 confirmed on
+05.11.2026. Requirements only; no detailed specification, plan, tasks or
+production implementation is created by this update. I-007 and I-008 retain
+their existing IDs and scope.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to create the specification for this development slice.
+
+Slice ID: I-009
+Slice name: Dated Windows, Copying and Intensive-Week Scheduling
+
+Product context:
+University planners need specific Monday-through-Saturday intensive-week dates
+even for Studienformen such as Berufsbegleitend with ordinary Friday/Saturday
+hours. Changing recurring windows would open unrelated weeks. The user chose
+dated additional windows, exactly one Studienform per record, and a copy action
+to reduce redundant entry without sharing or synchronizing later edits.
+The scheduler must actively prefer these opportunities when marked Intensivwoche
+and favour different LVs per cohort/day; a single-LV day is an allowed fallback.
+
+Product-level success and user outcome:
+Prepare dated teaching opportunities and independently reuse window values
+across Studienformen. Generate eligible teaching on those dates without
+opening the same weekdays elsewhere or weakening other hard constraints.
+At equal total teaching coverage, prefer more teaching in marked intensive
+windows; at equal intensive coverage, prefer a daily mix of different LVs.
+
+Primary actors:
+Planner user. Cohorts benefit through existing Studienform/course relationships;
+no new role, permission or student-facing workflow is required.
+
+In scope:
+Dated-window create/view/edit/delete with full date, hours and one Studienform;
+clear distinction from existing weekly windows; additional opportunities only
+on the recorded date; individual entries for intensive-week days. Copy any
+existing weekly or dated window into an editable unsaved new entry retaining
+its kind and prefilling its scheduling values and Studienform. Allow changing
+the target form, date/weekday and hours before explicit save. Copies have
+independent identity and later maintenance. Cancel without mutation. Integrate
+dated opportunities into teaching generation and window validation, with
+refreshed current draft alerts and no automatic session changes.
+Add an explicit Intensivwoche indicator to dated windows and their list/editor.
+Copy its value into dated copies, independently editable before save. Marking
+one window does not mark the entire week or another Studienform. In generation,
+prioritize total LE, then intensive-window LE, then daily LV variety, then the
+existing lower-priority preferences in their existing relative order.
+
+Out of scope:
+Multi-Studienform mappings, shared/linked records, inheritance, synchronized
+copies, dedicated week entities, annual recurrence, bulk week/all-form creation,
+compulsory sessions for every cohort/day, automatic generation/replacement,
+new exam-window policy, break exceptions, capacity diagnostics/proposals,
+increased course limits and external integrations.
+No mandatory two-LV day, sacrificing total coverage for intensive use/variety,
+or relaxing hard rules to fill an intensive day.
+
+Main workflow:
+Create a dated window in Stammdaten > Zeitfenster for one Studienform. Copy
+existing windows, adjust and save independent entries for other dates/forms
+as needed. Explicitly mark intensive windows. Generate through the existing
+workflow with intensive-use and daily-variety preferences, and explicitly
+accept any required replacement under established rules.
+
+Business rules:
+Exactly one Studienform per window; dates include a year and never recur
+implicitly. Identical dates/hours may exist for different forms. Copy window
+values only, never sessions or other planning records. Editing/deleting one
+record never affects its source/copies. Dated windows supplement weekly hours;
+overlaps do not manufacture capacity. Explicit narrower course restrictions,
+semester/course periods, holidays, availability, eligibility, capacity, active
+exams, session-size/break rules and resource/cohort non-overlap remain binding.
+Windows permit teaching but neither create nor require sessions. Preserve
+manual-save severity, stale safeguards, atomic replacement, immutable published
+revisions and historical facts; source edits never silently change sessions.
+Intensive priority applies only to marked dated windows. Measure amount by
+scheduled teaching units (LE), not session count, break time, distinct LV count,
+or complete courses. An LV may be partly inside and partly outside the week.
+Maximize total permitted LE first, marked-intensive LE second, then prefer
+different LVs within each cohort's intensive date. Single-LV days remain valid
+when a mix is infeasible under higher priorities/constraints. Daily variety must
+not reduce total or intensive LE. Unrelated cohorts do not satisfy each other's
+variety preference. Intensive use/variety precede I-003/FS-010's once-per-week,
+session-size-midpoint, weekly-concentration and resource-continuity preferences,
+which keep their relative order below those priorities. Multiple days of one LV
+in the intensive week may be preferred. Hard session sizes and at most one
+session per LV/date still apply. Count overlapping intensive/weekly opportunities
+without double-counting LE. With no applicable intensive markers, retain the
+existing preference order. Generated validity is unchanged.
+
+Data inputs and outputs:
+Studienform, date or weekday, hours, source window and save/cancel actions
+plus the dated intensive indicator produce independent records and updated
+teaching/validation context with intensive-aware placement preferences.
+
+External systems and integrations:
+None; manual product-owned administration remains authoritative.
+
+UI references:
+Existing Stammdaten > Zeitfenster list/editor and Studienform selector,
+create/save/cancel patterns, generation and calendar/list alerts. No new mockup
+supplied. Show the dated Intensivwoche indicator in administration. Follow
+existing German wording and European date display/entry.
+
+Dependencies and assumptions:
+FS-007, FS-005, FS-011, FS-019, I-003 and I-004, including inherited resource,
+course and revision rules. NO dependency on I-007/I-008 or I-006's timeout
+extension. If present, those features use the same applicable windows and keep
+their approval boundaries. User confirmed single mappings, independent copying
+and identifier I-009 on 05.11.2026.
+The same-day variety preference with single-LV fallback was also confirmed on
+05.11.2026. Intensive priorities belong to this slice, not a new initiative.
+
+Completion outcome:
+A normally Friday/Saturday study form can receive eligible teaching on a dated
+Monday while other Mondays remain restricted. Individually copied windows
+prepare intensive-week dates for other forms; editing a copy leaves its source
+unchanged. Generation and validation agree and preserve other constraints and
+saved work.
+At equal total LE, choose more intensive LE before ordinary placement
+preferences; at equal total and intensive LE, favour daily variety within each
+cohort. Demonstrate single-LV fallback, intensive scheduling over multiple days
+of an LV despite the lower once-per-week preference, unchanged unmarked-window
+behavior, and no double-counting from overlapping windows.
+
+Known clarification topics:
+Copy presentation/focus, same-form exact duplicates, dated/weekly ordering and
+overlap messages, field/protected-deletion feedback, detailed freshness/refresh
+within existing no-silent-session-change rules.
+Define measurable daily-variety scoring and ties across intensive dates without
+changing the priority order or imposing a two-LV minimum; exact overlap accounting
+and intensive-use/proof-status presentation where supported.
+
+Keep the specification strictly limited to this slice and consistent with
+docs/planning/Feature_slices.md. Define user scenarios, functional requirements,
+edge cases, assumptions, accessibility behavior and measurable success criteria.
+Do not prescribe implementation, expand scope or start production changes.
 ```
 
 ## Deferred scope
@@ -3836,6 +4493,10 @@ Keep the specification consistent with docs/planning/Feature_slices.md. Define m
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-11-05 | Updated slice and scheduling-preference scope change | I-009, I-003, FS-010 | Added an explicit Intensivwoche indicator on dated windows. At equal maximum total LE, prioritize intensive-window LE, then different LVs per cohort/day, ahead of existing weekly-placement and continuity preferences. Permit single-LV days where a valid mix is impossible; retain hard constraints, independent copies and no I-007/I-008 dependency. Updated outcome, scope and specification prompt; requirements only. | The user wants intensive windows actively used rather than merely permitted and wants different LVs within the same day, while explicitly allowing single-LV fallback when a valid mix cannot be scheduled. |
+| 2026-11-05 | New improvement slice and dated-window scope extension | I-009, FS-007, FS-005, I-003, I-004 | Added dated teaching opportunities for intensive weeks, one Studienform per Zeitfenster, and independent editable copying of existing weekly/dated windows. Retain ordinary weekly windows, other hard constraints and saved-plan protections. Explicitly independent of I-007/I-008 and I-006's timeout extension. Requirements only. | The user simplified a shared intensive-week idea to concrete additional dates and chose single mappings plus copying to reduce repeated entry without shared edits. I-009 was explicitly confirmed after I-007 and I-008 were allocated meanwhile. |
+| 2026-11-05 | New improvement slices and explicit duration-rule exception scope | I-007, I-008, FS-010, I-006 | Confirmed pre-generation calendar-capacity checks, evidence-based open-LE explanations and approved additional-slot proposals; existing teaching days first, other weekdays as marked alternatives. Separate follow-up permits proposed five-minute breaks only after explicit approval. Ordered I-007 before I-008; requirements only. | The user reported unexplained open LE and wanted to distinguish insufficient timetable capacity from search timeout, identify actionable extra opportunities and consider narrowly approved shorter breaks. |
+| 2026-11-04 | Specification authorized and created | I-006, FS-010, I-003, I-004 | Created `specs/I-006-optimization-incumbent-acceptance/spec.md` and its quality checklist. Confirmed five-minute default, thirty-minute initial ceiling, operator configuration without planner overrides, fresh retry, and running/navigation cancellation. Defined candidate/proof/bound review, atomic acceptance, freshness and preservation, and supersession of conflicting fixed deadlines. No implementation started. | The user explicitly requested specification work and resolved budget ownership/values and longer-running interaction choices. |
 | 2026-11-03 | Implementation preparation completed | I-005 | Completed two plan/tasks/analyze cycles. Added design, response/UI contracts, validation guide and 34 test-first tasks; corrected parent-owned generation retrieval-state coverage. Final consistency review found no remaining findings. No implementation started. | Prepare the confirmed cohort-discovery scope for the next implementation phase while preserving selection, editor state, session filter memory and I-004 safeguards. |
 | 2026-11-03 | Specification authorized and created | I-005 | Created `specs/I-005 - filter-course-plan-list/spec.md` and its quality checklist for cohort discovery in both course lists, explicit and hidden selection, accessibility, and preserved generation safeguards. Documented local filter lifetime defaults; search, grouping, and bulk selection remain deferred. No implementation started. | The user explicitly requested starting I-005 after the requirements-only backlog entry. |
 | 2026-11-03 | New improvement slice, optimization-result policy change | I-006, FS-010, I-003, I-004 | Recorded a longer configurable optimization budget and explicit atomic acceptance of hard-valid candidates without complete optimality proof, with honest quality/bound reporting and unchanged hard constraints; five minutes remains the proposed default. Requirements only. | Larger first-plan selections exhausted the 60-second deadline and discarded any potential useful result; the user approved increasing the limit and offering valid unproven results for conscious acceptance. |

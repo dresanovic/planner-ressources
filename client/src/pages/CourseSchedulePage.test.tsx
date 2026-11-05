@@ -16,6 +16,10 @@ const mocks = vi.hoisted(() => ({
   prepare: vi.fn(),
   generateBatch: vi.fn(),
   acceptBatch: vi.fn(),
+  startOperation: vi.fn(),
+  readOperation: vi.fn(),
+  decideOperation: vi.fn(),
+  cancelOperation: vi.fn(),
   getExamPlanningOverview: vi.fn(),
   saveExamConfiguration: vi.fn(),
   createManualExam: vi.fn(),
@@ -46,9 +50,13 @@ vi.mock('../api/draftSchedule', () => ({
   clearCourseDraft: mocks.clearCourseDraft,
 }))
 vi.mock('../api/conflictAwareGeneration', () => ({
-  prepareConflictAwareGeneration: mocks.prepare,
+  prepareConflictAwareGeneration: async (...args: unknown[]) => ({...optimizationPreparationFixture,...await mocks.prepare(...args)}),
   generateConflictAwareSchedules: mocks.generateBatch,
   acceptConflictAwareSchedules: mocks.acceptBatch,
+  startOptimizationOperation: mocks.startOperation,
+  getOptimizationOperation: mocks.readOperation,
+  decideOptimizationOperation: mocks.decideOperation,
+  cancelOptimizationOperation: mocks.cancelOperation,
 }))
 vi.mock('../api/examScheduling', () => ({
   getExamPlanningOverview: mocks.getExamPlanningOverview,
@@ -86,7 +94,8 @@ import { draftScheduleFixture, generationConstraintsFixture } from '../test/draf
 import { lifecycleOverviewFixture, snapshotFixture } from '../test/lifecycleFixtures'
 import { loadedCalendarWorkspaceFixture, noRevisionWorkspaceFixture } from '../test/calendarWorkspaceFixtures'
 import { issuedLecturerReviewLinkFixture, plannerLecturerReviewOverviewFixture } from '../test/lecturerReviewFixtures'
-import { decisionRequiredGenerationFixture, directSavedGenerationFixture, optimizationPreparationFixture } from '../test/optimizationFixtures'
+import { decisionRequiredGenerationFixture, directSavedGenerationFixture, optimizationPreparationFixture, operationStatusFixture } from '../test/optimizationFixtures'
+import type { OptimizationOperationContext, OptimizationPreparation, OptimizationGenerationResponse } from '../api/conflictAwareGeneration'
 
 function deferred<Value>() {
   let resolve!: (value: Value) => void
@@ -278,6 +287,23 @@ function lecturerReviewOverviewForRevision(
 
 beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset())
+  sessionStorage.clear()
+  const results = new Map<string, OptimizationGenerationResponse>()
+  mocks.startOperation.mockImplementation(async (preparation: OptimizationPreparation, context: OptimizationOperationContext) => {
+    const result = await mocks.generateBatch(preparation)
+    results.set(context.operationId, result)
+    return {...operationStatusFixture,operationId:context.operationId,
+      phase:result.mode === 'decision_required' ? 'awaiting_decision' : 'ready_to_save',
+      canAccept:result.mode === 'decision_required',canFinalize:result.mode !== 'decision_required',
+      review:result.mode === 'decision_required' ? result : decisionRequiredGenerationFixture}
+  })
+  mocks.decideOperation.mockImplementation(async (context: OptimizationOperationContext, _fingerprint: string, finalize: boolean) => {
+    const prior = results.get(context.operationId)
+    const result = finalize ? prior : await mocks.acceptBatch(prior)
+    return {...operationStatusFixture,operationId:context.operationId,phase:'saved',saved:true,result}
+  })
+  mocks.cancelOperation.mockImplementation(async (id: string) => ({...operationStatusFixture,operationId:id,phase:'cancelled'}))
+  mocks.readOperation.mockImplementation(async (id: string) => ({...operationStatusFixture,operationId:id,phase:'interrupted'}))
   mocks.getPlanningOptions.mockResolvedValue(options)
   mocks.getGenerationConstraints.mockResolvedValue(generationConstraintsFixture)
   mocks.getDraftSchedules.mockResolvedValue([])
@@ -291,6 +317,10 @@ beforeEach(() => {
 })
 
 afterEach(() => { document.body.innerHTML = '' })
+
+async function confirmPreparedBudget() {
+  await act(async () => { button('Optimierung starten')?.click(); await new Promise(resolve=>setTimeout(resolve,0)) })
+}
 
 async function renderPage(destination: ScheduleDestination = 'calendar') {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
@@ -347,6 +377,81 @@ function summaryValue(label: string) {
 }
 
 describe('CourseSchedulePage multi-course mode', () => {
+  it.each(['clear', 'date', 'invalid date'])('invalidates prepared optimization after changing %s', async (change) => {
+    mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
+    const root = await renderPage()
+    act(() => button('Plan erzeugen')?.click())
+    act(() => document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
+    await act(async () => { button('Ausgewählte Lehrveranstaltungen optimieren')?.click() })
+    const preparedStart = button('Optimierung starten')!
+    expect(preparedStart).toBeDefined()
+    act(() => {
+      if (change === 'clear') button('Auswahl aufheben')?.click()
+      else {
+        const input = document.querySelector<HTMLInputElement>('.multi-course-panel input[type="text"]')!
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, change === 'date' ? '10.11.2026' : 'invalid')
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+      }
+      // A queued click must also be rejected before React removes the old action.
+      preparedStart.click()
+    })
+    expect(button('Optimierung starten')).toBeUndefined()
+    expect(mocks.startOperation).not.toHaveBeenCalled()
+    if (change === 'date') {
+      await act(async () => { button('Ausgewählte Lehrveranstaltungen optimieren')?.click() })
+      expect(mocks.prepare.mock.calls.at(-1)?.[3]).toEqual(['2026-11-10'])
+      expect(button('Optimierung starten')).toBeDefined()
+    }
+    act(() => root.unmount())
+  })
+
+  it('explains possible cancellation triggers instead of suggesting a larger budget for a cancelled run',async()=>{
+    mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
+    mocks.startOperation.mockImplementation(async(_p:OptimizationPreparation,c:OptimizationOperationContext)=>({
+      ...operationStatusFixture,operationId:c.operationId,phase:'cancelled',elapsedMilliseconds:286000}))
+    await renderPage()
+    act(()=>button('Plan erzeugen')?.click())
+    act(()=>document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
+    await act(async()=>{button('Ausgewählte Lehrveranstaltungen optimieren')?.click()})
+    await act(async()=>button('Optimierung starten')?.click())
+    const feedback=document.querySelector('.optimization-operation-status')?.textContent
+    expect(feedback).toContain('Mögliche Auslöser')
+    expect(feedback).toContain('Statusverbindung')
+    expect(feedback).not.toContain('Für mehr Zeit')
+  })
+  it.each(['revision_not_editable','working_revision_required','stale_lifecycle_state','semester_not_found'])('offers fresh preparation after definitive lifecycle start rejection %s',async(code)=>{
+    mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
+    mocks.startOperation.mockRejectedValueOnce([{code,message:'Lifecycle changed.'}])
+    await renderPage()
+    act(()=>button('Plan erzeugen')?.click())
+    act(()=>document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
+    await act(async()=>{button('Ausgewählte Lehrveranstaltungen optimieren')?.click()})
+    await act(async()=>{button('Optimierung starten')?.click();await Promise.resolve()})
+    expect(document.body.textContent).toContain(code==='semester_not_found'?'Semester ist nicht mehr verfügbar':'nicht mehr aktuell')
+    expect(document.body.textContent).not.toContain('Abschluss unbestätigt')
+    expect(mocks.decideOperation).not.toHaveBeenCalled()
+    expect(button('Ausgewählte Lehrveranstaltungen optimieren')?.disabled).toBe(false)
+    await act(async()=>{button('Ausgewählte Lehrveranstaltungen optimieren')?.click()})
+    expect(mocks.prepare).toHaveBeenCalledTimes(2)
+    expect(document.body.textContent).toContain('Optimierungszeit:')
+  })
+  it('cancels a deferred operation when its generation tab is left and ignores late review',async()=>{
+    const pending=deferred<typeof decisionRequiredGenerationFixture>()
+    mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
+    mocks.generateBatch.mockReturnValue(pending.promise)
+    await renderPage()
+    act(()=>button('Plan erzeugen')?.click())
+    act(()=>document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
+    await act(async()=>{button('Ausgewählte Lehrveranstaltungen optimieren')?.click()})
+    await act(async()=>{button('Optimierung starten')?.click();await Promise.resolve()})
+    const started=mocks.startOperation.mock.calls.length
+    expect(started).toBe(1)
+    await act(async()=>button('Kursdetails')?.click())
+    expect(mocks.cancelOperation).toHaveBeenCalled()
+    await act(async()=>pending.resolve(decisionRequiredGenerationFixture))
+    expect(document.querySelector('.regeneration-comparison-dialog')).toBeNull()
+    expect(mocks.decideOperation).not.toHaveBeenCalled()
+  })
   it('exposes exactly one focused Schedule workspace for each controlled destination', async () => {
     const root = await renderPage('versions')
     expect(document.querySelector<HTMLElement>('.versions-workspace-region')?.hidden).toBe(false)
@@ -1493,9 +1598,10 @@ describe('CourseSchedulePage multi-course mode', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(mocks.prepare).toHaveBeenCalledWith(1, 11, [1, 2], ['2026-10-26', '2026-11-02'])
+    await confirmPreparedBudget()
     expect(mocks.generateBatch).toHaveBeenCalledOnce()
     expect(document.querySelector('[role="dialog"]')).toBeNull()
-    expect(document.body.textContent).toContain('2 vollständig · 0 teilweise verbessert')
+    expect(document.body.textContent).toContain('2 vollständig · 0 unvollständig')
     expect(mocks.getGenerationConstraints).toHaveBeenCalledTimes(1)
   })
 
@@ -1514,6 +1620,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
+    await confirmPreparedBudget()
     expect(document.body.textContent).toContain('Keine gültige Alternative')
     expect(document.body.textContent).toContain('Course 1: Founders Day')
     expect(document.querySelector('[role="dialog"]')).toBeNull()
@@ -1570,8 +1677,10 @@ describe('CourseSchedulePage multi-course mode', () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
+    await confirmPreparedBudget()
     expect(document.querySelector('[role="dialog"]')).not.toBeNull()
     act(() => button('Abbrechen')?.click())
+    await confirmPreparedBudget()
     expect(mocks.generateBatch).toHaveBeenCalledTimes(1)
     expect(mocks.acceptBatch).not.toHaveBeenCalled()
     expect(document.querySelector('[role="dialog"]')).toBeNull()
@@ -1597,6 +1706,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
+    await confirmPreparedBudget()
     expect(document.querySelector('[role="dialog"]')).not.toBeNull()
 
     const resetButton = button('Benutzerdefinierte Regeln zurücksetzen') as HTMLButtonElement
@@ -1675,6 +1785,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
+    await confirmPreparedBudget()
     expect(document.querySelector('[role="dialog"]')).not.toBeNull()
   })
 
@@ -1702,6 +1813,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
+    await confirmPreparedBudget()
     expect(document.body.textContent).toContain('1 veraltet')
 
     await act(async () => {
@@ -1711,6 +1823,7 @@ describe('CourseSchedulePage multi-course mode', () => {
 
     expect(mocks.prepare).toHaveBeenCalledTimes(2)
     expect(mocks.prepare).toHaveBeenLastCalledWith(1, 11, [1], [])
+    await confirmPreparedBudget()
     expect(mocks.generateBatch).toHaveBeenCalledTimes(2)
     expect(mocks.getDraftSchedules).toHaveBeenCalledTimes(3)
     expect(document.body.textContent).toContain('1 vollständig')
@@ -1731,12 +1844,15 @@ describe('CourseSchedulePage multi-course mode', () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
+    await confirmPreparedBudget()
     expect(document.querySelector('[role="dialog"]')).not.toBeNull()
 
+    await confirmPreparedBudget()
     await act(async () => {
       button('Neu erzeugten Stundenplan übernehmen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
+    await confirmPreparedBudget()
     expect(mocks.generateBatch).toHaveBeenCalledTimes(1)
     expect(mocks.acceptBatch).toHaveBeenCalledTimes(1)
     expect(mocks.acceptBatch).toHaveBeenCalledWith(decisionRequiredGenerationFixture)
@@ -1767,6 +1883,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
+    await confirmPreparedBudget()
     await act(async () => {
       button('Neu erzeugten Stundenplan übernehmen')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
@@ -1789,6 +1906,7 @@ describe('CourseSchedulePage multi-course mode', () => {
       button('Ausgewählte Lehrveranstaltungen optimieren')?.click()
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
+    await confirmPreparedBudget()
     expect(document.querySelector('[role="dialog"]')).not.toBeNull()
 
     await act(async () => {
@@ -2162,10 +2280,13 @@ it('I-005 preserves hidden saved-course scope and captured I-004 evidence during
   expect(document.body.textContent).toContain('1 durch den Kohortenfilter verborgen')
   await act(async () => document.querySelector<HTMLButtonElement>('.multi-course-panel .generate-button')!.click())
   expect(mocks.prepare).toHaveBeenCalledWith(1, 11, [1, 2], [])
+  await confirmPreparedBudget()
   expect(mocks.generateBatch).toHaveBeenCalledWith(optimizationPreparationFixture)
   act(() => { filter.value = '1'; filter.dispatchEvent(new Event('change', {bubbles: true})) })
+  await confirmPreparedBudget()
   expect(mocks.generateBatch).toHaveBeenCalledTimes(1)
   expect(mocks.acceptBatch).not.toHaveBeenCalled()
+  await confirmPreparedBudget()
   expect(document.querySelector('[role="dialog"]')).not.toBeNull()
   await act(async () => button('Abbrechen')!.click())
   expect(document.querySelector('[role="dialog"]')).toBeNull()
@@ -2250,6 +2371,7 @@ it('I-005 prevents retry from stale planning options without altering selection'
   act(() => button('Plan erzeugen')!.click())
   act(() => document.querySelector<HTMLInputElement>('.multi-course-panel .course-picker input')!.click())
   await act(async () => document.querySelector<HTMLButtonElement>('.multi-course-panel .generate-button')!.click())
+  await confirmPreparedBudget()
   mocks.getPlanningOptions.mockRejectedValueOnce(new Error('offline'))
   await act(async () => root.render(<CourseSchedulePage catalogRevision={1} />))
   expect(button('Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen')).toBeDefined()

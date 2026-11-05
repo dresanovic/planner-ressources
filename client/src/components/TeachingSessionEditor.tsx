@@ -2,6 +2,7 @@ import type { SessionEditFailure } from '../api/draftSchedule'
 import {
   derivedLengthLabel,
   resourceLabel,
+  teachingEndTime,
   type EditableDraftSessionRequest,
   type TeachingSessionEditModel,
 } from './sessionEditModel'
@@ -41,13 +42,22 @@ export function TeachingSessionEditor({
       <EuropeanDateField id={`teaching-date-${session.id}`} className="inline-edit-field" label="Datum" autoFocus value={draft.date} disabled={isDisabled} onChange={(value) => onChange({ ...draft, date: value ?? '' })} required />
       <label className="inline-edit-field">
         <span>Beginn</span>
-        <input type="time" value={draft.startTime} disabled={isDisabled} onChange={(event) => onChange({ ...draft, startTime: event.target.value })} />
+        <input name="startTime" type="time" value={draft.startTime} disabled={isDisabled} required onChange={(event) => onChange({ ...draft, startTime: event.target.value, endTime: teachingEndTime(event.target.value, draft.units ?? session.units) })} />
+      </label>
+      <label className="inline-edit-field">
+        <span>Lehreinheiten (LE)</span>
+        <input name="units" type="number" min="1" step="1" required value={draft.units === 0 ? '' : draft.units ?? session.units ?? ''} disabled={isDisabled}
+          onChange={(event) => {
+            const units = Number(event.target.value)
+            onChange({ ...draft, units, endTime: teachingEndTime(draft.startTime, units) })
+          }} />
       </label>
       <label className="inline-edit-field">
         <span>Ende</span>
-        <input type="time" value={draft.endTime} disabled={isDisabled} onChange={(event) => onChange({ ...draft, endTime: event.target.value })} />
+        <input name="endTime" type="time" value={draft.endTime} required disabled={isDisabled} onChange={(event) => onChange({ ...draft, endTime: event.target.value })} />
       </label>
       <span>{derivedLengthLabel(draft.startTime, draft.endTime)}</span>
+      <p>1 LE = 45 Minuten Unterricht; zwischen zwei LE werden 10 Minuten Pause eingerechnet. Änderungen an LE oder Beginn berechnen das Ende neu. Ein manuell geändertes Ende verändert die LE nicht.</p>
       <span>{session.context.course.name}</span>
       <span>{session.context.cohort.name}</span>
       <label className="lecturer-edit-field">

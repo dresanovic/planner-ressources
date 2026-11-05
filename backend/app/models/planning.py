@@ -7,6 +7,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Float,
     Index,
     Integer,
     JSON,
@@ -23,6 +24,46 @@ from app.db.base import Base
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+class OptimizationOperation(Base):
+    """Durable outcome identity. Candidates and action credentials stay in memory."""
+    __tablename__ = "optimization_operations"
+    __table_args__ = (
+        CheckConstraint("budget_seconds > 0 AND captured_ceiling_seconds >= budget_seconds", name="ck_optimization_budget"),
+        CheckConstraint("elapsed_milliseconds >= 0", name="ck_optimization_elapsed"),
+        CheckConstraint("originating_session_id > 0", name="ck_optimization_session"),
+        CheckConstraint("phase IN ('preparing','optimizing','checking','ready_to_save','awaiting_decision','saving','saved','cancelled','timeout_no_candidate','failed','stale','interrupted')", name="ck_optimization_phase"),
+        CheckConstraint("(phase = 'saved' AND saved_result IS NOT NULL) OR (phase != 'saved' AND saved_result IS NULL)", name="ck_optimization_saved_result"),
+        CheckConstraint("phase NOT IN ('failed','stale','interrupted','timeout_no_candidate') OR terminal_code IS NOT NULL", name="ck_optimization_terminal_code"),
+        CheckConstraint("(phase IN ('saved','cancelled','timeout_no_candidate','failed','stale','interrupted') AND finished_at IS NOT NULL) OR (phase NOT IN ('saved','cancelled','timeout_no_candidate','failed','stale','interrupted') AND finished_at IS NULL)", name="ck_optimization_finished"),
+        CheckConstraint("length(operation_id) = 36 AND substr(operation_id,15,1) = '4'", name="ck_optimization_uuid"),
+        *(
+            CheckConstraint(f"length({column}) = 64 AND {column} NOT GLOB '*[^0-9a-f]*'", name=f"ck_optimization_{column}")
+            for column in ("originating_session_secret_digest", "context_secret_digest", "request_fingerprint", "policy_fingerprint")
+        ),
+    )
+
+    operation_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    owner_account_id: Mapped[int] = mapped_column(ForeignKey("planner_accounts.id", ondelete="CASCADE"), nullable=False)
+    # No FK to an ephemeral login: logout must not destroy deduplication/outcome facts.
+    originating_session_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    originating_session_secret_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    context_secret_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
+    schedule_revision_id: Mapped[int] = mapped_column(ForeignKey("schedule_revisions.id"), nullable=False)
+    selected_course_ids: Mapped[list[int]] = mapped_column(JSON, nullable=False)
+    budget_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    captured_ceiling_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    policy_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    phase: Mapped[str] = mapped_column(String(32), nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    elapsed_milliseconds: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    budget_exhausted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text('0'))
+    terminal_code: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    saved_result: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
 
 
 class PlannerAccount(Base):
@@ -845,6 +886,7 @@ class Course(Base):
     total_units: Mapped[int] = mapped_column(Integer, nullable=False)
     min_session_units: Mapped[int] = mapped_column(Integer, nullable=False)
     max_session_units: Mapped[int] = mapped_column(Integer, nullable=False)
+    preferred_session_units: Mapped[float | None] = mapped_column(Float, nullable=True)
     cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id"), nullable=False)
     study_type_id: Mapped[int] = mapped_column(ForeignKey("study_types.id"), nullable=False)
     current_semester_id: Mapped[int | None] = mapped_column(

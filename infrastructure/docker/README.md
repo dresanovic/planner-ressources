@@ -230,3 +230,28 @@ The image defaults to production mode and
 
 GitHub's current GHCR authentication and visibility guidance is available at
 <https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry>.
+# Optional teaching optimization policy
+
+Keep the existing single application process and SQLite volume. To configure
+teaching search time, create host `config/optimization/policy.json`, using
+`config/optimization/policy.example.json` as the initial 300/1800-second policy.
+Uncomment the directory mount `./config/optimization:/config/optimization:ro` in
+Compose and set `TEACHING_OPTIMIZATION_POLICY_FILE=/config/optimization/policy.json`.
+Do not bind-mount the individual file. After initial configuration, atomically
+replace `policy.json` inside that host directory to change policy without
+restarting/rebuilding the container. Existing operations keep their captured
+time allowance; later preparations see the replacement. Policy changes between
+preparation and start require preparing again.
+
+An unset policy path uses shipped defaults. Missing keys use their individual
+defaults; supplied invalid/unreadable files block new generation with actionable
+configuration errors. Both positive whole-second values are operator-controlled,
+and default must not exceed ceiling. There is no planner override. Correct the
+host file, then retry preparation. Do not restart a running operation merely to
+reload policy, and do not modify the normal database volume for validation.
+
+Short status/decision requests avoid holding an HTTP request for the full search.
+External HTTPS/proxy operation, health/status latency, real long searches and
+stop/restart behavior still require the isolated acceptance trials in
+`specs/I-006-optimization-incumbent-acceptance/quickstart.md`.
+

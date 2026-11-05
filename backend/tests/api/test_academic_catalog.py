@@ -55,6 +55,28 @@ def create_academic_chain(client):
     return semester.json(), cohort.json(), study_type.json(), window.json()
 
 
+def test_optional_preferred_units_create_update_clear_and_bounds(client, db_session):
+    seed_resources(db_session)
+    semester, cohort, study_type, _ = create_academic_chain(client)
+    payload = dict(name="Preferred length", totalUnits=12, minSessionUnits=2, maxSessionUnits=6,
+        semesterId=semester["id"], cohortId=cohort["id"], studyTypeId=study_type["id"],
+        lecturerId=1, roomId=1, preferredSessionUnits=3)
+    response = client.post('/api/academic/courses', json=payload)
+    assert response.status_code == 201
+    row = response.json()
+    assert row['preferredSessionUnits'] == 3
+    update = {k: v for k, v in payload.items() if k not in ('lecturerId', 'roomId')}
+    for value, expected_status in [(7, 422), (2.25, 422), (3.5, 200), (None, 200)]:
+        result = client.patch(f"/api/academic/courses/{row['id']}",
+            json={**update, 'preferredSessionUnits': value, 'expectedRevision': row['revision']})
+        assert result.status_code == expected_status, result.text
+        if expected_status == 200:
+            row = result.json()
+            assert row['preferredSessionUnits'] == value
+    stored = client.get('/api/academic/courses').json()['items']
+    assert next(item for item in stored if item['id'] == row['id'])['preferredSessionUnits'] is None
+
+
 def test_create_list_and_revisit_complete_academic_catalog(client, db_session):
     seed_resources(db_session)
     semester, cohort, study_type, window = create_academic_chain(client)

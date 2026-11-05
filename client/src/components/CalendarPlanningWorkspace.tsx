@@ -55,6 +55,7 @@ export type WorkspaceListTraceTarget = {
   courseIds: number[]
   teachingSessionIds: number[]
   examIds: number[]
+  teachingCoverage?: { courseId: number; courseName: string; requiredUnits: number; plannedUnits: number; remainingUnits: number }[]
 }
 
 export type WorkspaceListContext = {
@@ -468,7 +469,7 @@ function CalendarPlanningWorkspaceContent({
             ) : (
               <>
                 {visibleOccurrences.length === 0 && activeFilterCount > 0 && <p className="empty-state">Keine Datensätze entsprechen den aktiven Filtern. Feiertage bleiben zur Einordnung sichtbar.</p>}
-                <CalendarSurface mode={mode} occurrences={visibleOccurrences} holidays={visibleHolidays} courses={workspace.courses} selectedRef={selectedRef} onSelect={chooseOccurrence} semesterStart={workspace.semester.startDate} semesterEnd={workspace.semester.endDate} />
+                <CalendarSurface mode={mode} occurrences={visibleOccurrences} holidays={visibleHolidays} courses={workspace.courses} rooms={workspace.filterFacets.rooms} selectedRef={selectedRef} onSelect={chooseOccurrence} semesterStart={workspace.semester.startDate} semesterEnd={workspace.semester.endDate} />
               </>
             )
           )}
@@ -565,7 +566,7 @@ function CalendarPlanningWorkspaceContent({
   }
 }
 
-function CalendarSurface({ mode, occurrences, holidays, courses, selectedRef, onSelect, semesterStart, semesterEnd }: { mode: Exclude<CalendarMode, 'list'>; occurrences: WorkspaceOccurrence[]; holidays: LoadedCalendarWorkspace['holidays']; courses: LoadedCalendarWorkspace['courses']; selectedRef: string | null; onSelect: (ref: string) => void; semesterStart: string; semesterEnd: string }) {
+function CalendarSurface({ mode, occurrences, holidays, courses, rooms, selectedRef, onSelect, semesterStart, semesterEnd }: { mode: Exclude<CalendarMode, 'list'>; occurrences: WorkspaceOccurrence[]; holidays: LoadedCalendarWorkspace['holidays']; courses: LoadedCalendarWorkspace['courses']; rooms: LoadedCalendarWorkspace['filterFacets']['rooms']; selectedRef: string | null; onSelect: (ref: string) => void; semesterStart: string; semesterEnd: string }) {
   const courseByRef = new Map(courses.map((item) => [item.courseRef, item]))
   const dates = [...new Set([...occurrences.map((item) => item.date), ...holidays.map((item) => item.date)])].sort()
   const [expandedDates, setExpandedDates] = useState<Set<string>>(() => new Set())
@@ -590,6 +591,7 @@ function CalendarSurface({ mode, occurrences, holidays, courses, selectedRef, on
                 <strong>{courseByRef.get(item.courseRef)?.name ?? item.courseRef}</strong>
                 <span>{item.startTime}–{item.endTime}</span>
                 <span>{item.cohort}</span>
+                <span>Raum: {rooms.find((room) => room.value === item.roomRef)?.label ?? (item.kind === 'exam' ? item.assignedRoomName : 'Nicht verfügbar')}</span>
                 {item.findingRefs.length > 0 && <span className="warning-label">⚠ {item.findingRefs.length} {item.findingRefs.length === 1 ? 'aktueller Hinweis' : 'aktuelle Hinweise'}</span>}
               </button>
             ))}
@@ -630,8 +632,8 @@ function OccurrenceDetail({ occurrence, workspace, headingRef, onClose, onEditTe
         <div><dt>Studienart</dt><dd>{course?.studyType ?? 'Nicht verfügbar'}</dd></div>
         <div><dt>Datum und Uhrzeit</dt><dd>{formatCalendarDate(occurrence.date)}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
         <div><dt>{label('cohort.fieldLabel')}</dt><dd>{occurrence.cohort}</dd></div>
-        <div><dt>{label('lecturer.fieldLabel')}</dt><dd>{occurrence.lecturerRefs.join(', ')}</dd></div>
-        <div><dt>{label('room.fieldLabel')}</dt><dd>{occurrence.kind === 'exam' ? `${occurrence.assignedRoomName} (${occurrence.roomRef})` : occurrence.roomRef}</dd></div>
+        <div><dt>{label('lecturer.fieldLabel')}</dt><dd>{occurrence.lecturerRefs.map((ref) => workspace.filterFacets.lecturers.find((item) => item.value === ref)?.label ?? 'Nicht verfügbar').join(', ')}</dd></div>
+        <div><dt>{label('room.fieldLabel')}</dt><dd>{workspace.filterFacets.rooms.find((item) => item.value === occurrence.roomRef)?.label ?? (occurrence.kind === 'exam' ? occurrence.assignedRoomName : 'Nicht verfügbar')}</dd></div>
         {occurrence.kind === 'teaching' ? (
           <>
             <div><dt>Lehreinheiten</dt><dd>{occurrence.teachingUnits}</dd></div>
@@ -948,6 +950,15 @@ function resolveListTraceTarget(
       .map((item) => item.courseId),
     teachingSessionIds: occurrenceIds(targetOccurrences, 'teaching'),
     examIds: occurrenceIds(targetOccurrences, 'exam'),
+    teachingCoverage: workspace.courses
+      .filter((item) => courseRefs.includes(item.courseRef))
+      .map((item) => ({
+        courseId: item.courseId,
+        courseName: item.name,
+        requiredUnits: item.totalTeachingUnits,
+        plannedUnits: item.scheduledTeachingUnits,
+        remainingUnits: item.remainingTeachingUnits,
+      })),
   }
 }
 

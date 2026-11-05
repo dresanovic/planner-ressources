@@ -11,8 +11,8 @@ from tests.planner_auth_fixtures import authenticate_test_client
 
 
 @pytest.fixture()
-def client():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+def client(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'resources.db'}", connect_args={"check_same_thread": False})
     initialize_database(engine)
     session = sessionmaker(bind=engine)()
     app.dependency_overrides[get_db] = lambda: (yield session)
@@ -143,21 +143,8 @@ def test_course_resource_configuration_includes_unavailability_and_course_sessio
             "unavailableDates": [],
         },
     ).json()
-    generated = client.post(
-        "/api/draft-schedules/optimization/generate",
-        json={
-            "semesterId": prepared["semesterId"],
-            "scheduleRevisionId": prepared["scheduleRevisionId"],
-            "unavailableDates": prepared["unavailableDates"],
-            "sharedSnapshotToken": prepared["sharedSnapshotToken"],
-                "courses": [{
-                "courseId": item["courseId"],
-                "expectedDraftScheduleId": item["draftScheduleId"],
-                "expectedDraftRevision": item["draftRevision"],
-                "inputSnapshotToken": item["inputSnapshotToken"],
-            } for item in prepared["courses"]],
-        },
-    )
+    from tests.api.test_conflict_aware_generation import _generate_operation, generation_payload
+    generated = _generate_operation(client, generation_payload(prepared))
     assert generated.status_code == 200
     assert client.delete(f"/api/resources/lecturers/{lecturer['id']}?expectedRevision={lecturer['revision']}&confirmed=true").json()["outcome"] == "inactivated"
     assert client.delete(f"/api/resources/rooms/{room['id']}?expectedRevision={room['revision']}&confirmed=true").json()["outcome"] == "inactivated"

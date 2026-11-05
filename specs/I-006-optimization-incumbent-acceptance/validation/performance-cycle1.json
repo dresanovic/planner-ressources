@@ -1,0 +1,427 @@
+{
+  "semester_optimization_performance": {
+    "runs": 20,
+    "minimumSeconds": 10.786900800000012,
+    "maximumSeconds": 17.96983019999999,
+    "medianSeconds": 12.036271499999998,
+    "under30Seconds": 20,
+    "under60Seconds": 20,
+    "details": {
+      "platform": "Windows-11-10.0.22631-SP0",
+      "python": "3.12.8 | packaged by Anaconda, Inc. | (main, Dec 11 2024, 16:48:34) [MSC v.1929 64 bit (AMD64)]",
+      "processor": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+      "runs": [
+        {
+          "run": 1,
+          "seconds": 11.87729730000001
+        },
+        {
+          "run": 2,
+          "seconds": 13.21614939999995
+        },
+        {
+          "run": 3,
+          "seconds": 13.79647239999997
+        },
+        {
+          "run": 4,
+          "seconds": 11.94109050000003
+        },
+        {
+          "run": 5,
+          "seconds": 12.651291699999945
+        },
+        {
+          "run": 6,
+          "seconds": 13.11200869999999
+        },
+        {
+          "run": 7,
+          "seconds": 12.094771999999978
+        },
+        {
+          "run": 8,
+          "seconds": 12.218857800000023
+        },
+        {
+          "run": 9,
+          "seconds": 12.81048340000001
+        },
+        {
+          "run": 10,
+          "seconds": 13.462278399999946
+        },
+        {
+          "run": 11,
+          "seconds": 17.96983019999999
+        },
+        {
+          "run": 12,
+          "seconds": 12.377004999999997
+        },
+        {
+          "run": 13,
+          "seconds": 11.977771000000018
+        },
+        {
+          "run": 14,
+          "seconds": 11.85201189999998
+        },
+        {
+          "run": 15,
+          "seconds": 11.491958300000022
+        },
+        {
+          "run": 16,
+          "seconds": 11.341936799999985
+        },
+        {
+          "run": 17,
+          "seconds": 11.340842800000019
+        },
+        {
+          "run": 18,
+          "seconds": 10.786900800000012
+        },
+        {
+          "run": 19,
+          "seconds": 11.87604900000008
+        },
+        {
+          "run": 20,
+          "seconds": 11.486985000000004
+        }
+      ]
+    }
+  },
+  "direct_save_performance": {
+    "runs": 20,
+    "minimumSeconds": 0.16270480000002863,
+    "maximumSeconds": 7.801541400000019,
+    "medianSeconds": 2.9161642500000653,
+    "under30Seconds": 20,
+    "under60Seconds": 20,
+    "details": [
+      {
+        "run": 1,
+        "courseCount": 1,
+        "seconds": 0.16270480000002863
+      },
+      {
+        "run": 2,
+        "courseCount": 5,
+        "seconds": 1.5546990000000278
+      },
+      {
+        "run": 3,
+        "courseCount": 10,
+        "seconds": 2.641421799999989
+      },
+      {
+        "run": 4,
+        "courseCount": 15,
+        "seconds": 4.601390400000014
+      },
+      {
+        "run": 5,
+        "courseCount": 20,
+        "seconds": 7.164708700000006
+      },
+      {
+        "run": 6,
+        "courseCount": 1,
+        "seconds": 0.16575670000008813
+      },
+      {
+        "run": 7,
+        "courseCount": 5,
+        "seconds": 1.2513200999999299
+      },
+      {
+        "run": 8,
+        "courseCount": 10,
+        "seconds": 3.0675498999999036
+      },
+      {
+        "run": 9,
+        "courseCount": 15,
+        "seconds": 5.543281800000045
+      },
+      {
+        "run": 10,
+        "courseCount": 20,
+        "seconds": 7.7143822000000455
+      },
+      {
+        "run": 11,
+        "courseCount": 1,
+        "seconds": 0.16974359999994704
+      },
+      {
+        "run": 12,
+        "courseCount": 5,
+        "seconds": 1.2849563000000899
+      },
+      {
+        "run": 13,
+        "courseCount": 10,
+        "seconds": 3.002884100000074
+      },
+      {
+        "run": 14,
+        "courseCount": 15,
+        "seconds": 5.133290200000033
+      },
+      {
+        "run": 15,
+        "courseCount": 20,
+        "seconds": 7.801541400000019
+      },
+      {
+        "run": 16,
+        "courseCount": 1,
+        "seconds": 0.17515869999999722
+      },
+      {
+        "run": 17,
+        "courseCount": 5,
+        "seconds": 1.2448249999999916
+      },
+      {
+        "run": 18,
+        "courseCount": 10,
+        "seconds": 2.8294444000000567
+      },
+      {
+        "run": 19,
+        "courseCount": 15,
+        "seconds": 4.937971599999969
+      },
+      {
+        "run": 20,
+        "courseCount": 20,
+        "seconds": 7.548589000000106
+      }
+    ]
+  },
+  "replacement_preview_performance": {
+    "runs": 20,
+    "minimumSeconds": 0.1630688000000191,
+    "maximumSeconds": 9.20004019999999,
+    "medianSeconds": 2.9582805499999836,
+    "under30Seconds": 20,
+    "under60Seconds": 20,
+    "details": [
+      {
+        "run": 1,
+        "courseCount": 1,
+        "seconds": 0.1630688000000191
+      },
+      {
+        "run": 2,
+        "courseCount": 5,
+        "seconds": 1.2674427000000605
+      },
+      {
+        "run": 3,
+        "courseCount": 10,
+        "seconds": 2.846117800000002
+      },
+      {
+        "run": 4,
+        "courseCount": 15,
+        "seconds": 4.9377905000000055
+      },
+      {
+        "run": 5,
+        "courseCount": 20,
+        "seconds": 8.033042500000079
+      },
+      {
+        "run": 6,
+        "courseCount": 1,
+        "seconds": 0.1718841000000566
+      },
+      {
+        "run": 7,
+        "courseCount": 5,
+        "seconds": 1.265055899999993
+      },
+      {
+        "run": 8,
+        "courseCount": 10,
+        "seconds": 2.906159900000034
+      },
+      {
+        "run": 9,
+        "courseCount": 15,
+        "seconds": 4.967136900000014
+      },
+      {
+        "run": 10,
+        "courseCount": 20,
+        "seconds": 7.693170900000041
+      },
+      {
+        "run": 11,
+        "courseCount": 1,
+        "seconds": 0.1782713000000058
+      },
+      {
+        "run": 12,
+        "courseCount": 5,
+        "seconds": 1.2722588000000314
+      },
+      {
+        "run": 13,
+        "courseCount": 10,
+        "seconds": 3.010401199999933
+      },
+      {
+        "run": 14,
+        "courseCount": 15,
+        "seconds": 5.256078299999899
+      },
+      {
+        "run": 15,
+        "courseCount": 20,
+        "seconds": 7.668580399999996
+      },
+      {
+        "run": 16,
+        "courseCount": 1,
+        "seconds": 0.1717035000000351
+      },
+      {
+        "run": 17,
+        "courseCount": 5,
+        "seconds": 1.32148559999996
+      },
+      {
+        "run": 18,
+        "courseCount": 10,
+        "seconds": 3.068032500000072
+      },
+      {
+        "run": 19,
+        "courseCount": 15,
+        "seconds": 5.117803400000071
+      },
+      {
+        "run": 20,
+        "courseCount": 20,
+        "seconds": 9.20004019999999
+      }
+    ]
+  },
+  "no_result_performance": {
+    "runs": 20,
+    "minimumSeconds": 0.021541700000057062,
+    "maximumSeconds": 0.39567699999997785,
+    "medianSeconds": 0.11530529999998862,
+    "under30Seconds": 20,
+    "under60Seconds": 20,
+    "details": [
+      {
+        "run": 1,
+        "courseCount": 1,
+        "seconds": 0.02754990000005364
+      },
+      {
+        "run": 2,
+        "courseCount": 5,
+        "seconds": 0.05785880000007637
+      },
+      {
+        "run": 3,
+        "courseCount": 10,
+        "seconds": 0.11289099999999053
+      },
+      {
+        "run": 4,
+        "courseCount": 15,
+        "seconds": 0.16342859999997472
+      },
+      {
+        "run": 5,
+        "courseCount": 20,
+        "seconds": 0.20293000000003758
+      },
+      {
+        "run": 6,
+        "courseCount": 1,
+        "seconds": 0.021541700000057062
+      },
+      {
+        "run": 7,
+        "courseCount": 5,
+        "seconds": 0.05337969999993675
+      },
+      {
+        "run": 8,
+        "courseCount": 10,
+        "seconds": 0.09995969999999943
+      },
+      {
+        "run": 9,
+        "courseCount": 15,
+        "seconds": 0.13838850000001912
+      },
+      {
+        "run": 10,
+        "courseCount": 20,
+        "seconds": 0.18684880000000703
+      },
+      {
+        "run": 11,
+        "courseCount": 1,
+        "seconds": 0.022278900000060275
+      },
+      {
+        "run": 12,
+        "courseCount": 5,
+        "seconds": 0.39567699999997785
+      },
+      {
+        "run": 13,
+        "courseCount": 10,
+        "seconds": 0.11771959999998671
+      },
+      {
+        "run": 14,
+        "courseCount": 15,
+        "seconds": 0.13601029999995262
+      },
+      {
+        "run": 15,
+        "courseCount": 20,
+        "seconds": 0.1681568999999854
+      },
+      {
+        "run": 16,
+        "courseCount": 1,
+        "seconds": 0.02316859999996268
+      },
+      {
+        "run": 17,
+        "courseCount": 5,
+        "seconds": 0.05960400000003574
+      },
+      {
+        "run": 18,
+        "courseCount": 10,
+        "seconds": 0.10390240000003814
+      },
+      {
+        "run": 19,
+        "courseCount": 15,
+        "seconds": 0.1563106000000971
+      },
+      {
+        "run": 20,
+        "courseCount": 20,
+        "seconds": 0.18008149999991474
+      }
+    ]
+  }
+}

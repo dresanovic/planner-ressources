@@ -1,11 +1,49 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { acceptConflictAwareSchedules, generateConflictAwareSchedules, prepareConflictAwareGeneration } from './conflictAwareGeneration'
-import { decisionRequiredGenerationFixture, directSavedGenerationFixture, optimizationPreparationFixture, optimizationResultFixture } from '../test/optimizationFixtures'
+import { acceptConflictAwareSchedules, generateConflictAwareSchedules, prepareConflictAwareGeneration,
+  startOptimizationOperation, getOptimizationOperation, decideOptimizationOperation, cancelOptimizationOperation } from './conflictAwareGeneration'
+import type { OptimizationOperationStatus } from './conflictAwareGeneration'
+import { decisionRequiredGenerationFixture, directSavedGenerationFixture, optimizationPreparationFixture, optimizationResultFixture, operationStatusFixture } from '../test/optimizationFixtures'
 
 afterEach(() => vi.restoreAllMocks())
 
 describe('conflict-aware generation API', () => {
+  it('uses short operation routes, passive outcome polling and memory-only decision evidence', async () => {
+    const fetchMock=vi.spyOn(globalThis,'fetch').mockImplementation(async()=>new Response(JSON.stringify(operationStatusFixture),{status:200}))
+    const context={operationId:'test-operation',contextSecret:'b'.repeat(64)}
+    await startOptimizationOperation(optimizationPreparationFixture,context)
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/draft-schedules/optimization/operations')
+    const start=JSON.parse(String(fetchMock.mock.calls[0][1]?.body))
+    expect(start.policyFingerprint).toBe(optimizationPreparationFixture.budgetPolicy.policyFingerprint)
+    expect(start).not.toHaveProperty('budgetSeconds')
+    expect(start.preparation).not.toHaveProperty('comparison')
+    await getOptimizationOperation(context.operationId)
+    let headers=new Headers(fetchMock.mock.calls[1][1]?.headers)
+    expect(headers.has('X-Optimization-Context')).toBe(false)
+    expect(headers.has('X-Planner-Activity')).toBe(false)
+    expect(fetchMock.mock.calls[1][1]?.credentials).toBe('include')
+    await getOptimizationOperation(context.operationId,context.contextSecret)
+    headers=new Headers(fetchMock.mock.calls[2][1]?.headers)
+    expect(headers.get('X-Optimization-Context')).toBe(context.contextSecret)
+    expect(headers.has('X-Planner-Activity')).toBe(false)
+    for(const finalize of [false,true]) await decideOptimizationOperation(context,'a'.repeat(64),finalize)
+    expect(fetchMock.mock.calls[3][0]).toBe('/api/draft-schedules/optimization/operations/test-operation/accept')
+    expect(fetchMock.mock.calls[4][0]).toBe('/api/draft-schedules/optimization/operations/test-operation/finalize')
+    expect(JSON.parse(String(fetchMock.mock.calls[3][1]?.body))).toEqual({contextSecret:context.contextSecret,candidateFingerprint:'a'.repeat(64)})
+    expect(new Headers(fetchMock.mock.calls[3][1]?.headers).get('X-CSRF-Protection')).toBe('1')
+    await cancelOptimizationOperation(context.operationId,'navigation',true)
+    expect(fetchMock.mock.calls[5][0]).toBe('/api/draft-schedules/optimization/operations/test-operation/cancel')
+    expect(fetchMock.mock.calls[5][1]?.keepalive).toBe(true)
+    expect(String(fetchMock.mock.calls[5][1]?.body)).not.toContain(context.contextSecret)
+  })
+  it('keeps outcome identity, nullable evidence and long-running status separate from live secrets', () => {
+    const status: OptimizationOperationStatus = { ...operationStatusFixture, elapsedMilliseconds: 65001 }
+    expect(status.review).toBeNull()
+    expect(status.result).toBeNull()
+    expect(status.canAccept).toBe(false)
+    expect(status.elapsedMilliseconds).toBeGreaterThan(60000)
+    expect(status).not.toHaveProperty('contextSecret')
+  })
   it('prepares 1-20 courses with future unavailable dates', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(optimizationPreparationFixture), { status: 200 }))
     const result = await prepareConflictAwareGeneration(1, 11, [1, 2], ['2026-10-26'])

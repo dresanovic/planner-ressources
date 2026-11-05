@@ -1,0 +1,1 @@
+{"platform": "Linux", "sequentialCases": [{"windowMinutes": 360, "scheduledUnits": 7, "proven": true}, {"windowMinutes": 405, "scheduledUnits": 8, "proven": true}], "exactSecondBoundary": "09:07:30", "passed": true}

@@ -1,0 +1,133 @@
+{
+  "source": "isolated read-only backup of current master data",
+  "database": "C:\\Codex\\planner-resource\\.tmp\\i006-cycle4-trial-4b4d31b7\\planner.db",
+  "selectedCourseIds": [
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59
+  ],
+  "requiredUnits": 358,
+  "fixedSessionCount": 0,
+  "budgetSeconds": 300,
+  "elapsedSeconds": 300.406,
+  "terminal": "result",
+  "objectiveEvents": [
+    {
+      "seconds": 2.156,
+      "objective": "total_units"
+    }
+  ],
+  "saved": false,
+  "databaseUnchanged": true,
+  "hardValid": true,
+  "scheduledUnits": 334,
+  "optimal": false,
+  "unitUpperBound": 358,
+  "objectives": [
+    {
+      "key": "total_units",
+      "proof": "unfinished",
+      "value": 334
+    },
+    {
+      "key": "conflicts",
+      "proof": "not_attempted",
+      "value": 0
+    },
+    {
+      "key": "schedule_shape",
+      "proof": "not_attempted",
+      "value": 6367
+    },
+    {
+      "key": "lecturer_changes",
+      "proof": "not_attempted",
+      "value": 38
+    },
+    {
+      "key": "room_changes",
+      "proof": "not_attempted",
+      "value": 0
+    },
+    {
+      "key": "retained_drafts",
+      "proof": "not_attempted",
+      "value": 0
+    },
+    {
+      "key": "canonical_temporal",
+      "proof": "not_attempted",
+      "value": 49937
+    },
+    {
+      "key": "canonical_resource",
+      "proof": "not_attempted",
+      "value": 371
+    }
+  ],
+  "courses": [
+    {
+      "id": 49,
+      "units": 25,
+      "sessions": 12
+    },
+    {
+      "id": 50,
+      "units": 32,
+      "sessions": 15
+    },
+    {
+      "id": 51,
+      "units": 33,
+      "sessions": 15
+    },
+    {
+      "id": 52,
+      "units": 33,
+      "sessions": 15
+    },
+    {
+      "id": 53,
+      "units": 30,
+      "sessions": 15
+    },
+    {
+      "id": 54,
+      "units": 31,
+      "sessions": 13
+    },
+    {
+      "id": 55,
+      "units": 25,
+      "sessions": 12
+    },
+    {
+      "id": 56,
+      "units": 33,
+      "sessions": 14
+    },
+    {
+      "id": 57,
+      "units": 34,
+      "sessions": 16
+    },
+    {
+      "id": 58,
+      "units": 26,
+      "sessions": 12
+    },
+    {
+      "id": 59,
+      "units": 32,
+      "sessions": 15
+    }
+  ]
+}

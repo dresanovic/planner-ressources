@@ -10,6 +10,28 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
+
+def test_preferred_units_migration_initializes_midpoints_and_preserves_sessions():
+    from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
+    engine = create_engine('sqlite://')
+    initialize_database(engine)
+    with Session(engine) as db:
+        seed_lifecycle_semester(db, with_schedule=True)
+        db.get(Course, 1).max_session_units = 5
+        db.commit()
+    with engine.begin() as connection:
+        sessions = connection.execute(text('SELECT * FROM draft_sessions')).fetchall()
+        connection.exec_driver_sql('ALTER TABLE courses DROP COLUMN preferred_session_units')
+    initialize_database(engine)
+    with engine.connect() as connection:
+        assert connection.execute(text('SELECT preferred_session_units FROM courses WHERE id=1')).scalar() == 3.5
+        assert connection.execute(text('SELECT * FROM draft_sessions')).fetchall() == sessions
+    with engine.begin() as connection:
+        connection.exec_driver_sql('UPDATE courses SET preferred_session_units=NULL WHERE id=1')
+    initialize_database(engine)
+    with engine.connect() as connection:
+        assert connection.execute(text('SELECT preferred_session_units FROM courses WHERE id=1')).scalar() is None
+
 from app.db.schema import initialize_database
 from app.models.planning import (
     Cohort,
@@ -1330,3 +1352,72 @@ def _load_migration(filename: str, module_name: str):
 
 def _columns_by_name(inspector, table_name: str):
     return {column["name"]: column for column in inspector.get_columns(table_name)}
+
+
+def test_optimization_receipt_fresh_and_current_upgrade_are_idempotent():
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    expected = {
+        "operation_id", "owner_account_id", "originating_session_id",
+        "originating_session_secret_digest", "context_secret_digest",
+        "request_fingerprint", "semester_id", "schedule_revision_id",
+        "selected_course_ids", "budget_seconds", "captured_ceiling_seconds",
+        "policy_fingerprint", "phase", "started_at", "finished_at",
+        "elapsed_milliseconds", "terminal_code", "saved_result",
+        "budget_exhausted",
+    }
+    with engine.begin() as connection:
+        assert expected == set(_columns_by_name(inspect(connection), "optimization_operations"))
+        connection.exec_driver_sql("DROP TABLE optimization_operations")
+    # A complete FS-016 database upgrades without rewriting existing tables.
+    initialize_database(engine)
+    initialize_database(engine)
+    assert expected == set(_columns_by_name(inspect(engine), "optimization_operations"))
+
+
+def test_optimization_receipt_partial_schema_is_rejected_without_repair():
+    from app.db.schema import UnsupportedSchemaStateError
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    with engine.begin() as connection:
+        connection.exec_driver_sql("DROP TABLE IF EXISTS optimization_operations")
+        connection.exec_driver_sql("CREATE TABLE optimization_operations (operation_id TEXT PRIMARY KEY)")
+    with pytest.raises(UnsupportedSchemaStateError, match="optimization"):
+        initialize_database(engine)
+    assert set(_columns_by_name(inspect(engine), "optimization_operations")) == {"operation_id"}
+
+
+def test_optimization_receipt_unique_identity_and_rollback():
+    from sqlalchemy.exc import IntegrityError
+    from app.models.planning import OptimizationOperation
+    from tests.optimization_fixtures import seed_optimization_planner, OPERATION_ID
+    from tests.planner_auth_fixtures import add_planner_account
+    engine = create_engine("sqlite://")
+    initialize_database(engine)
+    with Session(engine) as db:
+        seed_optimization_planner(db, course_count=1)
+        account = add_planner_account(db)
+        db.commit()
+        values = dict(
+            operation_id=OPERATION_ID, owner_account_id=account.id,
+            originating_session_id=1, originating_session_secret_digest="a" * 64,
+            context_secret_digest="b" * 64, request_fingerprint="c" * 64,
+            semester_id=1, schedule_revision_id=1, selected_course_ids=[1],
+            budget_seconds=300, captured_ceiling_seconds=1800,
+            policy_fingerprint="d" * 64, phase="preparing",
+            started_at=datetime.now(timezone.utc), elapsed_milliseconds=0,
+        )
+        db.add(OptimizationOperation(**values))
+        db.commit()
+        db.add(OptimizationOperation(**values))
+        with pytest.raises(IntegrityError):
+            db.commit()
+        db.rollback()
+        assert db.query(OptimizationOperation).count() == 1
+        row = db.get(OptimizationOperation, OPERATION_ID)
+        row.phase = "saved"
+        row.saved_result = {"saved": True}
+        row.finished_at = datetime.now(timezone.utc)
+        db.flush()
+        db.rollback()
+        assert db.get(OptimizationOperation, OPERATION_ID).phase == "preparing"

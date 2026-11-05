@@ -1,0 +1,142 @@
+{
+  "source": "isolated read-only backup of current master data",
+  "database": "C:\\Codex\\planner-resource\\.tmp\\preferred-trial-a2d5acb9\\planner.db",
+  "selectedCourseIds": [
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59
+  ],
+  "requiredUnits": 358,
+  "fixedSessionCount": 0,
+  "budgetSeconds": 30,
+  "elapsedSeconds": 30.407,
+  "terminal": "result",
+  "objectiveEvents": [
+    {
+      "seconds": 2.469,
+      "objective": "total_units"
+    }
+  ],
+  "saved": false,
+  "databaseUnchanged": true,
+  "hardValid": true,
+  "scheduledUnits": 293,
+  "optimal": false,
+  "unitUpperBound": 358,
+  "objectives": [
+    {
+      "key": "total_units",
+      "proof": "unfinished",
+      "value": 293
+    },
+    {
+      "key": "conflicts",
+      "proof": "not_attempted",
+      "value": 0
+    },
+    {
+      "key": "schedule_shape",
+      "proof": "not_attempted",
+      "value": 16175
+    },
+    {
+      "key": "lecturer_changes",
+      "proof": "not_attempted",
+      "value": 36
+    },
+    {
+      "key": "room_changes",
+      "proof": "not_attempted",
+      "value": 60
+    },
+    {
+      "key": "retained_drafts",
+      "proof": "not_attempted",
+      "value": 0
+    },
+    {
+      "key": "canonical_temporal",
+      "proof": "not_attempted",
+      "value": 33787
+    },
+    {
+      "key": "canonical_resource",
+      "proof": "not_attempted",
+      "value": 325
+    }
+  ],
+  "courses": [
+    {
+      "id": 49,
+      "units": 26,
+      "sessions": 9
+    },
+    {
+      "id": 50,
+      "units": 33,
+      "sessions": 11
+    },
+    {
+      "id": 51,
+      "units": 33,
+      "sessions": 11
+    },
+    {
+      "id": 52,
+      "units": 33,
+      "sessions": 11
+    },
+    {
+      "id": 53,
+      "units": 33,
+      "sessions": 11
+    },
+    {
+      "id": 54,
+      "units": 33,
+      "sessions": 11
+    },
+    {
+      "id": 55,
+      "units": 33,
+      "sessions": 11
+    },
+    {
+      "id": 56,
+      "units": 33,
+      "sessions": 11
+    },
+    {
+      "id": 57,
+      "units": 20,
+      "sessions": 7
+    },
+    {
+      "id": 58,
+      "units": 8,
+      "sessions": 4
+    },
+    {
+      "id": 59,
+      "units": 8,
+      "sessions": 4
+    }
+  ],
+  "firstCheckpoint": {
+    "seconds": 15.625,
+    "checkpointUnits": 288,
+    "sizes": {
+      "2": 0,
+      "3": 96,
+      "4": 0
+    }
+  }
+}

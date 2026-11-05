@@ -332,6 +332,26 @@ def legacy_regeneration_displays_the_current_course_name(client, db_session):
     assert regenerated.json()["context"]["course"] == {"id": 1, "name": "KI Grundlagen"}
 
 
+def test_edit_units_persists_and_end_only_edit_keeps_units(client, db_session):
+    seed_valid_course(db_session, total_units=8)
+    created = client.post('/api/courses/1/draft-schedule/sessions', json=manual_session_payload())
+    session = created.json()['draftSchedule']['sessions'][0]
+    payload = dict(scheduleRevisionId=1, date=session['date'], startTime='09:00',
+                   endTime='11:35', lecturerId=session['lecturerId'], roomId=session['roomId'], units=3)
+    path = f"/api/draft-sessions/{session['id']}"
+    updated = client.patch(path, json=payload)
+    assert updated.status_code == 200, updated.text
+    assert updated.json()['sessions'][0]['units'] == 3
+    payload.pop('units')
+    payload['endTime'] = '12:00'
+    overridden = client.patch(path, json=payload)
+    assert overridden.status_code == 200
+    assert overridden.json()['sessions'][0]['units'] == 3
+    assert overridden.json()['sessions'][0]['endTime'] == '12:00'
+    for invalid in [0, -1, 2.5, True]:
+        assert client.patch(path, json={**payload, 'units': invalid}).status_code == 422
+
+
 def test_create_manual_session_from_empty_and_partial_draft_returns_authoritative_progress(client, db_session):
     seed_valid_course(db_session, total_units=8)
     first = client.post("/api/courses/1/draft-schedule/sessions", json=manual_session_payload())

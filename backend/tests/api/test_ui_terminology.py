@@ -1,4 +1,17 @@
 from fastapi.testclient import TestClient
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app import main as app_main
+
+
+@pytest.fixture(autouse=True)
+def isolated_database(tmp_path, monkeypatch):
+    engine = create_engine(f"sqlite:///{tmp_path / 'terminology.db'}", connect_args={"check_same_thread": False})
+    monkeypatch.setattr(app_main, 'engine', engine)
+    monkeypatch.setattr(app_main, 'SessionLocal', sessionmaker(bind=engine))
+    yield
+    engine.dispose()
 
 from app.main import app
 from app.terminology import TERMINOLOGY_KEYS

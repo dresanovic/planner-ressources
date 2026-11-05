@@ -8,6 +8,17 @@ from app.services.academic_catalog import (
 )
 
 
+@pytest.mark.parametrize('preferred', [1, 5, 2.25, float('inf'), float('nan'), True])
+def test_preferred_session_units_must_be_in_range_whole_or_half(preferred):
+    with pytest.raises(AcademicCatalogError):
+        validate_course_units(8, 2, 4, preferred)
+
+
+@pytest.mark.parametrize('preferred', [None, 2, 3, 3.5, 4])
+def test_valid_optional_preferred_session_units(preferred):
+    validate_course_units(8, 2, 4, preferred)
+
+
 def test_normalize_name_trims_and_casefolds_unicode():
     assert normalize_name("  STRASSE  ") == "strasse"
     assert normalize_name("  Straße  ") == "strasse"

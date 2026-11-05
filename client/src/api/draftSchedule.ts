@@ -125,6 +125,7 @@ export type UpdateDraftSessionRequest = {
   endTime: string
   lecturerId: number
   roomId: number
+  units?: number
 }
 
 export type SessionEditFailure = {

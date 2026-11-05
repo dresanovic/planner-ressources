@@ -1,4 +1,6 @@
 from datetime import date, time
+from dataclasses import dataclass
+from copy import deepcopy
 
 from app.models.planning import (
     Cohort,
@@ -272,3 +274,68 @@ def reference_fixed_sessions():
         )
         for index in range(500)
     ]
+
+
+OPERATION_ID = "00000000-0000-4000-8000-000000000001"
+CONTEXT_SECRET = "ab" * 32
+POLICY_FINGERPRINT = "c" * 64
+
+
+def operation_start_payload(prepared: dict, *, operation_id: str = OPERATION_ID) -> dict:
+    """Echo prepared evidence, never client-authored candidates or budget overrides."""
+    return {
+        "operationId": operation_id,
+        "contextSecret": CONTEXT_SECRET,
+        "policyFingerprint": prepared["budgetPolicy"]["policyFingerprint"],
+        "preparation": {
+            "semesterId": prepared["semesterId"],
+            "scheduleRevisionId": prepared["scheduleRevisionId"],
+            "unavailableDates": deepcopy(prepared["unavailableDates"]),
+            "sharedSnapshotToken": prepared["sharedSnapshotToken"],
+            "courses": [
+                {
+                    "courseId": course["courseId"],
+                    "expectedDraftScheduleId": course["draftScheduleId"],
+                    "expectedDraftRevision": course["draftRevision"],
+                    "inputSnapshotToken": course["inputSnapshotToken"],
+                }
+                for course in prepared["courses"]
+            ],
+        },
+    }
+
+
+@dataclass
+class OptimizationClock:
+    """Controlled monotonic time; no timing-dependent timeout tests."""
+    seconds: float = 0.0
+
+    def __call__(self) -> float:
+        return self.seconds
+
+    def advance(self, seconds: float) -> None:
+        if seconds < 0:
+            raise ValueError("Monotonic time cannot move backwards")
+        self.seconds += seconds
+
+
+class ControlledDispatch:
+    """Capture detached input and defer delivery until a race test chooses it."""
+    def __init__(self):
+        self.calls = []
+        self.stopped = False
+        self.reaped = False
+        self.messages = []
+
+    def __call__(self, *args, **kwargs):
+        self.calls.append((deepcopy(args), deepcopy(kwargs)))
+        return self
+
+    def emit(self, phase: str, **facts):
+        self.messages.append({"phase": phase, **deepcopy(facts)})
+
+    def stop(self):
+        self.stopped = True
+
+    def join(self, timeout=None):
+        self.reaped = True

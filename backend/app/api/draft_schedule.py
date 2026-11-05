@@ -272,6 +272,7 @@ def edit_draft_session(
             end_time=_parse_edit_time(request.end_time),
             lecturer_id=request.lecturer_id,
             room_id=request.room_id,
+            units=request.units,
         )
         db.commit()
     except DraftSessionEditValidationError as exc:

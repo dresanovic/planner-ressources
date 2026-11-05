@@ -1,0 +1,326 @@
+{
+  "platform": "Windows-11-10.0.22631-SP0",
+  "samples": [
+    {
+      "wallSeconds": 0.078,
+      "phase": "preparing",
+      "elapsedMilliseconds": 46,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.016,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 2.062,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 2044,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 4.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 4058,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 6.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 6057,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 8.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 8058,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 10.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 10056,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 12.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 12055,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 14.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 14053,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 16.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 16051,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 18.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 18050,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 20.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 20047,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.016,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 22.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 22046,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.016,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 24.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 24046,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.016,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 26.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 26047,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.016,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 28.062,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 28044,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 30.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 30061,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.015,
+      "pollSeconds": 0.016,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 32.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 32046,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.016,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 34.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 34045,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.016,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 36.062,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 36046,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 38.078,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 38061,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.0,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 40.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 40075,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 42.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 42073,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 44.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 44072,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 46.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 46071,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 48.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 48070,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 50.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 50070,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 52.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 52068,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 54.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 54069,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 56.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 56069,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 58.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 58068,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 60.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 60069,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 62.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 62067,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 64.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 64067,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    },
+    {
+      "wallSeconds": 66.093,
+      "phase": "optimizing",
+      "elapsedMilliseconds": 66070,
+      "budgetSeconds": 300,
+      "healthSeconds": 0.0,
+      "pollSeconds": 0.015,
+      "cacheControl": "no-store"
+    }
+  ],
+  "dataset": {
+    "semester": 2,
+    "revision": 2,
+    "courses": 20,
+    "requiredUnits": 1600
+  },
+  "startRequestSeconds": 0.062000000005355105,
+  "capturedBudget": 300,
+  "operationId": "6074aa42-6490-4b1a-b945-2d1dd4d870ab",
+  "nextPreparationBudget": 600,
+  "observedSearchPast60": true,
+  "cancelRequestSeconds": 0.29699999999138527,
+  "finalPhase": "cancelled",
+  "saved": false,
+  "savedStatePreserved": true
+}

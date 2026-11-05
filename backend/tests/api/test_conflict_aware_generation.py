@@ -29,8 +29,8 @@ from datetime import date, time
 
 
 @pytest.fixture()
-def db_session():
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+def db_session(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'api.db'}", connect_args={"check_same_thread": False})
     Base.metadata.create_all(engine)
     db = sessionmaker(bind=engine)()
     try:
@@ -40,7 +40,26 @@ def db_session():
 
 
 @pytest.fixture()
-def client(db_session):
+def client(db_session, monkeypatch):
+    from app.services import optimization_operations as operations
+    import app.services.conflict_aware_generation as generation
+    from app.services.semester_optimization import OptimalResultNotProven, NoGeneratedAlternative
+    class DeterministicWorker:
+        def __init__(self, problem):
+            try:
+                result=generation.optimize_semester(problem.courses,problem.fixed_sessions,problem.unavailable_dates,
+                    holidays=problem.holidays,generated_only=True,allow_unproven=True)
+                self.message={'kind':'result','result':result}
+            except (OptimalResultNotProven,NoGeneratedAlternative) as exc:
+                self.message={'kind':'timeout','message':str(exc)}
+            self.sent=False
+        def receive(self):
+            if self.sent: return []
+            self.sent=True
+            return [self.message]
+        def is_alive(self): return not self.sent
+        def close(self): pass
+    monkeypatch.setattr(operations,'SolverProcess',DeterministicWorker)
     def override():
         yield db_session
     app.dependency_overrides[get_db] = override
@@ -48,6 +67,7 @@ def client(db_session):
         authenticate_test_client(value, db_session)
         yield value
     app.dependency_overrides.clear()
+    operations.shutdown_operations(db_session.get_bind())
 
 
 def generation_payload(prepared):
@@ -65,6 +85,87 @@ def generation_payload(prepared):
     }
 
 
+def _generate_operation(client, payload):
+    """Run real short operation endpoints; unwrap their result for scenario assertions."""
+    from uuid import uuid4
+    from time import monotonic, sleep
+    from httpx import Response
+    from app.services.optimization_config import load_optimization_policy
+    operation_id=str(uuid4())
+    secret='ab'*32
+    response=client.post('/api/draft-schedules/optimization/operations',json={
+        'operationId':operation_id,'contextSecret':secret,
+        'policyFingerprint':load_optimization_policy().policy_fingerprint,'preparation':payload})
+    if response.status_code != 202: return response
+    end=monotonic()+20
+    while monotonic()<end:
+        response=client.get(f'/api/draft-schedules/optimization/operations/{operation_id}',headers={'X-Optimization-Context':secret})
+        status=response.json()
+        if status['phase']=='ready_to_save':
+            response=client.post(f'/api/draft-schedules/optimization/operations/{operation_id}/finalize',json={
+                'contextSecret':secret,'candidateFingerprint':status['review']['candidateFingerprint']})
+            if response.status_code != 200: return response
+            return Response(200,json=response.json()['result'])
+        if status['phase']=='awaiting_decision':
+            preview=status['review']
+            if not hasattr(client,'operation_contexts'): client.operation_contexts={}
+            client.operation_contexts[preview['candidateFingerprint']]=(operation_id,secret,payload)
+            return Response(200,json=preview)
+        if status['phase'] in ('failed','stale','timeout_no_candidate','interrupted','cancelled'):
+            code=status['terminalCode']
+            http_status=409 if status['phase'] in ('stale','timeout_no_candidate') else 500
+            return Response(http_status,json={**status,'code':code,'errors':[{'code':code,'message':'Planungsdaten geändert oder kein verwendbarer Kandidat.'}]})
+        sleep(.005)
+    pytest.fail('Operation did not settle')
+
+
+def _accept_operation(client,payload):
+    from httpx import Response
+    operation_id,secret,evidence=next(iter(client.operation_contexts.values())) if payload['candidateFingerprint'] not in client.operation_contexts else client.operation_contexts[payload['candidateFingerprint']]
+    body={'contextSecret':secret,'candidateFingerprint':payload['candidateFingerprint']}
+    if any(payload.get(key)!=value for key,value in evidence.items()): body['preparation']=payload
+    response=client.post(f'/api/draft-schedules/optimization/operations/{operation_id}/accept',json=body)
+    if response.status_code==200: return Response(200,json=response.json()['result'])
+    return response
+
+
+def test_prepare_exposes_hot_read_policy_without_saved_mutation(client, db_session, monkeypatch, tmp_path):
+    seed_optimization_planner(db_session, course_count=1)
+    path = tmp_path / "policy.json"
+    path.write_text('{"defaultSeconds":600,"ceilingSeconds":1200}')
+    monkeypatch.setenv("TEACHING_OPTIMIZATION_POLICY_FILE", str(path))
+    payload = {"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1]}
+    first = client.post("/api/draft-schedules/optimization/prepare", json=payload)
+    assert first.status_code == 200
+    policy = first.json()["budgetPolicy"]
+    assert policy["defaultSeconds"] == 600
+    assert policy["ceilingSeconds"] == 1200
+    replacement = tmp_path / "next.json"
+    replacement.write_text('{"defaultSeconds":900,"ceilingSeconds":1200}')
+    replacement.replace(path)
+    second = client.post("/api/draft-schedules/optimization/prepare", json=payload)
+    assert second.json()["budgetPolicy"]["defaultSeconds"] == 900
+    assert second.json()["budgetPolicy"]["policyFingerprint"] != policy["policyFingerprint"]
+    assert db_session.query(DraftSchedule).count() == 0
+
+
+def test_invalid_policy_blocks_prepare_with_operator_guidance_but_health_works(client, db_session, monkeypatch, tmp_path):
+    seed_optimization_planner(db_session, course_count=1)
+    path = tmp_path / "policy.json"
+    path.write_text('{"defaultSeconds":false}')
+    monkeypatch.setenv("TEACHING_OPTIMIZATION_POLICY_FILE", str(path))
+    response = client.post("/api/draft-schedules/optimization/prepare", json={
+        "semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1],
+    })
+    assert response.status_code == 503
+    error = response.json()["errors"][0]
+    assert error["code"] == "OPTIMIZATION_CONFIGURATION_INVALID"
+    assert "defaultSeconds" in error["message"]
+    assert "policy.json" in error["message"]
+    assert client.get("/health").status_code == 200
+    assert db_session.query(DraftSchedule).count() == 0
+
+
 def test_prepare_deduplicates_dates_and_generate_returns_proven_complete_saved_result(client, db_session):
     seed_optimization_planner(db_session, course_count=2)
     response = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [2, 1], "unavailableDates": ["2026-10-26", "2026-10-26"]})
@@ -78,7 +179,7 @@ def test_prepare_deduplicates_dates_and_generate_returns_proven_complete_saved_r
     }
     assert prepared["courses"][0]["effectiveConstraints"]["allowedTeachingWindows"][0]["sourceTimeWindowId"] == 1
 
-    generated = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
+    generated = _generate_operation(client, generation_payload(prepared))
     assert generated.status_code == 200
     assert generated.json()["summary"]["complete"] == 2
     assert generated.json()["summary"]["optimalForPreparedSnapshot"] is True
@@ -89,13 +190,13 @@ def test_prepare_deduplicates_dates_and_generate_returns_proven_complete_saved_r
 
 
 def test_optimizer_api_keeps_caller_dates_unchanged_and_returns_named_holiday_reason(client, db_session):
-    seed_optimization_planner(db_session, course_count=1)
+    seed_optimization_planner(db_session, course_count=1, total_units=12)
     db_session.add_all([
         GenerationConstraintSet(
             course_id=1,
             semester_id=1,
             planning_start_date=date(2026, 9, 7),
-            planning_end_date=date(2026, 9, 7),
+            planning_end_date=date(2026, 9, 14),
             windows=[GenerationConstraintWindow(
                 source_time_window_id=1,
                 weekday=0,
@@ -112,10 +213,11 @@ def test_optimizer_api_keeps_caller_dates_unchanged_and_returns_named_holiday_re
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": ["2026-10-26"]},
     ).json()
 
-    generated = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
+    generated = _generate_operation(client, generation_payload(prepared))
 
-    assert generated.status_code == 200
+    assert generated.status_code == 200, generated.text
     assert prepared["unavailableDates"] == ["2026-10-26"]
+    assert any(item["code"] == "INSTITUTION_HOLIDAY" for item in generated.json()["outcomes"][0]["reasons"]), generated.text
     reason = next(item for item in generated.json()["outcomes"][0]["reasons"] if item["code"] == "INSTITUTION_HOLIDAY")
     assert reason["holidayDate"] == "2026-09-07"
     assert reason["holidayName"] == "Founders Day"
@@ -131,13 +233,13 @@ def test_optimizer_api_rejects_holiday_snapshot_change_without_saving(client, db
     db_session.add(InstitutionHoliday(date=date(2026, 9, 7), name="New Closure"))
     db_session.commit()
 
-    generated = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
+    generated = _generate_operation(client, generation_payload(prepared))
 
-    assert generated.status_code == 200
-    assert generated.json()["outcomes"][0]["status"] == "stale"
-    assert generated.json()["outcomes"][0]["saved"] is False
+    assert generated.status_code == 409
+    assert generated.json()["phase"] == "stale"
+    assert generated.json()["saved"] is False
     assert db_session.query(DraftSchedule).count() == 0
-    assert db_session.query(PlanningOutcome).one().classification == "stale"
+    assert db_session.query(PlanningOutcome).count() == 0
 
 
 @pytest.mark.parametrize("course_ids", [[], list(range(1, 22)), [1, 1], [999]])
@@ -204,7 +306,7 @@ def test_existing_draft_returns_non_mutating_post_generation_comparison(client, 
         for item in original.sessions
     ]
     prepared = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []}).json()
-    response = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
+    response = _generate_operation(client, generation_payload(prepared))
     body = response.json()
 
     assert response.status_code == 200
@@ -238,7 +340,7 @@ def test_existing_draft_returns_non_mutating_post_generation_comparison(client, 
     assert db_session.query(PlanningOutcome).count() == 0
 
 
-def test_replacement_with_no_nonempty_alternative_reports_course_specific_blockers(
+def test_replacement_with_no_nonempty_alternative_preserves_saved_work(
     client, db_session
 ):
     seed_optimization_planner(db_session, course_count=1, total_units=4)
@@ -260,14 +362,13 @@ def test_replacement_with_no_nonempty_alternative_reports_course_specific_blocke
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
 
-    response = client.post(
-        "/api/draft-schedules/optimization/generate", json=generation_payload(prepared)
-    )
+    response = _generate_operation(client, generation_payload(prepared))
 
-    assert response.status_code == 503
-    assert response.json()["code"] == "NO_VALID_ALTERNATIVE"
-    assert "Course 1" in response.json()["message"]
-    assert "Founders Day" in response.json()["message"]
+    assert response.status_code == 409
+    assert response.json()["phase"] == "timeout_no_candidate"
+    assert response.json()["saved"] is False
+    assert response.json()["review"] is None
+    assert response.json()["canAccept"] is False
     assert get_draft_schedule(db_session, 1, 1).revision == 1
     assert db_session.query(PlanningOutcome).count() == 0
 
@@ -297,13 +398,9 @@ def test_accepts_exact_lower_coverage_preview_once_and_retains_only_saved_outcom
         "/api/draft-schedules/optimization/prepare",
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
-    preview = client.post(
-        "/api/draft-schedules/optimization/generate", json=generation_payload(prepared)
-    ).json()
+    preview = _generate_operation(client, generation_payload(prepared)).json()
 
-    accepted = client.post(
-        "/api/draft-schedules/optimization/accept", json=acceptance_payload(preview)
-    )
+    accepted = _accept_operation(client, acceptance_payload(preview))
 
     assert accepted.status_code == 200
     assert accepted.json()["mode"] == "direct_saved"
@@ -315,10 +412,9 @@ def test_accepts_exact_lower_coverage_preview_once_and_retains_only_saved_outcom
     assert sum(item.units for item in current.sessions) == 2
     assert db_session.query(PlanningOutcome).one().classification == "successful"
 
-    repeated = client.post(
-        "/api/draft-schedules/optimization/accept", json=acceptance_payload(preview)
-    )
-    assert repeated.status_code == 409
+    repeated = _accept_operation(client, acceptance_payload(preview))
+    assert repeated.status_code == 200
+    assert repeated.json() == accepted.json()
     assert get_draft_schedule(db_session, 1, 1).revision == current.revision
     assert db_session.query(PlanningOutcome).count() == 1
 
@@ -333,13 +429,9 @@ def test_mixed_acceptance_applies_existing_and_unplanned_courses_as_one_result(c
         "/api/draft-schedules/optimization/prepare",
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1, 2], "unavailableDates": []},
     ).json()
-    preview = client.post(
-        "/api/draft-schedules/optimization/generate", json=generation_payload(prepared)
-    ).json()
+    preview = _generate_operation(client, generation_payload(prepared)).json()
 
-    accepted = client.post(
-        "/api/draft-schedules/optimization/accept", json=acceptance_payload(preview)
-    )
+    accepted = _accept_operation(client, acceptance_payload(preview))
 
     assert accepted.status_code == 200, accepted.text
     assert {item.course_id for item in db_session.query(DraftSchedule)} == {1, 2}
@@ -368,18 +460,14 @@ def test_acceptance_clears_a_zero_session_course_without_creating_an_empty_draft
         "/api/draft-schedules/optimization/prepare",
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1, 2], "unavailableDates": []},
     ).json()
-    preview = client.post(
-        "/api/draft-schedules/optimization/generate", json=generation_payload(prepared)
-    ).json()
+    preview = _generate_operation(client, generation_payload(prepared)).json()
     by_course = {
         item["courseId"]: item for item in preview["comparison"]["courses"]
     }
     assert by_course[1]["generated"]["scheduledUnits"] == 0
     assert by_course[2]["generated"]["scheduledUnits"] == 4
 
-    accepted = client.post(
-        "/api/draft-schedules/optimization/accept", json=acceptance_payload(preview)
-    )
+    accepted = _accept_operation(client, acceptance_payload(preview))
 
     assert accepted.status_code == 200
     assert get_draft_schedule(db_session, 1, 1) is None
@@ -397,16 +485,14 @@ def test_fingerprint_mismatch_rejects_acceptance_without_mutation(client, db_ses
         "/api/draft-schedules/optimization/prepare",
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
-    preview = client.post(
-        "/api/draft-schedules/optimization/generate", json=generation_payload(prepared)
-    ).json()
+    preview = _generate_operation(client, generation_payload(prepared)).json()
     payload = acceptance_payload(preview)
     payload["candidateFingerprint"] = "0" * 64
 
-    rejected = client.post("/api/draft-schedules/optimization/accept", json=payload)
+    rejected = _accept_operation(client, payload)
 
     assert rejected.status_code == 409
-    assert rejected.json()["errors"][0]["code"] == "CANDIDATE_NOT_REPRODUCIBLE"
+    assert rejected.json()["errors"][0]["code"] == "CANDIDATE_MISMATCH"
     assert get_draft_schedule(db_session, 1, 1).revision == original.revision
     assert db_session.query(PlanningOutcome).count() == 0
 
@@ -439,9 +525,7 @@ def test_acceptance_rejects_every_material_snapshot_change_without_mutation(
         "/api/draft-schedules/optimization/prepare",
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
-    preview = client.post(
-        "/api/draft-schedules/optimization/generate", json=generation_payload(prepared)
-    ).json()
+    preview = _generate_operation(client, generation_payload(prepared)).json()
     payload = acceptance_payload(preview)
 
     if changed_input == "lifecycle":
@@ -489,10 +573,10 @@ def test_acceptance_rejects_every_material_snapshot_change_without_mutation(
     db_session.commit()
     revision_before_accept = get_draft_schedule(db_session, 1, 1).revision
 
-    response = client.post("/api/draft-schedules/optimization/accept", json=payload)
+    response = _accept_operation(client, payload)
 
-    assert response.status_code == 409
-    assert response.json()["errors"][0]["code"] == "STALE_PLANNING_INPUT"
+    assert response.status_code == (422 if changed_input == "unavailable_dates" else 409)
+    assert response.json()["errors"][0]["code"] == ("INVALID_REQUEST" if changed_input == "unavailable_dates" else "STALE_PLANNING_INPUT")
     assert get_draft_schedule(db_session, 1, 1).revision == revision_before_accept
     assert db_session.query(PlanningOutcome).count() == 0
 
@@ -512,29 +596,28 @@ def test_past_exam_added_after_preview_does_not_invalidate_acceptance(
         "/api/draft-schedules/optimization/prepare",
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
-    preview = client.post(
-        "/api/draft-schedules/optimization/generate", json=generation_payload(prepared)
-    ).json()
+    preview = _generate_operation(client, generation_payload(prepared)).json()
     db_session.add(past_exam(exam_id=91, course_id=1))
     db_session.commit()
 
-    response = client.post(
-        "/api/draft-schedules/optimization/accept", json=acceptance_payload(preview)
-    )
+    response = _accept_operation(client, acceptance_payload(preview))
 
     assert response.status_code == 200
     assert response.json()["outcomes"][0]["saved"] is True
 
 
-def test_unproven_solver_result_returns_503_and_saves_nothing(client, db_session, monkeypatch):
+def test_no_assignment_timeout_has_no_review_and_saves_nothing(client, db_session, monkeypatch):
     seed_optimization_planner(db_session, course_count=1)
     prepared = client.post("/api/draft-schedules/optimization/prepare", json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []}).json()
     from app.services.semester_optimization import OptimalResultNotProven
     import app.services.conflict_aware_generation as service
     monkeypatch.setattr(service, "optimize_semester", lambda *args, **kwargs: (_ for _ in ()).throw(OptimalResultNotProven("not proven")))
-    response = client.post("/api/draft-schedules/optimization/generate", json=generation_payload(prepared))
-    assert response.status_code == 503
-    assert response.json() == {"code": "OPTIMAL_RESULT_NOT_PROVEN", "message": "not proven", "saved": False}
+    response = _generate_operation(client, generation_payload(prepared))
+    assert response.status_code == 409
+    assert response.json()["phase"] == "timeout_no_candidate"
+    assert response.json()["saved"] is False
+    assert response.json()["review"] is None
+    assert db_session.query(DraftSchedule).count() == 0
 
 
 def test_material_change_after_preparation_returns_saved_state_stale_outcome(client, db_session):
@@ -548,15 +631,12 @@ def test_material_change_after_preparation_returns_saved_state_stale_outcome(cli
     room.revision += 1
     db_session.commit()
 
-    response = client.post(
-        "/api/draft-schedules/optimization/generate",
-        json=generation_payload(prepared),
-    )
+    response = _generate_operation(client, generation_payload(prepared))
 
-    assert response.status_code == 200
-    assert response.json()["summary"]["stale"] == 1
-    assert response.json()["summary"]["optimalForPreparedSnapshot"] is False
-    assert response.json()["outcomes"][0]["status"] == "stale"
+    assert response.status_code == 409
+    assert response.json()["phase"] == "stale"
+    assert response.json()["saved"] is False
+    assert response.json()["review"] is None
     assert db_session.query(DraftSchedule).count() == 0
 
 
@@ -571,19 +651,13 @@ def test_equal_coverage_candidate_is_only_replaced_after_acceptance(client, db_s
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
 
-    preview = client.post(
-        "/api/draft-schedules/optimization/generate",
-        json=generation_payload(prepared),
-    )
+    preview = _generate_operation(client, generation_payload(prepared))
     assert preview.status_code == 200
     assert preview.json()["mode"] == "decision_required"
     assert get_draft_schedule(db_session, 1, 1).revision == 1
     assert db_session.query(PlanningOutcome).count() == 0
 
-    response = client.post(
-        "/api/draft-schedules/optimization/accept",
-        json=acceptance_payload(preview.json()),
-    )
+    response = _accept_operation(client, acceptance_payload(preview.json()))
 
     assert response.status_code == 200
     assert response.json()["outcomes"][0]["status"] == "complete"
@@ -613,10 +687,7 @@ def test_saved_partial_improvement_is_retained_as_a_successful_completed_result(
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
 
-    response = client.post(
-        "/api/draft-schedules/optimization/generate",
-        json=generation_payload(prepared),
-    )
+    response = _generate_operation(client, generation_payload(prepared))
 
     assert response.status_code == 200
     assert response.json()["outcomes"][0]["status"] == "improved_partial"
@@ -640,18 +711,12 @@ def test_acceptance_replaces_a_current_draft_that_conflicts_with_fixed_teaching(
         json={"semesterId": 1, "scheduleRevisionId": 1, "courseIds": [1], "unavailableDates": []},
     ).json()
 
-    preview = client.post(
-        "/api/draft-schedules/optimization/generate",
-        json=generation_payload(prepared),
-    )
+    preview = _generate_operation(client, generation_payload(prepared))
     assert preview.status_code == 200
     assert preview.json()["mode"] == "decision_required"
     assert get_draft_schedule(db_session, 1, 1).revision == 1
 
-    response = client.post(
-        "/api/draft-schedules/optimization/accept",
-        json=acceptance_payload(preview.json()),
-    )
+    response = _accept_operation(client, acceptance_payload(preview.json()))
     outcome = response.json()["outcomes"][0]
     current = get_draft_schedule(db_session, 1, 1)
 
@@ -676,12 +741,11 @@ def test_persistence_failure_rolls_back_every_selected_draft_and_outcome(client,
         return original(database, course_plan, *args, **kwargs)
 
     monkeypatch.setattr(service, "replace_draft_schedule", fail_second)
-    response = client.post(
-        "/api/draft-schedules/optimization/generate",
-        json=generation_payload(prepared),
-    )
+    response = _generate_operation(client, generation_payload(prepared))
 
     assert response.status_code == 500
-    assert response.json()["saved"] is False
+    assert response.json()["errors"][0]["code"] == "OPTIMIZATION_APPLICATION_FAILED"
+    from app.models.planning import OptimizationOperation
+    assert db_session.query(OptimizationOperation).one().saved_result is None
     assert db_session.query(DraftSchedule).count() == 0
     assert db_session.query(PlanningOutcome).count() == 0

@@ -13,6 +13,7 @@ from app.models.planning import (
     GenerationConstraintWindow,
     InstitutionHoliday,
     Lecturer,
+    Room,
     ScheduleRevision,
     StudyTypeTimeWindow,
 )
@@ -118,6 +119,7 @@ def test_lecturer_filter_facet_uses_the_resource_name():
         seed_lifecycle_semester(db, with_schedule=True)
         lecturer = db.get(Lecturer, 1)
         lecturer.name = "Ada Lovelace"
+        db.get(Room, 1).reference_code = "CAMPUS-055"
         initial = get_lifecycle_overview(db, 1)
         create_working_revision(db, 1, initial["stateToken"])
         db.commit()
@@ -126,6 +128,9 @@ def test_lecturer_filter_facet_uses_the_resource_name():
 
         assert workspace["filterFacets"]["lecturers"] == [
             {"value": "lecturer:1", "label": "Ada Lovelace"}
+        ]
+        assert workspace["filterFacets"]["rooms"] == [
+            {"value": "room:1", "label": "CAMPUS-055"}
         ]
 
 
@@ -290,10 +295,17 @@ def test_published_content_stays_captured_while_current_holiday_validation_chang
         db.commit()
 
         before = get_calendar_workspace(db, 1)
+        assert before["filterFacets"]["rooms"] == [
+            {"value": "room:1", "label": "R-1"}
+        ]
+        db.get(Room, 1).reference_code = "RENAMED-ROOM"
+        db.get(Lecturer, 1).name = "Renamed Lecturer"
         db.add(InstitutionHoliday(date=date(2026, 10, 5), name="New closure"))
         db.get(Lecturer, 1).is_active = False
         db.commit()
         after = get_calendar_workspace(db, 1)
+        assert after["filterFacets"]["rooms"] == before["filterFacets"]["rooms"]
+        assert after["filterFacets"]["lecturers"] == before["filterFacets"]["lecturers"]
 
         assert before["selectedRevision"]["designation"] == "current_published"
         assert before["selectedRevision"]["snapshotSchemaVersion"] == 2

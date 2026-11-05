@@ -207,6 +207,7 @@ describe('DraftSchedulePanel', () => {
         traceTarget: {
           reference: 'course:2',
           label: 'Scheduling 201 · 2 units remaining',
+          teachingCoverage: [{ courseId: 2, courseName: 'Scheduling 201', requiredUnits: 8, plannedUnits: 6, remainingUnits: 2 }],
           courseIds: [2],
           teachingSessionIds: [3],
           examIds: [],
@@ -216,12 +217,26 @@ describe('DraftSchedulePanel', () => {
 
     expect(document.body.textContent).toContain('Betroffener Datensatz')
     expect(document.body.textContent).toContain('Scheduling 201 · 2 units remaining')
+    const trace = document.querySelector('.workspace-list-trace')!
+    expect(trace.textContent).toContain('Benötigt: 8 LE')
+    expect(trace.textContent).toContain('Geplant: 6 LE')
+    expect(trace.textContent).toContain('Offen: 2 LE')
     expect(document.body.textContent).not.toContain('Planning 101')
     expect(document.querySelector('[aria-label="Draft session filters"]')).toBeNull()
     await act(async () => {
       await Promise.resolve()
     })
     expect(document.activeElement).toBe(document.querySelector('[data-trace-reference="course:2"]'))
+  })
+
+  it('shows teaching units beside elapsed duration including breaks', () => {
+    renderPanel({ schedules: [{ ...draftScheduleFixture, sessions: [{
+      ...draftScheduleFixture.sessions[0], startTime: '13:15', endTime: '14:55', units: 2,
+    }] }] })
+    const row = document.querySelector('.teaching-session-row:not(.session-header)')!
+    expect(row.querySelector('[data-label="Dauer / LE"]')?.textContent).toContain('1 h 40 min')
+    expect(row.querySelector('[data-label="Dauer / LE"]')?.textContent).toContain('2 LE')
+    expect(document.body.textContent).toContain('1 LE = 45 Minuten Unterricht')
   })
 
   it('shows a no-schedule empty state', () => {
@@ -506,6 +521,7 @@ describe('DraftSchedulePanel', () => {
       endTime: '10:30',
       lecturerId: 1,
       roomId: 3,
+      units: 4,
     })
   })
 
@@ -709,11 +725,11 @@ describe('DraftSchedulePanel', () => {
     renderPanel({ schedules: [alertDraftScheduleFixture] })
     const header = document.querySelector('.teaching-session-row.session-header')
     expect([...header!.children].map((item) => item.textContent)).toEqual([
-      'Datum', 'Zeit', 'Dauer', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Studienart', 'Aktionen',
+      'Datum', 'Zeit', 'Dauer / LE', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Studienart', 'Aktionen',
     ])
     const row = document.querySelector('.teaching-session-row:not(.session-header)')!
     expect([...row.children].map((item) => item.getAttribute('data-label'))).toEqual([
-      'Datum', 'Zeit', 'Dauer', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Studienart', 'Aktionen',
+      'Datum', 'Zeit', 'Dauer / LE', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Studienart', 'Aktionen',
     ])
     expect(row.children[0].querySelector('.validation-alerts')).not.toBeNull()
     expect(row.children[8].querySelectorAll('button')).toHaveLength(2)

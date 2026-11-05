@@ -3,11 +3,68 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ReplacementConfirmationDialog } from './ReplacementConfirmationDialog'
-import { decisionRequiredGenerationFixture } from '../test/optimizationFixtures'
+import { decisionRequiredGenerationFixture, candidateProofFixture } from '../test/optimizationFixtures'
 
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('ReplacementConfirmationDialog', () => {
+  it('localizes provisional holiday evidence from structured fields instead of displaying raw English',()=>{
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    const courses=decisionRequiredGenerationFixture.comparison.courses.map((c,index)=>index?c:{...c,remainingReasons:[{
+      code:'INSTITUTION_HOLIDAY',message:'Osterferien on 2027-03-20 removed an otherwise allowed date.',
+      relatedCount:1,holidayDate:'2027-03-20',holidayName:'Osterferien'}]})
+    act(()=>root.render(<ReplacementConfirmationDialog preview={{...decisionRequiredGenerationFixture,
+      comparison:{...decisionRequiredGenerationFixture.comparison,courses}}} onAccept={vi.fn()} onCancel={vi.fn()}/>))
+    expect(document.body.textContent).toContain('20.03.2027')
+    expect(document.body.textContent).toContain('als mögliche Lehrtermine ausgeschlossen')
+    expect(document.body.textContent).not.toContain('removed an otherwise')
+    expect(document.body.textContent).not.toContain('2027-03-20')
+  })
+  it('keeps aggregate subtraction distinct from per-course excess and shows conditional proof',()=>{
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    const courses=decisionRequiredGenerationFixture.comparison.courses.map((course,index)=>({...course,
+      current:{requiredUnits:index?60:40,scheduledUnits:index?40:50,remainingUnits:index?20:0,status:'partial' as const},
+      remainingReasons:[]}))
+    const proof={...candidateProofFixture,objectives:candidateProofFixture.objectives.map((o,i)=>i===1?{...o,proofStatus:'conditional' as const,condition:{total_units:80}}:o)}
+    act(()=>root.render(<ReplacementConfirmationDialog preview={{...decisionRequiredGenerationFixture,proof,
+      comparison:{...decisionRequiredGenerationFixture.comparison,courses,current:{requiredUnits:100,scheduledUnits:90,remainingUnits:10,status:'partial'}}}} onAccept={vi.fn()} onCancel={vi.fn()}/>))
+    const sides=[...document.querySelectorAll('[aria-label="Aktueller Stundenplan"]')]
+    expect(sides[0].textContent).toContain('100 LEGeplant90 LEVerbleibend10 LE')
+    expect(sides[1].textContent).toContain('40 LEGeplant50 LEVerbleibend0 LE')
+    expect(sides[2].textContent).toContain('60 LEGeplant40 LEVerbleibend20 LE')
+    expect(document.body.textContent).toContain('Nur bedingt nachgewiesen')
+    expect(document.body.textContent).toContain('Geplante Lehreinheiten = 80')
+    expect(document.body.textContent).toContain('keine belegten Gründe')
+  })
+  it('keeps review on retry back-out and requires confirmation before discarding',()=>{
+    const retry=vi.fn()
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    act(()=>root.render(<ReplacementConfirmationDialog preview={{...decisionRequiredGenerationFixture,proof:candidateProofFixture}} onRetry={retry} onAccept={vi.fn()} onCancel={vi.fn()}/>))
+    const button=(text:string)=>[...document.querySelectorAll('button')].find(b=>b.textContent===text)
+    act(()=>button('Erneut optimieren')?.click())
+    expect(document.body.textContent).toContain('kann schlechter ausfallen oder kein Ergebnis liefern')
+    expect(retry).not.toHaveBeenCalled()
+    act(()=>button('Zurück zum Vergleich')?.click())
+    expect(document.activeElement).toBe(button('Erneut optimieren'))
+    expect(document.querySelectorAll('.optimization-objectives li')).toHaveLength(8)
+    expect(retry).not.toHaveBeenCalled()
+    act(()=>button('Erneut optimieren')?.click())
+    act(()=>button('Verwerfen und neuen Versuch vorbereiten')?.click())
+    expect(retry).toHaveBeenCalledOnce()
+  })
+  it.each([true,false])('explains provisional validity, coverage and known/unknown gap (%s)', (known) => {
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    const proof={...candidateProofFixture,unitUpperBound:known?90:null,additionalPossibleUnits:known?10:null,gapKnown:known}
+    act(()=>root.render(<ReplacementConfirmationDialog preview={{...decisionRequiredGenerationFixture,hasSavedSessions:false,proof}} onAccept={vi.fn()} onCancel={vi.fn()}/>))
+    expect(document.body.textContent).toContain('Noch nicht gespeichert')
+    expect(document.body.textContent).toContain('Keine gespeicherten Lehrtermine')
+    expect(document.body.textContent).toContain('Harte Regeln geprüft')
+    expect(document.body.textContent).toContain('Verbleibende erforderliche Lehreinheiten: 20')
+    expect(document.body.textContent).toContain(known?'höchstens 10 zusätzliche Lehreinheiten':'Abstand zum möglichen Maximum unbekannt')
+    expect(document.body.textContent).toContain('Wochenverteilung und Termingröße')
+    expect(document.querySelectorAll('.optimization-objectives li')).toHaveLength(8)
+    expect(document.body.textContent).toContain('keine Aussage über ein globales Semesteroptimum')
+  })
   it('shows factual aggregate and per-course comparison with only the atomic actions', () => {
     const cancel = vi.fn()
     const root = createRoot(document.body.appendChild(document.createElement('div')))

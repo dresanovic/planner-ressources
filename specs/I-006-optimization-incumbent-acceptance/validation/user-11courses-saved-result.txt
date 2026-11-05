@@ -1,0 +1,181 @@
+Konfliktfreie Semesteroptimierung
+
+Gespeichertes Optimierungsergebnis
+0 vollständig · 11 teilweise verbessert · 0 unverändert · 0 fehlgeschlagen · 0 veraltet
+
+192 Lehreinheiten geplant · 166 offen · 24.3 Sekunden
+
+Für den vorbereiteten Datenstand als optimal nachgewiesen. Veraltete Ergebnisse bleiben erhalten und behaupten nicht, dass das aktualisierte Semester global optimal ist.
+
+Harte Regeln geprüft
+Ein gültiger Stundenplan muss nicht vollständig oder optimal sein. Die maximale Abdeckung ist für die vorbereitete Auswahl nachgewiesen.
+
+Verbleibende erforderliche Lehreinheiten: 166.
+
+Nach der verfügbaren Obergrenze 192 sind höchstens 0 zusätzliche Lehreinheiten möglich. Dies ist keine Zusage, dass die Obergrenze erreichbar ist.
+
+Auch die nachgeordneten Ziele sind in ihrer Prioritätsfolge nachgewiesen.
+
+Geplante Lehreinheiten: Nachgewiesen · Wert 192
+Überschneidungen: Nachgewiesen · Wert 0
+Wochenverteilung und Termingröße: Nachgewiesen · Wert 96
+Wechsel der Lehrperson: Nachgewiesen · Wert 0
+Raumwechsel: Nachgewiesen · Wert 0
+Beibehaltene Entwürfe: Nachgewiesen · Wert 0
+Eindeutige zeitliche Reihenfolge: Nachgewiesen · Wert 3528
+Eindeutige Ressourcenauswahl: Nachgewiesen · Wert 96
+Der Nachweis gilt für die vorbereitete Auswahl (11 Lehrveranstaltungen) mit der damaligen festen Belegung; keine Aussage über ein globales Semesteroptimum oder unabhängige Kursmaxima. Nach dem Speichern werden diese Termine für spätere Auswahlen zur festen Belegung und können deren Möglichkeiten einschränken.
+
+Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S
+Teilweise verbessert
+16 geplant · 10 offen
+
+Hinweis: Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Angewandte Forschung und Entwicklung in der Wirtschaftsinformatik [0320BB2001] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Unternehmensgründung in der IT [0320BB2005] – 2027 S
+Teilweise verbessert
+24 geplant · 10 offen
+
+Hinweis: Unternehmensgründung in der IT [0320BB2005] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Unternehmensgründung in der IT [0320BB2005] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Unternehmensgründung in der IT [0320BB2005] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Unternehmensgründung in der IT [0320BB2005] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Unternehmensgründung in der IT [0320BB2005] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Communication & Presentation [0320BB2006] – 2027 S
+Teilweise verbessert
+0 geplant · 34 offen
+
+Hinweis: Communication & Presentation [0320BB2006] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Communication & Presentation [0320BB2006] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Communication & Presentation [0320BB2006] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Communication & Presentation [0320BB2006] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Communication & Presentation [0320BB2006] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Operation Research [0320BB2007] – 2027 S
+Teilweise verbessert
+28 geplant · 6 offen
+
+Hinweis: Operation Research [0320BB2007] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Operation Research [0320BB2007] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Operation Research [0320BB2007] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Operation Research [0320BB2007] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Operation Research [0320BB2007] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Informationssicherheitsmanagement [0320BB2012] – 2027 S
+Teilweise verbessert
+32 geplant · 2 offen
+
+Hinweis: Informationssicherheitsmanagement [0320BB2012] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Informationssicherheitsmanagement [0320BB2012] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Informationssicherheitsmanagement [0320BB2012] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Informationssicherheitsmanagement [0320BB2012] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Informationssicherheitsmanagement [0320BB2012] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S
+Teilweise verbessert
+12 geplant · 22 offen
+
+Hinweis: Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Seminar zur Masterarbeit 1 [0320BB2018] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S
+Teilweise verbessert
+12 geplant · 22 offen
+
+Hinweis: Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Systems Engineering & Analytisches Denken [0320BB2019] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Begleitendes FuE Projekt [0320BB2020] – 2027 S
+Teilweise verbessert
+24 geplant · 10 offen
+
+Hinweis: Begleitendes FuE Projekt [0320BB2020] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Begleitendes FuE Projekt [0320BB2020] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Begleitendes FuE Projekt [0320BB2020] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Begleitendes FuE Projekt [0320BB2020] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Begleitendes FuE Projekt [0320BB2020] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S
+Teilweise verbessert
+16 geplant · 18 offen
+
+Hinweis: Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Gesellschafts- und Vertragsrecht [0320BB2021] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Consulting Methoden [0320BB2022] – 2027 S
+Teilweise verbessert
+12 geplant · 14 offen
+
+Hinweis: Consulting Methoden [0320BB2022] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Consulting Methoden [0320BB2022] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Consulting Methoden [0320BB2022] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Consulting Methoden [0320BB2022] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Consulting Methoden [0320BB2022] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)
+
+Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S
+Teilweise verbessert
+16 geplant · 18 offen
+
+Hinweis: Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 20.03.2027. (1 betroffen)
+
+Hinweis: Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 26.03.2027. (1 betroffen)
+
+Hinweis: Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Osterferien (unterrichtsfrei)“, betroffenes Datum: 27.03.2027. (1 betroffen)
+
+Hinweis: Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S: Ein betroffener Termin liegt auf einem Feiertag. Prüfen Sie das Datum und behalten oder ändern Sie den Termin bewusst. Feiertag „Staatsfeiertag“, betroffenes Datum: 01.05.2027. (1 betroffen)
+
+Hinweis: Integration elekt. Geschäftsprozesse [0320BB2024] – 2027 S: Die Aktion konnte nicht abgeschlossen werden. Die genaue Ursache ist nicht verfügbar; prüfen Sie den aktuellen Stand vor einem weiteren Versuch. (1 betroffen)

@@ -181,18 +181,24 @@ Every available Course is generated independently with its own saved Course-Seme
 
 Execution uses one outer transaction and a nested savepoint per successful Course candidate. Repository mutation helpers flush but do not commit; API boundaries own commit and rollback. Changed Draft Schedule or active constraint snapshots return stale Course failures. Any unexpected orchestration or persistence exception rolls back the complete attempt and returns `BATCH_OPERATION_FAILED` without uncommitted success outcomes. Batch results and retry sets are response/UI state only and are not persisted.
 
-## Conflict-Aware Semester Optimization (FS-010)
+## Conflict-Aware Semester Optimization (FS-010, I-004 and I-006)
 
-FS-010 is an additive workflow; the existing single-course and independent FS-006 batch routes keep their established behavior. The new synchronous endpoints are:
+Teaching optimization for one to twenty selected courses uses short authenticated operation requests. Existing independent single-course and FS-006 batch routes retain their separate behavior. The optimization endpoints are:
 
 - `POST /api/draft-schedules/optimization/prepare`
-- `POST /api/draft-schedules/optimization/generate`
+- `POST /api/draft-schedules/optimization/operations`
+- `GET /api/draft-schedules/optimization/operations/{operationId}`
+- `POST /api/draft-schedules/optimization/operations/{operationId}/accept`
+- `POST /api/draft-schedules/optimization/operations/{operationId}/finalize`
+- `POST /api/draft-schedules/optimization/operations/{operationId}/cancel`
 
-Preparation accepts 1-20 distinct courses in one semester and optional unavailable dates. Duplicate unavailable dates are accepted and canonically deduplicated. It returns opaque shared/per-course snapshot tokens plus the exact existing drafts that require confirmation. Generation echoes that preparation and globally maximizes scheduled teaching units while treating unselected schedules and retained selected schedules as fixed occupancy. Generated sessions never introduce lecturer, room, or cohort overlaps and use only active, eligible, available, capacity-sufficient resources.
+Preparation accepts 1–20 distinct courses in one semester's active editable Working revision and optional canonically deduplicated unavailable dates. It returns shared/per-course snapshots and the effective operator budget/fingerprint, shown before explicit start. Start captures one preparation/search deadline and returns an operation identity promptly. A spawned solver receives detached planning values and never writes schedules; passive short status polls keep the interface responsive. Unselected teaching and active exams remain fixed occupancy. Every offered candidate is independently checked against dates, windows, units/breaks, holidays/unavailable dates, eligibility/activity/availability/capacity, exam boundaries and joint lecturer/room/cohort conflicts.
 
-The comparison order is strict: total units, retained conflict count, weekly concentration followed by midpoint session-size preference, adjacent lecturer changes, adjacent room changes, complete-draft preservation, then canonical rank. The actual units already saved in each current draft are the replacement floor, including over-scheduled drafts. Equal-unit replacement occurs only for a strict higher-priority arrangement improvement; otherwise the draft and manual edits remain unchanged. Existing custom constraints and source academic/resource records are preserved. A successfully generated course that had no constraint set saves the exact defaults used.
+Objective priorities remain total units, conflicts, weekly distribution/session size, lecturer changes, room changes, retained drafts, then canonical temporal/resource ordering. Current saved units are comparison facts; they do not impose a replacement floor. A planner may explicitly accept lower coverage for the whole selection, including replacement of manual sessions. Existing constraints, unselected/protected sessions, academic/resource records and exams retain their protections.
 
-Only a result proven `OPTIMAL` at every comparison stage may save. Timeout, feasible-only, unknown, invalid-model, or unexpected operation failures roll back and return a no-save error. Inputs are fingerprinted before solve and reloaded before writes; stale courses remain unchanged, and exact unaffected results save only when they still validate without a second solve. `optimalForPreparedSnapshot` is true only when a solve completed and deliberately describes the prepared proof scope, not a refreshed-state global claim.
+A hard-valid nonempty candidate lacking any required objective proof remains provisional and requires explicit operation-wide acceptance, even for new or fully covered courses. Review separates coverage, ordered preference evidence, sound unit bounds or unknown gap, and prepared-selection scope. Individual zero-unit courses remain in a nonempty joint decision. Entirely empty unproven results offer no acceptance; timeout alone is not proof of infeasibility. Fully proven wholly unplanned selections use live-client automatic finalize; existing saved sessions still require comparison and acceptance.
+
+Accept/finalize apply the exact retained candidate without solving again, after fresh revision/input/hard-rule validation. All selected replacements/creations/deletions and the durable saved receipt commit atomically and at most once. Any relevant stale change rejects the entire candidate; there is no unaffected-course partial application. Precommit failure/cancellation preserves saved work. Cancellation after commit returns the actual saved receipt. Refresh, authentication/context loss or restart permits outcome-only reconciliation, never restored review authority. The old synchronous `/generate` and replay `/accept` routes return `409 OPERATION_API_REQUIRED`. See [the operation contract](../specs/I-006-optimization-incumbent-acceptance/contracts/optimization-operation.md) and the operator-budget section below.
 
 Install the pinned solver runtime with `pip install -r requirements.txt`. Run focused verification from `backend/` with:
 
@@ -249,3 +255,31 @@ Each success returns `courseId`, `semesterId`, authoritative `scheduledUnits`, a
 Manual creation accepts explicit `lecturerId`, `cohortId`, and `roomId` values and returns structured `422` errors for date, time, whole-unit, remaining-unit, duplicate-date, and selected-Cohort room-capacity rules. A missing or inactive selected source record returns `404`. Confirmed deletions return `409 STALE_DRAFT` when the target, parent identity, or revision no longer matches; no deletion occurs and the client must refresh and obtain a new confirmation.
 
 All mutations preserve Course, Semester, Lecturer, Room, Cohort, Study Type, and saved Generation Constraint Set records. Manual creation defaults Lecturer, Cohort, and Room from the Course in the planner UI, persists any active-record overrides only on the new session, accepts active Rooms that are capacity-valid for the selected Cohort, and retains established non-blocking validation alerts.
+# Teaching optimization time policy
+
+Teaching generation uses short operation requests and a separate solver process.
+The operator may set `TEACHING_OPTIMIZATION_POLICY_FILE` to a JSON file containing
+`defaultSeconds` and `ceilingSeconds`. Missing keys use 300 and 1800 respectively;
+an unset path uses both defaults. Values must be finite positive whole seconds,
+excluding strings and booleans, with default no greater than ceiling. Unknown or
+duplicate keys, malformed/unreadable files, and invalid values block new
+preparation with `OPTIMIZATION_CONFIGURATION_INVALID`; unrelated health/startup
+remains available. Correct the file and prepare again; no rebuild is required.
+
+Copy `config/optimization/policy.example.json` to an operator-owned `policy.json`.
+For containers, mount host `./config/optimization` read-only at
+`/config/optimization`, and set the policy path to
+`/config/optimization/policy.json`. Mount the directory, never the individual
+file: replacing a single-file mount can leave the container reading its old inode.
+Write the replacement beside the original, then atomically rename it over
+`policy.json` on the host filesystem (for example Python `os.replace`). The next
+preparation reads the new values while a running operation retains its captured
+budget. A change between preparation and start requires preparation again.
+
+The planner has no per-run budget override or configuration editor. More time
+does not guarantee a better result; reducing the selected courses is another
+recovery option. Keep the supported single application process/SQLite deployment;
+this operation registry is not a distributed queue. A restart interrupts live
+work and review; outcome receipts preserve committed saves without restoring
+candidate authority. Use isolated databases for acceptance trials.
+

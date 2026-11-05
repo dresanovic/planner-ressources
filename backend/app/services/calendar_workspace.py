@@ -86,12 +86,12 @@ def get_calendar_workspace(
     initial_selected_version = selected.row_version
 
     if selected is active:
-        courses, occurrences, lecturer_labels = _working_content(db, semester)
+        courses, occurrences, lecturer_labels, room_labels = _working_content(db, semester)
         designation = "active_working"
         content_source = "active_working"
         read_only = False
     else:
-        courses, occurrences, lecturer_labels = _published_content(selected)
+        courses, occurrences, lecturer_labels, room_labels = _published_content(selected)
         designation = "current_published"
         content_source = "captured_published"
         read_only = True
@@ -152,6 +152,7 @@ def get_calendar_workspace(
         designation,
         selected.state,
         lecturer_labels,
+        room_labels,
     )
     for course in courses:
         course.pop("cohortSize", None)
@@ -232,10 +233,14 @@ def get_calendar_workspace(
 
 def _working_content(
     db: Session, semester: Semester
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, str]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, str], dict[str, str]]:
     lecturer_labels = {
         f"lecturer:{row.id}": row.name
         for row in db.scalars(select(Lecturer))
+    }
+    room_labels = {
+        f"room:{row.id}": row.reference_code or row.name
+        for row in db.scalars(select(Room))
     }
     course_rows = list(
         db.scalars(
@@ -427,18 +432,25 @@ def _working_content(
         sorted(courses, key=lambda item: item["courseId"]),
         occurrences,
         lecturer_labels,
+        room_labels,
     )
 
 
 def _published_content(
     revision: ScheduleRevision,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, str]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, str], dict[str, str]]:
     snapshot = revision.snapshot_document or {}
     courses: list[dict[str, Any]] = []
     occurrences: list[dict[str, Any]] = []
     lecturer_labels: dict[str, str] = {}
+    room_labels: dict[str, str] = {}
     for source in snapshot.get("courses", []):
         course_id = source["sourceCourseId"]
+        room_labels.update({
+            f"room:{session['room']['sourceId']}":
+                session["room"].get("referenceCode") or session["room"]["name"]
+            for session in source.get("teachingSessions", [])
+        })
         lecturer_labels.update(
             {
                 f"lecturer:{session['lecturer']['sourceId']}": session[
@@ -490,6 +502,9 @@ def _published_content(
     course_by_id = {row["courseId"]: row for row in courses}
     for exam in snapshot.get("examSessions", []):
         course_id = exam["course"]["sourceId"]
+        room_labels[f"room:{exam['room']['sourceId']}"] = (
+            exam["room"].get("referenceCode") or exam["room"]["name"]
+        )
         lecturer_labels[
             f"lecturer:{exam['lecturer']['sourceId']}"
         ] = exam["lecturer"]["name"]
@@ -549,6 +564,7 @@ def _published_content(
         sorted(courses, key=lambda item: item["courseId"]),
         occurrences,
         lecturer_labels,
+        room_labels,
     )
 
 
@@ -1158,8 +1174,10 @@ def _facets(
     designation,
     lifecycle_state,
     lecturer_labels=None,
+    room_labels=None,
 ):
     lecturer_labels = lecturer_labels or {}
+    room_labels = room_labels or {}
     outcome_issue_course_refs = {
         row["courseRef"]
         for row in outcomes
@@ -1194,7 +1212,7 @@ def _facets(
             for ref in row["lecturerRefs"]
         ),
         "rooms": _facet(
-            (row["roomRef"], row["roomRef"].replace(":", " "))
+            (row["roomRef"], room_labels.get(row["roomRef"], row["roomRef"].replace(":", " ")))
             for row in occurrences
         ),
         "studyTypes": _facet(

@@ -1,0 +1,15 @@
+{
+  "image": "eba0ac98042f9efff83f07a950f723263f0da733e6976ecf22311c1636fff108",
+  "courseCount": 1,
+  "requiredUnits": 80,
+  "budgetSeconds": 5,
+  "phaseBeforeSave": "awaiting_decision",
+  "unsavedStatePreserved": true,
+  "scheduledUnits": 80,
+  "preferencesProven": false,
+  "savedReceiptRecovered": true,
+  "outcomeOnly": true,
+  "lateCancelReturnedSaved": true,
+  "savedStateAfterRestartPreserved": true,
+  "unsavedBeforeDecision": true
+}

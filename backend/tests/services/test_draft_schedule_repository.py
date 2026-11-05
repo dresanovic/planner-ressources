@@ -13,6 +13,7 @@ from app.models.planning import (
     Course,
     CourseEligibleLecturer,
     CourseEligibleRoom,
+    DraftSession,
     GenerationConstraintSet,
     GenerationConstraintWindow,
     Lecturer,
@@ -415,6 +416,22 @@ def test_update_draft_session_persists_date_time_and_room():
     assert session.start_time == time(9, 0)
     assert session.end_time == time(12, 0)
     assert session.room_id == 2
+
+
+def test_edit_units_is_explicit_and_manual_end_time_preserves_units():
+    db = make_session()
+    seed_course(db)
+    draft = seed_draft(db)
+    session_id = draft.sessions[0].id
+    update_draft_session(db, session_id, date=date(2026, 9, 21), start_time=time(9),
+                         end_time=time(11, 35), room_id=2, units=3)
+    db.expire_all()
+    assert db.get(DraftSession, session_id).units == 3
+    update_draft_session(db, session_id, date=date(2026, 9, 21), start_time=time(9),
+                         end_time=time(12), room_id=2)
+    db.expire_all()
+    assert db.get(DraftSession, session_id).units == 3
+    assert db.get(DraftSession, session_id).end_time == time(12)
 
 
 def test_update_draft_session_rejects_invalid_date_time_and_duplicate_date_without_changes():

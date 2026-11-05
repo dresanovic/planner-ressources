@@ -55,6 +55,7 @@ from app.services.planner_auth import (
     touch_session_if_current,
 )
 from app.terminology import load_terminology_from_environment
+from app.services.optimization_operations import recover_operations, shutdown_operations
 
 
 @asynccontextmanager
@@ -73,6 +74,7 @@ async def lifespan(_app: FastAPI):
                 recovery_credential=os.getenv("PLANNER_ADMIN_RECOVERY_CREDENTIAL") or None,
             )
             db.commit()
+            recover_operations(db)
     cleanup_task = (
         asyncio.create_task(_cleanup_lecturer_review_source_state())
         if uses_default_database
@@ -81,6 +83,8 @@ async def lifespan(_app: FastAPI):
     try:
         yield
     finally:
+        if uses_default_database:
+            shutdown_operations(engine)
         if cleanup_task is not None:
             cleanup_task.cancel()
             with suppress(asyncio.CancelledError):
@@ -243,6 +247,7 @@ app.add_middleware(
         "Content-Type",
         "X-CSRF-Protection",
         "X-Planner-Activity",
+        "X-Optimization-Context",
     ],
     expose_headers=["Content-Disposition"],
 )
@@ -269,6 +274,10 @@ app.include_router(planner_auth_router)
 
 @app.exception_handler(RequestValidationError)
 async def structured_holiday_validation_errors(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith('/api/draft-schedules/optimization/operations'):
+        return JSONResponse(status_code=422, content={'errors': [{'code': 'INVALID_REQUEST',
+            'message': 'Prüfen Sie die Laufkennung und Eingaben. Bitte die Auswahl erneut vorbereiten.'}]},
+            headers={'Cache-Control':'no-store'})
     if request.url.path.startswith("/api/auth/") or request.url.path.startswith("/api/planner-accounts"):
         return JSONResponse(
             status_code=400,

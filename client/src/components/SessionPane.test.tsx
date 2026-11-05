@@ -8,6 +8,8 @@ afterEach(() => { document.body.innerHTML = ''; Object.defineProperty(window, 'i
 
 it('shows complete teaching detail and reaches editing in the second intentional action', () => {
   const workspace = loadedCalendarWorkspaceFixture()
+  workspace.filterFacets.lecturers = [{ value: 'lecturer:1', label: 'Ada Lovelace' }] as never
+  workspace.filterFacets.rooms = [{ value: 'room:1', label: 'RC409' }] as never
   const occurrence = workspace.occurrences.find((item) => item.kind === 'teaching')!
   const host = document.body.appendChild(document.createElement('div'))
   const root = createRoot(host)
@@ -15,6 +17,10 @@ it('shows complete teaching detail and reaches editing in the second intentional
   act(() => root.render(<SessionPane occurrence={occurrence} workspace={workspace} mode="detail" onRequestClose={vi.fn()} onRequestEdit={onEdit} />))
   expect(host.textContent).toContain('Lehrtermin')
   expect(host.textContent).toContain('Lehreinheiten')
+  const valueFor = (name: string) => [...host.querySelectorAll('dt')]
+    .find((item) => item.textContent === name)?.nextElementSibling?.textContent
+  expect(valueFor('Lehrende Person')).toBe('Ada Lovelace')
+  expect(valueFor('Raum')).toBe('RC409')
   const edit = [...host.querySelectorAll('button')].find((button) => button.textContent === 'Termin bearbeiten')!
   act(() => edit.click())
   expect(onEdit).toHaveBeenCalledOnce()
