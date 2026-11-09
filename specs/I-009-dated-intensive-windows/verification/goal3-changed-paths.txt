@@ -1,0 +1,85 @@
+ M .specify/feature.json
+ M backend/app/api/academic_catalog.py
+ M backend/app/api/draft_schedule.py
+ M backend/app/api/planning_options.py
+ M backend/app/db/schema.py
+ M backend/app/models/planning.py
+ M backend/app/schemas/academic_catalog.py
+ M backend/app/schemas/conflict_aware_generation.py
+ M backend/app/schemas/draft_schedule.py
+ M backend/app/schemas/planning_options.py
+ M backend/app/services/academic_catalog.py
+ M backend/app/services/calendar_workspace.py
+ M backend/app/services/conflict_aware_generation.py
+ M backend/app/services/draft_schedule_repository.py
+ M backend/app/services/draft_schedule_validation.py
+ M backend/app/services/exam_scheduling.py
+ M backend/app/services/optimization_operations.py
+ M backend/app/services/schedule_generation.py
+ M backend/app/services/schedule_lifecycle.py
+ M backend/app/services/semester_optimization.py
+ M backend/tests/api/test_conflict_aware_generation.py
+ M backend/tests/api/test_draft_schedule.py
+ M backend/tests/db/test_migrations.py
+ M backend/tests/services/test_academic_catalog.py
+ M backend/tests/services/test_conflict_aware_generation.py
+ M backend/tests/services/test_conflict_aware_generation_concurrency.py
+ M backend/tests/services/test_exam_scheduling.py
+ M backend/tests/services/test_optimization_operations.py
+ M backend/tests/services/test_optimization_worker.py
+ M backend/tests/services/test_schedule_lifecycle.py
+ M backend/tests/services/test_semester_optimization.py
+ M client/src/App.css
+ M client/src/api/academicCatalog.test.ts
+ M client/src/api/academicCatalog.ts
+ M client/src/api/conflictAwareGeneration.ts
+ M client/src/api/draftSchedule.ts
+ M client/src/api/planningOptions.ts
+ M client/src/components/AcademicCatalogList.tsx
+ M client/src/components/AcademicRecordEditor.test.tsx
+ M client/src/components/AcademicRecordEditor.tsx
+ M client/src/components/BatchResultSummary.test.tsx
+ M client/src/components/BatchResultSummary.tsx
+ M client/src/components/DraftSchedulePanel.test.tsx
+ M client/src/components/DraftSchedulePanel.tsx
+ M client/src/components/OptimizationProofFacts.tsx
+ M client/src/components/ReplacementConfirmationDialog.test.tsx
+ M client/src/components/ReplacementConfirmationDialog.tsx
+ M client/src/pages/AcademicDataPage.test.tsx
+ M client/src/pages/AcademicDataPage.tsx
+ M client/src/pages/CourseSchedulePage.test.tsx
+ M client/src/pages/CourseSchedulePage.tsx
+ M client/src/test/optimizationFixtures.ts
+ M docs/planning/Feature_slices.md
+?? backend/app/db/migrations/0013_dated_teaching_windows.py
+?? backend/tests/api/test_dated_intensive_windows.py
+?? backend/tests/fixtures/dated_intensive_contracts.json
+?? backend/tests/fixtures/dated_intensive_windows.py
+?? backend/tests/services/test_dated_intensive_windows.py
+?? backend/tests/services/test_intensive_objectives.py
+?? client/src/components/AcademicCatalogList.test.tsx
+?? client/src/components/OptimizationProofFacts.test.tsx
+?? client/src/test/datedIntensiveContracts.json
+?? specs/021-dated-intensive-windows/checklists/requirements.md
+?? specs/021-dated-intensive-windows/contracts/interfaces.md
+?? specs/021-dated-intensive-windows/data-model.md
+?? specs/021-dated-intensive-windows/goal-progress.md
+?? specs/021-dated-intensive-windows/plan.md
+?? specs/021-dated-intensive-windows/quickstart.md
+?? specs/021-dated-intensive-windows/research.md
+?? specs/021-dated-intensive-windows/spec.md
+?? specs/021-dated-intensive-windows/tasks.md
+?? specs/021-dated-intensive-windows/validation.md
+?? specs/021-dated-intensive-windows/verification/analysis-cycle-1.md
+?? specs/021-dated-intensive-windows/verification/analysis-initial.md
+?? specs/021-dated-intensive-windows/verification/browser-320-cycle1.png
+?? specs/021-dated-intensive-windows/verification/browser-current-facts-320.png
+?? specs/021-dated-intensive-windows/verification/browser-generated-facts-320.png
+?? specs/021-dated-intensive-windows/verification/browser-keyboard-cycle1.json
+?? specs/021-dated-intensive-windows/verification/browser-layout-cycle1.json
+?? specs/021-dated-intensive-windows/verification/browser-refresh-cycle1.json
+?? specs/021-dated-intensive-windows/verification/browser-result-layout.json
+?? specs/021-dated-intensive-windows/verification/browser-saved-facts-320.png
+?? specs/021-dated-intensive-windows/verification/cycle2-assessed-source-sha256.json
+?? specs/021-dated-intensive-windows/verification/i009-cycle1-full.xml
+?? specs/021-dated-intensive-windows/verification/i009-cycle1-performance.json

@@ -266,6 +266,7 @@ def test_publication_uses_current_study_type_for_default_generation_constraints(
     assert constraint_profile["allowedTeachingWindows"] == [
         {
             "sourceTimeWindowId": current_window.id,
+            "kind": "weekly", "date": None, "isIntensive": False,
             "weekday": 1,
             "startTime": "09:00:00",
             "endTime": "11:00:00",

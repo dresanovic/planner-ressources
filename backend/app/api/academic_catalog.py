@@ -51,7 +51,9 @@ from app.services.academic_catalog import (
     update_study_type,
     update_time_window,
     usage_for,
+    window_overlap_notice,
 )
+from app.services.schedule_generation import format_clock
 
 router = APIRouter(prefix="/api/academic", tags=["academic catalog"])
 
@@ -89,7 +91,9 @@ def _time_window(row: StudyTypeTimeWindow) -> TimeWindowResponse:
     reasons = [] if row.is_active and row.study_type.is_active else ["RECORD_INACTIVE" if not row.is_active else "STUDY_TYPE_INACTIVE"]
     return TimeWindowResponse(
         id=row.id, studyTypeId=row.study_type_id, weekday=row.weekday,
-        startTime=row.start_time.strftime("%H:%M"), endTime=row.end_time.strftime("%H:%M"),
+        kind=row.kind, date=row.date, isIntensive=row.is_intensive,
+        overlapNotice=window_overlap_notice(object_session(row), row),
+        startTime=format_clock(row.start_time), endTime=format_clock(row.end_time),
         sortOrder=row.sort_order, isActive=row.is_active, revision=row.revision,
         availability=AvailabilityResponse(available=not reasons, reasons=reasons), usage=_usage(row, "time_window"),
     )
@@ -108,7 +112,7 @@ def _course(db: Session, row: Course) -> CourseResponse:
     summary = lambda value: EntitySummaryResponse(id=value.id, name=value.name)
     return CourseResponse(
         id=row.id, name=row.name, nameRepairRequired=row.name_repair_required,
-        totalUnits=row.total_units, minSessionUnits=row.min_session_units, maxSessionUnits=row.max_session_units, preferredSessionUnits=row.preferred_session_units,
+        totalUnits=row.total_units, overallUnits=row.overall_units, minSessionUnits=row.min_session_units, maxSessionUnits=row.max_session_units, preferredSessionUnits=row.preferred_session_units,
         semester=summary(row.current_semester) if row.current_semester else None,
         cohort=summary(row.cohort), studyType=summary(row.study_type), lecturer=summary(row.lecturer) if row.lecturer else None, room=summary(row.room) if row.room else None,
         isActive=row.is_active, revision=row.revision,
@@ -198,7 +202,7 @@ def list_time_windows(study_type_id: int, db: Session = Depends(get_db)):
         select(StudyTypeTimeWindow)
         .where(StudyTypeTimeWindow.study_type_id == study_type_id)
         .options(selectinload(StudyTypeTimeWindow.study_type))
-        .order_by(StudyTypeTimeWindow.sort_order, StudyTypeTimeWindow.id)
+        .order_by(StudyTypeTimeWindow.kind == 'dated', StudyTypeTimeWindow.weekday, StudyTypeTimeWindow.date, StudyTypeTimeWindow.start_time, StudyTypeTimeWindow.end_time, StudyTypeTimeWindow.sort_order, StudyTypeTimeWindow.id)
     ).scalars().all()
     return [_time_window(row) for row in rows]
 
@@ -206,7 +210,7 @@ def list_time_windows(study_type_id: int, db: Session = Depends(get_db)):
 @router.post("/study-types/{study_type_id}/time-windows", response_model=TimeWindowResponse, status_code=status.HTTP_201_CREATED)
 def post_time_window(study_type_id: int, payload: TimeWindowInput, db: Session = Depends(get_db)):
     try:
-        row = create_time_window(db, study_type_id, weekday=payload.weekday, start_time=payload.start_time, end_time=payload.end_time, sort_order=payload.sort_order)
+        row = create_time_window(db, study_type_id, **payload.model_dump())
         db.commit(); row = db.get(StudyTypeTimeWindow, row.id, options=[selectinload(StudyTypeTimeWindow.study_type)])
         return _time_window(row)
     except AcademicCatalogError as exc:
@@ -224,7 +228,7 @@ def list_courses(page: int = Query(1, ge=1), pageSize: int = Query(50, ge=1, le=
 @router.post("/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
 def post_course(payload: CourseInput, db: Session = Depends(get_db)):
     try:
-        row = create_course(db, name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, lecturer_id=payload.lecturer_id, room_id=payload.room_id)
+        row = create_course(db, name=payload.name, total_units=payload.total_units, overall_units=payload.overall_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, lecturer_id=payload.lecturer_id, room_id=payload.room_id)
         db.commit()
         row = db.get(Course, row.id, options=COURSE_OPTIONS)
         return _course(db, row)
@@ -286,12 +290,12 @@ def get_time_window(record_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/time-windows/{record_id}", response_model=TimeWindowResponse)
 def patch_time_window(record_id: int, payload: TimeWindowUpdate, db: Session = Depends(get_db)):
-    return _commit_or_error(db, lambda: update_time_window(db, require_record(db, StudyTypeTimeWindow, record_id), weekday=payload.weekday, start_time=payload.start_time, end_time=payload.end_time, sort_order=payload.sort_order, expected_revision=payload.expected_revision), _time_window)
+    return _commit_or_error(db, lambda: update_time_window(db, require_record(db, StudyTypeTimeWindow, record_id), **payload.model_dump()), _time_window)
 
 
 @router.patch("/courses/{record_id}", response_model=CourseResponse)
 def patch_course(record_id: int, payload: CourseUpdate, db: Session = Depends(get_db)):
-    return _commit_or_error(db, lambda: update_course(db, require_record(db, Course, record_id), name=payload.name, total_units=payload.total_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, expected_revision=payload.expected_revision), lambda row: _course(db, row))
+    return _commit_or_error(db, lambda: update_course(db, require_record(db, Course, record_id), name=payload.name, total_units=payload.total_units, overall_units=payload.overall_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, expected_revision=payload.expected_revision), lambda row: _course(db, row))
 
 
 RESOURCE_MODELS = {

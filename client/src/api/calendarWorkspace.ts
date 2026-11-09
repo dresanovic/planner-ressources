@@ -475,7 +475,7 @@ function isIsoDate(value: string) {
 }
 
 function isClock(value: string) {
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
+  return /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,6})?)?$/.test(value)
 }
 
 function validateFinding(finding: Record<string, unknown>) {

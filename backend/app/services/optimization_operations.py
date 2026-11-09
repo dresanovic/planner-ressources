@@ -312,6 +312,7 @@ def apply_operation(db, operation_id, auth, secret, fingerprint, *, finalize=Fal
                     errors=[],
                 ))
             result = OptimizationGenerationResult(semesterId=row.semester_id, outcomes=outcomes, proof=live.review.proof,
+                intensiveFacts=live.review.comparison.generated.intensive_facts,
                 summary=OptimizationSummary(total=len(outcomes), complete=sum(o.status == 'complete' for o in outcomes),
                     improvedPartial=sum(o.status == 'improved_partial' for o in outcomes), unchanged=0, failed=0, stale=0,
                     scheduledUnits=sum(o.scheduled_units for o in outcomes), remainingUnits=sum(o.remaining_units for o in outcomes),
@@ -338,16 +339,21 @@ def apply_operation(db, operation_id, auth, secret, fingerprint, *, finalize=Fal
     return get_status(db, operation_id, auth)
 
 
-def cancel_operation(db, operation_id, auth):
+def cancel_operation(db, operation_id, auth, *, reason='cancel'):
+    code = {
+        'cancel': 'CANCELLED_BY_USER', 'navigation': 'CANCELLED_BY_NAVIGATION',
+        'dismiss': 'CANCELLED_BY_DISMISSAL', 'retry': 'CANCELLED_FOR_RETRY',
+        'context_lost': 'CANCELLED_CONTEXT_LOST',
+    }[reason]
     row = _owned(db, str(operation_id), auth)
     live = _registry.get(_key(db, operation_id))
     with live.lock if live else _registry_lock:
         db.execute(update(Semester).where(Semester.id == row.semester_id).values(id=Semester.id))
         row = _owned(db, operation_id, auth)
         if row.phase not in TERMINAL:
-            if live: _finish(db, row, live, 'cancelled')
+            if live: _finish(db, row, live, 'cancelled', code)
             else:
-                row.phase, row.finished_at = 'cancelled', datetime.now(timezone.utc)
+                row.phase, row.finished_at, row.terminal_code = 'cancelled', datetime.now(timezone.utc), code
             db.commit()
         else: db.rollback()
     return get_status(db, operation_id, auth)

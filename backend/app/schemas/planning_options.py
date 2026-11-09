@@ -1,4 +1,5 @@
 from datetime import date
+from datetime import date as CalendarDate
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -39,7 +40,10 @@ class TimeWindowOptionResponse(BaseModel):
 
     id: int
     study_type_id: int = Field(alias="studyTypeId")
-    weekday: int
+    weekday: int | None
+    kind: str = 'weekly'
+    date: CalendarDate | None = None
+    is_intensive: bool = Field(default=False, alias='isIntensive')
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
     sort_order: int = Field(alias="sortOrder")

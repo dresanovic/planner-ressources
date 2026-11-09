@@ -1,4 +1,5 @@
 from datetime import date
+from datetime import date as CalendarDate
 from enum import StrEnum
 from typing import Any, Literal
 
@@ -67,7 +68,10 @@ class PlanningPeriodInput(BaseModel):
 class AllowedTeachingWindowInput(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    weekday: int
+    weekday: int | None
+    kind: str = 'weekly'
+    date: CalendarDate | None = None
+    is_intensive: bool = Field(default=False, alias='isIntensive')
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
     source_time_window_id: int | None = Field(default=None, alias="sourceTimeWindowId")
@@ -92,7 +96,10 @@ class PlanningPeriodResponse(BaseModel):
 class AllowedTeachingWindowResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    weekday: int
+    weekday: int | None
+    kind: str = 'weekly'
+    date: CalendarDate | None = None
+    is_intensive: bool = Field(default=False, alias='isIntensive')
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
     source_time_window_id: int | None = Field(default=None, alias="sourceTimeWindowId")

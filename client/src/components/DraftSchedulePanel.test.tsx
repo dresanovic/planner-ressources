@@ -103,6 +103,17 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
+it('renders full dated permission and marker beside legacy captured weekly windows', () => {
+  renderConstraintEditor({ constraints: { ...generationConstraintsFixture, allowedTeachingWindows: [
+    { weekday: 4, startTime: '09:00', endTime: '12:00' },
+    { kind: 'dated', date: '2026-11-09', weekday: null, isIntensive: true, startTime: '09:00', endTime: '12:00' },
+  ] } })
+  expect(document.body.textContent).toContain('Freitag')
+  expect(document.body.textContent).toContain('09.11.2026')
+  expect(document.body.textContent).toContain('Intensivwoche')
+  expect(document.body.textContent).toContain('Einmalig')
+})
+
 function setInputValue(input: HTMLInputElement, value: string) {
   Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, value)
   input.dispatchEvent(new Event('input', { bubbles: true }))

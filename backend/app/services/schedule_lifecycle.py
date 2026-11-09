@@ -434,6 +434,7 @@ def _build_snapshot(
             .where(
                 StudyTypeTimeWindow.study_type_id.in_(study_type_ids),
                 StudyTypeTimeWindow.is_active.is_(True),
+                StudyTypeTimeWindow.study_type.has(is_active=True),
             )
             .order_by(StudyTypeTimeWindow.study_type_id, StudyTypeTimeWindow.sort_order)
         ):
@@ -564,6 +565,8 @@ def _build_snapshot(
                             if hasattr(window, "source_time_window_id")
                             else window.id,
                             "weekday": window.weekday,
+                    "kind": window.kind, "date": window.date.isoformat() if window.date else None,
+                    "isIntensive": window.is_intensive,
                             "startTime": window.start_time.isoformat(),
                             "endTime": window.end_time.isoformat(),
                             "sortOrder": window.sort_order,
@@ -731,6 +734,7 @@ def _teaching_validation_alerts(
             .where(
                 StudyTypeTimeWindow.study_type_id.in_(study_type_ids),
                 StudyTypeTimeWindow.is_active.is_(True),
+                StudyTypeTimeWindow.study_type.has(is_active=True),
             )
             .order_by(
                 StudyTypeTimeWindow.study_type_id,
@@ -748,6 +752,7 @@ def _teaching_validation_alerts(
             TimeWindowPlan(
                 id=row.id,
                 weekday=row.weekday,
+                kind=row.kind, date=row.date, is_intensive=row.is_intensive,
                 start_time=row.start_time,
                 end_time=row.end_time,
                 sort_order=row.sort_order,

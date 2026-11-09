@@ -54,8 +54,7 @@ export type PlanningPeriod = {
   endDate: string
 }
 
-export type AllowedTeachingWindow = {
-  weekday: number
+export type AllowedTeachingWindow = import('./academicCatalog').TeachingWindowShape & {
   startTime: string
   endTime: string
   sourceTimeWindowId?: number | null

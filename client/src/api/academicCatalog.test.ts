@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  createTimeWindow,
+  updateTimeWindow,
   createSemester,
   deleteAcademicRecord,
   listSemesters,
@@ -11,6 +13,15 @@ import {
 } from './academicCatalog'
 
 afterEach(() => vi.unstubAllGlobals())
+
+it('sends dated facts unchanged for create and owner-changing revisioned update', async () => {
+  const payload = { kind: 'dated' as const, date: '2026-11-09', weekday: null, isIntensive: true, startTime: '09:00', endTime: '12:00', sortOrder: 0 }
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => ({...payload,id:3}) })
+  vi.stubGlobal('fetch', fetchMock)
+  expect((await createTimeWindow(1, payload)).date).toBe(payload.date)
+  await updateTimeWindow(3, {...payload, studyTypeId:2, expectedRevision:4})
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({...payload,studyTypeId:2,expectedRevision:4})
+})
 
 describe('academic catalog API', () => {
   it('parses paginated lifecycle and name-repair fields', async () => {

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from app.services.schedule_generation import window_applies, window_has_occurrence, format_clock
 
 import hashlib
 import json
@@ -58,6 +59,7 @@ from app.services.exam_scheduling import institution_today
 from app.services.holiday_calendar import HolidayReference, holiday_snapshot
 from app.services.semester_optimization import (
     CourseOptimization,
+    intensive_arrangement,
     CurrentSession,
     FixedSession,
     NoGeneratedAlternative,
@@ -131,7 +133,7 @@ def validate_exact_candidate(courses, fixed_sessions, unavailable_dates, holiday
             if course.latest_teaching_end is not None and end > course.latest_teaching_end:
                 raise InvalidExactCandidate("Teaching extends beyond active same-course exam")
             if not any(
-                window.weekday == session.date.weekday()
+                window_applies(window, session.date)
                 and window.start_time <= session.start_time < session.end_time <= window.end_time
                 and window.id == session.time_window_id
                 and window.constraint_window_index == session.constraint_window_index
@@ -596,6 +598,9 @@ def _execute_optimization(
         raise OptimalResultNotProven("The optimization operation exceeded its 60-second deadline before completion.")
     elapsed = int(elapsed_seconds * 1000)
     return OptimizationGenerationResult(
+        intensiveFacts=_arrangement_facts(loaded, {c.course_id:c.sessions for c in solution.courses},
+            loaded.shared_snapshot_token,candidate_fingerprint(solution,{c.course.id:c.course.cohort_id for c in loaded.courses}))
+            if not counts[OptimizationStatus.STALE] and not counts[OptimizationStatus.FAILED] else None,
         semesterId=semester_id,
         summary=OptimizationSummary(
             total=len(outcomes),
@@ -649,6 +654,9 @@ def load_operation(
             end_time=session.end_time,
             source_kind="teaching_session",
             source_id=session.id,
+            units=session.units,
+            study_type_id=db.get(Course,draft.course_id).study_type_id,
+            marked_windows=tuple(load_time_windows(db,db.get(Course,draft.course_id).study_type_id)),
         )
         for draft in drafts if draft.course_id not in selected_ids
         for session in draft.sessions
@@ -783,6 +791,10 @@ def _decision_required_result(
     shared_snapshot_token: str,
     schedule_revision_id: int,
 ) -> OptimizationDecisionRequiredResult:
+    actual = intensive_arrangement([c.optimization for c in loaded.courses],loaded.fixed_sessions,
+                                  {c.course_id:c.sessions for c in solution.courses})
+    if actual is not None and (solution.intensive_teaching_time,solution.daily_variety) != (actual[1],actual[2]):
+        raise InvalidExactCandidate('Intensive objective facts do not match the actual arrangement')
     solved = {item.course_id: item for item in solution.courses}
     warning_counts = _current_warning_counts(db, loaded)
     course_comparisons: list[CourseRegenerationComparison] = []
@@ -827,7 +839,7 @@ def _decision_required_result(
     scope = _fingerprint({'shared': shared_snapshot_token,
         'courses': [item.model_dump(mode='json', by_alias=True) for item in sorted(prepared_courses, key=lambda c:c.course_id)]})
     objective_by_key = {item.objective_key: item for item in solution.objectives}
-    objectives = [ObjectiveProof(objectiveKey=key, direction='max' if key in ('total_units','retained_drafts') else 'min',
+    objectives = [ObjectiveProof(objectiveKey=key, direction='max' if key in ('total_units','intensive_teaching_time','daily_variety','retained_drafts') else 'min',
         proofStatus=objective_by_key[key].proof_status if key in objective_by_key else 'not_attempted',
         value=objective_by_key[key].value if key in objective_by_key else None,
         candidateFingerprint=fingerprint, preparedSnapshotToken=scope) for key in OBJECTIVE_KEYS]
@@ -854,15 +866,28 @@ def _decision_required_result(
         ),
         comparison=RegenerationComparison(
             selectedCourseIds=[item.course.id for item in loaded.courses],
-            current=_coverage(required_total, current_total),
-            generated=_coverage(required_total, generated_total),
+            current=_coverage(required_total, current_total, _arrangement_facts(loaded,
+                {c.course.id:c.optimization.current_sessions for c in loaded.courses},scope,
+                _fingerprint({'current':[_draft_payload(c.draft) for c in loaded.courses]}))),
+            generated=_coverage(required_total, generated_total, _arrangement_facts(loaded,
+                {c.course_id:c.sessions for c in solution.courses},scope,fingerprint)),
             courses=course_comparisons,
         ),
     )
 
 
-def _coverage(required_units: int, scheduled_units: int) -> CoverageFacts:
+def _arrangement_facts(loaded, sessions, scope, fingerprint):
+    facts = intensive_arrangement([c.optimization for c in loaded.courses],loaded.fixed_sessions,sessions)
+    if facts is None:
+        return None
+    total,ticks,variety,rows = facts
+    return dict(totalUnits=total,intensiveLe=dict(numerator=ticks,denominator=2700000000),
+                dailyVariety=variety,cohortDates=rows,preparedSnapshotToken=scope,candidateFingerprint=fingerprint)
+
+
+def _coverage(required_units: int, scheduled_units: int, intensive_facts=None) -> CoverageFacts:
     return CoverageFacts(
+        intensiveFacts=intensive_facts,
         requiredUnits=required_units,
         scheduledUnits=scheduled_units,
         remainingUnits=max(required_units - scheduled_units, 0),
@@ -1000,7 +1025,7 @@ def _windows_host_minimum_session(item: LoadedCourse) -> bool:
     return any(
         datetime.combine(date.min, window.end_time)
         - datetime.combine(date.min, window.start_time)
-        >= required
+        >= required and window_has_occurrence(window, item.constraints.planning_period)
         for window in item.constraints.allowed_windows
     )
 
@@ -1029,8 +1054,9 @@ def _constraints_response(constraints: GenerationConstraints):
         allowedTeachingWindows=[
             AllowedTeachingWindowResponse(
                 weekday=window.weekday,
-                startTime=window.start_time.strftime("%H:%M"),
-                endTime=window.end_time.strftime("%H:%M"),
+                kind=window.kind, date=window.date, is_intensive=window.is_intensive,
+                startTime=format_clock(window.start_time),
+                endTime=format_clock(window.end_time),
                 sourceTimeWindowId=window.id,
             )
             for window in constraints.allowed_windows
@@ -1226,7 +1252,7 @@ def _course_payload(course, plan, constraints):
             "custom": constraints.is_custom,
             "revision": constraints.revision,
             "period": [constraints.planning_period.start_date.isoformat(), constraints.planning_period.end_date.isoformat()],
-            "windows": [[item.id, item.weekday, item.start_time.isoformat(), item.end_time.isoformat(), item.sort_order] for item in constraints.allowed_windows],
+            "windows": [[item.id, item.kind, item.date.isoformat() if item.date else None, item.is_intensive, item.revision, item.weekday, item.start_time.isoformat(), item.end_time.isoformat(), item.sort_order] for item in constraints.allowed_windows],
         },
     }
 
@@ -1249,7 +1275,8 @@ def _draft_payload(draft):
 
 
 def _fixed_payload(item):
-    return [item.source_kind, item.source_id, item.course_id, item.cohort_id, item.lecturer_id, item.room_id, item.date.isoformat(), item.start_time.isoformat(), item.end_time.isoformat()]
+    return [item.source_kind, item.source_id, item.course_id, item.cohort_id, item.lecturer_id, item.room_id, item.date.isoformat(), item.start_time.isoformat(), item.end_time.isoformat(),item.units,item.study_type_id,
+        [[w.id,w.kind,w.weekday,w.date.isoformat() if w.date else None,w.start_time.isoformat(),w.end_time.isoformat(),w.is_intensive,w.revision] for w in item.marked_windows]]
 
 
 def _fixed_sort_key(item):
@@ -1289,6 +1316,7 @@ def _draft_as_fixed(draft):
             end_time=session.end_time,
             source_kind="teaching_session",
             source_id=session.id,
+            units=session.units,
         )
         for session in draft.sessions
     ]

@@ -17,6 +17,20 @@ import {
 describe('calendar workspace API', () => {
   afterEach(() => vi.unstubAllGlobals())
 
+  it('retains exact generated clock values and rejects invalid subminute clocks', async () => {
+    const precise = loadedCalendarWorkspaceFixture()
+    precise.occurrences[0].startTime = '09:00:00.000001'
+    precise.occurrences[0].endTime = '09:45:00.000001'
+    const invalid = structuredClone(precise)
+    invalid.occurrences[0].startTime = '09:00:60.000001'
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(precise), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(invalid), { status: 200 })))
+    const result = await getCalendarWorkspace(1)
+    expect(result.workspaceState === 'loaded' && result.occurrences[0].startTime).toBe('09:00:00.000001')
+    await expect(getCalendarWorkspace(1)).rejects.toBeInstanceOf(CalendarWorkspaceApiError)
+  })
+
   it('parses loaded and no-revision variants', async () => {
     const fetchMock = vi
       .fn()

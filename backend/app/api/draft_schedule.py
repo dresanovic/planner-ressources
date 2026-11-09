@@ -58,7 +58,7 @@ from app.services.draft_schedule_repository import (
     save_generation_constraints,
     update_draft_session,
 )
-from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan
+from app.services.schedule_generation import PlanningPeriodPlan, TimeWindowPlan, format_clock
 from app.services.schedule_lifecycle import LifecycleFailure, claim_active_working_revision
 from app.api.schedule_lifecycle import lifecycle_failure_response
 from app.models.planning import Course
@@ -308,7 +308,7 @@ def read_generation_constraints(
         semester = load_semester_plan(db, semesterId)
     except PlanningInputNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    eligibility = planning_eligibility_reasons(db, db.get(Course, course_id), semesterId)
+    eligibility = planning_eligibility_reasons(db, db.get(Course, course_id), semesterId, require_usable_window=False)
     if eligibility:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -330,7 +330,7 @@ def put_generation_constraints(
         course = load_course_plan(db, course_id)
         semester = load_semester_plan(db, request.semester_id)
         eligibility = planning_eligibility_reasons(
-            db, db.get(Course, course_id), request.semester_id
+            db, db.get(Course, course_id), request.semester_id, require_usable_window=False
         )
         if eligibility:
             db.rollback()
@@ -398,7 +398,7 @@ def delete_generation_constraints(
     except LifecycleFailure as exc:
         db.rollback()
         return lifecycle_failure_response(exc)
-    eligibility = planning_eligibility_reasons(db, db.get(Course, course_id), semesterId)
+    eligibility = planning_eligibility_reasons(db, db.get(Course, course_id), semesterId, require_usable_window=False)
     if eligibility:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -565,8 +565,8 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None, lecturers_by_i
             DraftSessionResponse(
                 id=session.id,
                 date=session.date,
-                startTime=session.start_time.strftime("%H:%M"),
-                endTime=session.end_time.strftime("%H:%M"),
+                startTime=format_clock(session.start_time),
+                endTime=format_clock(session.end_time),
                 units=session.units,
                 courseId=session.course_id,
                 lecturerId=session.lecturer_id,
@@ -627,6 +627,7 @@ def _request_window_to_plan(index: int, window) -> TimeWindowPlan:
     return TimeWindowPlan(
         id=window.source_time_window_id,
         weekday=window.weekday,
+                kind=window.kind, date=window.date, is_intensive=window.is_intensive,
         start_time=_parse_time(window.start_time),
         end_time=_parse_time(window.end_time),
         sort_order=index,
@@ -678,8 +679,9 @@ def _constraints_to_response(constraints: GenerationConstraints) -> GenerationCo
         allowedTeachingWindows=[
             AllowedTeachingWindowResponse(
                 weekday=window.weekday,
-                startTime=window.start_time.strftime("%H:%M"),
-                endTime=window.end_time.strftime("%H:%M"),
+                kind=window.kind, date=window.date, is_intensive=window.is_intensive,
+                startTime=format_clock(window.start_time),
+                endTime=format_clock(window.end_time),
                 sourceTimeWindowId=window.id,
             )
             for window in constraints.allowed_windows

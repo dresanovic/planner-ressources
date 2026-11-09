@@ -18,6 +18,11 @@ from app.services.schedule_generation import (
     ResourceCandidatePlan,
     TimeWindowPlan,
     session_duration_minutes,
+    window_applies,
+    window_sort_key,
+    intensive_instruction_ticks,
+    marked_intervals,
+    window_has_occurrence,
 )
 
 
@@ -93,11 +98,14 @@ class FixedSession:
     end_time: time
     source_kind: str = field(default="teaching_session", kw_only=True)
     source_id: int | None = field(default=None, kw_only=True)
+    units: int = field(default=0, kw_only=True)
+    study_type_id: int | None = field(default=None, kw_only=True)
+    marked_windows: tuple[TimeWindowPlan, ...] = field(default=(), kw_only=True)
 
 
 @dataclass(frozen=True)
 class CurrentSession(FixedSession):
-    units: int
+    units: int = field()
     time_window_id: int | None = None
     constraint_window_index: int = 0
 
@@ -191,6 +199,8 @@ class SemesterOptimizationResult:
     objectives: tuple[ObjectiveEvidence, ...] = ()
     unit_upper_bound: int | None = None
     search_exhausted: bool = False
+    intensive_teaching_time: int = 0
+    daily_variety: int = 0
 
 
 @dataclass
@@ -249,7 +259,7 @@ def _candidate_start_times(courses, fixed_sessions, day, control=None) -> tuple[
         if control is not None: control.check()
         if not course.planning_period.start_date <= day <= course.planning_period.end_date:
             continue
-        matching = [w for w in course.windows if w.weekday == day.weekday()]
+        matching = [w for w in course.windows if window_applies(w, day)]
         windows.extend(matching)
         seeds.update(_time_ticks(w.start_time) for w in matching)
         for units in range(max(1, course.min_session_units), course.max_session_units + 1):
@@ -271,20 +281,52 @@ def _candidate_start_times(courses, fixed_sessions, day, control=None) -> tuple[
         if control is not None: control.check()
         if fixed.date == day:
             seeds.add(_time_ticks(fixed.end_time))
+    intensive = any(marked_intervals(day,c.windows) for c in courses
+                    if c.planning_period.start_date <= day <= c.planning_period.end_date)
+    if intensive:
+        # Intensive time is piecewise linear in session start. Its breakpoints
+        # align marked boundaries with instructional starts/ends. Variety also
+        # distinguishes positive overlap from endpoint contact, hence ±1 tick.
+        for course in courses:
+            if not course.planning_period.start_date <= day <= course.planning_period.end_date:
+                continue
+            for a,b in marked_intervals(day,course.windows):
+                for unit in range(course.max_session_units):
+                    if control is not None: control.check()
+                    for offset in (unit*55*60_000_000,(unit*55+45)*60_000_000):
+                        for boundary in (a,b):
+                            seeds.update(boundary-offset+delta for delta in (-1,0,1))
+        seeds.update(_time_ticks(w.end_time) for w in windows)
+        seeds.update(_time_ticks(f.start_time) for f in fixed_sessions if f.date == day)
+        # A right-shifted intensive optimum can end exactly when a resource
+        # becomes unavailable. Reverse duration closure derives that start.
+        for course in courses:
+            if not course.planning_period.start_date <= day <= course.planning_period.end_date:
+                continue
+            for resource in (*course.lecturers, *course.rooms):
+                for period in resource.unavailable_periods:
+                    if control is not None:
+                        control.check()
+                    if ((period.kind == 'recurring' and day.weekday() in {w.weekday for w in period.weekdays})
+                        or (period.kind != 'recurring' and period.start_date == day)):
+                        seeds.add(_time_ticks(period.start_time))
     latest = max(_time_ticks(w.end_time) for w in windows) - min(durations)
-    starts = {value for value in seeds if 0 <= value <= latest}
+    # End boundaries may lie after the latest feasible *start*. Retain them
+    # through reverse closure before filtering the returned start candidates.
+    closure_limit = max(_time_ticks(w.end_time) for w in windows) if intensive else latest
+    starts = {value for value in seeds if 0 <= value <= closure_limit}
     pending = deque(sorted(starts))
     ordered_durations = sorted(durations)
     while pending:
         if control is not None: control.check()
         start = pending.popleft()
         for duration in ordered_durations:
-            value = start + duration
-            if value <= latest and value not in starts:
-                starts.add(value)
-                pending.append(value)
+            for value in ((start-duration,start+duration) if intensive else (start+duration,)):
+                if 0 <= value <= closure_limit and value not in starts:
+                    starts.add(value)
+                    pending.append(value)
     midnight = datetime.combine(day, time.min)
-    return tuple((midnight + timedelta(microseconds=value)).time() for value in sorted(starts))
+    return tuple((midnight + timedelta(microseconds=value)).time() for value in sorted(starts) if value <= latest)
 
 
 def generate_candidates(
@@ -333,7 +375,7 @@ def generate_candidates(
 
     ordered_windows = sorted(
         course.windows,
-        key=lambda item: (item.weekday, item.start_time, item.end_time, item.sort_order, item.id or 0),
+        key=window_sort_key,
     )
     cursor = course.planning_period.start_date
     raw: list[tuple] = []
@@ -341,7 +383,7 @@ def generate_candidates(
     while cursor <= course.planning_period.end_date:
         if control is not None:
             control.check()
-        matching = [window for window in ordered_windows if window.weekday == cursor.weekday()]
+        matching = [window for window in ordered_windows if window_applies(window, cursor)]
         starts = (start_times_for_date(cursor) if start_times_for_date else
             _candidate_start_times((course,), fixed_sessions, cursor, control)) if matching else ()
         if cursor in holidays:
@@ -573,7 +615,7 @@ def _current_sessions_respect_hard_constraints(
         if session.cohort_id != course.cohort_id:
             return False
         if not any(
-            window.weekday == session.date.weekday()
+            window_applies(window, session.date)
             and window.start_time <= session.start_time
             and session.end_time <= window.end_time
             for window in course.windows
@@ -774,8 +816,11 @@ def optimize_semester(
         + sum(session_size_deviation_terms)
     )
 
+    intensive_time, daily_variety = _intensive_objectives(model,course_vars,fixed_sessions,control)
     objectives = [
         ("total_units", "max", sum(total_units_terms)),
+        ("intensive_teaching_time", "max", intensive_time),
+        ("daily_variety", "max", daily_variety),
         ("conflicts", "min", sum(conflict_terms)),
         ("schedule_shape", "min", schedule_shape_terms),
         ("lecturer_changes", "min", sum(lecturer_change_terms)),
@@ -890,6 +935,8 @@ def optimize_semester(
             unit_upper_bound=(values['total_units'] if 'total_units' in proofs else
                 valid_unit_upper_bound(values['total_units'], sum(c.total_units for c in courses), unit_bound)),
             total_units=values["total_units"],
+            intensive_teaching_time=values['intensive_teaching_time'],
+            daily_variety=values['daily_variety'],
             conflicts=values["conflicts"],
             lecturer_changes=values["lecturer_changes"],
             room_changes=values["room_changes"],
@@ -902,6 +949,8 @@ def optimize_semester(
     tracked_vars = [var for variables in course_vars.values() for var in (
         list(variables.temporal.values()) + list(variables.lecturer.values()) + list(variables.room.values()) + ([variables.retain] if variables.retain is not None else [])
     )]
+    if generated_only and any(_needs_completion_hint(course) for course in courses):
+        _add_completion_hint(model, course_vars, control)
     objective_values: dict[str, int] = {}
     # Try the course's preferred size first, then fall back without excluding any
     # allowed size. Keep canonical ranks and the coverage-first objectives intact.
@@ -922,6 +971,13 @@ def optimize_semester(
             control.checkpoint(candidate)
         return candidate
     for stage, (objective_name, direction, expression) in enumerate(objectives):
+        if stage not in (0,len(objectives)-1) and isinstance(expression,int):
+            objective_values[objective_name] = expression
+            if last_candidate is not None:
+                last_candidate = replace(last_candidate,objectives=tuple(
+                    replace(evidence,proof_status='proven',value=expression) if index == stage else evidence
+                    for index,evidence in enumerate(last_candidate.objectives)))
+            continue
         try:
             control.check()
         except OptimalResultNotProven:
@@ -976,7 +1032,7 @@ def optimize_semester(
         if status == cp_model.MODEL_INVALID:
             raise OptimizationModelInvalid("The semester optimization model is invalid.")
         if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-            value = int(round(solver.objective_value))
+            value = int(solver.value(expression))
             if objective_name == 'total_units':
                 unit_bound = solver.best_objective_bound
             if status == cp_model.OPTIMAL:
@@ -1001,6 +1057,87 @@ def optimize_semester(
 
     assert last_candidate is not None
     return last_candidate
+
+
+def _needs_completion_hint(course: OptimizationCourse) -> bool:
+    preferred_twice = course.preferred_size_twice
+    preferred = preferred_twice // 2
+    return (preferred_twice % 2 == 0 and preferred > 0
+            and 0 < course.total_units % preferred < course.min_session_units)
+
+
+def _add_completion_hint(model, course_vars, control):
+    """Suggest a hard-valid generated arrangement; never constrain or prove it.
+
+    Prefer the usual session size unless that would leave an unfillable tail.
+    Scarce-date courses go first only in this constructive hint, not in an
+    objective or constraint. Native search can replace every suggested choice.
+    """
+    dates_by_course = {}
+    for course_id, variables in course_vars.items():
+        dates = defaultdict(list)
+        for candidate in variables.candidate_set.candidates:
+            control.check()
+            dates[candidate.date].append(candidate)
+        dates_by_course[course_id] = dates
+    occupied = defaultdict(list)
+    selected = {}
+
+    def free(kind, resource_id, candidate):
+        return all(candidate.end_time <= start or end <= candidate.start_time
+                   for start, end in occupied[(kind, resource_id, candidate.date)])
+
+    for course_id in sorted(course_vars, key=lambda key: (len(dates_by_course[key]), key)):
+        variables = course_vars[course_id]
+        course = variables.course
+        remaining = course.total_units
+        dates = sorted(dates_by_course[course_id].items())
+        for index, (_day, candidates) in enumerate(dates):
+            control.check()
+            if remaining < course.min_session_units:
+                break
+            future_dates = len(dates) - index - 1
+            best = None
+            best_key = None
+            for candidate in candidates:
+                control.check()
+                if candidate.units > remaining or not free('cohort', course.cohort_id, candidate):
+                    continue
+                lecturer = next((key for key in candidate.lecturer_ids if free('lecturer', key, candidate)), None)
+                room = next((key for key in candidate.room_ids if free('room', key, candidate)), None)
+                if lecturer is None or room is None:
+                    continue
+                tail = remaining - candidate.units
+                # Whole sessions of any allowed size can represent the tail
+                # only if some session count fits both its LE and date bounds.
+                can_complete = (tail == 0 or
+                    (tail + course.max_session_units - 1) // course.max_session_units
+                    <= min(future_dates, tail // course.min_session_units))
+                preference = abs(2 * candidate.units - course.preferred_size_twice)
+                key = (not can_complete, preference if can_complete else -candidate.units,
+                       candidate.canonical_rank, lecturer, room)
+                if best_key is None or key < best_key:
+                    best_key, best = key, (candidate, lecturer, room)
+            if best is None:
+                continue
+            candidate, lecturer, room = best
+            selected[(course_id, candidate.candidate_id)] = (lecturer, room)
+            remaining -= candidate.units
+            for kind, resource in (('cohort', course.cohort_id), ('lecturer', lecturer), ('room', room)):
+                occupied[(kind, resource, candidate.date)].append((candidate.start_time, candidate.end_time))
+
+    if not selected:
+        return
+    for course_id, variables in course_vars.items():
+        for candidate_id, variable in variables.temporal.items():
+            control.check()
+            model.add_hint(variable, int((course_id, candidate_id) in selected))
+        for kind, assignments in (('lecturer', variables.lecturer), ('room', variables.room)):
+            resource_index = 0 if kind == 'lecturer' else 1
+            for (candidate_id, resource_id), variable in assignments.items():
+                control.check()
+                choice = selected.get((course_id, candidate_id))
+                model.add_hint(variable, int(choice is not None and choice[resource_index] == resource_id))
 
 
 
@@ -1073,6 +1210,75 @@ def _add_retained_alternatives(model, course_vars, fixed_sessions, *, control=No
     return conflict_terms
 
 
+def intensive_arrangement(courses, fixed_sessions, sessions_by_course):
+    cohorts = {c.cohort_id for c in courses}
+    applicable = any(w.kind == 'dated' and w.is_intensive and window_has_occurrence(w,c.planning_period)
+                     for c in courses for w in c.windows)
+    applicable = applicable or any(f.source_kind == 'teaching_session' and f.cohort_id in cohorts
+        and marked_intervals(f.date,f.marked_windows) for f in fixed_sessions)
+    if not applicable:
+        return None
+    total = ticks = 0
+    presence = defaultdict(set)
+    for course in courses:
+        for session in sessions_by_course.get(course.course_id,()):
+            total += session.units
+            overlap = intensive_instruction_ticks(session.date,session.start_time,session.end_time,session.units,course.windows)
+            ticks += overlap
+            if overlap:
+                presence[(session.date,course.cohort_id)].add(course.course_id)
+    for fixed in fixed_sessions:
+        if (fixed.source_kind == 'teaching_session' and fixed.cohort_id in cohorts
+            and intensive_instruction_ticks(fixed.date,fixed.start_time,fixed.end_time,fixed.units,fixed.marked_windows)):
+            presence[(fixed.date,fixed.cohort_id)].add(fixed.course_id)
+    rows = [dict(cohortId=cohort,date=day.isoformat(),distinctCourseIds=sorted(ids),
+                 distinctLvCount=len(ids),varietyContribution=max(0,len(ids)-1))
+            for (day,cohort),ids in sorted(presence.items())]
+    return total,ticks,sum(row['varietyContribution'] for row in rows),rows
+
+
+def _intensive_objectives(model, course_vars, fixed_sessions, control):
+    terms = []
+    presence = defaultdict(lambda: defaultdict(list))
+    for variables in course_vars.values():
+        course = variables.course
+        for candidate in variables.candidate_set.candidates:
+            control.check()
+            ticks = intensive_instruction_ticks(candidate.date,candidate.start_time,candidate.end_time,candidate.units,course.windows)
+            if ticks:
+                selected = variables.temporal[candidate.candidate_id]
+                terms.append(ticks * selected)
+                presence[(course.cohort_id,candidate.date)][course.course_id].append(selected)
+        if variables.retain is not None:
+            for session in course.current_sessions:
+                ticks = intensive_instruction_ticks(session.date,session.start_time,session.end_time,session.units,course.windows)
+                if ticks:
+                    terms.append(ticks * variables.retain)
+                    presence[(course.cohort_id,session.date)][course.course_id].append(variables.retain)
+    cohorts = {v.course.cohort_id for v in course_vars.values()}
+    for fixed in fixed_sessions:
+        if (fixed.source_kind == 'teaching_session' and fixed.cohort_id in cohorts
+            and intensive_instruction_ticks(fixed.date,fixed.start_time,fixed.end_time,fixed.units,fixed.marked_windows)):
+            presence[(fixed.cohort_id,fixed.date)][fixed.course_id].append(1)
+    contributions = []
+    for index,(_pair, courses) in enumerate(sorted(presence.items())):
+        control.check()
+        if len(courses) < 2:
+            continue
+        lvs = []
+        for course_id, choices in sorted(courses.items()):
+            if 1 in [value for value in choices if isinstance(value,int)]:
+                lvs.append(1)
+            else:
+                used = model.new_bool_var(f'intensive_{index}_lv_{course_id}')
+                model.add_max_equality(used, choices)
+                lvs.append(used)
+        extra = model.new_int_var(0,len(courses)-1,f'intensive_{index}_variety')
+        model.add_max_equality(extra,[sum(lvs)-1,0])
+        contributions.append(extra)
+    return sum(terms),sum(contributions)
+
+
 def _cohort_day_room_penalties(model, course_vars, room_assignments, fixed_sessions, control):
     """Soft cost for each additional room used by a cohort on one date."""
     groups = defaultdict(lambda: defaultdict(list))
@@ -1109,6 +1315,8 @@ def _add_continuity(model, variables: _CourseVariables, *, lecturer: bool, contr
     if not candidates:
         return
     resource_ids = sorted({resource_id for candidate in candidates for resource_id in (candidate.lecturer_ids if lecturer else candidate.room_ids)})
+    if len(resource_ids) < 2:
+        return  # Every generated transition is necessarily unchanged.
     resource_index = {resource_id: index + 1 for index, resource_id in enumerate(resource_ids)}
     by_date: dict[date, list[TemporalCandidate]] = defaultdict(list)
     for candidate in candidates:

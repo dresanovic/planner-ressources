@@ -229,3 +229,29 @@ def test_development_status_poll_allows_live_context_cors_preflight(setup_operat
                 'Access-Control-Request-Headers':'x-optimization-context'})
             assert denied.status_code==400 and 'access-control-allow-origin' not in denied.headers
     finally:app.dependency_overrides.clear()
+
+
+def test_cancel_api_records_the_supplied_reason(setup_operation):
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.db.session import get_db
+    from app.models.planning import OptimizationOperation
+    from app.services import optimization_operations as operations
+    from tests.services.test_optimization_operations import settled
+    factory,auth,request,worker=setup_operation
+    with factory() as db:operations.start_operation(db,request,auth)
+    settled(factory,auth,request)
+    def override():
+        with factory() as db:yield db
+    app.dependency_overrides[get_db]=override
+    try:
+        with TestClient(app) as client:
+            client.cookies.set('planner_session','s'*43)
+            response=client.post(f'/api/draft-schedules/optimization/operations/{request.operation_id}/cancel',
+                json={'reason':'navigation'},headers={'X-CSRF-Protection':'1'})
+            assert response.status_code==200
+            assert response.json()['phase']=='cancelled'
+            assert response.json()['terminalCode']=='CANCELLED_BY_NAVIGATION'
+        with factory() as db:
+            assert db.get(OptimizationOperation,str(request.operation_id)).terminal_code=='CANCELLED_BY_NAVIGATION'
+    finally:app.dependency_overrides.clear()

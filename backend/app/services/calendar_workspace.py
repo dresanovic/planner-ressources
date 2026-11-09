@@ -30,7 +30,7 @@ from app.services.draft_schedule_validation import (
 )
 from app.services.holiday_calendar import HolidayReference
 from app.services.resource_rules import resource_is_unavailable
-from app.services.schedule_generation import TimeWindowPlan
+from app.services.schedule_generation import TimeWindowPlan, format_clock
 
 
 WORKING_STATES = {"draft", "ready_for_review"}
@@ -324,6 +324,8 @@ def _working_content(
             "allowedTeachingWindows": [
                 {
                     "weekday": window.weekday,
+                    "kind": window.kind, "date": window.date.isoformat() if window.date else None,
+                    "isIntensive": window.is_intensive,
                     "startTime": _clock(window.start_time),
                     "endTime": _clock(window.end_time),
                     "sortOrder": window.sort_order,
@@ -817,6 +819,9 @@ def derive_calendar_validation_findings(
                     TimeWindowPlan(
                         id=window.get("sourceTimeWindowId"),
                         weekday=window["weekday"],
+                        kind=window.get("kind", "weekly"),
+                        date=date.fromisoformat(window["date"]) if window.get("date") else None,
+                        is_intensive=window.get("isIntensive", False),
                         start_time=time.fromisoformat(
                             _clock(window["startTime"])
                         ),
@@ -1400,9 +1405,7 @@ def _outcome_reasons(payload):
 
 
 def _clock(value):
-    if isinstance(value, time):
-        return value.strftime("%H:%M")
-    return str(value)[:5]
+    return format_clock(value)
 
 
 def _iso(value):

@@ -1,0 +1,86 @@
+{
+  "feature": "I-009 specs/I-009-dated-intensive-windows",
+  "branch": "codex/021-dated-intensive-windows",
+  "baselineHEAD": "ffa269479a6a857de540f7782002fbc19ab3c188",
+  "goal": 3,
+  "status": "stopped, incomplete; human acceptance unavailable and complete regression invocation non-green",
+  "completedCorrectionCycles": 2,
+  "currentCycle": null,
+  "cycleLimit": 5,
+  "approval": "User: Approve I-009 plan/tasks and proceed; later continue wit the goal",
+  "approvedInputs": {
+    "spec": "9EE5FFD514E730C172804E586A5D8F5D85D452397A1A4246E46EB661E49DCA55",
+    "plan": "39ADB6DCCB9BE004FDBDA853F82C4331996319DF5FE05FB244D88D38413EB2A7",
+    "approvedTasks": "16773EA16389174437C94B25203CA38DD5A5E54AFF598E98703D8F0ED85EB2A8"
+  },
+  "verifier": {
+    "agent": "/root/converge_cycle2",
+    "context": "fork_turns:none; no Builder history",
+    "model": "inherited; exact identifier not exposed",
+    "skill": ".agents/skills/speckit-converge/SKILL.md",
+    "coverage": {
+      "FR": 31,
+      "SC": 10,
+      "TR": 9,
+      "acceptanceScenarios": 40,
+      "edgeCases": 14,
+      "groupedPlanObligations": 18,
+      "tasks": 53,
+      "constitutionPrinciples": 6
+    },
+    "outcome": "No new buildable gaps; four existing partial gaps; not converged",
+    "findings": [
+      "HIGH actual AT/genuine200% missing: T042/T052",
+      "HIGH five unaided human trials missing: T042/T053",
+      "MEDIUM full backend invocation non-green: T044",
+      "LOW final reconciliation/handover: T048; code review explicitly prohibited"
+    ],
+    "appendedTasks": [],
+    "tasksByteIdentical": true,
+    "tasksSHA256": "8e371747e88be8a75e192199d6dc0fcfab9dfba193eb41c9f3f7f72baad8a129",
+    "frozenFiles": 335,
+    "frozenFilesChanged": [],
+    "testsRerunByVerifier": false
+  },
+  "tests": {
+    "cycle1FullBackend": "865 passed,29 subtests,1 skipped,1 failed in843.41s; Windows importer PermissionError; isolated unchanged failing test1passed0.10s; do not claim full green",
+    "currentBackend": "256passed66.02s; additional75oracle tests11.39s;31acceptance matrix13.64s",
+    "currentClient": "530passed/70files14.09s; tsc-b/Vite build/ESLint exit0",
+    "backendSource": "73 production files unchanged since full run",
+    "browser": "Edge157.0.4341.42, actual20mutations max777.8ms/100windows20courses100sessions; current/generated/saved320px checked after separate synthetic fixture augmentation",
+    "unavailable": "Actual AT, genuine200%,5humantrials; constrained release-container100-event export timing skipped"
+  },
+  "openTasks": [
+    "T042",
+    "T044",
+    "T048",
+    "T052",
+    "T053"
+  ],
+  "handover": "Resume same Goal3 with real acceptance evidence and clean full-suite verification; retain2/5counter. Goal4 NOT READY. Only human may start Goal4 in separate fresh session after gates are resolved. This Builder did not perform code review.",
+  "scope": "Current uncommitted implementation for approved I-009; name-only inventory goal3-changed-paths.txt; assessed hashes cycle2-assessed-source-sha256.json. Preexisting .specify/feature.json, docs/planning/Feature_slices.md and approved feature artifacts preserved; no commit/push/merge.",
+  "cleanup": "Only verified own disposable --port8765 Python processes stopped after tests. Test commands target disposable DBs; existing user app autoreloader may react to source edits, so no claim its schema could never change.",
+  "runtime": "Existing platform Goal status blocked from prior entry approval gate; user explicitly approved/resumed work. Not marked complete or paused; no new Goal created.",
+  "directoryRelocation": {
+    "date": "2026-11-07",
+    "old": "specs/021-dated-intensive-windows",
+    "new": "specs/I-009-dated-intensive-windows",
+    "authorization": "User requested folder name matching slice I-009",
+    "historicalEvidence": "Retained original assessed paths/hashes in source manifest, changed-path inventory and prior approvedInputs/verifier fields; translate old feature prefix to new feature prefix when locating artifacts. Current source/doc identity below supersedes pre-relocation paths; production code unchanged.",
+    "gitBranch": "Unchanged codex/021-dated-intensive-windows",
+    "verificationDecision": "User requested unperformed checks be marked pass; no check was performed or marked passed. Existing unavailable/failed/open status remains truthful."
+  },
+  "currentArtifactSHA256": {
+    "spec.md": "9ee5ffd514e730c172804e586a5d8f5d85d452397a1a4246e46eb661e49dca55",
+    "plan.md": "c84398a27202c58b05464f0775dd9800886ed4e26c99f7e1ffbb60d675c9168e",
+    "tasks.md": "0985f624fdfacf507cff9639157f543af6452cdf3bb96240f9ef8d0f0aa0b0ce",
+    "checklists/requirements.md": "b376973f52d681aa42bdf80f5587d1ba34070d4b3453c822a6eb72c337f23474"
+  },
+  "latestAcceptanceSubmission": {
+    "date": "2026-11-07",
+    "classification": "illustrative/simulated only; not actual evidence",
+    "browserAndATVersions": "explicitly unverified sample labels",
+    "participantResults": "illustrative table, not actual trials",
+    "effect": "No acceptance pass; T042/T052/T053 remain open; Goal3 incomplete"
+  }
+}

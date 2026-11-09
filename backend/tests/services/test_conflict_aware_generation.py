@@ -33,6 +33,77 @@ from app.services.draft_schedule_repository import load_course_plan, replace_dra
 from app.services.schedule_generation import GeneratedSession
 from app.services.semester_optimization import CourseOptimization, SemesterOptimizationResult
 from tests.optimization_fixtures import active_exam, past_exam, seed_optimization_planner
+from tests.fixtures.dated_intensive_windows import ACCEPTANCE_WINDOW_CHANGES
+
+
+@pytest.mark.parametrize('change',ACCEPTANCE_WINDOW_CHANGES)
+def test_dated_and_fixed_marker_changes_after_preview_reject_synchronous_acceptance(change):
+    from tests.fixtures.dated_intensive_windows import seed_acceptance_context,mutate_acceptance_window,business_rows
+    db=make_session();seed_acceptance_context(db,with_selected=True)
+    prepared=prepare_optimization(db,1,[1],[],1)
+    preview=generate_optimization(db,1,execution_courses(prepared),[],prepared.shared_snapshot_token,1)
+    assert preview.mode=='decision_required' and preview.saved is False
+    mutate_acceptance_window(db,change)
+    before=business_rows(db.get_bind())
+    with pytest.raises(conflict_aware_service.StaleOptimizationCandidate):
+        accept_optimization(db,1,execution_courses(prepared),[],prepared.shared_snapshot_token,1,preview.candidate_fingerprint)
+    db.rollback()
+    assert business_rows(db.get_bind())==before
+
+
+@pytest.mark.parametrize('change', ['date','marker','hours','activity','form','revision'])
+def test_dated_preparation_stales_on_every_relevant_window_change_without_writes(change):
+    db = make_session()
+    seed_optimization_planner(db, course_count=1, total_units=2)
+    row = db.query(StudyTypeTimeWindow).first()
+    row.kind, row.weekday, row.date = 'dated', None, date(2026,9,7)
+    db.commit()
+    prepared = prepare_optimization(db, 1, [1], [])
+    windows = prepared.courses[0].effective_constraints.allowed_teaching_windows
+    specific = next(w for w in windows if w.source_time_window_id == row.id)
+    assert specific.kind == 'dated' and specific.date == date(2026,9,7)
+    if change == 'date': row.date = date(2026,9,8)
+    if change == 'marker': row.is_intensive = True
+    if change == 'hours': row.end_time = time(13)
+    if change == 'activity': row.is_active = False
+    if change == 'revision': row.revision += 1
+    if change == 'form':
+        other = StudyType(name='Other form')
+        db.add(other); db.flush()
+        row.study_type_id = other.id
+    db.commit()
+    result = generate_optimization(db, 1, execution_courses(prepared), prepared.unavailable_dates, prepared.shared_snapshot_token)
+    assert result.summary.stale == 1 and result.outcomes[0].status == 'stale'
+    assert db.query(DraftSchedule).count() == 0
+
+
+def test_synchronous_generation_uses_only_specific_date_without_operation_service():
+    db = make_session()
+    seed_optimization_planner(db, course_count=1,total_units=2)
+    row = db.query(StudyTypeTimeWindow).first()
+    row.kind, row.weekday, row.date = 'dated', None, date(2026,9,7)
+    db.commit()
+    prepared = prepare_optimization(db,1,[1],[])
+    result = generate_optimization(db,1,execution_courses(prepared),prepared.unavailable_dates,prepared.shared_snapshot_token)
+    assert result.summary.scheduled_units == 2
+    assert {s.date for s in db.query(DraftSchedule).first().sessions} == {date(2026,9,7)}
+
+
+def test_saved_dated_result_has_exact_arrangement_scoped_intensive_facts():
+    db = make_session()
+    seed_optimization_planner(db,course_count=1,total_units=2)
+    row = db.query(StudyTypeTimeWindow).first()
+    row.kind,row.weekday,row.date,row.is_intensive = 'dated',None,date(2026,9,7),True
+    db.commit()
+    prepared = prepare_optimization(db,1,[1],[])
+    result = generate_optimization(db,1,execution_courses(prepared),prepared.unavailable_dates,prepared.shared_snapshot_token)
+    facts = result.model_dump(by_alias=True,mode='json')['intensiveFacts']
+    assert facts['totalUnits'] == 2
+    assert facts['intensiveLe'] == {'numerator':5_400_000_000,'denominator':2_700_000_000}
+    assert facts['dailyVariety'] == 0
+    assert facts['cohortDates'][0]['distinctCourseIds'] == [1]
+    assert facts['preparedSnapshotToken'] == prepared.shared_snapshot_token
+    assert len(facts['candidateFingerprint']) == 64
 
 
 def exact_candidate_fixture():

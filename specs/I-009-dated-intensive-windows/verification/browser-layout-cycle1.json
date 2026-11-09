@@ -1,0 +1,22 @@
+{
+  "browser": "157.0.4341.42",
+  "keyboardCopyOpened": true,
+  "newMarkerDefaultOff": true,
+  "copyRetainsMarker": true,
+  "narrow": {
+    "viewport": 320,
+    "document": 320
+  },
+  "cleanup": {
+    "status": 204
+  },
+  "errors": [],
+  "limitations": [
+    "No actual assistive-technology observation",
+    "No genuine browser 200% text enlargement",
+    "No five-human acceptance trials"
+  ],
+  "cleanupFirstAttempt": {
+    "status": 403
+  }
+}

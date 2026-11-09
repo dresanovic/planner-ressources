@@ -137,6 +137,7 @@ export type CourseOptimizationOutcome = {
 }
 
 export type OptimizationGenerationResult = {
+  intensiveFacts?: IntensiveFacts | null
   proof?: CandidateProof | null
   mode: 'direct_saved'
   semesterId: number
@@ -156,6 +157,7 @@ export type OptimizationGenerationResult = {
 }
 
 export type CoverageFacts = {
+  intensiveFacts?: IntensiveFacts | null
   requiredUnits: number
   scheduledUnits: number
   remainingUnits: number
@@ -163,6 +165,15 @@ export type CoverageFacts = {
 }
 
 export type ResolvedWarning = { code: string; count: number }
+
+export type IntensiveFacts = {
+  totalUnits: number
+  intensiveLe: { numerator: number; denominator: 2700000000 }
+  dailyVariety: number
+  cohortDates: Array<{ cohortId: number; date: string; distinctCourseIds: number[]; distinctLvCount: number; varietyContribution: number }>
+  preparedSnapshotToken: string
+  candidateFingerprint: string
+}
 
 export type CourseRegenerationComparison = {
   courseId: number

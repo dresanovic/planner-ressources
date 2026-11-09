@@ -141,14 +141,14 @@ export function deferredResponse<T>() {
 }
 
 export const objectiveKeysFixture = [
-  'total_units', 'conflicts', 'schedule_shape', 'lecturer_changes',
+  'total_units', 'intensive_teaching_time', 'daily_variety', 'conflicts', 'schedule_shape', 'lecturer_changes',
   'room_changes', 'retained_drafts', 'canonical_temporal', 'canonical_resource',
 ] as const
 
 export function objectiveEvidenceFixture(unfinishedIndex = 0) {
   return objectiveKeysFixture.map((objectiveKey, index) => ({
     objectiveKey,
-    direction: objectiveKey === 'total_units' || objectiveKey === 'retained_drafts' ? 'maximize' : 'minimize',
+    direction: ['total_units','intensive_teaching_time','daily_variety','retained_drafts'].includes(objectiveKey) ? 'maximize' : 'minimize',
     proofStatus: index < unfinishedIndex ? 'proven' : index === unfinishedIndex ? 'unfinished' : 'not_attempted',
     value: index === 0 ? 80 : null,
     preparedSnapshotToken: 'd'.repeat(64),
@@ -162,7 +162,7 @@ export const candidateProofFixture: CandidateProof = {
   selectedCourseIds:[1,2], requiredUnits:100, scheduledUnits:80,
   coverageProven:false,preferencesProven:false,
   objectives:objectiveKeysFixture.map((objectiveKey,index)=>({
-    objectiveKey,direction:objectiveKey==='total_units'||objectiveKey==='retained_drafts'?'max':'min',
+    objectiveKey,direction:['total_units','intensive_teaching_time','daily_variety','retained_drafts'].includes(objectiveKey)?'max':'min',
     proofStatus:index===0?'unfinished':'not_attempted',value:index===0?80:null,
     preparedSnapshotToken:'d'.repeat(64),candidateFingerprint:'a'.repeat(64),condition:null,
   })),

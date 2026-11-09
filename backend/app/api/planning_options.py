@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Semester, StudyTypeTimeWindow
+from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, GenerationConstraintSet, Lecturer, Room, Semester, StudyTypeTimeWindow
 from app.schemas.academic_catalog import AvailabilityResponse
 from app.schemas.draft_schedule import PlanningEntityResponse
 from app.schemas.planning_options import (
@@ -16,6 +16,7 @@ from app.schemas.planning_options import (
     CoursePlanningResourceExtension,
 )
 from app.services.academic_catalog import availability_for_course
+from app.services.schedule_generation import format_clock
 from app.services.resource_catalog import resource_candidate
 
 router = APIRouter(prefix="/api/planning-options", tags=["planning options"])
@@ -82,7 +83,11 @@ def read_planning_options(
         .scalars()
         .all()
     )
-    active_window_study_type_ids = {window.study_type_id for window in time_windows}
+    windows_by_study_type = {}
+    for window in time_windows:
+        windows_by_study_type.setdefault(window.study_type_id,[]).append(window)
+    constraint_sets = {(row.course_id,row.semester_id):row for row in db.scalars(
+        select(GenerationConstraintSet).where(GenerationConstraintSet.course_id.in_([c.id for c in courses])))} if courses else {}
 
     return PlanningOptionsResponse(
         courses=[
@@ -96,7 +101,8 @@ def read_planning_options(
                 semesterId=course.current_semester_id,
                 availability=AvailabilityResponse(
                     available=not (reasons := availability_for_course(
-                        db, course, active_window_study_type_ids=active_window_study_type_ids
+                        db, course, active_windows_by_study_type=windows_by_study_type,
+                        constraint_sets_by_course_semester=constraint_sets
                     )),
                     reasons=reasons,
                 ),
@@ -145,8 +151,9 @@ def read_planning_options(
                 id=window.id,
                 studyTypeId=window.study_type_id,
                 weekday=window.weekday,
-                startTime=window.start_time.strftime("%H:%M"),
-                endTime=window.end_time.strftime("%H:%M"),
+                kind=window.kind, date=window.date, is_intensive=window.is_intensive,
+                startTime=format_clock(window.start_time),
+                endTime=format_clock(window.end_time),
                 sortOrder=window.sort_order,
             )
             for window in time_windows

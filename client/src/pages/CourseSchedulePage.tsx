@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import {
   clearGenerationConstraints,
   clearCourseDraft,
@@ -162,11 +162,23 @@ export function CourseSchedulePage({
   const [batchPreview, setBatchPreview] = useState<OptimizationDecisionRequiredResult | null>(null)
   const [batchResult, setBatchResult] = useState<OptimizationGenerationResult | null>(null)
   const [unavailableDatesInput, setUnavailableDatesInput] = useState('')
+  const [validationRetry, setValidationRetry] = useState(0)
+  const validationKey = `${catalogRevision}:${validationRetry}`
+  const semesterValidationKey = `${validationKey}:${selectedSemesterId}`
+  const constraintsContextKey = `${semesterValidationKey}:${selectedCourseId}`
+  const constraintsContextKeyRef = useRef(constraintsContextKey)
+  useLayoutEffect(() => { constraintsContextKeyRef.current = constraintsContextKey }, [constraintsContextKey])
+  const [optionsValidationKey, setOptionsValidationKey] = useState('')
+  const [constraintsValidationKey, setConstraintsValidationKey] = useState('')
+  const [overviewValidationKey, setOverviewValidationKey] = useState('')
+  const [calendarValidationKey, setCalendarValidationKey] = useState('')
+  const [constraintsErrorKey, setConstraintsErrorKey] = useState('')
   const [optionsLoading, setOptionsLoading] = useState(true)
   const [optionsOutcome, setOptionsOutcome] = useState<{ revision: number; status: 'ready' | 'error' }>({ revision: -1, status: 'error' })
   const optionsFreshness = optionsOutcome.revision !== catalogRevision ? 'loading' : optionsOutcome.status
-  const [constraintsLoading, setConstraintsLoading] = useState(false)
-  const [constraintsDirty, setConstraintsDirty] = useState(false)
+  const [constraintsSaving, setConstraintsSaving] = useState(false)
+  const [constraintsInspection, setConstraintsInspection] = useState({ context: '', attempt: 0 })
+  const [constraintsEditorDirty, setConstraintsDirty] = useState(false)
   const [overviewLoading, setOverviewLoading] = useState(false)
   const [loadedOverviewSemesterId, setLoadedOverviewSemesterId] = useState<number | null>(null)
   const [batchPreparing, setBatchPreparing] = useState(false)
@@ -305,11 +317,11 @@ export function CourseSchedulePage({
   const activeScheduleRevisionId = lifecycleOverview?.activeWorkingRevision?.revisionId ?? null
   const operation = useOptimizationOperation(active && destination === 'calendar' && planningInputsVisible && planningInputTab === 'generation'
     && (selectedLifecycleRevisionId == null || selectedLifecycleRevisionId === activeScheduleRevisionId),
-    `${selectedSemesterId}:${selectedLifecycleRevisionId ?? activeScheduleRevisionId}`)
+    `${selectedSemesterId}:${selectedLifecycleRevisionId ?? activeScheduleRevisionId}:${catalogRevision}`)
   const batchExecuting = operation.busy
   useEffect(() => {
     return () => { preparationEpoch.current += 1 }
-  }, [active, destination, selectedSemesterId, activeScheduleRevisionId, selectedLifecycleRevisionId, planningInputTab, planningInputsVisible])
+  }, [active, destination, selectedSemesterId, activeScheduleRevisionId, selectedLifecycleRevisionId, planningInputTab, planningInputsVisible, validationKey])
   useEffect(() => {
     const status = operation.status
     queueMicrotask(() => {
@@ -326,9 +338,32 @@ export function CourseSchedulePage({
     selectedLifecycleRevisionIdRef.current = selectedLifecycleRevision?.revisionId ?? null
     lecturerReviewRequestSequence.current += 1
   }, [selectedLifecycleRevision?.revisionId])
+  const constraintsRequired = selectedCourseId != null && selectedSemesterId != null && !planningSelectionInvalid
+  const constraintsRepairable = selectedCourse != null && selectedSemesterId != null
+    && !semesterSelectionMissing && !courseSelectionInvalid && selectedCourse.availability?.available === false
+    && selectedCourse.availability.reasons.length > 0
+    && selectedCourse.availability.reasons.every(reason => reason === 'MISSING_ACTIVE_TIME_WINDOW')
+  const constraintsRequested = constraintsRequired
+    || (constraintsRepairable && constraintsInspection.context === constraintsContextKey)
+  const constraintsMatchSelection = generationConstraints?.courseId === selectedCourseId
+    && generationConstraints?.semesterId === selectedSemesterId
+  const constraintsDirty = constraintsRequired && constraintsMatchSelection && constraintsEditorDirty
+  const constraintsRefreshError = constraintsRequired && constraintsErrorKey === constraintsContextKey
+  const constraintsLoading = constraintsSaving || (constraintsRequired
+    && constraintsValidationKey !== constraintsContextKey && !constraintsRefreshError)
+  const constraintsReady = constraintsRequested && constraintsMatchSelection && !constraintsSaving
+    && constraintsValidationKey === constraintsContextKey && constraintsErrorKey !== constraintsContextKey
+  const workspaceValidationReady = optionsValidationKey === validationKey
+    && overviewValidationKey === semesterValidationKey && calendarValidationKey === semesterValidationKey
+  const currentValidationReady = workspaceValidationReady && (!constraintsRequired || constraintsReady)
+  const currentValidationError = optionsFreshness === 'error' || constraintsRefreshError || overviewRefreshError || Boolean(calendarWorkspaceError)
+  useEffect(() => {
+    const discard = window.setTimeout(() => { setBatchPreview(null); setBatchPreparation(null) },0)
+    return () => window.clearTimeout(discard)
+  }, [validationKey])
   const mutationBusy = batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
   const contextBusy = mutationBusy || overviewLoading || examBusy
-  const writeBusy = contextBusy || batchPreview != null || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
+  const writeBusy = !currentValidationReady || contextBusy || batchPreview != null || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
   const examConfigurationBusy = contextBusy || batchPreview != null || overviewRefreshError || examRefreshError
   const currentExamOverview = examOverview?.semesterId === selectedSemesterId ? examOverview : null
   const selectedExamState = useMemo(() => currentExamOverview?.courses.find((course) => course.courseId === selectedCourseId) ?? null, [currentExamOverview, selectedCourseId])
@@ -490,6 +525,7 @@ export function CourseSchedulePage({
       .then((options) => {
         if (!current) return
         setOptionsOutcome({ revision: catalogRevision, status: 'ready' })
+        setOptionsValidationKey(validationKey)
         const currentCourseId = selectedCourseIdRef.current
         const currentSemesterId = selectedSemesterIdRef.current
         const courseMissing = currentCourseId != null && !options.courses.some((course) => course.id === currentCourseId)
@@ -513,29 +549,28 @@ export function CourseSchedulePage({
       .catch(() => { if (current) { setOptionsOutcome({ revision: catalogRevision, status: 'error' }); setErrors([{ code: 'REQUEST_FAILED', message: 'Die Planungsoptionen konnten nicht geladen werden. Prüfen Sie die Verbindung und laden Sie die Seite erneut.' }]) } })
       .finally(() => current && setOptionsLoading(false))
     return () => { current = false }
-  }, [catalogRevision])
+  }, [catalogRevision, validationKey])
 
   useEffect(() => {
-    if (!selectedCourseId || !selectedSemesterId || planningSelectionInvalid) {
+    if (!constraintsRequested) {
       return
     }
     let current = true
     async function loadConstraints() {
-      setConstraintsLoading(true)
+      setConstraintsValidationKey('')
+      setConstraintsErrorKey('')
       try {
         const value = await getGenerationConstraints(selectedCourseId as number, selectedSemesterId as number)
-        if (current) setGenerationConstraints(value)
+        if (current) { setGenerationConstraints(value); setConstraintsValidationKey(constraintsContextKey) }
       } catch (error) {
         if (!current) return
-        setGenerationConstraints(null)
+        setConstraintsErrorKey(constraintsContextKey)
         setErrors(toFailures(error, 'Die Erzeugungsregeln konnten nicht geladen werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.'))
-      } finally {
-        if (current) setConstraintsLoading(false)
       }
     }
     void loadConstraints()
     return () => { current = false }
-  }, [selectedCourseId, selectedSemesterId, planningSelectionInvalid])
+  }, [selectedCourseId, selectedSemesterId, constraintsRequested, constraintsContextKey, constraintsInspection])
 
   useEffect(() => {
     if (!selectedSemesterId) return
@@ -547,6 +582,7 @@ export function CourseSchedulePage({
         const value = await getDraftSchedules(selectedSemesterId as number)
         if (current) {
           setSchedules(value)
+          setOverviewValidationKey(semesterValidationKey)
           setLoadedOverviewSemesterId(selectedSemesterId as number)
         }
       } catch {
@@ -557,7 +593,7 @@ export function CourseSchedulePage({
     }
     void loadOverview()
     return () => { current = false }
-  }, [selectedSemesterId, catalogRevision])
+  }, [selectedSemesterId, catalogRevision, semesterValidationKey])
 
   useEffect(() => {
     if (!selectedSemesterId) return
@@ -571,14 +607,14 @@ export function CourseSchedulePage({
       .catch(() => { if (current) setLifecycleRefreshError(true) })
       .finally(() => { if (current) setLifecycleBusy(false) })
     return () => { current = false }
-  }, [selectedSemesterId, catalogRevision])
+  }, [selectedSemesterId, catalogRevision, validationKey])
 
   useEffect(() => {
     if (!selectedSemesterId) return
     let current = true
     void getExamPlanningOverview(selectedSemesterId).then((value) => { if (current) { setExamOverview(value); setExamRefreshError(false) } }).catch(() => { if (current) setExamRefreshError(true) })
     return () => { current = false }
-  }, [selectedSemesterId, catalogRevision])
+  }, [selectedSemesterId, catalogRevision, validationKey])
 
   useEffect(() => {
     const revisionId = selectedLifecycleRevision?.revisionId
@@ -638,7 +674,7 @@ export function CourseSchedulePage({
     })
     void getCalendarWorkspace(selectedSemesterId, permittedRevision)
       .then((value) => {
-        if (calendarRequestSequence.current === sequence) setCalendarWorkspace(value)
+        if (calendarRequestSequence.current === sequence) { setCalendarWorkspace(value); setCalendarValidationKey(semesterValidationKey) }
       })
       .catch(() => {
         if (calendarRequestSequence.current === sequence) {
@@ -648,7 +684,8 @@ export function CourseSchedulePage({
       .finally(() => {
         if (calendarRequestSequence.current === sequence) setCalendarWorkspaceLoading(false)
       })
-  }, [selectedSemesterId, selectedLifecycleRevision, calendarWorkspaceRefresh])
+    return () => { if (calendarRequestSequence.current === sequence) calendarRequestSequence.current += 1 }
+  }, [selectedSemesterId, selectedLifecycleRevision, calendarWorkspaceRefresh, semesterValidationKey])
 
   async function refreshExamOverview(semesterId = selectedSemesterId) {
     if (!semesterId) return false
@@ -868,7 +905,7 @@ export function CourseSchedulePage({
   }
 
   async function startBatch(courseIds = selectedBatchCourseIds) {
-    if (optionsFreshness !== 'ready' || !selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty || batchPreview || operation.busy || operation.unknown) return
+    if (!currentValidationReady || optionsFreshness !== 'ready' || !selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty || batchPreview || operation.busy || operation.unknown) return
     setBatchPreparing(true)
     setBatchErrors([])
     setBatchPreparation(null)
@@ -887,7 +924,7 @@ export function CourseSchedulePage({
   }
 
   async function executeBatch(preparation: OptimizationPreparation) {
-    if (constraintsLoading || constraintsDirty || preparedBatchEpoch.current !== preparationEpoch.current) return
+    if (!currentValidationReady || constraintsLoading || constraintsDirty || preparedBatchEpoch.current !== preparationEpoch.current) return
     preparedBatchEpoch.current = null
     setBatchErrors([])
     setBatchPreparation(null)
@@ -921,7 +958,7 @@ export function CourseSchedulePage({
   }
 
   async function startBatchForSemester(semesterId: number, courseIds: number[]) {
-    if (optionsFreshness !== 'ready' || constraintsLoading || constraintsDirty || operation.unknown) return
+    if (!currentValidationReady || optionsFreshness !== 'ready' || constraintsLoading || constraintsDirty || operation.unknown) return
     setBatchPreparing(true)
     setBatchErrors([])
     const epoch = preparationEpoch.current
@@ -940,26 +977,27 @@ export function CourseSchedulePage({
   }
 
   async function handleClearGenerationConstraints() {
-    if (batchPreparing || batchExecuting || constraintsLoading || !selectedCourseId || !selectedSemesterId || !activeScheduleRevisionId || !generationConstraints?.revision) return
-    setConstraintsLoading(true)
+    if (!constraintsReady || batchPreparing || batchExecuting || !selectedCourseId || !selectedSemesterId || !activeScheduleRevisionId || !generationConstraints?.revision) return
+    setConstraintsSaving(true)
     setErrors([])
     setBatchPreview(null)
     setBatchResult(null)
     try {
       const result = await clearGenerationConstraints(selectedCourseId, selectedSemesterId, activeScheduleRevisionId, generationConstraints.revision)
+      if (constraintsContextKeyRef.current !== constraintsContextKey) return
       setGenerationConstraints(result.constraints)
       setConstraintsDirty(false)
-      await refreshOverview(selectedSemesterId, false)
+      setValidationRetry(value => value + 1)
     } catch (error) {
-      setErrors(toFailures(error, 'Die benutzerdefinierten Erzeugungsregeln konnten nicht zurückgesetzt werden. Ihre Planung bleibt unverändert; versuchen Sie es erneut.'))
+      if (constraintsContextKeyRef.current === constraintsContextKey) setErrors(toFailures(error, 'Die benutzerdefinierten Erzeugungsregeln konnten nicht zurückgesetzt werden. Ihre Planung bleibt unverändert; versuchen Sie es erneut.'))
     } finally {
-      setConstraintsLoading(false)
+      setConstraintsSaving(false)
     }
   }
 
   async function handleSaveGenerationConstraints(planningPeriod: PlanningPeriod) {
-    if (batchPreparing || batchExecuting || constraintsLoading || !selectedCourseId || !selectedSemesterId || !activeScheduleRevisionId || !generationConstraints) return
-    setConstraintsLoading(true)
+    if (!constraintsReady || batchPreparing || batchExecuting || !selectedCourseId || !selectedSemesterId || !activeScheduleRevisionId || !generationConstraints) return
+    setConstraintsSaving(true)
     setErrors([])
     try {
       const result = await saveGenerationConstraints(
@@ -969,15 +1007,16 @@ export function CourseSchedulePage({
         generationConstraints.revision ?? null,
         planningPeriod,
       )
+      if (constraintsContextKeyRef.current !== constraintsContextKey) return
       setGenerationConstraints(result.constraints)
       setConstraintsDirty(false)
       setBatchPreview(null)
       setBatchResult(null)
-      await refreshOverview(selectedSemesterId, false)
+      setValidationRetry(value => value + 1)
     } catch (error) {
-      setErrors(toFailures(error, 'Die Datumsgrenzen konnten nicht gespeichert werden.'))
+      if (constraintsContextKeyRef.current === constraintsContextKey) setErrors(toFailures(error, 'Die Datumsgrenzen konnten nicht gespeichert werden.'))
     } finally {
-      setConstraintsLoading(false)
+      setConstraintsSaving(false)
     }
   }
 
@@ -1464,6 +1503,12 @@ export function CourseSchedulePage({
           </button>
         </div>}
 
+        {selectedSemesterId != null && <section aria-label="Aktuelle Validierung" role={currentValidationError ? 'alert' : 'status'}>
+          {currentValidationReady ? 'Die Validierung der aktuellen Planung ist aktuell.' : currentValidationError
+            ? 'Aktuelle Validierung nicht verfügbar. Hinweise in Kalender, Liste und Details sind nicht aktuell. Ihre Eingaben bleiben erhalten.'
+            : 'Die aktuelle Validierung wird aktualisiert. Hinweise in Kalender, Liste und Details sind bis dahin nicht aktuell.'}
+          {!currentValidationReady && <button type="button" onClick={() => setValidationRetry(value=>value+1)}>Validierung erneut laden</button>}
+        </section>}
         <div className="planner-grid" data-planning-inputs-visible={destination === 'calendar' && planningInputsVisible ? 'true' : 'false'}>
           <section id="planning-inputs" className="input-summary" aria-labelledby="input-summary-title" hidden={destination !== 'calendar' || !planningInputsVisible} inert={destination !== 'calendar' || !planningInputsVisible || undefined}>
             <h2 id="input-summary-title">Planungseingaben</h2>
@@ -1532,7 +1577,8 @@ export function CourseSchedulePage({
                     )}
                     <button type="button" className="destructive-button clear-course-draft" onClick={beginCourseDeletion} disabled={writeBusy || !selectedDraft}>{label('course.singular')}-Entwurf leeren</button>
                     {progressAnnouncement && <p className="mutation-feedback" role="status" aria-live="polite">{progressAnnouncement}</p>}
-                    {generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={constraintsLoading || batchPreparing || batchExecuting || batchPreview != null} onSave={handleSaveGenerationConstraints} onClear={handleClearGenerationConstraints} onDirtyChange={setConstraintsDirty} />}
+                    {constraintsRepairable && (!constraintsRequested || constraintsErrorKey === constraintsContextKey) && <button type="button" className="secondary-button" onClick={() => setConstraintsInspection(previous => ({ context: constraintsContextKey, attempt: previous.attempt + 1 }))}>Datumsgrenzen prüfen</button>}
+                    {constraintsMatchSelection && generationConstraints && <GenerationConstraintEditor constraints={generationConstraints} isLoading={!constraintsReady || batchPreparing || batchExecuting || batchPreview != null} onSave={handleSaveGenerationConstraints} onClear={handleClearGenerationConstraints} onDirtyChange={setConstraintsDirty} />}
                     {errors.length > 0 && <ErrorList errors={errors} />}
                 </section>
                 <section
@@ -1552,11 +1598,11 @@ export function CourseSchedulePage({
                   )}
                   {(operation.status || operation.busy || operation.unknown) && (
                     <section className="optimization-operation-status" aria-label="Optimierungslauf">
-                      <p role="status" aria-live="polite">{operation.unknown ? 'Abschluss unbestätigt. Der tatsächliche Speicherstand wird abgefragt; kein Vergleich kann wiederhergestellt werden.' : operation.action === 'cancelling' ? 'Abbruch angefordert. Die Bestätigung wird abgewartet.' : operation.action === 'saving' ? 'Stundenplan wird gespeichert. Die Bestätigung wird abgewartet.' : operation.status ? operationPhaseLabel(operation.status.phase) : 'Optimierung wird gestartet…'}</p>
+                      <p role="status" aria-live="polite">{operation.unknown ? 'Status unbestätigt. Die Verbindung wird erneut geprüft. Bis zur Bestätigung sind keine Speicherentscheidungen möglich.' : operation.action === 'cancelling' ? 'Abbruch angefordert. Die Bestätigung wird abgewartet.' : operation.action === 'saving' ? 'Stundenplan wird gespeichert. Die Bestätigung wird abgewartet.' : operation.status ? operationPhaseLabel(operation.status.phase) : 'Optimierung wird gestartet…'}</p>
                       {operation.status && <p>Semester #{operation.status.semesterId} · Revision #{operation.status.scheduleRevisionId} · {operation.status.selectionCount} Kurse · Zeitbudget {operation.status.budgetSeconds} Sekunden · vergangen {Math.floor(operation.status.elapsedMilliseconds / 1000)} Sekunden{operation.status.budgetExhausted ? ['preparing', 'optimizing'].includes(operation.status.phase) ? ' · Optimierungszeit beendet; Ergebnis wird geprüft.' : ' · Die Suche hat ihr Zeitbudget ausgeschöpft.' : ''}</p>}
                       {(operation.busy || operation.unknown) && <button type="button" onClick={() => void operation.cancel()}>Abbrechen</button>}
                       {operation.status && ['timeout_no_candidate', 'failed', 'stale', 'interrupted'].includes(operation.status.phase) && <p>Nichts aus diesem Lauf wurde gespeichert. Prüfen Sie die Auswahl und starten Sie einen neuen Versuch. Für mehr Zeit kontaktieren Sie die Installationsbetreuung; eine kleinere Auswahl ist ebenfalls möglich.</p>}
-                      {operation.status?.phase === 'cancelled' && <p>Nichts aus diesem Lauf wurde gespeichert. Mögliche Auslöser sind „Abbrechen“, ein Wechsel des Planungskontexts oder der Verlust der Statusverbindung. Prüfen Sie die Auswahl, starten Sie erneut und lassen Sie den Planungstab geöffnet.</p>}
+                      {operation.status?.phase === 'cancelled' && <p>Nichts aus diesem Lauf wurde gespeichert. {operationCancellationReason(operation.status.terminalCode)} Prüfen Sie die Auswahl und starten Sie erneut.</p>}
                       {operation.status?.phase === 'timeout_no_candidate' && <p>Es liegt kein verwendbarer Vorschlag vor. Dies allein beweist keine Unmöglichkeit. {operation.status.errors.length === 0 ? 'Es liegen keine belegten Gründe für die fehlenden Termine vor.' : ''}</p>}
                       {operation.status?.errors.map((error, index) => <p key={`${error.code}-${index}`}>{error.message}</p>)}
                     </section>
@@ -1681,7 +1727,7 @@ export function CourseSchedulePage({
         </div>
       </section>
 
-      {batchPreview && active && destination === 'calendar' && (
+      {batchPreview && currentValidationReady && active && destination === 'calendar' && (
         <ReplacementConfirmationDialog
           preview={batchPreview}
           disabled={batchExecuting || constraintsLoading || constraintsDirty}
@@ -1740,6 +1786,17 @@ function operationPhaseLabel(phase: string): string {
     interrupted: 'Optimierung wurde unterbrochen.',
   }
   return labels[phase] ?? 'Optimierungsstatus wird abgefragt…'
+}
+
+function operationCancellationReason(code: string | null): string {
+  const reasons: Record<string, string> = {
+    CANCELLED_BY_USER: 'Der Lauf wurde über „Abbrechen“ beendet.',
+    CANCELLED_BY_NAVIGATION: 'Der Lauf wurde beim Verlassen des Planungskontexts beendet.',
+    CANCELLED_BY_DISMISSAL: 'Der Lauf wurde beim Schließen des Vergleichs beendet.',
+    CANCELLED_FOR_RETRY: 'Der Lauf wurde für einen neuen Versuch verworfen.',
+    CANCELLED_CONTEXT_LOST: 'Der Lauf wurde beim Schließen der Seite oder beim Verlust des Anmeldungskontexts beendet.',
+  }
+  return reasons[code ?? ''] ?? 'Für diesen älteren Lauf wurde kein genauer Abbruchgrund aufgezeichnet.'
 }
 
 function isStaleGenerationFailure(code: string): boolean {

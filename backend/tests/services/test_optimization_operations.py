@@ -12,6 +12,51 @@ from app.services.semester_optimization import optimize_semester
 from app.models.planning import DraftSchedule, OptimizationOperation
 from tests.optimization_fixtures import seed_optimization_planner, operation_start_payload, CONTEXT_SECRET
 from tests.planner_auth_fixtures import file_backed_engine, add_planner_account, add_current_session
+from tests.fixtures.dated_intensive_windows import ACCEPTANCE_WINDOW_CHANGES
+
+
+@pytest.fixture(params=[False,True],ids=['first-plan-finalize','existing-plan-accept'])
+def dated_acceptance_operation(tmp_path,monkeypatch,request):
+    from tests.fixtures.dated_intensive_windows import seed_acceptance_context
+    engine=file_backed_engine(tmp_path/'dated-acceptance.db')
+    factory=sessionmaker(bind=engine,expire_on_commit=False)
+    with factory() as db:
+        seed_acceptance_context(db,with_selected=request.param)
+        account=add_planner_account(db)
+        session,_=add_current_session(db,account_id=account.id)
+        db.commit()
+        auth=SimpleNamespace(account=account,session=session,secret_digest=session.secret_digest)
+        prepared=prepare_optimization(db,1,[1],[],1)
+        loaded=load_operation(db,1,[1],[],1)
+        solution=optimize_semester([c.optimization for c in loaded.courses],loaded.fixed_sessions,generated_only=True)
+    class Worker:
+        def __init__(self,problem):self.sent=False
+        def receive(self):
+            if self.sent:return []
+            self.sent=True;return [{'kind':'result','result':solution}]
+        def is_alive(self):return not self.sent
+        def close(self):pass
+    monkeypatch.setattr(operations,'SolverProcess',Worker)
+    operation_request=OptimizationOperationStart.model_validate(operation_start_payload(prepared.model_dump(by_alias=True,mode='json')))
+    yield factory,auth,operation_request,request.param
+    operations.shutdown_operations(engine);engine.dispose()
+
+
+@pytest.mark.parametrize('change',ACCEPTANCE_WINDOW_CHANGES)
+def test_dated_and_fixed_context_changes_after_candidate_reject_final_apply(dated_acceptance_operation,change):
+    from tests.fixtures.dated_intensive_windows import mutate_acceptance_window
+    factory,auth,request,with_selected=dated_acceptance_operation
+    with factory() as db:operations.start_operation(db,request,auth)
+    status=settled(factory,auth,request)
+    assert status.phase==('awaiting_decision' if with_selected else 'ready_to_save')
+    with factory() as db:mutate_acceptance_window(db,change)
+    before=saved_state(factory)
+    with factory() as db:
+        with pytest.raises(operations.OperationFailure):
+            operations.apply_operation(db,str(request.operation_id),auth,CONTEXT_SECRET,status.review.candidate_fingerprint,finalize=not with_selected)
+        receipt=db.get(OptimizationOperation,str(request.operation_id))
+        assert receipt.phase=='stale' and receipt.saved_result is None
+    assert saved_state(factory)==before
 
 
 @pytest.fixture
@@ -101,6 +146,9 @@ def test_fully_proven_new_selection_has_no_worker_writes_and_finalizes_once(setu
     with factory() as db:
         repeated = operations.apply_operation(db, status.operation_id, auth, CONTEXT_SECRET, status.review.candidate_fingerprint, finalize=True)
         assert repeated.result == saved.result
+        late_cancel=operations.cancel_operation(db,status.operation_id,auth,reason='navigation')
+        assert late_cancel.saved and late_cancel.terminal_code is None
+        assert late_cancel.result==saved.result
         assert db.query(DraftSchedule).count() == 2
     assert worker.calls == 1
 
@@ -124,6 +172,25 @@ def test_cancel_discards_candidate_and_prevents_apply(setup_operation):
         with pytest.raises(operations.OperationFailure):
             operations.apply_operation(db, str(request.operation_id), auth, CONTEXT_SECRET, status.review.candidate_fingerprint)
         assert db.query(DraftSchedule).count() == 0
+
+
+@pytest.mark.parametrize('reason,code', [
+    ('cancel','CANCELLED_BY_USER'), ('navigation','CANCELLED_BY_NAVIGATION'),
+    ('dismiss','CANCELLED_BY_DISMISSAL'), ('retry','CANCELLED_FOR_RETRY'),
+    ('context_lost','CANCELLED_CONTEXT_LOST'),
+])
+def test_cancel_preserves_the_first_recorded_reason(setup_operation,reason,code):
+    factory,auth,request,worker=setup_operation
+    with factory() as db:operations.start_operation(db,request,auth)
+    settled(factory,auth,request)
+    with factory() as db:
+        cancelled=operations.cancel_operation(db,str(request.operation_id),auth,reason=reason)
+        assert cancelled.phase=='cancelled' and cancelled.terminal_code==code
+    with factory() as db:
+        repeated=operations.cancel_operation(db,str(request.operation_id),auth,reason='context_lost')
+        assert repeated.terminal_code==code
+        assert db.get(OptimizationOperation,str(request.operation_id)).terminal_code==code
+        assert db.query(DraftSchedule).count()==0
 
 
 def test_missing_live_secret_is_outcome_only_and_other_owner_is_not_found(setup_operation):
@@ -539,7 +606,8 @@ def test_operation_uses_one_original_deadline_without_a_save_reserve(setup_opera
         live=operations._registry[operations._key(db,str(request.operation_id))]
         receipt=db.get(OptimizationOperation,str(request.operation_id))
         assert worker.last_problem.deadline==live.deadline
-        assert live.deadline-live.started==receipt.budget_seconds==300
+        assert receipt.budget_seconds == 300
+        assert live.deadline == live.started + receipt.budget_seconds
 
 
 @pytest.mark.parametrize('state',['published','abandoned'])

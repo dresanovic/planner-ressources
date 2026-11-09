@@ -96,6 +96,32 @@ def seed_saved_constraint(db):
     return constraint
 
 
+@pytest.mark.parametrize('recovery', ['broaden', 'reset'])
+def test_date_limits_can_be_read_and_repaired_after_excluding_only_window(client, db_session, recovery):
+    seed_valid_course(db_session)
+    db_session.query(StudyTypeTimeWindow).delete()
+    db_session.add(StudyTypeTimeWindow(study_type_id=1, kind='dated', weekday=None,
+        date=date(2026, 11, 9), start_time=time(9), end_time=time(12)))
+    db_session.commit()
+    url = '/api/courses/1/generation-constraints'
+    payload = dict(semesterId=1, scheduleRevisionId=1, expectedRevision=None,
+        planningPeriod=dict(startDate='2026-11-10', endDate='2026-11-11'))
+    narrowed = client.put(url, json=payload)
+    assert narrowed.status_code == 200, narrowed.text
+    revision = narrowed.json()['constraints']['revision']
+    assert client.get('/api/planning-options?semesterId=1').json()['courses'][0]['availability']['available'] is False
+    current = client.get(url + '?semesterId=1')
+    assert current.status_code == 200, current.text
+    if recovery == 'broaden':
+        restored = client.put(url, json={**payload, 'expectedRevision': revision,
+            'planningPeriod': dict(startDate='2026-11-09', endDate='2026-11-11')})
+    else:
+        restored = client.delete(url + f'?semesterId=1&scheduleRevisionId=1&expectedRevision={revision}')
+    assert restored.status_code == 200, restored.text
+    assert client.get('/api/planning-options?semesterId=1').json()['courses'][0]['availability']['available'] is True
+    assert db_session.query(DraftSchedule).count() == 0
+
+
 def seed_second_semester(db):
     semester = Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20))
     db.add_all([semester, ScheduleRevision(id=2, semester_id=2, revision_number=1, row_version=1, state="draft")])
@@ -840,8 +866,8 @@ def test_generation_constraints_default_load_save_reload_and_clear(client, db_se
     assert defaults["isCustom"] is False
     assert defaults["planningPeriod"] == {"startDate": "2026-09-07", "endDate": "2026-12-20"}
     assert defaults["allowedTeachingWindows"] == [
-        {"weekday": 0, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1},
-        {"weekday": 2, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 2},
+        {"weekday": 0, "kind": "weekly", "date": None, "isIntensive": False, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1},
+        {"weekday": 2, "kind": "weekly", "date": None, "isIntensive": False, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 2},
     ]
 
     missing_reset = client.delete(
@@ -867,8 +893,8 @@ def test_generation_constraints_default_load_save_reload_and_clear(client, db_se
     assert saved["isCustom"] is True
     assert saved["planningPeriod"] == {"startDate": "2026-09-14", "endDate": "2026-10-21"}
     assert saved["allowedTeachingWindows"] == [
-        {"weekday": 0, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1},
-        {"weekday": 2, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 2},
+        {"weekday": 0, "kind": "weekly", "date": None, "isIntensive": False, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1},
+        {"weekday": 2, "kind": "weekly", "date": None, "isIntensive": False, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 2},
     ]
     assert saved["studyType"] == {"id": 1, "name": "Full-time"}
 
@@ -1224,7 +1250,7 @@ def legacy_single_generation_uses_server_holidays_and_returns_paired_named_evide
         json=generation_payload(
             start="2026-09-07",
             end="2026-09-07",
-            windows=[{"weekday": 0, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1}],
+            windows=[{"weekday": 0, "kind": "weekly", "date": None, "isIntensive": False, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1}],
         ),
     )
 
@@ -1262,7 +1288,7 @@ def legacy_failed_single_generation_rejects_superseded_holiday_evidence(client, 
         json=generation_payload(
             start="2026-09-07",
             end="2026-09-07",
-            windows=[{"weekday": 0, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1}],
+            windows=[{"weekday": 0, "kind": "weekly", "date": None, "isIntensive": False, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1}],
         ),
     )
 

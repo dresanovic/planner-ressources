@@ -17,7 +17,7 @@ import {
   type CourseResourceConfiguration, type CourseResourceEligibilityUpdate,
 } from '../api/resourceCatalog'
 import { AcademicCatalogList } from '../components/AcademicCatalogList'
-import { AcademicRecordEditor, type AcademicCategory } from '../components/AcademicRecordEditor'
+import { AcademicRecordEditor, type AcademicCategory, type AcademicEditorValues } from '../components/AcademicRecordEditor'
 import { ProtectedDeleteDialog } from '../components/ProtectedDeleteDialog'
 import { ResourceCatalogList } from '../components/ResourceCatalogList'
 import { ResourceEditor } from '../components/ResourceEditor'
@@ -70,6 +70,8 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
   const [status, setStatus] = useState<CatalogStatus>('all')
   const [resourceStatus, setResourceStatus] = useState<CatalogStatus>('active')
   const [selected, setSelected] = useState<DisplayRecord | null>(null)
+  const [copyValues, setCopyValues] = useState<AcademicEditorValues | null>(null)
+  const editorOrigin = useRef<HTMLElement | null>(null)
   const [deleting, setDeleting] = useState<DisplayRecord | null>(null)
   const [editorGeneration, setEditorGeneration] = useState(0)
   const [resourceRecords, setResourceRecords] = useState<ResourceRecord[]>([])
@@ -82,30 +84,35 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
   const availabilityRequestId = useRef(0)
   const selectedResourceKey = useRef('')
   const [renderedCategory, setRenderedCategory] = useState(category)
+  const catalogLoadEpoch = useRef(0)
 
   const load = useCallback(async (selected: PageCategory) => {
+    const epoch = ++catalogLoadEpoch.current
+    const publishRecords = (value: DisplayRecord[]) => { if (catalogLoadEpoch.current === epoch) setRecords(value) }
+    const publishResources = (value: ResourceRecord[]) => { if (catalogLoadEpoch.current === epoch) setResourceRecords(value) }
+    const publishOptions = (value: Options) => { if (catalogLoadEpoch.current === epoch) setOptions(value) }
     setLoading(true)
     setLoadFailed(false)
     try {
       if (selected === 'lecturers') {
-        setResourceRecords(await loadAllResourcePages((page, pageSize) => listLecturers({ status: resourceStatus, query: resourceQuery, page, pageSize })))
+        publishResources(await loadAllResourcePages((page, pageSize) => listLecturers({ status: resourceStatus, query: resourceQuery, page, pageSize })))
         return
       }
       if (selected === 'rooms') {
-        setResourceRecords(await loadAllResourcePages((page, pageSize) => listRooms({ status: resourceStatus, query: resourceQuery, page, pageSize })))
+        publishResources(await loadAllResourcePages((page, pageSize) => listRooms({ status: resourceStatus, query: resourceQuery, page, pageSize })))
         return
       }
-      if (selected === 'semesters') setRecords(await loadAllPages((page, pageSize) => listSemesters(status, page, pageSize)) as DisplayRecord[])
-      if (selected === 'cohorts') setRecords(await loadAllPages((page, pageSize) => listCohorts(status, page, pageSize)) as DisplayRecord[])
-      if (selected === 'courses') setRecords(await loadAllPages((page, pageSize) => listCourses(status, page, pageSize)) as DisplayRecord[])
-      if (selected === 'study-types') setRecords(await loadAllPages((page, pageSize) => listStudyTypes(status, page, pageSize)) as DisplayRecord[])
+      if (selected === 'semesters') publishRecords(await loadAllPages((page, pageSize) => listSemesters(status, page, pageSize)) as DisplayRecord[])
+      if (selected === 'cohorts') publishRecords(await loadAllPages((page, pageSize) => listCohorts(status, page, pageSize)) as DisplayRecord[])
+      if (selected === 'courses') publishRecords(await loadAllPages((page, pageSize) => listCourses(status, page, pageSize)) as DisplayRecord[])
+      if (selected === 'study-types') publishRecords(await loadAllPages((page, pageSize) => listStudyTypes(status, page, pageSize)) as DisplayRecord[])
       if (selected === 'time-windows') {
         const types = await loadAllPages((page, pageSize) => listStudyTypes('all', page, pageSize))
         const typeNames = new Map(types.map((type) => [type.id, type.name]))
         const windows = (await Promise.all(types.map((type) => listTimeWindows(type.id)))).flat()
           .filter((window) => status === 'all' || window.isActive === (status === 'active'))
-          .sort((left, right) => (typeNames.get(left.studyTypeId) ?? '').localeCompare(typeNames.get(right.studyTypeId) ?? '') || left.weekday - right.weekday || left.startTime.localeCompare(right.startTime))
-        setRecords(windows.map((window) => ({ ...window, name: `${typeNames.get(window.studyTypeId) ?? 'Unbekannte Studienform'} · ${WEEKDAY_NAMES[window.weekday] ?? 'Unbekannter Wochentag'}, ${window.startTime}–${window.endTime}` })))
+          .sort((left, right) => Number(left.kind === 'dated') - Number(right.kind === 'dated') || (left.kind === 'dated' ? left.date : String(left.weekday)).localeCompare(right.kind === 'dated' ? right.date : String(right.weekday)) || left.startTime.localeCompare(right.startTime) || left.endTime.localeCompare(right.endTime) || (typeNames.get(left.studyTypeId) ?? '').localeCompare(typeNames.get(right.studyTypeId) ?? '') || left.sortOrder - right.sortOrder || left.id - right.id)
+        publishRecords(windows.map((window) => ({ ...window, name: `${typeNames.get(window.studyTypeId) ?? 'Unbekannte Studienform'} · ${window.kind === 'dated' ? `Einmalig: ${window.date.split('-').reverse().join('.')} · ${window.isIntensive ? 'Intensivwoche' : 'Nicht intensiv'}` : `Wöchentlich: ${WEEKDAY_NAMES[window.weekday] ?? 'Unbekannter Wochentag'}`}, ${window.startTime}–${window.endTime}` })))
       }
       if (selected === 'courses' || selected === 'time-windows') {
         const [semesters, cohorts, studyTypes, planning] = await Promise.all([
@@ -114,19 +121,20 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
           loadAllPages((page, pageSize) => listStudyTypes('all', page, pageSize)),
           getPlanningOptions(),
         ])
-        setOptions({
+        publishOptions({
           semesters,
           cohorts,
-          studyTypes,
+          studyTypes: studyTypes.filter((type) => type.isActive),
           lecturers: planning.lecturers.filter((resource) => resource.isActive),
           rooms: planning.rooms.filter((resource) => resource.isActive),
         })
       }
-    } catch (error) { setLoadFailed(true); throw error } finally { setLoading(false) }
+    } catch (error) { if (catalogLoadEpoch.current === epoch) setLoadFailed(true); throw error } finally { if (catalogLoadEpoch.current === epoch) setLoading(false) }
   }, [resourceQuery, resourceStatus, status])
 
   if (renderedCategory !== category) {
     setRenderedCategory(category)
+    setCopyValues(null)
     setSelected(null)
     setSelectedResource(null)
     setAvailabilityPeriods([])
@@ -146,7 +154,13 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
     return () => { current = false }
   }, [category, load])
 
-  async function create(value: Record<string, string | number>) {
+  async function refreshAcknowledgedMutation(success: string) {
+    setMessage(success)
+    try { await load(category) }
+    catch { setMessage(`${success} Die Liste ist nicht aktuell und konnte nicht neu geladen werden. Wählen Sie „Liste erneut laden“.`) }
+  }
+
+  async function create(value: AcademicEditorValues) {
     if (category === 'semesters') await createSemester(value as { name: string; startDate: string; endDate: string })
     if (category === 'cohorts') await createCohort(value as { name: string; studentCount: number })
     if (category === 'study-types') await createStudyType(value as { name: string })
@@ -155,13 +169,13 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
       const { studyTypeId, ...window } = value
       await createTimeWindow(Number(studyTypeId), window as Parameters<typeof createTimeWindow>[1])
     }
-    await load(category)
-    setEditorGeneration((value) => value + 1)
-    setMessage(`${categories.find((item) => item.id === category)?.singular ?? 'Datensatz'} erstellt.`)
     onCatalogChanged()
+    setCopyValues(null)
+    setEditorGeneration((value) => value + 1)
+    await refreshAcknowledgedMutation(`${categories.find((item) => item.id === category)?.singular ?? 'Datensatz'} erstellt.`)
   }
 
-  async function save(value: Record<string, string | number>) {
+  async function save(value: AcademicEditorValues) {
     if (!selected) return create(value)
     const expectedRevision = selected.revision
     let outcomeMessage = `${current.singular} aktualisiert.`
@@ -180,13 +194,13 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
     if (category === 'study-types') await updateStudyType(selected.id, { ...(value as { name: string }), expectedRevision })
     if (category === 'courses') await updateCourse(selected.id, { ...(value as Omit<Parameters<typeof createCourse>[0], 'lecturerId' | 'roomId'>), expectedRevision })
     if (category === 'time-windows') await updateTimeWindow(selected.id, { ...(value as Parameters<typeof createTimeWindow>[1]), expectedRevision })
-    setSelected(null); await load(category); setMessage(outcomeMessage); onCatalogChanged()
+    onCatalogChanged(); setSelected(null); await refreshAcknowledgedMutation(outcomeMessage)
   }
 
   async function lifecycle(record: DisplayRecord): Promise<boolean> {
     try {
       await setAcademicLifecycle(category, record.id, record.isActive ? 'archive' : 'reactivate', record.revision)
-      await load(category); setMessage(record.isActive ? 'Datensatz archiviert.' : 'Datensatz reaktiviert.'); onCatalogChanged()
+      onCatalogChanged(); await refreshAcknowledgedMutation(record.isActive ? 'Datensatz archiviert.' : 'Datensatz reaktiviert.')
       return true
     } catch {
       setMessage(`Der Status von „${record.name}“ konnte nicht geändert werden. Laden Sie den aktuellen Stand neu und versuchen Sie es danach erneut.`)
@@ -197,7 +211,7 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
   async function remove(record: DisplayRecord) {
     try {
       await deleteAcademicRecord(category, record.id, record.revision)
-      setDeleting(null); await load(category); setMessage('Datensatz dauerhaft gelöscht.'); onCatalogChanged()
+      onCatalogChanged(); setDeleting(null); await refreshAcknowledgedMutation('Datensatz dauerhaft gelöscht.')
     } catch {
       setMessage(`„${record.name}“ konnte nicht gelöscht werden. Prüfen Sie, ob der Datensatz noch verwendet wird, und laden Sie den aktuellen Stand neu.`)
     }
@@ -333,6 +347,8 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
   }
 
   async function selectAcademicRecord(record: DisplayRecord) {
+    editorOrigin.current = document.activeElement as HTMLElement
+    setCopyValues(null)
     setSelected(record)
     if (category !== 'courses') return
     const requestId = ++eligibilityRequestId.current
@@ -357,12 +373,28 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
     setMessage(`Ressourceneignung für ${label('course.singular')} gespeichert.`)
   }
 
-  function editValues(record: DisplayRecord): Record<string, string | number> {
+  function copyWindow(record: DisplayRecord, origin: HTMLButtonElement) {
+    editorOrigin.current = origin
+    setSelected(null)
+    setCopyValues(editValues(record))
+    setEditorGeneration(value=>value+1)
+  }
+
+  function cancelAcademicEditor() {
+    setSelected(null);setCopyValues(null)
+    queueMicrotask(() => {
+      const origin=editorOrigin.current
+      if (origin?.isConnected) origin.focus()
+      else document.getElementById('academic-list-heading')?.focus()
+    })
+  }
+
+  function editValues(record: DisplayRecord): AcademicEditorValues {
     if (category === 'semesters') return { name: record.name, startDate: record.startDate as string, endDate: record.endDate as string }
     if (category === 'cohorts') return { name: record.name, studentCount: record.studentCount as number }
     if (category === 'study-types') return { name: record.name }
-    if (category === 'courses') return { name: record.name, totalUnits: record.totalUnits as number, minSessionUnits: record.minSessionUnits as number, maxSessionUnits: record.maxSessionUnits as number, preferredSessionUnits: (record.preferredSessionUnits as number | null) ?? '', semesterId: (record.semester as Option | null)?.id ?? '', cohortId: (record.cohort as Option).id, studyTypeId: (record.studyType as Option).id }
-    return { studyTypeId: record.studyTypeId as number, weekday: record.weekday as number, startTime: record.startTime as string, endTime: record.endTime as string }
+    if (category === 'courses') return { name: record.name, totalUnits: record.totalUnits as number, overallUnits: (record.overallUnits ?? record.totalUnits) as number, minSessionUnits: record.minSessionUnits as number, maxSessionUnits: record.maxSessionUnits as number, preferredSessionUnits: (record.preferredSessionUnits as number | null) ?? '', semesterId: (record.semester as Option | null)?.id ?? '', cohortId: (record.cohort as Option).id, studyTypeId: (record.studyType as Option).id }
+    return { kind: (record.kind as string) ?? 'weekly', date: (record.date as string) ?? '', isIntensive: Boolean(record.isIntensive), sortOrder: (record.sortOrder as number) ?? 0, studyTypeId: record.studyTypeId as number, weekday: record.weekday as number | null, startTime: record.startTime as string, endTime: record.endTime as string }
   }
 
   const semesterRecords = records.filter((record) => courseFilters.semesterId == null || (record.semester as Option | null)?.id === courseFilters.semesterId)
@@ -377,13 +409,13 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
       {message && <p role="status">{message}</p>}
       <div className="resource-toolbar"><label className="catalog-field">Nach Name oder Code suchen<input type="search" value={resourceQuery} onChange={(event) => setResourceQuery(event.target.value)} /></label><button type="button" className="secondary-button" onClick={() => void refreshResources()}>Aktualisieren</button></div>
       <div className="catalog-grid">
-        <section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Wird geladen…</p> : <ResourceCatalogList resourceType={category} records={resourceRecords} onSelect={(record) => void selectResource(record)} onRemove={(record) => void prepareResourceRemoval(record)} onReactivate={(record) => void reactivate(record)} />}</section>
+        <section className="planner-panel"><h2 id="academic-list-heading" tabIndex={-1}>{current.label}</h2>{loading ? <p>Wird geladen…</p> : <ResourceCatalogList resourceType={category} records={resourceRecords} onSelect={(record) => void selectResource(record)} onRemove={(record) => void prepareResourceRemoval(record)} onReactivate={(record) => void reactivate(record)} />}</section>
         <section className="planner-panel"><h2>{selectedResource ? 'Bearbeiten:' : 'Erstellen:'} {current.singular}</h2><ResourceEditor key={`${category}-${selectedResource?.id ?? 'new'}-${selectedResource?.revision ?? 0}`} resourceType={category} initial={selectedResource} onSubmit={saveResource} onCancel={clearSelectedResource} />{selectedResource && <ResourceAvailabilityEditor periods={availabilityPeriods} onCreate={addUnavailablePeriod} onUpdate={changeUnavailablePeriod} onDelete={removeUnavailablePeriod} />}</section>
       </div>
     </section>
     {removingResource && <ResourceRemovalDialog resourceName={`${removingResource.record.name} · ${removingResource.record.referenceCode}`} assessment={removingResource.assessment} onClose={() => setRemovingResource(null)} onConfirm={() => void confirmResourceRemoval()} />}
   </>
-  return <><section className="workbench"><header className="page-header"><div><p className="eyebrow">Planungsverwaltung</p><h1>{label('academicData.heading')}</h1></div><label className="catalog-field">Anzeigen<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">Alle Datensätze</option><option value="active">Aktiv</option><option value="inactive">Inaktiv</option></select></label></header>{message && <p role="status">{message}</p>}{category === 'courses' && <div className="course-list-filters">
+  return <><section className="workbench"><header className="page-header"><div><p className="eyebrow">Planungsverwaltung</p><h1>{label('academicData.heading')}</h1></div><label className="catalog-field">Anzeigen<select value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">Alle Datensätze</option><option value="active">Aktiv</option><option value="inactive">Inaktiv</option></select></label></header>{message && <p role="status">{message}</p>}{loadFailed && <p role="alert">Die Liste ist nicht aktuell. <button type="button" onClick={() => void load(category).then(() => setMessage('Liste aktualisiert.')).catch(() => setMessage('Die Liste konnte nicht neu geladen werden. Prüfen Sie die Verbindung.'))}>Liste erneut laden</button></p>}{category === 'courses' && <div className="course-list-filters">
     <label>Semester filtern<select aria-label="Semester filtern" value={courseFilters.semesterId ?? ''} onChange={(event) => onCourseFiltersChange?.({ semesterId: event.target.value === '' ? null : Number(event.target.value), cohortId: null })}>
       <option value="">Alle Semester</option>
       {courseFilters.semesterId != null && !options.semesters.some((item) => item.id === courseFilters.semesterId) && <option value={courseFilters.semesterId}>{semesterContext}</option>}
@@ -396,8 +428,8 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
     </select></label>
     <button type="button" className="secondary-button" onClick={() => onCourseFiltersChange?.({ ...courseFilters, cohortId: null })}>Kohortenfilter zurücksetzen</button>
     <p role="status">{semesterContext} · {cohortContext} · {loading ? 'Wird geladen…' : loadFailed ? 'Stammdaten konnten nicht geladen werden. Laden Sie die Seite erneut.' : `${visibleRecords.length} Treffer`}</p>
-  </div>}<div className={category === 'courses' ? 'catalog-grid course-catalog-grid' : 'catalog-grid'} onFocusCapture={(event) => { focusedCourseAction.current = category === 'courses' && event.target.closest('.catalog-list') ? event.target as HTMLElement : null }}><section className="planner-panel"><h2>{current.label}</h2>{loading ? <p>Wird geladen…</p> : loadFailed && category === 'courses' ? <p role="alert">Stammdaten konnten nicht geladen werden. Laden Sie die Seite erneut.</p> : <AcademicCatalogList records={visibleRecords} renderMetadata={category === 'courses' ? (record) => {
+  </div>}<div className={category === 'courses' ? 'catalog-grid course-catalog-grid' : 'catalog-grid'} onFocusCapture={(event) => { focusedCourseAction.current = category === 'courses' && event.target.closest('.catalog-list') ? event.target as HTMLElement : null }}><section className="planner-panel"><h2 id="academic-list-heading" tabIndex={-1}>{current.label}</h2>{loading ? <p>Wird geladen…</p> : loadFailed && category === 'courses' ? <p role="alert">Stammdaten konnten nicht geladen werden. Laden Sie die Seite erneut.</p> : <AcademicCatalogList onCopy={category === 'time-windows' ? (record,origin)=>copyWindow(record as DisplayRecord,origin) : undefined} groupBy={category === 'time-windows' ? (record) => (record as DisplayRecord).kind === 'dated' ? 'Einmalige Datumsfenster' : 'Wöchentliche Zeitfenster' : undefined} records={visibleRecords} renderMetadata={category === 'courses' ? (record) => {
     const course = record as DisplayRecord
     return <small className="course-record-metadata">{(course.cohort as Option | null)?.name ?? 'Keine Kohorte'} · {(course.semester as Option | null)?.name ?? 'Ohne Semester'} · #{course.id}</small>
-  } : undefined} emptyLabel={category === 'courses' ? (semesterRecords.length === 0 ? 'Keine Lehrveranstaltungen in diesem Semester / Status.' : 'Keine Treffer. Setzen Sie den Kohortenfilter zurück.') : `Noch keine ${current.label}`} onEdit={(record) => void selectAcademicRecord(record as DisplayRecord)} onDelete={(record) => setDeleting(record as DisplayRecord)} onLifecycle={(record) => void lifecycle(record as DisplayRecord)} />}</section><section className="planner-panel"><h2>{selected ? 'Bearbeiten:' : 'Erstellen:'} {current.singular}</h2>{selected?.nameRepairRequired === true && <p role="alert">Dieser übernommene Name steht im Konflikt mit einem anderen Datensatz. Geben Sie einen eindeutigen Namen ein.</p>}{category === 'courses' && selected && selected.semester == null && <p role="alert">Ordnen Sie vor dem Speichern dieser {label('course.singular')} ein Semester zu.</p>}<AcademicRecordEditor key={`${category}-${selected?.id ?? 'new'}-${selected?.revision ?? 0}-${editorGeneration}`} category={category as AcademicCategory} options={options} initialValues={selected ? editValues(selected) : {}} submitLabel={selected ? 'Änderungen speichern' : 'Erstellen'} includeCourseResources={!selected} onSubmit={save} />{selected && <button type="button" className="secondary-button" onClick={() => setSelected(null)}>Bearbeitung abbrechen</button>}{category === 'courses' && selected && courseResources?.courseId === selected.id && <CourseResourceEligibilityEditor key={`${courseResources.courseId}-${courseResources.courseRevision}`} configuration={courseResources} onSave={saveCourseResources} onCancel={() => void selectAcademicRecord(selected)} />}</section></div></section>{deleting && <ProtectedDeleteDialog name={deleting.name} usage={deleting.usage} canArchive={deleting.isActive} onClose={() => setDeleting(null)} onArchive={() => void lifecycle(deleting).then((changed) => { if (changed) setDeleting(null) })} onDelete={() => void remove(deleting)} />}</>
+  } : category === 'time-windows' ? (record) => <small className="window-overlap-note">{(record as DisplayRecord).overlapNotice as string | null}</small> : undefined} emptyLabel={category === 'courses' ? (semesterRecords.length === 0 ? 'Keine Lehrveranstaltungen in diesem Semester / Status.' : 'Keine Treffer. Setzen Sie den Kohortenfilter zurück.') : `Noch keine ${current.label}`} onEdit={(record) => void selectAcademicRecord(record as DisplayRecord)} onDelete={(record) => setDeleting(record as DisplayRecord)} onLifecycle={(record) => void lifecycle(record as DisplayRecord)} />}</section><section className="planner-panel"><h2>{copyValues ? 'Ungespeicherte Kopie:' : selected ? 'Bearbeiten:' : 'Erstellen:'} {current.singular}</h2>{selected?.nameRepairRequired === true && <p role="alert">Dieser übernommene Name steht im Konflikt mit einem anderen Datensatz. Geben Sie einen eindeutigen Namen ein.</p>}{category === 'courses' && selected && selected.semester == null && <p role="alert">Ordnen Sie vor dem Speichern dieser {label('course.singular')} ein Semester zu.</p>}<AcademicRecordEditor key={`${category}-${selected?.id ?? 'new'}-${selected?.revision ?? 0}-${editorGeneration}`} category={category as AcademicCategory} options={options} initialValues={selected ? editValues(selected) : copyValues ?? {}} submitLabel={selected ? 'Änderungen speichern' : copyValues ? 'Kopie speichern' : 'Erstellen'} includeCourseResources={!selected} lockKind={Boolean(selected || copyValues)} onSubmit={save} />{(selected || copyValues) && <button type="button" className="secondary-button" onClick={cancelAcademicEditor}>{copyValues ? 'Kopie verwerfen' : 'Bearbeitung abbrechen'}</button>}{category === 'courses' && selected && courseResources?.courseId === selected.id && <CourseResourceEligibilityEditor key={`${courseResources.courseId}-${courseResources.courseRevision}`} configuration={courseResources} onSave={saveCourseResources} onCancel={() => void selectAcademicRecord(selected)} />}</section></div></section>{deleting && <ProtectedDeleteDialog name={deleting.name} usage={deleting.usage} canArchive={deleting.isActive} onClose={() => setDeleting(null)} onArchive={() => void lifecycle(deleting).then((changed) => { if (changed) setDeleting(null) })} onDelete={() => void remove(deleting)} />}</>
 }

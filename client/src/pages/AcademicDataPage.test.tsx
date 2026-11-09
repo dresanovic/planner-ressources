@@ -35,6 +35,7 @@ vi.mock('../components/HolidayAdministration', () => ({
 
 import { administrationCatalog, legacyCourse, otherSemesterCourse, laterPageCourses, targetCohort, otherCohort, emptyCohort, courseListSemester } from '../test/fixtures/courseLists'
 import { AcademicDataPage } from './AcademicDataPage'
+import { AcademicCatalogApiError } from '../api/academicCatalog'
 
 const usage = { recordId: 1, revision: 1, canDelete: true, dependentRecords: [], savedSchedules: { type: 'draft_schedule', count: 0 }, blockers: [] }
 const page = <T,>(items: T[], total = items.length, pageNumber = 1) => ({ page: pageNumber, pageSize: 200, total, items })
@@ -57,6 +58,67 @@ beforeEach(() => {
 })
 
 afterEach(() => { document.body.innerHTML = '' })
+
+it('keeps the unsaved copy correctable after marker-only duplicate feedback and cancels without another request',async()=>{
+  mocks.listStudyTypes.mockResolvedValue(page([{id:1,name:'Form',isActive:true,revision:1,usage}]))
+  mocks.listTimeWindows.mockResolvedValue([{id:10,studyTypeId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',sortOrder:7,isActive:false,revision:3,usage}])
+  mocks.createTimeWindow.mockRejectedValueOnce(new AcademicCatalogApiError(409,[{code:'DUPLICATE_TIME_WINDOW',message:'duplicate',field:null}]))
+  const root=createRoot(document.body.appendChild(document.createElement('div')))
+  await act(async()=>root.render(<AcademicDataPage category="time-windows" onCatalogChanged={vi.fn()}/>))
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Kopieren')?.click())
+  await act(async()=>document.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})))
+  expect(document.body.textContent).toContain('Zeitfenster bereits vorhanden')
+  expect(document.querySelector<HTMLInputElement>('[name=date]')?.value).toBe('09.11.2026')
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Kopie verwerfen')?.click())
+  expect(mocks.createTimeWindow).toHaveBeenCalledTimes(1)
+  expect(mocks.updateTimeWindow).not.toHaveBeenCalled()
+})
+
+it('opens an independent unsaved marked copy, cancels without writes and submits one ordinary create without source identity', async () => {
+  mocks.listStudyTypes.mockResolvedValue(page([{id:1,name:'Form',isActive:true,revision:1,usage}]))
+  mocks.listTimeWindows.mockResolvedValue([{id:10,studyTypeId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',sortOrder:7,isActive:true,revision:3,usage}])
+  const root=createRoot(document.body.appendChild(document.createElement('div')))
+  await act(async()=>root.render(<AcademicDataPage category="time-windows" onCatalogChanged={vi.fn()}/>))
+  const copy=[...document.querySelectorAll('button')].find(b=>b.textContent==='Kopieren')!
+  expect(copy).toBeDefined()
+  await act(async()=>{ copy.focus();copy.click() })
+  expect(document.body.textContent).toContain('Ungespeicherte Kopie')
+  expect(document.activeElement?.getAttribute('name')).toBe('studyTypeId')
+  expect(document.querySelector<HTMLInputElement>('input[name="isIntensive"]')?.checked).toBe(true)
+  expect(mocks.createTimeWindow).not.toHaveBeenCalled()
+  await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Kopie verwerfen')?.click())
+  expect(mocks.createTimeWindow).not.toHaveBeenCalled()
+  expect(document.activeElement).toBe(copy)
+  await act(async()=>copy.click())
+  await act(async()=>document.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})))
+  expect(mocks.createTimeWindow).toHaveBeenCalledTimes(1)
+  const [owner,payload]=mocks.createTimeWindow.mock.calls[0]
+  expect(owner).toBe(1)
+  expect(payload).toMatchObject({kind:'dated',date:'2026-11-09',weekday:null,isIntensive:true,sortOrder:7})
+  expect(payload).not.toHaveProperty('id')
+  expect(payload).not.toHaveProperty('expectedRevision')
+  expect(mocks.updateTimeWindow).not.toHaveBeenCalled()
+})
+
+it('groups weekly before dated windows in chronological order and invalidates at save acknowledgement', async () => {
+  mocks.listStudyTypes.mockResolvedValue(page([{ id:1,name:'Form',isActive:true,revision:1,usage }]))
+  mocks.listTimeWindows.mockResolvedValue([
+    {id:1,studyTypeId:1,kind:'dated',date:'2026-11-10',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage,overlapNotice:'Überschneidung schafft keine zusätzliche Kapazität.'},
+    {id:2,studyTypeId:1,weekday:4,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage},
+    {id:3,studyTypeId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:false,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage},
+  ])
+  const changed = vi.fn()
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  await act(async () => root.render(<AcademicDataPage category="time-windows" onCatalogChanged={changed} />))
+  const text = document.body.textContent!
+  expect(text.indexOf('Freitag')).toBeLessThan(text.indexOf('09.11.2026'))
+  expect(text.indexOf('09.11.2026')).toBeLessThan(text.indexOf('10.11.2026'))
+  expect(text).toContain('Intensivwoche')
+  expect(text).toContain('Überschneidung schafft keine zusätzliche Kapazität.')
+  mocks.listStudyTypes.mockRejectedValue(new Error('reload failed'))
+  await act(async () => document.querySelector('form')!.dispatchEvent(new Event('submit', {bubbles:true,cancelable:true})))
+  expect(changed).toHaveBeenCalledTimes(1)
+})
 
 async function renderPage(category: 'semesters' | 'cohorts' | 'courses' | 'study-types' | 'time-windows' | 'lecturers' | 'rooms' | 'holidays' = 'semesters') {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
@@ -133,8 +195,8 @@ describe('AcademicDataPage', () => {
     expect(mocks.listTimeWindows).toHaveBeenCalledWith(1)
     expect(mocks.listTimeWindows).toHaveBeenCalledWith(2)
     expect(document.querySelectorAll('.catalog-list li')).toHaveLength(2)
-    expect(document.body.textContent).toContain('Type 1 · Montag, 08:00–10:00')
-    expect(document.body.textContent).toContain('Type 2 · Dienstag, 08:00–10:00')
+    expect(document.body.textContent).toContain('Type 1 · Wöchentlich: Montag, 08:00–10:00')
+    expect(document.body.textContent).toContain('Type 2 · Wöchentlich: Dienstag, 08:00–10:00')
     expect(document.body.textContent).not.toContain('Day 1')
 
     const status = document.querySelector<HTMLSelectElement>('.page-header select')!

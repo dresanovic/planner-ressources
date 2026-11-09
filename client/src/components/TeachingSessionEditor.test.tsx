@@ -7,6 +7,35 @@ import { TeachingSessionEditor } from './TeachingSessionEditor'
 
 afterEach(() => { document.body.innerHTML = '' })
 
+it('displays and saves exact generated times on resource-only and LE edits', async () => {
+  const save = vi.fn()
+  const initial = { date: '2026-09-07', startTime: '09:00:00.000001', endTime: '09:45:00.000001',
+    units: 1, lecturerId: 1, roomId: 1 }
+  function Editor() {
+    const [draft, setDraft] = useState(initial)
+    return <TeachingSessionEditor session={{ ...initial, id: 7,
+      lecturer: { id: 1, name: 'Ada' }, room: { id: 1, name: 'R1' }, eligibleLecturers: [],
+      eligibleRooms: [{ id: 1, name: 'R1' }, { id: 2, name: 'R2' }],
+      context: { course: { name: 'Course' }, cohort: { name: 'Cohort' }, cohortSize: 20 },
+    } as never} draft={draft} isSaving={false} isDisabled={false} errors={[]}
+      onChange={(value) => setDraft(value as typeof initial)} onCancel={() => undefined} onSave={() => save(draft)} />
+  }
+  const root = createRoot(document.body.appendChild(document.createElement('div')))
+  await act(async () => root.render(<Editor />))
+  expect(document.querySelector<HTMLInputElement>('[name=startTime]')!.value).toBe(initial.startTime)
+  expect(document.querySelector<HTMLInputElement>('[name=endTime]')!.value).toBe(initial.endTime)
+  const room = [...document.querySelectorAll<HTMLSelectElement>('select')].at(-1)!
+  await act(async () => { room.value = '2'; room.dispatchEvent(new Event('change', { bubbles: true })) })
+  expect(document.querySelector('form')!.checkValidity()).toBe(true)
+  await act(async () => document.querySelector<HTMLButtonElement>('[type=submit]')!.click())
+  expect(save).toHaveBeenLastCalledWith({ ...initial, roomId: 2 })
+  await act(async () => change(document.querySelector<HTMLInputElement>('[name=units]')!, '2'))
+  expect(document.querySelector<HTMLInputElement>('[name=endTime]')!.value).toBe('10:40:00.000001')
+  await act(async () => document.querySelector<HTMLButtonElement>('[type=submit]')!.click())
+  expect(save).toHaveBeenLastCalledWith({ ...initial, roomId: 2, units: 2, endTime: '10:40:00.000001' })
+  await act(async () => root.unmount())
+})
+
 it('calculates end from LE with breaks and preserves LE when end is overridden', async () => {
   let saved: EditableDraftSessionRequest | undefined
   function ControlledEditor() {

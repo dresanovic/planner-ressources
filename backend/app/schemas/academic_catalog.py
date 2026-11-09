@@ -86,20 +86,27 @@ class StudyTypeUpdate(StudyTypeInput):
 
 class TimeWindowInput(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    weekday: int
-    start_time: str = Field(alias="startTime")
-    end_time: str = Field(alias="endTime")
-    sort_order: int = Field(alias="sortOrder")
+    # Preserve raw values so the service can aggregate every detected field
+    # correction into the catalog's German error envelope (including parsing).
+    kind: Any = "weekly"
+    weekday: Any = None
+    date: Any = None
+    is_intensive: Any = Field(default=False, alias="isIntensive")
+    start_time: Any = Field(default=None, alias="startTime")
+    end_time: Any = Field(default=None, alias="endTime")
+    sort_order: Any = Field(default=0, alias="sortOrder")
 
 
 class TimeWindowUpdate(TimeWindowInput):
     expected_revision: int = Field(alias="expectedRevision")
+    study_type_id: Any = Field(default=None, alias="studyTypeId")
 
 
 class CourseDetailsInput(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     name: str
     total_units: int = Field(alias="totalUnits")
+    overall_units: int | None = Field(default=None, alias="overallUnits", ge=1)
     min_session_units: int = Field(alias="minSessionUnits")
     max_session_units: int = Field(alias="maxSessionUnits")
     preferred_session_units: float | None = Field(default=None, alias="preferredSessionUnits", strict=True, allow_inf_nan=False, multiple_of=0.5)
@@ -164,7 +171,11 @@ class TimeWindowResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     id: int
     study_type_id: int = Field(alias="studyTypeId")
-    weekday: int
+    kind: str
+    weekday: int | None
+    date: date | None
+    is_intensive: bool = Field(alias="isIntensive")
+    overlap_notice: str | None = Field(alias="overlapNotice")
     start_time: str = Field(alias="startTime")
     end_time: str = Field(alias="endTime")
     sort_order: int = Field(alias="sortOrder")
@@ -191,6 +202,7 @@ class CourseResponse(BaseModel):
     name: str
     name_repair_required: bool = Field(alias="nameRepairRequired")
     total_units: int = Field(alias="totalUnits")
+    overall_units: int = Field(alias="overallUnits")
     min_session_units: int = Field(alias="minSessionUnits")
     max_session_units: int = Field(alias="maxSessionUnits")
     preferred_session_units: float | None = Field(default=None, alias="preferredSessionUnits")

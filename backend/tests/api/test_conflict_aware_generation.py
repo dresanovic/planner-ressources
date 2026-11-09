@@ -315,6 +315,7 @@ def test_existing_draft_returns_non_mutating_post_generation_comparison(client, 
     assert len(body["candidateFingerprint"]) == 64
     assert body["preparedEvidence"] == generation_payload(prepared)
     assert body["comparison"]["current"] == {
+        "intensiveFacts": None,
         "requiredUnits": 4,
         "scheduledUnits": 4,
         "remainingUnits": 0,
@@ -323,6 +324,7 @@ def test_existing_draft_returns_non_mutating_post_generation_comparison(client, 
 
 
     assert body["comparison"]["generated"] == {
+        "intensiveFacts": None,
         "requiredUnits": 4,
         "scheduledUnits": 2,
         "remainingUnits": 2,

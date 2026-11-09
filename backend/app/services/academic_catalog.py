@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from datetime import time
+from datetime import date as calendar_date, time, timedelta
 from math import isfinite
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.planning import (
@@ -172,44 +173,107 @@ def parse_time(value: str, field: str) -> time:
         raise AcademicCatalogError(422, [CatalogErrorItem("VALIDATION_ERROR", "Enter a valid HH:MM time.", field)]) from exc
 
 
-def create_time_window(db: Session, study_type_id: int, *, weekday: int, start_time: str, end_time: str, sort_order: int) -> StudyTypeTimeWindow:
-    owner = db.get(StudyType, study_type_id)
-    if owner is None:
-        raise AcademicCatalogError(404, [CatalogErrorItem("NOT_FOUND", "Study Type not found.")])
+def _window_values(db, study_type_id, *, kind, weekday, date, start_time, end_time, sort_order, is_intensive):
     errors = []
-    start = end = None
-    for value, field in ((start_time, "startTime"), (end_time, "endTime")):
+    def invalid(field, message):
+        errors.append(CatalogErrorItem("VALIDATION_ERROR", message, field))
+    owner = db.get(StudyType, study_type_id) if type(study_type_id) is int else None
+    if owner is None or not owner.is_active:
+        invalid("studyTypeId", "Wählen Sie eine vorhandene aktive Studienform.")
+    if kind not in ("weekly", "dated"):
+        invalid("kind", "Wählen Sie Wöchentlich oder Einmaliges Datum.")
+    parsed_date = None
+    if kind == 'dated':
         try:
-            parsed = parse_time(value, field)
-            if field == "startTime":
-                start = parsed
-            else:
-                end = parsed
-        except AcademicCatalogError as exc:
-            errors.extend(exc.errors)
-    if weekday < 0 or weekday > 6:
-        errors.append(CatalogErrorItem("VALIDATION_ERROR", "Weekday must be between 0 and 6.", "weekday"))
+            if not isinstance(date, str) or len(date) != 10:
+                raise ValueError()
+            parsed_date = calendar_date.fromisoformat(date)
+            if parsed_date.isoformat() != date:
+                raise ValueError()
+        except ValueError:
+            invalid("date", "Geben Sie ein gültiges vollständiges Datum mit Jahr an.")
+        if weekday is not None:
+            invalid("weekday", "Ein einmaliges Datum hat keinen wiederkehrenden Wochentag.")
+    elif kind == 'weekly':
+        if type(weekday) is not int or not 0 <= weekday <= 6:
+            invalid("weekday", "Wählen Sie einen Wochentag von Montag bis Sonntag.")
+        if date is not None:
+            invalid("date", "Ein wöchentliches Zeitfenster hat kein einzelnes Datum.")
+    if type(is_intensive) is not bool or (kind == 'weekly' and is_intensive):
+        invalid("isIntensive", "Intensivwoche ist nur bei einem einmaligen Datum als Ja oder Nein zulässig.")
+    parsed = []
+    for value, field in ((start_time, 'startTime'), (end_time, 'endTime')):
+        try:
+            result = time.fromisoformat(value)
+            if result.tzinfo is not None:
+                raise ValueError()
+            parsed.append(result)
+        except (ValueError, TypeError):
+            parsed.append(None)
+            invalid(field, "Geben Sie eine gültige Uhrzeit im Format HH:MM an.")
+    start, end = parsed
     if start is not None and end is not None and end <= start:
-        errors.append(CatalogErrorItem("VALIDATION_ERROR", "End time must be later than start time.", "endTime"))
-    if sort_order < 0:
-        errors.append(CatalogErrorItem("VALIDATION_ERROR", "Sort order cannot be negative.", "sortOrder"))
+        invalid('endTime', 'Das Ende muss am selben Tag nach dem Beginn liegen.')
+    if type(sort_order) is not int or sort_order < 0:
+        invalid('sortOrder', 'Die Reihenfolge muss eine nichtnegative ganze Zahl sein.')
     if errors:
         raise AcademicCatalogError(422, errors)
-    duplicate = db.execute(select(StudyTypeTimeWindow.id).where(
-        StudyTypeTimeWindow.study_type_id == study_type_id,
-        StudyTypeTimeWindow.weekday == weekday,
-        StudyTypeTimeWindow.start_time == start,
-        StudyTypeTimeWindow.end_time == end,
-    )).scalar_one_or_none()
+    return dict(study_type_id=study_type_id, kind=kind, weekday=weekday, date=parsed_date,
+                start_time=start, end_time=end, sort_order=sort_order, is_intensive=is_intensive)
+
+
+def _check_window_duplicate(db, values, exclude_id=None):
+    query = select(StudyTypeTimeWindow.id).where(*(
+        getattr(StudyTypeTimeWindow, key) == values[key]
+        for key in ('study_type_id', 'kind', 'weekday', 'date', 'start_time', 'end_time')))
+    if exclude_id is not None:
+        query = query.where(StudyTypeTimeWindow.id != exclude_id)
+    duplicate = db.scalar(query)
     if duplicate is not None:
-        raise AcademicCatalogError(409, [CatalogErrorItem("DUPLICATE_TIME_WINDOW", "This exact weekly window already exists.", None, {"conflictingRecordId": duplicate})])
-    row = StudyTypeTimeWindow(study_type_id=study_type_id, weekday=weekday, start_time=start, end_time=end, sort_order=sort_order)
+        raise AcademicCatalogError(409, [CatalogErrorItem('DUPLICATE_TIME_WINDOW',
+            'Dieses Zeitfenster besteht bereits, auch wenn es archiviert oder anders markiert ist.',
+            None, {'conflictingRecordId': duplicate})])
+
+
+def _flush_window(db):
+    try:
+        db.flush()
+    except IntegrityError as exc:
+        db.rollback()
+        raise AcademicCatalogError(409, [CatalogErrorItem('DUPLICATE_TIME_WINDOW',
+            'Das Zeitfenster wurde inzwischen gespeichert oder geändert. Aktualisieren Sie die Liste.')]) from exc
+
+
+def create_time_window(db: Session, study_type_id: int, *, weekday=None, start_time=None, end_time=None, sort_order=0, kind='weekly', date=None, is_intensive=False) -> StudyTypeTimeWindow:
+    values = _window_values(db, study_type_id, kind=kind, weekday=weekday, date=date,
+        start_time=start_time, end_time=end_time, sort_order=sort_order, is_intensive=is_intensive)
+    _check_window_duplicate(db, values)
+    row = StudyTypeTimeWindow(**values)
     db.add(row)
-    db.flush()
+    _flush_window(db)
     return row
 
 
-def create_course(db: Session, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, lecturer_id: int, room_id: int, preferred_session_units: float | None = None) -> Course:
+def window_overlap_notice(db, row):
+    # Positive occurrence overlap is informative; permission is never capacity.
+    for other in db.scalars(select(StudyTypeTimeWindow).where(
+            StudyTypeTimeWindow.study_type_id == row.study_type_id,
+            StudyTypeTimeWindow.id != row.id, StudyTypeTimeWindow.is_active.is_(True))):
+        if not row.is_active or not (row.start_time < other.end_time and other.start_time < row.end_time):
+            continue
+        if row.kind == other.kind == 'weekly':
+            same_day = row.weekday == other.weekday
+        elif row.kind == other.kind == 'dated':
+            same_day = row.date == other.date
+        else:
+            dated, weekly = (row, other) if row.kind == 'dated' else (other, row)
+            same_day = dated.date.weekday() == weekly.weekday
+        if same_day:
+            return 'Zeitfenster überschneiden sich. Dadurch entsteht keine zusätzliche Kapazität.'
+    return None
+
+
+def create_course(db: Session, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, lecturer_id: int, room_id: int, preferred_session_units: float | None = None, overall_units: int | None = None) -> Course:
     errors: list[CatalogErrorItem] = []
     name_status = 422
     try:
@@ -241,7 +305,7 @@ def create_course(db: Session, *, name: str, total_units: int, min_session_units
         raise AcademicCatalogError(name_status if len(errors) == 1 else 422, errors)
     row = Course(
         name=display, normalized_name=canonical, normalized_name_key=canonical,
-        total_units=total_units, min_session_units=min_session_units, max_session_units=max_session_units, preferred_session_units=preferred_session_units,
+        total_units=total_units, overall_units=total_units if overall_units is None else overall_units, min_session_units=min_session_units, max_session_units=max_session_units, preferred_session_units=preferred_session_units,
         current_semester_id=semester_id, cohort_id=cohort_id, study_type_id=study_type_id,
         eligible_lecturers=[CourseEligibleLecturer(lecturer_id=lecturer_id)],
         eligible_rooms=[CourseEligibleRoom(room_id=room_id)],
@@ -278,15 +342,26 @@ def availability_for_course(
     course: Course,
     *,
     active_window_study_type_ids: set[int] | None = None,
+    active_windows_by_study_type: dict | None = None,
+    constraint_sets_by_course_semester: dict | None = None,
 ) -> list[str]:
-    has_window = (
-        course.study_type_id in active_window_study_type_ids
-        if active_window_study_type_ids is not None
-        else db.execute(select(StudyTypeTimeWindow.id).where(
-            StudyTypeTimeWindow.study_type_id == course.study_type_id,
-            StudyTypeTimeWindow.is_active.is_(True),
-        ).limit(1)).first() is not None
-    )
+    from app.services.schedule_generation import PlanningPeriodPlan, session_duration_minutes, window_has_occurrence
+    has_window = False
+    if course.current_semester is not None:
+        period = PlanningPeriodPlan(course.current_semester.start_date, course.current_semester.end_date)
+        saved = (constraint_sets_by_course_semester.get((course.id,course.current_semester_id))
+            if constraint_sets_by_course_semester is not None else db.scalar(select(GenerationConstraintSet).where(
+                GenerationConstraintSet.course_id == course.id,
+                GenerationConstraintSet.semester_id == course.current_semester_id)))
+        if saved is not None:
+            period = PlanningPeriodPlan(max(period.start_date, saved.planning_start_date), min(period.end_date, saved.planning_end_date))
+        from datetime import datetime
+        windows = (active_windows_by_study_type.get(course.study_type_id,())
+                   if active_windows_by_study_type is not None else course.study_type.time_windows)
+        has_window = any(window_has_occurrence(w, period)
+            and datetime.combine(calendar_date.min, w.end_time) - datetime.combine(calendar_date.min, w.start_time)
+            >= timedelta(minutes=session_duration_minutes(course.min_session_units))
+            for w in windows if w.is_active)
     reasons = course_availability_reasons(
         course_active=course.is_active,
         semester_assigned=course.current_semester is not None,
@@ -303,8 +378,11 @@ def availability_for_course(
     return reasons
 
 
-def planning_eligibility_reasons(db: Session, course: Course, semester_id: int) -> list[str]:
+def planning_eligibility_reasons(db: Session, course: Course, semester_id: int, *, require_usable_window: bool = True) -> list[str]:
     reasons = availability_for_course(db, course)
+    if not require_usable_window:
+        # An unusable saved period must not prevent reading or repairing it.
+        reasons = [reason for reason in reasons if reason != 'MISSING_ACTIVE_TIME_WINDOW']
     if course.current_semester_id is not None and course.current_semester_id != semester_id:
         reasons.append("COURSE_SEMESTER_MISMATCH")
     return reasons
@@ -460,28 +538,25 @@ def update_study_type(db: Session, row: StudyType, *, name: str, expected_revisi
     db.flush(); return row
 
 
-def update_time_window(db: Session, row: StudyTypeTimeWindow, *, weekday: int, start_time: str, end_time: str, sort_order: int, expected_revision: int) -> StudyTypeTimeWindow:
+def update_time_window(db: Session, row: StudyTypeTimeWindow, *, weekday=None, start_time=None, end_time=None, sort_order=0, expected_revision: int, kind='weekly', date=None, is_intensive=False, study_type_id=None) -> StudyTypeTimeWindow:
     require_revision(row, expected_revision)
-    errors = []
-    start = end = None
-    for value, field in ((start_time, "startTime"), (end_time, "endTime")):
-        try:
-            parsed = parse_time(value, field)
-            if field == "startTime": start = parsed
-            else: end = parsed
-        except AcademicCatalogError as exc:
-            errors.extend(exc.errors)
-    if weekday < 0 or weekday > 6: errors.append(CatalogErrorItem("VALIDATION_ERROR", "Weekday must be between 0 and 6.", "weekday"))
-    if start is not None and end is not None and end <= start: errors.append(CatalogErrorItem("VALIDATION_ERROR", "End time must be later than start time.", "endTime"))
-    if sort_order < 0: errors.append(CatalogErrorItem("VALIDATION_ERROR", "Sort order cannot be negative.", "sortOrder"))
-    if errors: raise AcademicCatalogError(422, errors)
-    duplicate = db.execute(select(StudyTypeTimeWindow.id).where(StudyTypeTimeWindow.study_type_id == row.study_type_id, StudyTypeTimeWindow.weekday == weekday, StudyTypeTimeWindow.start_time == start, StudyTypeTimeWindow.end_time == end, StudyTypeTimeWindow.id != row.id)).scalar_one_or_none()
-    if duplicate is not None: raise AcademicCatalogError(409, [CatalogErrorItem("DUPLICATE_TIME_WINDOW", "This exact weekly window already exists.", None, {"conflictingRecordId": duplicate})])
-    row.weekday, row.start_time, row.end_time, row.sort_order = weekday, start, end, sort_order
-    row.revision += 1; db.flush(); return row
+    values = _window_values(db, row.study_type_id if study_type_id is None else study_type_id,
+        kind=kind, weekday=weekday, date=date, start_time=start_time, end_time=end_time,
+        sort_order=sort_order, is_intensive=is_intensive)
+    if kind != row.kind:
+        raise AcademicCatalogError(422, [CatalogErrorItem('VALIDATION_ERROR',
+            'Die Art eines gespeicherten Zeitfensters kann nicht geändert werden.', 'kind')])
+    _check_window_duplicate(db, values, row.id)
+    for key, value in values.items():
+        setattr(row, key, value)
+    # Avoid a cached former owner after an owner-changing edit.
+    row.study_type = db.get(StudyType, values['study_type_id'])
+    row.revision += 1
+    _flush_window(db)
+    return row
 
 
-def update_course(db: Session, row: Course, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, expected_revision: int, preferred_session_units: float | None = None) -> Course:
+def update_course(db: Session, row: Course, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, expected_revision: int, preferred_session_units: float | None = None, overall_units: int | None = None) -> Course:
     require_revision(row, expected_revision)
     errors: list[CatalogErrorItem] = []
     name_status = 422
@@ -501,6 +576,8 @@ def update_course(db: Session, row: Course, *, name: str, total_units: int, min_
     row.name, row.normalized_name, row.normalized_name_key = display, canonical, canonical
     row.name_repair_required = False
     row.total_units, row.min_session_units, row.max_session_units = total_units, min_session_units, max_session_units
+    if overall_units is not None:
+        row.overall_units = overall_units
     row.preferred_session_units = preferred_session_units
     row.current_semester_id, row.cohort_id, row.study_type_id = semester_id, cohort_id, study_type_id
     row.revision += 1; db.flush(); return row
@@ -515,7 +592,7 @@ def set_lifecycle(db: Session, row, *, active: bool, expected_revision: int):
         blocking = [reason for reason in reasons if reason != "RECORD_INACTIVE" and reason != "MISSING_ACTIVE_TIME_WINDOW"]
         if blocking: raise AcademicCatalogError(409, [CatalogErrorItem("REACTIVATION_BLOCKED", "Required relationships must be active before reactivation.", None, {"reasons": blocking})])
     if active and isinstance(row, StudyTypeTimeWindow) and not row.study_type.is_active:
-        raise AcademicCatalogError(409, [CatalogErrorItem("REACTIVATION_BLOCKED", "Reactivate the Study Type first.")])
+        raise AcademicCatalogError(409, [CatalogErrorItem("REACTIVATION_BLOCKED", "Aktivieren Sie zuerst die Studienform.")])
     row.is_active = active; row.revision += 1; db.flush(); return row
 
 

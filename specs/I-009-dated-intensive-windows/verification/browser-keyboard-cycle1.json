@@ -1,0 +1,102 @@
+{
+  "browser": "157.0.4341.42",
+  "invalidDateFocusedAndRetained": true,
+  "keyboardCopySaveAndDelete": true,
+  "invalidToSubmitTabPath": [
+    {
+      "tag": "INPUT",
+      "name": "date",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "isIntensive",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "startTime",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "startTime",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "endTime",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "endTime",
+      "text": ""
+    },
+    {
+      "tag": "BUTTON",
+      "name": null,
+      "text": "Kopie speichern"
+    }
+  ],
+  "saveTabPath": [
+    {
+      "tag": "INPUT",
+      "name": "date",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "isIntensive",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "startTime",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "startTime",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "endTime",
+      "text": ""
+    },
+    {
+      "tag": "INPUT",
+      "name": "endTime",
+      "text": ""
+    },
+    {
+      "tag": "BUTTON",
+      "name": null,
+      "text": "Kopie speichern"
+    }
+  ],
+  "deleteTabPath": [
+    {
+      "tag": "BUTTON",
+      "name": null,
+      "text": "Abbrechen"
+    },
+    {
+      "tag": "BUTTON",
+      "name": null,
+      "text": "Archivieren"
+    },
+    {
+      "tag": "BUTTON",
+      "name": null,
+      "text": "Dauerhaft löschen"
+    }
+  ],
+  "createdId": 101,
+  "cleanupStatus": 204,
+  "limitations": [
+    "Actual assistive-technology announcements and genuine 200% enlargement still require human observation.",
+    "Five representative unaided trials have not occurred."
+  ]
+}

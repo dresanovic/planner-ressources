@@ -20,6 +20,30 @@ from app.services.schedule_generation import GeneratedSession
 from tests.optimization_fixtures import seed_optimization_planner
 
 
+def test_preference_only_marker_change_rejects_both_concurrent_accepts_without_business_writes(tmp_path):
+    from tests.fixtures.dated_intensive_windows import seed_acceptance_context,mutate_acceptance_window,business_rows
+    engine=create_engine(f"sqlite:///{tmp_path/'dated-marker-race.db'}",connect_args={'check_same_thread':False,'timeout':10})
+    initialize_database(engine)
+    with Session(engine) as db:
+        seed_acceptance_context(db,with_selected=True)
+        prepared=prepare_optimization(db,1,[1],[],1)
+        courses=[PreparedOptimizationCourseInput(courseId=c.course_id,expectedDraftScheduleId=c.draft_schedule_id,expectedDraftRevision=c.draft_revision,inputSnapshotToken=c.input_snapshot_token) for c in prepared.courses]
+        preview=generate_optimization(db,1,courses,[],prepared.shared_snapshot_token,1)
+        mutate_acceptance_window(db,'fixed_marker')
+    before=business_rows(engine);barrier=Barrier(2)
+    def accept():
+        with Session(engine) as db:
+            barrier.wait(timeout=5)
+            try:accept_optimization(db,1,courses,[],prepared.shared_snapshot_token,1,preview.candidate_fingerprint)
+            except StaleOptimizationCandidate:
+                db.rollback();return 'stale'
+            return 'unexpected-save'
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results=list(pool.map(lambda _:accept(),range(2)))
+    assert results==['stale','stale']
+    assert business_rows(engine)==before
+
+
 def test_simultaneous_acceptance_commits_the_joint_candidate_at_most_once(tmp_path: Path):
     database = tmp_path / "regeneration-accept-race.db"
     engine = create_engine(

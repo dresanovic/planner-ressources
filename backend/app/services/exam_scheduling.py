@@ -418,7 +418,7 @@ def _automatic_candidates(db, course, config, semester_id):
         return [], [OptimizationIssue("ROOM_INELIGIBLE", "No active eligible room is configured for this course.")]
     if not eligible_rooms:
         return [], [OptimizationIssue("INSUFFICIENT_ROOM_CAPACITY", "No eligible room meets the configured exam capacity.")]
-    proposals = tuple((window.weekday, window.start_time) for window in course.study_type.time_windows if window.is_active)
+    proposals = tuple((window.weekday, window.start_time) for window in course.study_type.time_windows if window.is_active and window.kind == 'weekly')
     holidays = frozenset(db.scalars(select(InstitutionHoliday.date).where(InstitutionHoliday.date.between(semester.start_date, semester.end_date))))
     fixed = tuple(_fixed_occupancy(db, semester_id))
     spec = CandidateInput(course_id=course.id, semester_start=semester.start_date, semester_end=semester.end_date, final_teaching_date=anchor["date"], final_teaching_end_time=anchor["endTime"], recommended_start=start, recommended_end=end, duration_minutes=config.duration_minutes, lecturer_id=config.responsible_lecturer_id, cohort_id=course.cohort_id, room_ids=tuple(room.id for room in eligible_rooms), start_proposals=proposals, holidays=holidays, fixed_occupancy=fixed)
@@ -517,7 +517,7 @@ def _eligibility(db, course, config, anchor, has_active):
     lecturer = db.get(Lecturer, config.responsible_lecturer_id)
     if lecturer is None or not lecturer.is_active or db.get(CourseEligibleLecturer, (course.id, config.responsible_lecturer_id)) is None:
         return {"eligible": False, "code": "CONFIGURATION_INCOMPLETE", "message": "The responsible lecturer is no longer active and eligible."}
-    if not any(window.is_active for window in course.study_type.time_windows): return {"eligible": False, "code": "AUTOMATIC_START_TIME_UNAVAILABLE", "message": "No active Study Type start time is available."}
+    if not any(window.is_active and window.kind == 'weekly' for window in course.study_type.time_windows): return {"eligible": False, "code": "AUTOMATIC_START_TIME_UNAVAILABLE", "message": "No active Study Type start time is available."}
     return {"eligible": True, "code": "ELIGIBLE", "message": None}
 
 

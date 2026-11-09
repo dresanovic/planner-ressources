@@ -2,7 +2,7 @@ import type { BlockingReason, OptimizationGenerationResult } from '../api/confli
 import { formatCalendarDate } from '../utils/datePresentation'
 import { safeReasonText } from '../utils/userProblems'
 import { label } from '../config/terminology'
-import { OptimizationProofFacts } from './OptimizationProofFacts'
+import { OptimizationProofFacts, IntensiveArrangementFacts } from './OptimizationProofFacts'
 
 type Props = {
   result: OptimizationGenerationResult
@@ -95,6 +95,9 @@ export function BatchResultSummary({ result, retryDisabled = false, onRetryFaile
           : 'Es wurde kein Optimalitätsnachweis erzeugt, weil die vorbereiteten Eingaben nicht gelöst werden konnten. Aktualisieren Sie veraltete Eingaben und versuchen Sie es erneut.'}
       </p>
       {result.proof && <OptimizationProofFacts proof={result.proof}/>}
+      {result.intensiveFacts && result.intensiveFacts.totalUnits === result.summary.scheduledUnits
+        && (!result.proof || (result.proof.preparedSnapshotToken === result.intensiveFacts.preparedSnapshotToken && result.proof.candidateFingerprint === result.intensiveFacts.candidateFingerprint))
+        && <IntensiveArrangementFacts facts={result.intensiveFacts} label="Gespeicherte intensive Planung" />}
       <div className="batch-outcomes">
         {result.outcomes.map((outcome) => (
           <article className={`batch-outcome ${outcome.status}`} key={outcome.courseId} aria-label={`${outcome.courseName ?? `${label('course.singular')} ${outcome.courseId}`}: ${statusLabels[outcome.status]}`}>

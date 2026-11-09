@@ -112,3 +112,16 @@ def test_holiday_evidence_message_is_german_for_provisional_and_no_candidate_tra
     assert 'ausgeschlossen' in holiday.message
     assert day.strftime('%d.%m.%Y') in holiday.message
     assert 'removed an otherwise' not in holiday.message and day.isoformat() not in holiday.message
+def test_intensive_detached_input_preserves_exact_windows_and_fixed_teaching_without_orm():
+    import pickle
+    from datetime import date, time
+    from app.services.schedule_generation import TimeWindowPlan
+    from app.services.semester_optimization import FixedSession
+    from app.services.optimization_worker import DetachedOptimizationInput
+    marker = TimeWindowPlan(1,None,time(9),time(12),kind='dated',date=date(2026,9,7),is_intensive=True)
+    fixed = FixedSession(99,1,99,99,date(2026,9,7),time(9),time(9,45),units=1,study_type_id=2,marked_windows=(marker,))
+    problem = DetachedOptimizationInput((),(fixed,),(),{},123.0)
+    copied = pickle.loads(pickle.dumps(problem))
+    assert copied == problem
+    assert copied.fixed_sessions[0].marked_windows[0].is_intensive is True
+

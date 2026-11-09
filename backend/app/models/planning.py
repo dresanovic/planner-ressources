@@ -853,15 +853,21 @@ class StudyType(Base):
 class StudyTypeTimeWindow(Base):
     __tablename__ = "study_type_time_windows"
     __table_args__ = (
-        UniqueConstraint(
-            "study_type_id", "weekday", "start_time", "end_time",
-            name="uq_study_type_time_window_exact",
-        ),
+        CheckConstraint("kind IN ('weekly','dated')", name="ck_time_window_kind"),
+        CheckConstraint("(kind='weekly' AND weekday IS NOT NULL AND weekday BETWEEN 0 AND 6 AND date IS NULL AND is_intensive=0) OR (kind='dated' AND weekday IS NULL AND date IS NOT NULL AND length(date)=10 AND date(date,'+0 days') IS NOT NULL AND date(date,'+0 days')=date)", name="ck_time_window_shape"),
+        CheckConstraint("end_time > start_time", name="ck_time_window_interval"),
+        CheckConstraint("revision > 0", name="ck_time_window_revision"),
+        CheckConstraint("is_intensive IN (0,1) AND is_active IN (0,1)", name="ck_time_window_flags"),
+        Index("uq_time_window_weekly", "study_type_id", "weekday", "start_time", "end_time", unique=True, sqlite_where=text("kind='weekly'")),
+        Index("uq_time_window_dated", "study_type_id", "date", "start_time", "end_time", unique=True, sqlite_where=text("kind='dated'")),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     study_type_id: Mapped[int] = mapped_column(ForeignKey("study_types.id"), nullable=False)
-    weekday: Mapped[int] = mapped_column(Integer, nullable=False)
+    kind: Mapped[str] = mapped_column(String(10), nullable=False, default="weekly", server_default="weekly")
+    weekday: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    is_intensive: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("0"))
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -869,6 +875,7 @@ class StudyTypeTimeWindow(Base):
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     study_type: Mapped[StudyType] = relationship(back_populates="time_windows")
+    __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
 
 
 class Course(Base):
@@ -883,7 +890,12 @@ class Course(Base):
     normalized_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     normalized_name_key: Mapped[str] = mapped_column(String(260), nullable=False, default=lambda: uuid4().hex)
     name_repair_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Legacy name: these are Lehreinheiten, the units required by planning.
     total_units: Mapped[int] = mapped_column(Integer, nullable=False)
+    overall_units: Mapped[int] = mapped_column(
+        Integer, nullable=False,
+        default=lambda context: context.get_current_parameters()['total_units'],
+    )
     min_session_units: Mapped[int] = mapped_column(Integer, nullable=False)
     max_session_units: Mapped[int] = mapped_column(Integer, nullable=False)
     preferred_session_units: Mapped[float | None] = mapped_column(Float, nullable=True)

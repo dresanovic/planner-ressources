@@ -33,6 +33,16 @@ opportunities without extending the ordinary timetable to unrelated weeks.
 Entering similar windows separately for several Studienformen also creates
 avoidable administration work (I-009).
 
+Lecturer eligibility alone does not express an agreed division of teaching.
+The optimizer may redistribute an LV's LE among eligible lecturers even when
+each lecturer is intended to teach a fixed portion. I-010 introduces explicit
+per-lecturer LE allocations rather than treating those lecturers as substitutes.
+
+Planners also need different approaches to distributing selected teaching
+across a semester. I-011 retains the existing algorithm as Standard and adds
+cohort-first and lecturer-first alternatives selected by installation policy,
+while preserving one generation, validation and acceptance workflow.
+
 ### Why now
 
 The planner scheduling, administration, publication, calendar workspace,
@@ -56,8 +66,25 @@ On 05.11.2026 the user requested intensive-week support and refined it to
 date-specific teaching windows, each assigned to one Studienform, with a copy
 action to speed up similar entries. No specific delivery deadline was stated.
 
+On 09.11.2026, review of an optimized plan exposed unwanted lecturer changes.
+The user confirmed fixed lecturer portions and requested a new slice only;
+implementation of this allocation change is not authorized by this update.
+
+On 09.11.2026 the user supplied a cohort-first algorithm idea and requested a
+documentation-only slice for three interchangeable teaching algorithms. The user
+confirmed lecturer-first weekly balancing, application to all teaching generation
+with exams unchanged, and policy selection at each new generation run. No
+specific delivery deadline was stated.
+
 ### Product-level success
 
+- Once I-011 is delivered, the configured Standard, Cohort or Lecturer algorithm
+  produces a clearly identified, hard-valid teaching result through the existing
+  workflow. Cohort and lecturer alternatives seek balanced weekly teaching in
+  their respective grouping and report all remaining LE and proof uncertainty.
+- Once I-010 is delivered, generated teaching respects each selected lecturer's
+  fixed LE portion, and incomplete results identify the lecturer's remaining LE
+  instead of transferring that work to another eligible lecturer.
 - Planner users can create and maintain maximally complete semester schedules,
   understand conflicts and gaps, and retain publication control.
 - When regeneration produces an alternative to existing teaching schedules,
@@ -132,6 +159,10 @@ synchronization remain later releases.
 
 ### Main user outcomes
 
+- Run the policy-selected teaching algorithm for the planning situation without
+  changing selection, validation or final acceptance workflows (I-011).
+- Define fixed LE portions for an LV's selected lecturers and review required,
+  scheduled and remaining LE for each lecturer (I-010, future capability).
 - Maintain the academic and resource data needed for scheduling without developer intervention.
 - Maintain dated additional teaching opportunities for one Studienform at a
   time and independently copy existing Zeitfenster (I-009).
@@ -165,6 +196,11 @@ synchronization remain later releases.
 
 ### In scope
 
+- Three teaching-planning strategies: the existing algorithm named `standard`,
+  plus `cohort` and `lecturer`, implemented with the Strategy design pattern.
+  Read the active algorithm from `config/optimization/policy.json` for each new
+  generation run, verify policy at Start, and freeze it through acceptance
+  (I-011). Both new strategies seek weekly balance; their grouping differs.
 - Planner-controlled course and multi-course draft generation by semester.
 - Cohort-based filtering of course lists in both teaching-generation selection
   and Academic Data course administration (I-005).
@@ -179,6 +215,9 @@ synchronization remain later releases.
 - Manual editing of existing Draft Sessions and non-blocking validation alerts.
 - Manual administration of academic records, resources, availability, holidays, and exam requirements.
 - Multiple eligible lecturers and rooms per course, with assignment preferences.
+- Fixed per-lecturer teaching-unit allocations replacing free redistribution
+  among eligible lecturers when I-010 is delivered. Selected rooms remain
+  eligible alternatives, without fixed room portions.
 - Manual Draft Session creation and deletion, complete course-schedule deletion, and remaining-unit tracking.
 - Global conflict-aware generation that maximizes scheduled units across the selected courses.
 - Persisted partial plans with understandable unscheduled-unit reasons.
@@ -225,6 +264,9 @@ synchronization remain later releases.
 
 ### Out of scope
 
+- I-011 does not select exam algorithms, automatically choose an algorithm from
+  course filters, add planner algorithm overrides, or automatically switch
+  strategies during a run. Dynamic plugins and algorithm tournaments are excluded.
 - Allowing lecturers to edit schedules directly.
 - Requiring lecturer approval before a planner may publish.
 - Silently replacing an existing schedule with a worse result.
@@ -302,6 +344,12 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 
 ## UI and supporting material
 
+- I-011 uses the user-provided cohort-first proposal from 09.11.2026 (grouped
+  demand, semester-week placement, constrained sessions first, shared occupancy,
+  bounded backtracking, weighted preferences and explicit unscheduled work).
+  The analysis is recorded in
+  `docs/architecture/teaching-planning-strategies.md`. Reuse current generation,
+  progress and comparison screens; no new algorithm-selection mockup was supplied.
 - Existing React/Vite planner screens and component behavior from FS-001 through FS-006 are the current UI baseline.
 - `docs/designs/resource-planner-calendar-screen-reference.png` is the confirmed visual inspiration for the future primary planner workspace.
 - The reference shows a navigation rail, remaining-hours/course list, validation summaries, filterable week calendar, schedule cards, and a session detail editor. It is inspiration rather than a pixel-perfect mandate.
@@ -326,6 +374,17 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 
 ## Product-level constraints and assumptions
 
+- I-011's selector is installation policy, never a planner request override.
+  Each new teaching-generation preparation reads policy, Start verifies its
+  fingerprint, and the chosen strategy remains fixed through review/acceptance.
+  A later policy change affects future runs only. Existing budget values and
+  hard constraints remain authoritative across all three strategies.
+- I-011 extends I-006's explicit acceptance of unproven valid results to
+  heuristic completion before timeout. Search termination does not establish
+  infeasibility or optimum; do not label an early heuristic stop as a timeout.
+  Standard retains its existing behavior. Intensive-use/variety priorities stay
+  above strategy-specific balance preferences, and I-010 allocations, when
+  delivered, are hard boundaries for every strategy.
 - The implemented planner-only MVP predates authentication. FS-016 changes the
   current product boundary so planner pages and APIs require an active named
   local account.
@@ -336,7 +395,14 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
   account management.
 - One teaching unit is 45 minutes, and the implemented break and preferred-session-size rules remain authoritative unless a later specification explicitly changes them.
 - A course may have multiple eligible lecturers and rooms; one Draft Session has exactly one lecturer and one room.
+- I-010 adds hard per-lecturer LE portions whose sum equals the LV's total LE.
+  Generation may leave a portion incomplete but may not transfer it to another
+  lecturer to improve coverage or preferences. This is planned scope, not a
+  statement that the current system already enforces allocations.
 - Multi-lecturer teaching should use contiguous lecturer blocks instead of repeatedly alternating lecturers.
+- Lecturer continuity remains a preference within valid fixed allocations;
+  it cannot override a lecturer's assigned portion. Room choices remain eligible
+  alternatives, with one available, capacity-sufficient room per session.
 - Reusing the same eligible room is a preference, not a hard rule.
 - Planner-created sessions may be saved with visible non-blocking validation alerts, consistent with current manual editing.
 - Public holidays use one institution-wide calendar in the planner-only MVP.
@@ -418,7 +484,9 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 28 | I-006 | Configurable Optimization Time and Valid Incumbent Acceptance | Use longer optimization runs and consciously accept valid results without an optimality proof | I-003, I-004, FS-013, FS-019 | Implemented |
 | 29 | I-007 | Calendar Capacity Diagnostics and Additional Planning Slots | Understand open LE and approve useful extra timetable opportunities | I-003, I-004, I-006, FS-003, FS-008, FS-011, FS-019 | Ready for specification — requirements confirmed 2026-11-05 |
 | 30 | I-008 | Planner-Approved Shorter Break Alternatives | Recover feasible teaching time through explicit five-minute-break approval | I-007, I-006, FS-004, FS-009, FS-013 | Ready for specification — after I-007 |
-| 31 | I-009 | Dated Windows, Copying and Intensive-Week Scheduling | Copy independent Zeitfenster and prioritize teaching with daily LV variety in marked intensive windows | FS-007, FS-005, FS-011, FS-019, I-003, I-004 | Ready for specification — requirements confirmed 2026-11-05 |
+| 31 | I-009 | Dated Windows, Copying and Intensive-Week Scheduling | Copy independent Zeitfenster and prioritize teaching with daily LV variety in marked intensive windows | FS-007, FS-005, FS-011, FS-019, I-003, I-004 | Specified — ready for planning; quality checklist validated 2026-11-06 |
+| 32 | I-010 | Fixed Lecturer LE Allocations | Preserve agreed teaching portions and show per-lecturer remaining LE | FS-007, FS-008, FS-009, FS-013, FS-019, I-003, I-004, I-006 | Proposed — intent confirmed 2026-11-09; clarification gates before specification finalization |
+| 33 | I-011 | Policy-Selected Teaching Planning Strategies | Use Standard, Cohort or Lecturer planning through one safe generation workflow | I-003, I-004, I-006, FS-008, FS-011, FS-013, FS-019 | Ready for specification — scope confirmed 2026-11-09 |
 
 **Improvement sequence:** `I-001` through `I-004`, with detailed artifacts in their matching `specs/I-.../` directories.
 
@@ -448,6 +516,22 @@ capacity diagnosis is not a prerequisite for window administration or use.
 The existing initiative's IDs, scope and order remain unchanged. I-009's
 backlog position does not change the older global release recommendation.
 The user explicitly confirmed I-009 as its identifier.
+
+**Confirmed 09.11.2026 lecturer-allocation increment:** I-010 is the next
+lecturer-assignment slice, documentation only in this update. Resolve its legacy
+and saved-work policies before finalizing specification or beginning planning.
+It does not depend on capacity proposals, shorter breaks, or further solver
+performance improvements. Preserve all existing acceptance gates and the older
+global release recommendation; no other slice is reprioritized here.
+
+**Confirmed 09.11.2026 strategy increment:** I-011 is one end-to-end slice for
+the selector and all three teaching algorithms. It builds on I-003/I-004/I-006
+and the existing resource, holiday, revision and workspace baseline. Within this
+initiative, start with I-011; do not create a separate pattern-only slice.
+No dependency on I-007/I-008 or prerequisite implementation of I-010 is added.
+Preserve I-009 priorities where present and enforce I-010 allocations when that
+slice is delivered. This addition does not change the older global release
+recommendation or the order of existing initiatives.
 
 ## Development slices
 
@@ -1082,6 +1166,11 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 
 ### FS-008: Resource Eligibility and Availability
 
+Historical implemented baseline: lecturer selection here means eligibility.
+I-010 owns the later fixed-LE allocation change and supersedes free lecturer
+redistribution when delivered. The original baseline prompt below must not be
+used to undo I-010's confirmed future boundary. Room eligibility stays unchanged.
+
 #### User or business outcome
 
 A planner can maintain lecturers, rooms, their unavailable periods, and the eligible resources for each course so later generation can make realistic resource choices.
@@ -1151,7 +1240,9 @@ The planner can express who and what may be scheduled for a course and when thos
 #### Open clarification topics
 
 - Recurring versus date-specific availability and exception precedence.
-- Whether lecturer blocks have explicit unit targets or are optimized from eligibility alone.
+- Resolved in direction by I-010 on 09.11.2026: fixed per-lecturer LE portions
+  are required. They are not implemented by this update; legacy and saved-work
+  policies remain I-010 clarification gates.
 - Whether room preference can be ranked beyond “same room where possible.”
 
 #### Specification status
@@ -1274,6 +1365,11 @@ Keep the specification strictly limited to this slice and consistent with docs/p
 ```
 
 ### FS-010: Conflict-Aware Semester Optimization
+
+Historical implemented baseline: free choice among eligible lecturers is
+constrained by explicit lecturer LE portions once I-010 is delivered. Its hard
+allocation boundary takes precedence over coverage and arrangement preferences;
+the original baseline prompt below does not authorize quota substitution.
 
 #### User or business outcome
 
@@ -4297,13 +4393,17 @@ intensive priority, and an overlap never counts teaching twice.
   use/preferences and their proven versus unproven status where supported.
 
 These are specification-level details, not unresolved product-scope decisions.
+The I-009 specification now records defaults for these topics in its requirements
+and Assumptions section; they do not expand the confirmed product scope.
 
 #### Specification status
 
-Ready for specification — requirements and identifier I-009 confirmed on
-05.11.2026. Requirements only; no detailed specification, plan, tasks or
-production implementation is created by this update. I-007 and I-008 retain
-their existing IDs and scope.
+Specified on 06.11.2026 in
+[`specs/I-009-dated-intensive-windows/spec.md`](../../specs/I-009-dated-intensive-windows/spec.md),
+with its requirements-quality checklist validated and ready for planning.
+The slice identifier is I-009; its artifact directory is named
+`I-009-dated-intensive-windows` to match that slice identifier. No plan, tasks or production implementation has
+been started. I-007 and I-008 retain their existing IDs and scope.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -4440,6 +4540,611 @@ edge cases, assumptions, accessibility behavior and measurable success criteria.
 Do not prescribe implementation, expand scope or start production changes.
 ```
 
+### I-010: Fixed Lecturer LE Allocations
+
+#### User or business outcome
+
+A planner assigns an explicit LE portion to every selected lecturer of an LV.
+Generation respects that division and shows whose teaching remains open rather
+than substituting another eligible lecturer. For example, an LV with 16 LE can
+require lecturer A to teach 6 LE and lecturer B to teach 10 LE.
+
+#### Rationale for this slice boundary
+
+The existing FS-008 eligibility model treats selected lecturers as alternatives.
+Resource continuity preferences cannot encode an agreed teaching commitment.
+Allocation entry, validation, generation, remaining-work reporting and safe
+acceptance form one end-to-end outcome. This is a new hard constraint, separate
+from performance improvements or giving the solver more time.
+
+#### Primary actors
+
+- Planner user maintaining LV teaching assignments and generating schedules.
+- Lecturers retain existing assignment-scoped views; no new lecturer authority.
+
+#### Preconditions
+
+The implemented LV/resource administration, unified generation, Working-revision
+lifecycle, remaining-unit display and operation-wide acceptance are available.
+Legacy-record treatment and allocation edits with saved teaching must be
+explicitly clarified before specification is finalized; existing checkboxes
+contain no trustworthy evidence of a lecturer's intended LE portion.
+
+#### In scope
+
+- Maintain explicit required LE for each selected lecturer in LV configuration,
+  with visible reconciliation against the LV's total LE.
+- Validate the complete allocation together; the sum must equal total LV LE.
+  Do not silently rebalance other lecturers when a portion or total changes.
+- Apply each allocation as a hard boundary in teaching generation, including
+  full, partial, provisional and accepted results.
+- Show required, scheduled and remaining LE for each lecturer within the LV,
+  alongside existing per-LV and complete-selection coverage.
+- Carry allocation changes through planning-input freshness and acceptance
+  checks, current validation context and historical attribution without
+  silently altering saved sessions or published facts.
+- Define explicit legacy and saved-work policies during clarification, then
+  cover them consistently in administration, generation and manual correction.
+- Retain eligible room alternatives: if RC409 and VH-100 are selected, a session
+  may use either when available and capacity-sufficient. One room is assigned
+  to that session; no room LE quota or obligation to use both is introduced.
+
+#### Out of scope
+
+- Automatic lecturer substitution, quota transfer, or inferred equal portions.
+- New global lecturer workload balancing, contractual/payroll administration,
+  new roles, integrations, or changes to exam-responsible lecturer policy.
+- Multiple lecturers sharing the LE of a single session; the existing exactly
+  one assigned lecturer per session remains authoritative. Any different
+  session-splitting model requires explicit clarification and scope review.
+- Changing session-size rules, teaching/break duration, availability, conflicts,
+  periods, holidays, protected occupancy, or the optimization budget.
+- Implementing the allocation feature, creating detailed Spec Kit artifacts,
+  or changing the live database as part of this requirements-only update.
+
+#### Main workflow
+
+The planner opens an LV, selects its lecturers, enters each required LE portion
+and reviews the total. After valid configuration, the planner generates through
+the existing workflow. The result explains each lecturer's scheduled and open
+LE. The planner reviews and accepts any required complete-selection alternative
+through the established atomic decision, or cancels and retains current work.
+If one lecturer cannot fulfill their portion, the result leaves that portion
+open; another lecturer's availability is not permission to take it over.
+
+#### Business rules
+
+- Required lecturer portions sum exactly to the LV's total LE. For the 16-LE
+  example, A=6 and B=10 is valid; A=4 and B=12 is a different allocation and
+  cannot be substituted by the optimizer without an explicit configuration edit.
+- Every generated session has exactly one assigned lecturer, and all its LE
+  count against that lecturer's own portion. Scheduled LE must not exceed that
+  portion; partial results can fall below it.
+- An LV is complete only when every lecturer allocation is satisfied. Aggregate
+  coverage alone must not conceal the wrong distribution among lecturers.
+- Maximize coverage only within allocations and all other hard constraints.
+  Intensive-window use, daily variety, session shape and continuity preferences
+  cannot override allocations. Contiguous lecturer blocks remain a preference.
+- Existing minimum/maximum session sizes, availability, non-overlap, room
+  capacity, permitted windows/periods, holidays and active-exam protection remain
+  binding. A quota remainder does not authorize an otherwise forbidden session.
+- Unavailability or exhausted search does not prove that an allocation is
+  impossible. Explain evidence and uncertainty without inventing substitution.
+- An allocation edit must invalidate any affected prepared candidate under
+  existing freshness safeguards. It never automatically regenerates, reassigns,
+  deletes or rewrites saved sessions or immutable publication snapshots.
+- Existing operation-wide atomic acceptance, cancellation and saved-work
+  protections remain authoritative. Manual-save severity and allocation-edit
+  handling require the explicit decisions below; no new manual blocking rule
+  is implied by this document.
+
+#### Data inputs and outputs
+
+Inputs are the LV's total LE, selected lecturer identities and their required
+portions, existing planning context and saved sessions. Outputs include validated
+allocation configuration and required/scheduled/remaining LE per lecturer and LV
+for current and generated results. Historical attribution remains tied to saved
+facts. This defines required information, not a storage schema or API design.
+
+#### Integrations
+
+None. Product-owned planning-data administration remains authoritative.
+
+#### UI references
+
+Reuse Stammdaten > Lehrveranstaltungen resource configuration, the generation
+result/comparison surfaces and remaining-work display. The user's 16-LE example
+is the requirements reference. No new allocation mockup was supplied. Room
+checkboxes retain their existing alternative-choice meaning and must be clearly
+distinguished from lecturer portions.
+
+#### Constraints and assumptions
+
+- Confirmed on 09.11.2026: fixed portions, not freely interchangeable lecturers.
+- Existing eligibility records do not imply a split, a block order, or permission
+  to migrate an arbitrary lecturer assignment into a contractual quota.
+- Exact numeric limits, zero/fraction handling and behavior where a portion
+  cannot be decomposed into valid session sizes are not confirmed.
+- This slice does not require I-007 or I-008. When intensive windows or timeout
+  acceptance are present, they obey the same allocation constraints.
+
+#### Dependencies
+
+- FS-007 and FS-008: LV and resource configuration and availability.
+- FS-009 and FS-019: manual correction and remaining-work/workspace surfaces.
+- FS-013: revision freshness, saved work and immutable published facts.
+- I-003, I-004 and I-006: unified generation, atomic replacement and truthful
+  provisional-result review. No change to their existing acceptance gates.
+- Clarification of legacy and saved-work policies before final specification;
+  detailed implementation depends on that confirmed specification.
+
+#### Completion outcome
+
+With total 16 LE and A=6/B=10, no generated or accepted candidate can assign
+A=4/B=12. A valid partial result A=6/B=8 displays B's remaining 2 LE and does not
+replace them with A's teaching. A complete result satisfies both portions while
+selecting any valid eligible room per session. Configuration changes, stale
+acceptance, cancellation and existing historical schedules remain safely handled
+according to the explicitly confirmed policies.
+
+#### Open clarification topics
+
+- Legacy single- and multi-lecturer records: what planner confirmation or
+  transition is required, and what remains available before allocation entry?
+  Do not infer equal splits or assign all LE to the first lecturer by default.
+- Allocation edits, lecturer removal and total-LE changes when saved teaching
+  exists: what is blocked, warned, or requires an explicit planner decision?
+  Include manual creation/reassignment and existing out-of-allocation sessions.
+- Allocation ownership across semesters/revisions and preservation of prior
+  allocation context, without changing immutable historical teaching facts.
+- Allowed numeric range/precision and zero handling; how to explain portions
+  or remainders incompatible with minimum/maximum whole-session LE rules.
+- Whether any finer session-splitting behavior is actually needed. The confirmed
+  baseline remains exactly one lecturer per session; do not assume co-teaching.
+- Accessible allocation-entry layout and per-lecturer comparison presentation.
+
+Legacy and saved-work decisions are specification-finalization gates, not
+permission for an implementation agent to choose a migration or manual policy.
+
+#### Specification status
+
+Proposed — fixed-portion product intent confirmed on 09.11.2026. Documentation
+only; not specified, planned or implemented by this update. Resolve the listed
+policy gates before finalizing specification and starting implementation.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify to draft I-010: Fixed Lecturer LE Allocations, followed by
+$speckit-clarify for the explicit policy gates before specification finalization
+or planning. This prompt does not authorize production implementation.
+
+Product context: Resource Planner currently treats selected LV lecturers as
+eligible alternatives. The user requires explicit fixed teaching portions:
+for total 16 LE, lecturer A can require 6 LE and B 10 LE. An optimized plan must
+not substitute A=4/B=12 simply to improve coverage or arrangement.
+Outcome: Configure the agreed split, generate within it, and understand each
+lecturer's required, scheduled and remaining LE. Primary actor: planner user.
+
+Scope: LV allocation entry and aggregate validation; portions sum to total LE;
+hard per-lecturer generation limits; per-lecturer current/generated coverage;
+freshness checks, safe acceptance and immutable historical attribution; explicit
+legacy-record, allocation-edit and manual-correction policy clarification.
+Exactly one lecturer teaches each session and all session LE count against
+their portion. Partial results may leave that lecturer's LE open; no transfer
+or substitution. Complete means every allocation is satisfied. Preserve hard
+session min/max, periods/windows, holidays, availability, capacity, non-overlap,
+active exams, protected occupancy, atomic acceptance and cancellation. Total LE,
+intensive use, daily variety and continuity objectives operate only within the
+hard allocation boundaries. A quota remainder permits no invalid small session.
+
+Rooms remain alternatives, not allocations: with RC409 and VH-100 selected,
+choose one eligible, available, capacity-sufficient room for each session.
+There is no room LE quota or obligation to use both. Existing room preferences
+remain preferences. Do not change exam-responsible lecturer policy.
+
+Workflow: Configure and reconcile portions in Stammdaten > Lehrveranstaltungen,
+generate through the existing workflow, review per-lecturer gaps, explicitly
+accept any required complete-selection alternative or cancel without mutation.
+Allocation changes stale affected prepared candidates, never silently rewrite
+saved sessions or publications. Do not invent new manual blocking behavior.
+
+Inputs/outputs: LV total LE, lecturer identities and portions plus existing
+planning context produce allocation configuration and per-lecturer/LV required,
+scheduled and remaining LE. No integration, new role or prescribed schema/API.
+UI: Reuse LV resource configuration, generation summaries/comparison and
+remaining-work surfaces. No dedicated mockup supplied.
+Dependencies: FS-007/008/009/013/019 and I-003/004/006. No dependency on I-007 or
+I-008; retain existing intensive-window priorities within hard constraints.
+Exclusions: Quota transfer, inferred splits, multi-lecturer sessions, payroll,
+global workload balancing, changed timing/size rules, new budget/solver
+architecture, live migration or production implementation in this step.
+
+Completion examples: For A=6/B=10, reject generated A=4/B=12; permit valid
+A=6/B=8 as partial and show B remaining 2. A complete LV satisfies both quotas.
+
+Clarify before finalizing: legacy single/multi-lecturer migration and generation
+readiness; allocation edits/removal/total changes with saved sessions; manual
+creation/reassignment and warning/block policy; semester/revision ownership;
+numeric precision/ranges/zero and session-size-incompatible remainders; any
+requested finer session splitting; accessible entry and comparison presentation.
+Do not select an arbitrary migration, split or saved-work policy by assumption.
+
+Keep consistent with docs/planning/Feature_slices.md. Define scenarios, functional
+requirements, edge cases, accessibility, assumptions and measurable success
+criteria without prescribing implementation or expanding scope. Leave unresolved
+policy decisions explicit for clarification; do not implement fixed lecturers.
+```
+
+### I-011: Policy-Selected Teaching Planning Strategies
+
+#### User or business outcome
+
+A planner runs the algorithm configured for the planning situation through the
+existing teaching-generation workflow. The current algorithm remains available
+as Standard; Cohort groups teaching by cohort and Lecturer groups it by lecturer.
+Both new approaches seek balanced weekly teaching across the semester and expose
+remaining LE rather than silently omitting work. Every offered result obeys the
+same hard rules and planner acceptance controls.
+
+#### Rationale for this slice boundary
+
+Policy selection, three working algorithms, consistent result evidence and safe
+acceptance form one demonstrable outcome. A selector without the alternatives
+does not deliver the requested capability. Keep one vertical slice and one Spec
+Kit workflow, with independent acceptance scenarios for each strategy and for
+policy lifetime. The user explicitly requested the Strategy design pattern;
+three concrete algorithms justify that abstraction under the constitution.
+
+#### Primary actors
+
+- Planner user selecting courses, generating and reviewing teaching plans.
+- Installation operator selecting the active algorithm in the existing policy.
+
+#### Preconditions
+
+The unified teaching-generation preparation, operation worker, cancellation,
+exact-result validation, active Working revision and atomic acceptance exist.
+Course/cohort relationships, permitted teaching windows, eligible resources,
+availability, holidays and protected teaching/exam occupancy supply the context.
+
+#### In scope
+
+- Retain the existing teaching algorithm and its priorities/results under
+  `standard`; add real `cohort` and `lecturer` strategies alongside it through
+  one small Strategy contract. Share hard scheduling rules and exact validation.
+- Read the active algorithm from the existing logical policy file at
+  `C:\Codex\planner-resource\config\optimization\policy.json` in this local
+  installation. Resolve the normal local path reliably; support the equivalent
+  explicit deployment/container file without hardcoding a developer's drive.
+- Extend policy alongside `defaultSeconds` and `ceilingSeconds`, retaining
+  operator budget values, validation and hot reading. Recommended selector:
+  `activeAlgorithm` with values `standard`, `cohort`, `lecturer`. Selector omission
+  in a valid legacy policy means Standard; invalid explicit values never cause
+  silent fallback. Confirmed during specification: a missing resolved file blocks
+  new runs with operator guidance; delivery must include file-provisioning/mount
+  instructions and preserve existing budget values.
+- Apply selection to all supported teaching-generation paths, for one to twenty
+  explicitly selected courses, including a selection spanning cohorts. Filtering
+  discovers courses; explicit selected IDs alone define demand.
+- Read policy during preparation and verify the effective fingerprint at Start.
+  Capture strategy and relevant settings for the entire operation, worker,
+  result, review and acceptance. A new run/retry reads current policy; existing
+  operation identity and idempotent Start retain their original strategy.
+- Show the selected algorithm read-only in existing preparation, progress and
+  result/comparison surfaces. Bind algorithm identity to result/acceptance
+  evidence so a candidate cannot be confused with one from another run.
+- Cohort-first: group demand by cohort, prioritize constrained sessions, evaluate
+  semester weeks for balanced cohort load and per-course weekly distribution,
+  prefer room continuity and use bounded backtracking to improve placement.
+  Courses keep a steady ordinary-week rhythm until completion; they need not
+  span the semester. For 22 LE with preferred size 3 and allowed sizes 2–4,
+  the feasible ordinary-week example is seven weekly sessions: six of 3 LE and
+  one of 4 LE, with the 4-LE session allowed anywhere.
+- Lecturer-first: a distinct search grouped by lecturer across selected
+  courses/cohorts. Preserve each course's steady weekly rhythm even if the
+  lecturer's aggregate weekly LE varies; aggregate lecturer-load smoothing is
+  secondary. Compact days/minimum gaps are not the defining goal.
+  Clarified in the subsequent I-011 clarification session: divide course LE
+  among all active eligible lecturers into sequential blocks in ascending
+  normalized lecturer-code order (stable identity breaks ties). Give extra
+  whole LE from rounding to earlier lecturers. No alternation, share transfer
+  or availability-based reordering is permitted; an incomplete earlier portion
+  can block later portions. Derive these per-run shares without introducing
+  permanent allocation administration; explicit supplied portion sizes prevail.
+- Confirmed for both: an intensive week permits a mixed increase, including
+  two distinct teaching days for a normally once-weekly course and introducing
+  other courses. Remaining demand, preferred sizes and hard rules still apply.
+  One ordinary-week day and two intensive-week days are soft preferences;
+  additional days may be used to increase required-LE coverage. The hard rule
+  remains at most one session of a course on the same date.
+- Use shared occupancy across every group, including protected unselected work,
+  active exams and tentative placements in the selection. Bounded repair can
+  revisit provisional generated placements, never protected saved bookings.
+- Preserve flexible valid session sizing; a preferred initial session split
+  must not silently turn otherwise schedulable LE into an unexplained remainder.
+- Include cheap, scoped necessary capacity checks and substantiated remaining-LE
+  explanations within search. Continue useful partial generation after shortage
+  warnings. Detailed capacity UI and additional-slot proposals remain I-007.
+- Preserve highest-priority total LE, intensive teaching and intensive daily
+  variety before lower strategy preferences. Heuristic search seeks these
+  priorities within its bounds; it does not guarantee their global optimum.
+- Return comparable per-course and selection coverage, explicit zero-placement
+  outcomes, reasons or uncertainty, elapsed time, algorithm identity and honest
+  objective proof/bound information. Retain the best validated checkpoint.
+- Permit explicit atomic acceptance of hard-valid heuristic results with
+  unproven objectives even when search stops before the deadline. Extend I-006
+  accordingly; reuse its review rather than inventing another decision flow.
+
+#### Out of scope
+
+Exam-algorithm selection or exam-rule changes; automatic algorithm detection
+from filters or course type; a planner dropdown, per-request selector or runtime
+configuration editor; automatic strategy fallback, chaining or comparison runs;
+dynamic plugin discovery; new services/queues; raising selection limits; moving
+unselected/protected work; guaranteed completion, optimality or speed gains;
+new permanent-room administration; I-007 capacity dashboards/extra-slot proposals;
+I-008 break exceptions; I-010 permanent allocation administration. Lecturer's
+explicitly requested per-run equal sequential shares are included in I-011;
+they are not a new catalog allocation feature. Cohort/Standard eligibility is
+unchanged by this clarification.
+No production, live-policy or database changes occur in this requirements update.
+
+#### Main workflow
+
+The operator chooses an algorithm in policy. The planner explicitly selects
+courses in the existing semester/Working-revision context. Preparation displays
+the effective algorithm and budget. Start rechecks policy; changed policy
+requires fresh preparation. The system runs the captured strategy against the
+shared planning snapshot and occupancy. The planner sees coverage, remaining
+LE, evidence, algorithm and proof status, then follows the established save or
+operation-wide accept/cancel workflow. Policy edits after Start affect the next
+run, without changing the current search or pending acceptance.
+
+#### Business rules
+
+- All strategies enforce the same semester/course bounds, weekly and dated
+  windows, unavailable dates, holidays, eligibility, resource availability,
+  room capacity, one lecturer/room per session, session-size/break rules,
+  at-most-one-LV-session-per-date, active-exam limits and non-overlap.
+- Maintain one demand ledger per LV. With alternative eligible lecturers, do
+  not schedule the LV's full demand once for each lecturer group. Lecturer now
+  derives equal sequential per-run shares in fixed code order when no explicit
+  allocations exist. With 23 LE and two lecturers use 12/11; with 22 LE and
+  three use 8/7/7. Explicit supplied portions take precedence for sizes and
+  remain nontransferable. Report scheduled/remaining LE and predecessor blocks
+  per portion. This supersedes the earlier blanket prohibition on deriving
+  Lecturer shares; it does not implement I-010 administration or change the
+  existing lecturer-eligibility behavior of Cohort/Standard.
+- Full regeneration targets the selected LVs' complete required LE. Current
+  selected sessions are the comparison alternative, not an extra fixed load
+  or a reason to generate only the remainder and then delete the current LE.
+  Preserve protected unselected teaching as fixed occupancy and relevant load.
+- Weekly load metrics include relevant fixed teaching as load as well as
+  occupancy. Existing conflicting or outside-window saved work remains fixed
+  according to the established selected/unselected and revision boundaries.
+- Cohort-first and lecturer-first differ in the owner of the balanced weekly
+  load. They do not remove cross-group competition for lecturer, room or cohort
+  time. No group receives an isolated view of shared resources.
+- Strategy weights operate below common higher priorities. Do not sacrifice
+  known higher-priority coverage for a better balance or preferred room.
+  Capacity checks merge overlapping windows and shared time; LE remain 45
+  teaching minutes, separate from breaks and computation seconds.
+- A bounded-search miss is not proof of infeasibility. Report early completion,
+  repair-limit exhaustion, actual deadline exhaustion, cancellation and failure
+  accurately. Passing a capacity check does not prove a complete plan exists.
+- Unproven preference results require conscious acceptance even with complete
+  coverage and even before timeout. Complete coverage alone proves no lower
+  preference optimum. Use only trustworthy bounds for the same prepared scope;
+  otherwise disclose the unknown improvement gap.
+- A usable unproven result schedules at least one LE across the selection;
+  include every selected course in reporting even when some schedule zero LE.
+  Entirely empty results explain the outcome and preserve saved work.
+- Exact validation gates review and acceptance independently of algorithm.
+  Replacing existing selected schedules, including selected manual sessions,
+  remains one explicit atomic decision. Cancel, failure, no usable candidate
+  or stale input preserves saved work. Published facts remain immutable.
+- Include the selector/effective parameters in policy freshness and operation
+  evidence. Do not reread changed algorithm policy to reject a running operation's
+  otherwise fresh acceptance or rerun the candidate using a new strategy.
+- Room continuity uses actual eligible-room information. The current catalog
+  has no cohort permanent-room designation; a lowest room ID is not one.
+
+#### Data inputs and outputs
+
+Inputs: explicit selected courses, semester/Working revision, active policy,
+course demand and constraints, applicable windows, resources/availability,
+protected teaching/exams and existing snapshot evidence. Outputs: captured
+algorithm identity and policy fingerprint, provisional sessions and validated
+coverage for every selected course, remaining LE and substantiated reasons or
+uncertainty, termination and proof facts, and either one atomic accepted save
+or no saved-plan change. This does not prescribe a database schema.
+
+#### Integrations
+
+No external system. Operator-managed filesystem policy uses the existing
+deployment boundary; container deployments use the equivalent mounted path.
+
+#### UI references
+
+Reuse `CourseSchedulePage`, generation preparation/progress, result summaries,
+`ReplacementConfirmationDialog` and `OptimizationProofFacts`. Add read-only
+algorithm context and truthful heuristic termination wording. Follow existing
+German terminology, European date display and accessibility patterns. No new
+mockup supplied. The user's pasted cohort-first idea is supporting material;
+`docs/architecture/teaching-planning-strategies.md` records analysis and deviations.
+
+#### Constraints and assumptions
+
+- Confirmed 09.11.2026: Standard plus Cohort and Lecturer, Strategy pattern,
+  filesystem policy selection, all teaching paths, exams unchanged, per-run
+  preparation/Start checking and frozen operation identity.
+- Clarified during specification: the algorithms remain distinct by grouping
+  owner; Lecturer prioritizes each course's weekly cadence over flattening the
+  lecturer's total weekly LE. Both permit the mixed intensive-week increase.
+  Scarce availability guides constrained-first ordering; compact teaching days
+  is not an additional confirmed optimization objective.
+- Recommended architecture: separate bounded greedy/backtracking alternatives
+  sharing legality/evidence primitives with a wrapper around current CP-SAT.
+  Detailed architecture remains proposed, not an implemented capability.
+- Policy identifiers, the confirmed missing-file behavior, week/preference
+  definitions, stable ties, finite repair/checkpoint defaults and acceptance
+  fixtures are recorded in the I-011 specification linked below. Tuning defaults
+  are identified separately from user-confirmed behavior.
+- The attachment's permanent-room assumption has no current data source. Use
+  eligible-room continuity for this slice; adding a designated permanent room
+  is a separate scope decision. Full capacity UI remains I-007.
+
+#### Dependencies
+
+- I-003: unified generation and protected teaching/exam occupancy.
+- I-004 and I-006: operation-wide choice, configuration, worker lifecycle,
+  checkpoints, cancellation, budgets and evidence. I-011 extends early unproven
+  result acceptance without weakening existing acceptance gates.
+- FS-008, FS-011, FS-013 and FS-019: resources, holidays, revision lifecycle
+  and shared planner workspace.
+- No prerequisite I-007/I-008 or I-010 implementation. Respect I-009 priorities
+  wherever intensive windows are present; all strategies must consume I-010's
+  hard allocation rules when delivered. This is compatibility, not hidden scope.
+
+#### Completion outcome
+
+Changing only valid policy selects each of the three algorithms on the next
+teaching run without rebuilding. Standard retains its observable baseline.
+Cohort and Lecturer fixtures demonstrate weekly balancing by the intended owner,
+including shared resources across cohorts and courses with multiple lecturers.
+Every strategy reports all selected demand and passes the same exact validation.
+Policy changes before Start trigger re-preparation; changes after Start preserve
+that operation's algorithm through acceptance. Valid heuristic partial results
+can be consciously accepted before or at timeout; cancellation, invalid policy,
+zero usable LE and stale acceptance preserve saved work. Exams retain their
+current generation behavior. Compare coverage, weekly balance and elapsed time
+on identical isolated snapshots/budgets without claiming universal improvement.
+
+#### Clarification outcome
+
+The specification records the confirmed course rhythms, intensive-week increase
+and blocking missing-file behavior. Exact score measures, calendar/partial-week
+treatment, ties, finite repair/checkpoints, deployment migration, room continuity,
+quality/runtime fixtures and accessible termination wording are defined there,
+with specification-selected defaults distinguished from user-confirmed choices.
+No unresolved scope decision is delegated to implementation.
+
+#### Specification status
+
+Specification created and clarified on 09.11.2026:
+[I-011 specification](../../specs/I-011-policy-teaching-strategies/spec.md) and
+[quality checklist](../../specs/I-011-policy-teaching-strategies/checklists/requirements.md).
+One slice, ready for planning after specification-quality validation; no plan,
+tasks or production implementation created. The earlier architecture analysis
+remains historical context; the specification contains the clarified behavior.
+
+#### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify for I-011: Policy-Selected Teaching Planning Strategies.
+
+Continuation note (09.11.2026): the specification already exists at
+specs/I-011-policy-teaching-strategies/spec.md. Preserve its confirmed ordinary-week
+course rhythms, mixed intensive-week increase and blocking missing-file behavior
+when updating it; do not create a duplicate I-011 feature from this earlier prompt.
+The later clarification also adds Lecturer-only equal sequential per-run shares
+for all active eligible lecturers, rounding extras to earlier code-ordered
+lecturers. That confirmed rule supersedes this older prompt's blanket exclusion
+of inferred portions; permanent I-010 allocation administration remains excluded.
+
+Product context/outcome: Resource Planner currently has one CP-SAT teaching
+algorithm. The planner needs selectable approaches for different planning
+situations through one existing generation, validation and acceptance workflow.
+Retain the current algorithm as Standard and add Cohort and Lecturer. Both new
+algorithms seek balanced teaching across semester weeks; grouping is by cohort
+or lecturer respectively. Actors: planner and installation operator.
+
+Confirmed scope: Strategy design pattern with three real implementations;
+selection from C:\Codex\planner-resource\config\optimization\policy.json for this
+local installation, equivalent deployment path supported without hardcoded
+Windows paths. Recommended key activeAlgorithm with standard/cohort/lecturer;
+missing selector in a valid legacy policy means standard. Preserve current
+defaultSeconds/ceilingSeconds values and validation. Verify normal local path
+actually reads the file: current code reads only an explicitly configured path.
+Read at preparation, verify effective policy at Start, freeze the algorithm and
+relevant settings through worker execution, review and acceptance. Changes before
+Start require fresh preparation; later changes affect future runs only. Keep
+idempotent Start bound to the existing operation; fresh retry reads current policy.
+Display algorithm read-only and bind it to result/acceptance evidence. Apply
+to all supported teaching generation for 1-20 explicitly selected courses;
+exam generation unchanged. Do not introduce another placement entry point.
+
+Cohort: selected demand grouped by cohort; constrained sessions first;
+semester-wide weekly placement/balance, sensible per-LV frequency and room
+continuity; bounded backtracking and valid session-size redistribution.
+Lecturer: same approach and weekly-balance goal, grouped by lecturer across
+courses/cohorts. Do not make compact teaching days the objective. Use one shared
+remaining-demand ledger for alternative lecturers; never duplicate an LV's
+demand per lecturer group. I-010 fixed portions, when delivered, become hard
+boundaries without transfer. Do not implement/infer their allocations here.
+Full regeneration targets full selected LV demand; do not subtract current
+selected sessions and then replace them with a remainder-only candidate.
+
+Shared rules: one occupancy view for all selected groups, unselected teaching,
+active exams and tentative assignments. Backtracking touches provisional work
+only. All existing periods/windows, dated opportunities, holidays, eligibility,
+availability, capacity, active exams, session sizes/durations/breaks, at-most-one
+LV session/date and lecturer/room/cohort non-overlap apply to every algorithm.
+Exact independent validation gates review and save. Keep total LE, intensive LE
+and intensive daily variety above strategy-specific balance/room penalties.
+Heuristics seek these priorities but promise no global optimum. Fixed teaching
+counts toward relevant weekly load. Merge overlapping capacity; separate teaching
+LE/minutes, breaks, calendar time and search seconds. Cheap necessary checks may
+warn of evidenced shortages; keep useful partial generation available. Full
+capacity screens and extra-slot proposals remain I-007.
+
+Results/acceptance: include all selected courses, coverage and remaining LE,
+evidenced reasons or uncertainty, algorithm, elapsed time, termination and honest
+objective proofs/bounds. Distinguish early heuristic completion/repair limit,
+deadline, cancellation and failure. A search miss is not infeasibility proof.
+Extend I-006 so a hard-valid unproven heuristic result can be explicitly accepted
+before timeout too, including a complete plan with unproven preferences. No
+automatic save of such candidates. Preserve I-004 operation-wide atomic choice,
+freshness, selected-manual replacement explanation, cancellation and immutable
+publication. Zero total placed LE yields no usable candidate and no plan change.
+Do not manufacture bounds or confuse complete coverage with preference proof.
+
+Exclusions: exam-algorithm selector, automatic detection/fallback/portfolios,
+planner algorithm overrides/editor, dynamic plugins, new services/queues,
+increased selection limits, protected movement, guaranteed quality/speed,
+new permanent-room catalog fields, I-007 diagnostics UI, I-008 exceptions or
+I-010 implementation. Current cohorts have no permanent-room designation;
+use eligible-room continuity and clarify any further scope explicitly.
+
+Dependencies: I-003/004/006 and FS-008/011/013/019. No prerequisite I-007/008/010;
+honor intensive priorities and fixed allocations whenever those features exist.
+No external integration. Reuse generation/progress/results/comparison/proof UI,
+German copy, European dates and accessibility conventions. No new mockup supplied.
+Architecture context: docs/architecture/teaching-planning-strategies.md compares
+three searches sharing primitives with one parameterized CP-SAT model and
+recommends a Standard wrapper plus two bounded greedy/backtracking alternatives.
+
+Completion: all three dispatch correctly from policy on the next run; Standard
+preserves baseline behavior; cohort/lecturer fixtures demonstrate their intended
+weekly balance without conflicts, duplicated demand or dropped LE; policy changes
+and retries obey lifetime; early/unproven/partial/timeout/cancel/stale outcomes
+retain safe atomic acceptance; exams unchanged. Compare coverage, weekly balance
+and runtime on identical isolated snapshots and budgets without promising gains.
+
+Clarify: exact balance/frequency scoring, week and partial-week treatment,
+capacity normalization, stable ties, bounded repair/enumeration/checkpoints,
+selector naming and missing-file/deployment migration, room continuity scope,
+quality/performance fixtures and accessible early-termination wording. Invalid
+explicit selectors must not fall back. Resolve details before implementation.
+
+Follow docs/planning/Feature_slices.md. Define independently testable scenarios,
+functional requirements, edge cases, assumptions and measurable success criteria.
+Retain the user's mandatory Strategy pattern/configuration requirements without
+turning proposed internal module or storage choices into requirements. Do not
+implement, change live policy/database, create a plan/tasks or expand scope.
+```
+
 ## Deferred scope
 
 - **Automated email delivery**: FS-015 and FS-021 deliberately use
@@ -4493,6 +5198,9 @@ Do not prescribe implementation, expand scope or start production changes.
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-11-09 | New slice and teaching-algorithm selection extension | I-011, I-003, I-004, I-006 | Added Standard/Cohort/Lecturer strategies using the requested Strategy pattern, per-run filesystem policy selection and frozen identity, common validation, weekly cohort/lecturer balance, and explicit early unproven-result acceptance. Recorded architecture alternatives and specification prompt; no implementation or live configuration changes. | User supplied the cohort-first idea and requested a slice; confirmed lecturer weekly balance, all teaching with exams unchanged, and preparation/Start selection lifetime. |
+| 2026-11-09 | New slice and lecturer-assignment constraint change | I-010, FS-008, FS-009, FS-010, I-003, I-004, I-006 | Added documentation-only fixed lecturer LE allocations, sum-to-total validation, per-lecturer remaining work and hard no-transfer generation boundaries. Rooms remain eligible alternatives. Legacy migration, saved-work/edit policy and numeric/session-remainder details remain clarification gates; no specification or implementation started. | The optimized plan proposed unwanted lecturer changes; the user confirmed fixed teaching portions and explicitly requested a future slice without implementing the lecturer change. |
+| 2026-11-06 | Specification created and validated | I-009 | Created `specs/I-009-dated-intensive-windows/spec.md` and its requirements-quality checklist. Specified dated administration, independent copying, strict total/intensive/variety priorities, exact overlap accounting, daily-variety score and ties, freshness, accessibility and acceptance criteria. No plan, tasks or production changes. | The user requested the specification for the confirmed I-009 slice, including measurable detail defaults within its existing scope. |
 | 2026-11-05 | Updated slice and scheduling-preference scope change | I-009, I-003, FS-010 | Added an explicit Intensivwoche indicator on dated windows. At equal maximum total LE, prioritize intensive-window LE, then different LVs per cohort/day, ahead of existing weekly-placement and continuity preferences. Permit single-LV days where a valid mix is impossible; retain hard constraints, independent copies and no I-007/I-008 dependency. Updated outcome, scope and specification prompt; requirements only. | The user wants intensive windows actively used rather than merely permitted and wants different LVs within the same day, while explicitly allowing single-LV fallback when a valid mix cannot be scheduled. |
 | 2026-11-05 | New improvement slice and dated-window scope extension | I-009, FS-007, FS-005, I-003, I-004 | Added dated teaching opportunities for intensive weeks, one Studienform per Zeitfenster, and independent editable copying of existing weekly/dated windows. Retain ordinary weekly windows, other hard constraints and saved-plan protections. Explicitly independent of I-007/I-008 and I-006's timeout extension. Requirements only. | The user simplified a shared intensive-week idea to concrete additional dates and chose single mappings plus copying to reduce repeated entry without shared edits. I-009 was explicitly confirmed after I-007 and I-008 were allocated meanwhile. |
 | 2026-11-05 | New improvement slices and explicit duration-rule exception scope | I-007, I-008, FS-010, I-006 | Confirmed pre-generation calendar-capacity checks, evidence-based open-LE explanations and approved additional-slot proposals; existing teaching days first, other weekdays as marked alternatives. Separate follow-up permits proposed five-minute breaks only after explicit approval. Ordered I-007 before I-008; requirements only. | The user reported unexplained open LE and wanted to distinguish insufficient timetable capacity from search timeout, identify actionable extra opportunities and consider narrowly approved shorter breaks. |

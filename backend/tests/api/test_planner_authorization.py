@@ -88,8 +88,21 @@ def test_planner_apis_default_deny_before_validation_and_mutation(tmp_path, monk
 def test_unsafe_public_auth_routes_have_only_exact_exceptions(tmp_path, monkeypatch):
     engine = create_engine(f"sqlite:///{tmp_path / 'exact-public.db'}", connect_args={"check_same_thread": False})
     initialize_database(engine)
+    factory = sessionmaker(bind=engine)
+
+    def get_test_db():
+        db = factory()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    # Route dependencies retain the SessionLocal from app.db.session; patching
+    # app_main.SessionLocal alone only affects the authorization middleware.
+    # Override get_db so this public route uses the initialized test database.
+    monkeypatch.setitem(app_main.app.dependency_overrides, app_main.get_db, get_test_db)
     monkeypatch.setattr(app_main, "engine", engine)
-    monkeypatch.setattr(app_main, "SessionLocal", sessionmaker(bind=engine))
+    monkeypatch.setattr(app_main, "SessionLocal", factory)
     with TestClient(app_main.app) as client:
         assert client.post(
             "/api/auth/login",

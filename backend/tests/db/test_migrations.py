@@ -11,6 +11,98 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 
+def test_dated_migration_preserves_weekly_identity_and_incoming_references():
+    from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
+    from tests.fixtures.dated_intensive_windows import weekly_window
+    from app.models.planning import DraftSession
+    engine = create_engine('sqlite://')
+    initialize_database(engine)
+    with Session(engine) as db:
+        seed_lifecycle_semester(db, with_schedule=True)
+        db.add(weekly_window())
+        db.flush()
+        for session in db.query(DraftSession):
+            session.time_window_id = 10
+        db.commit()
+    with engine.begin() as connection:
+        connection.exec_driver_sql('PRAGMA foreign_keys=OFF')
+        before = connection.exec_driver_sql('SELECT * FROM draft_sessions').fetchall()
+        history = connection.exec_driver_sql('SELECT * FROM schedule_revisions').fetchall()
+        connection.exec_driver_sql('CREATE TABLE old_windows (id INTEGER NOT NULL PRIMARY KEY, study_type_id INTEGER NOT NULL REFERENCES study_types(id), weekday INTEGER NOT NULL, start_time TIME NOT NULL, end_time TIME NOT NULL, sort_order INTEGER NOT NULL, is_active BOOLEAN NOT NULL, revision INTEGER NOT NULL, CONSTRAINT uq_study_type_time_window_exact UNIQUE(study_type_id,weekday,start_time,end_time))')
+        connection.exec_driver_sql('INSERT INTO old_windows SELECT id,study_type_id,weekday,start_time,end_time,sort_order,is_active,revision FROM study_type_time_windows')
+        expected = connection.exec_driver_sql('SELECT * FROM old_windows ORDER BY id').fetchall()
+        connection.exec_driver_sql('DROP TABLE study_type_time_windows')
+        connection.exec_driver_sql('ALTER TABLE old_windows RENAME TO study_type_time_windows')
+    initialize_database(engine)
+    initialize_database(engine)
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql('SELECT id,study_type_id,weekday,start_time,end_time,sort_order,is_active,revision FROM study_type_time_windows ORDER BY id').fetchall() == expected
+        assert connection.exec_driver_sql('SELECT DISTINCT kind,is_intensive,date FROM study_type_time_windows').fetchall() == [('weekly', 0, None)]
+        assert connection.exec_driver_sql('SELECT * FROM draft_sessions').fetchall() == before
+        assert connection.exec_driver_sql('SELECT * FROM schedule_revisions').fetchall() == history
+        assert connection.exec_driver_sql('PRAGMA foreign_key_check').fetchall() == []
+
+
+@pytest.mark.parametrize('statement', [
+    "UPDATE study_type_time_windows SET kind='dated'",
+    "UPDATE study_type_time_windows SET kind='other'",
+    "UPDATE study_type_time_windows SET weekday=7",
+    "UPDATE study_type_time_windows SET weekday=NULL",
+    "UPDATE study_type_time_windows SET is_intensive=1",
+    "UPDATE study_type_time_windows SET revision=0",
+    "UPDATE study_type_time_windows SET end_time=start_time",
+    "UPDATE study_type_time_windows SET kind='dated',weekday=NULL,date='2026-02-29'",
+])
+def test_fresh_dated_window_database_constraints(statement):
+    from sqlalchemy.exc import IntegrityError
+    from tests.fixtures.dated_intensive_windows import seed_forms, weekly_window
+    engine = create_engine('sqlite://')
+    initialize_database(engine)
+    with Session(engine) as db:
+        seed_forms(db)
+        db.add(weekly_window())
+        db.commit()
+    with pytest.raises(IntegrityError), engine.begin() as connection:
+        connection.exec_driver_sql(statement)
+
+
+def test_partial_dated_schema_is_rejected_without_mutating_rows():
+    from app.db.schema import UnsupportedSchemaStateError
+    engine = create_engine('sqlite://')
+    initialize_database(engine)
+    with engine.begin() as connection:
+        names = {c['name'] for c in inspect(connection).get_columns('study_type_time_windows')}
+        if 'kind' in names:
+            connection.exec_driver_sql('DROP TABLE study_type_time_windows')
+            connection.exec_driver_sql("CREATE TABLE study_type_time_windows (id INTEGER PRIMARY KEY, kind VARCHAR DEFAULT 'weekly')")
+        else:
+            connection.exec_driver_sql("ALTER TABLE study_type_time_windows ADD COLUMN kind VARCHAR DEFAULT 'weekly'")
+    with pytest.raises(UnsupportedSchemaStateError, match='dated|0013'):
+        initialize_database(engine)
+
+
+def test_dated_migration_rolls_back_invalid_predecessor_and_can_retry():
+    from sqlalchemy.exc import IntegrityError
+    engine = create_engine('sqlite://')
+    initialize_database(engine)
+    with engine.begin() as connection:
+        connection.exec_driver_sql('PRAGMA foreign_keys=OFF')
+        connection.exec_driver_sql('DROP TABLE study_type_time_windows')
+        connection.exec_driver_sql('CREATE TABLE study_type_time_windows (id INTEGER NOT NULL PRIMARY KEY, study_type_id INTEGER NOT NULL REFERENCES study_types(id), weekday INTEGER NOT NULL, start_time TIME NOT NULL, end_time TIME NOT NULL, sort_order INTEGER NOT NULL, is_active BOOLEAN NOT NULL, revision INTEGER NOT NULL, CONSTRAINT uq_study_type_time_window_exact UNIQUE(study_type_id,weekday,start_time,end_time))')
+        connection.exec_driver_sql("INSERT INTO study_types(id,name,normalized_name,normalized_name_key,name_repair_required,is_active,revision) VALUES (1,'Form','form','form',0,1,1)")
+        connection.exec_driver_sql("INSERT INTO study_type_time_windows VALUES (10,1,4,'12:00:00.000000','09:00:00.000000',7,0,3)")
+        before = connection.exec_driver_sql('SELECT * FROM study_type_time_windows').fetchall()
+    with pytest.raises(IntegrityError):
+        initialize_database(engine)
+    with engine.begin() as connection:
+        assert connection.exec_driver_sql('SELECT * FROM study_type_time_windows').fetchall() == before
+        assert 'kind' not in {c['name'] for c in inspect(connection).get_columns('study_type_time_windows')}
+        connection.exec_driver_sql("UPDATE study_type_time_windows SET start_time='08:00:00.000000'")
+    initialize_database(engine)
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql('SELECT id,is_active,revision FROM study_type_time_windows').fetchall() == [(10,0,3)]
+
+
 def test_preferred_units_migration_initializes_midpoints_and_preserves_sessions():
     from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
     engine = create_engine('sqlite://')
@@ -172,7 +264,7 @@ def test_current_schema_enables_sqlite_foreign_keys_and_exact_window_uniqueness(
         assert "course_name_snapshot" in _columns_by_name(inspector, "draft_schedules")
         unique_sets = {
             tuple(item.get("column_names") or [])
-            for item in inspector.get_unique_constraints("study_type_time_windows")
+            for item in inspector.get_unique_constraints("study_type_time_windows") + [index for index in inspector.get_indexes("study_type_time_windows") if index['unique']]
         }
         assert ("study_type_id", "weekday", "start_time", "end_time") in unique_sets
 

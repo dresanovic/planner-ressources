@@ -15,6 +15,8 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
   const [unknown,setUnknown]=useState(false)
   const [errors,setErrors]=useState<OptimizationError[]>([])
   const live=useRef<OptimizationOperationContext|null>(null)
+  const startPreparation=useRef<OptimizationPreparation|null>(null)
+  const cancellationReason=useRef('context_lost')
   const unresolved=useRef<string|null>(null)
   const epoch=useRef(0)
   const timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined)
@@ -36,6 +38,9 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
 
   const arm=useCallback((id:string,generation:number)=>{
     clearTimeout(watchdog.current)
+    // Browsers throttle background timers. Visibility alone does not lose the
+    // planning context; enforce connected freshness when the page is visible.
+    if(document.hidden) return
     watchdog.current=setTimeout(()=>expire.current(id,generation),Math.max(0,lastConfirmed.current+5000-Date.now()))
   },[])
 
@@ -44,7 +49,7 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
     if(mounted.current) {setStatus(value);setAction(null)}
     if(terminal.has(value.phase)) {
       clearTimeout(timer.current);clearTimeout(watchdog.current)
-      unresolved.current=null;live.current=null;decisionPending.current=false
+      unresolved.current=null;live.current=null;startPreparation.current=null;decisionPending.current=false
       sessionStorage.removeItem(STORAGE_KEY)
       if(mounted.current) setUnknown(false)
     }
@@ -52,11 +57,33 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
 
   const reconcile=useCallback(async(id:string,generation:number)=>{
     if(epoch.current!==generation || !mounted.current || unresolved.current!==id) return
-    clearObservation();live.current=null
+    clearObservation();live.current=null;startPreparation.current=null
     setUnknown(true);setAction(null);setStatus(null);currentStatus.current=null
-    // No action authority survives uncertainty. Cancellation may lose to a save.
-    void cancelOptimizationOperation(id,'context_lost').catch(()=>{})
+    // Discarded context cannot regain authority. Cancellation may lose to a save.
+    void cancelOptimizationOperation(id,cancellationReason.current).catch(()=>{})
     await observe.current(id,generation)
+  },[clearObservation])
+
+  const reconnect=useCallback(async(id:string,generation:number,delay=false)=>{
+    if(epoch.current!==generation || !mounted.current || unresolved.current!==id) return
+    // A failed/slow status request does not change the user's planning context.
+    // Keep its memory-only authority, hide decisions, and confirm the same run.
+    // Bump the epoch so an aborted request cannot publish a late response.
+    clearObservation()
+    const next=++epoch.current
+    decisionPending.current=false
+    setUnknown(true);setAction(null);setStatus(null);currentStatus.current=null
+    lastConfirmed.current=Date.now();arm(id,next)
+    if(delay) timer.current=setTimeout(()=>void observe.current(id,next),2000)
+    else await observe.current(id,next)
+  },[arm,clearObservation])
+
+  const rejectStart=useCallback((failures:OptimizationError[])=>{
+    clearObservation();++epoch.current
+    unresolved.current=null;live.current=null;startPreparation.current=null;decisionPending.current=false
+    sessionStorage.removeItem(STORAGE_KEY)
+    currentStatus.current=null
+    setErrors(failures);setStatus(null);setAction(null);setUnknown(false)
   },[clearObservation])
 
   const consumeStatus=useCallback(async(value:OptimizationOperationStatus,generation:number)=>{
@@ -64,19 +91,23 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
     lastConfirmed.current=Date.now()
     const context=live.current
     const safe=context ? value : {...value,review:null,canAccept:false,canFinalize:false}
+    if(context) setUnknown(false)
     publish(safe)
     if(terminal.has(value.phase)) return
+    // If an explicit cancellation/departure request was lost, retry that intent.
+    // Only unchanged live contexts may recover from transport interruptions.
+    if(!context) void cancelOptimizationOperation(value.operationId,cancellationReason.current).catch(()=>{})
     arm(value.operationId,generation)
     if(value.canFinalize && context && !decisionPending.current) {
       decisionPending.current=true;setAction('saving')
       const controller=new AbortController();request.current=controller
       try { await consume.current(await decideOptimizationOperation(context,value.review!.candidateFingerprint,true,controller.signal),generation) }
-      catch { if(epoch.current===generation && live.current) await reconcile(context.operationId,generation) }
+      catch { if(epoch.current===generation && live.current) await reconnect(context.operationId,generation,true) }
       finally { if(epoch.current===generation) decisionPending.current=false; if(request.current===controller) request.current=null }
       return
     }
     timer.current=setTimeout(()=>void observe.current(value.operationId,generation),2000)
-  },[arm,publish,reconcile])
+  },[arm,publish,reconnect])
 
   const observeStatus=useCallback(async(id:string,generation:number)=>{
     if(epoch.current!==generation || !mounted.current || unresolved.current!==id) return
@@ -84,29 +115,47 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
     if(!live.current) lastConfirmed.current=Date.now() // Already unknown: bound this outcome-only request.
     arm(id,generation)
     try {
-      const value=await getOptimizationOperation(id,live.current?.contextSecret,controller.signal)
+      let value:OptimizationOperationStatus
+      try { value=await getOptimizationOperation(id,live.current?.contextSecret,controller.signal) }
+      catch(error) {
+        // The start request may not have arrived before its response was lost.
+        // Reuse its original ID and payload; the server deduplicates dispatch.
+        const context=live.current,prepared=startPreparation.current
+        if(epoch.current!==generation || !context || !prepared || !Array.isArray(error)
+          || !error.some(item=>item.code==='OPERATION_NOT_FOUND')) throw error
+        try { value=await startOptimizationOperation(prepared,context,controller.signal) }
+        catch(error) {
+          if(epoch.current===generation && Array.isArray(error) && error.some(item=>rejectedStart.has(item.code))) {
+            rejectStart(error)
+          }
+          throw error
+        }
+      }
       await consume.current(value,generation)
     } catch {
       if(epoch.current!==generation || !mounted.current || unresolved.current!==id) return
-      live.current=null;setUnknown(true);setAction(null);setStatus(null);currentStatus.current=null
-      clearTimeout(watchdog.current)
-      void cancelOptimizationOperation(id,'context_lost').catch(()=>{})
-      timer.current=setTimeout(()=>void observe.current(id,generation),2000)
+      await reconnect(id,generation,true)
     } finally { if(request.current===controller) request.current=null }
-  },[arm])
+  },[arm,reconnect,rejectStart])
 
   useLayoutEffect(()=>{
     enabled.current=active;consume.current=consumeStatus;observe.current=observeStatus
     expire.current=(id,generation)=>{
-      if(epoch.current===generation && unresolved.current===id && mounted.current) void reconcile(id,generation)
+      if(epoch.current!==generation || unresolved.current!==id || !mounted.current) return
+      setUnknown(true);setAction(null);setStatus(null);currentStatus.current=null
+      // Five seconds means unconfirmed status, not a failed request. Give a
+      // slow response time to finish before replacing a genuinely stuck one.
+      if(request.current) watchdog.current=setTimeout(()=>void reconnect(id,generation),25000)
+      else void reconnect(id,generation)
     }
-  },[active,consumeStatus,observeStatus,reconcile])
+  },[active,consumeStatus,observeStatus,reconnect])
 
   const cancel=useCallback(async(reason='cancel',keepalive=false)=>{
     const id=unresolved.current
     if(!id) return
     const generation=++epoch.current
-    live.current=null;decisionPending.current=false;clearObservation()
+    cancellationReason.current=reason
+    live.current=null;startPreparation.current=null;decisionPending.current=false;clearObservation()
     if(mounted.current) {setStatus(null);setAction('cancelling');setErrors([])}
     currentStatus.current=null;lastConfirmed.current=Date.now();arm(id,generation)
     try {
@@ -123,7 +172,8 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
     const generation=++epoch.current
     const bytes=crypto.getRandomValues(new Uint8Array(32))
     const context={operationId:crypto.randomUUID(),contextSecret:[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('')}
-    live.current=context;unresolved.current=context.operationId;sessionStorage.setItem(STORAGE_KEY,context.operationId)
+    cancellationReason.current='context_lost'
+    live.current=context;startPreparation.current=preparation;unresolved.current=context.operationId;sessionStorage.setItem(STORAGE_KEY,context.operationId)
     setAction('starting');setUnknown(false);setErrors([]);setStatus(null);currentStatus.current=null
     lastConfirmed.current=Date.now();arm(context.operationId,generation)
     const controller=new AbortController();request.current=controller
@@ -132,11 +182,10 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
       if(generation!==epoch.current || !live.current) return
       if(Array.isArray(error)) setErrors(error)
       if(Array.isArray(error) && error.some(item=>rejectedStart.has(item.code))) {
-        clearObservation();unresolved.current=null;live.current=null;sessionStorage.removeItem(STORAGE_KEY)
-        setAction(null);setUnknown(false)
-      } else await reconcile(context.operationId,generation)
+        rejectStart(error)
+      } else await reconnect(context.operationId,generation)
     } finally { if(request.current===controller) request.current=null }
-  },[arm,clearObservation,reconcile])
+  },[arm,clearObservation,reconnect,rejectStart])
 
   const accept=useCallback(async()=>{
     const context=live.current,preview=currentStatus.current?.review
@@ -148,27 +197,37 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
     catch(error) {
       if(epoch.current!==generation) return
       if(Array.isArray(error)) setErrors(error)
-      if(live.current) await reconcile(context.operationId,generation)
+      if(live.current) await reconnect(context.operationId,generation)
       return Array.isArray(error) ? error as OptimizationError[] : undefined
     } finally {if(epoch.current===generation) decisionPending.current=false; if(request.current===controller) request.current=null}
-  },[arm,clearObservation,reconcile])
+  },[arm,clearObservation,reconnect])
 
   useEffect(()=>{
     mounted.current=true
     const stored=sessionStorage.getItem(STORAGE_KEY)
     if(stored && !unresolved.current) {unresolved.current=stored;void reconcile(stored,epoch.current)}
     const invalidate=()=>{void cancel('context_lost',true)}
-    const hidden=()=>{if(document.hidden) invalidate()}
+    const visibilityChanged=()=>{
+      clearTimeout(watchdog.current)
+      const id=unresolved.current
+      if(document.hidden || !id) return
+      lastConfirmed.current=Date.now()
+      arm(id,epoch.current)
+      if(!request.current && !decisionPending.current) {
+        clearTimeout(timer.current)
+        void observe.current(id,epoch.current)
+      }
+    }
     window.addEventListener('pagehide',invalidate)
     window.addEventListener(PLANNER_AUTH_INVALIDATED_EVENT,invalidate)
-    document.addEventListener('visibilitychange',hidden)
+    document.addEventListener('visibilitychange',visibilityChanged)
     return ()=>{
       mounted.current=false;void cancel('navigation',true);clearObservation()
       window.removeEventListener('pagehide',invalidate)
       window.removeEventListener(PLANNER_AUTH_INVALIDATED_EVENT,invalidate)
-      document.removeEventListener('visibilitychange',hidden)
+      document.removeEventListener('visibilitychange',visibilityChanged)
     }
-  },[cancel,clearObservation,reconcile])
+  },[arm,cancel,clearObservation,reconcile])
 
   useEffect(()=>{
     if(!active) void cancel('navigation')

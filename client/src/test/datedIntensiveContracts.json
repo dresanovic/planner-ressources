@@ -1,0 +1,15 @@
+{
+  "windows": [
+    {"kind":"weekly","weekday":4,"date":null,"startTime":"09:00","endTime":"12:00","sortOrder":0,"isIntensive":false},
+    {"kind":"dated","weekday":null,"date":"2026-11-09","startTime":"09:00","endTime":"12:00","sortOrder":0,"isIntensive":false},
+    {"kind":"dated","weekday":null,"date":"2028-02-29","startTime":"09:30","endTime":"10:10","sortOrder":1,"isIntensive":true}
+  ],
+  "invalid": {"kind":"dated","date":"2026-02-29","weekday":3,"startTime":"12:00","endTime":"09:00","isIntensive":"ja","sortOrder":0},
+  "errorFields": ["date","weekday","endTime","isIntensive"],
+  "intensiveLe": {"numerator":1800000000,"denominator":2700000000},
+  "objectives": [
+    {"key":"total_units","direction":"max"},
+    {"key":"intensive_teaching_time","direction":"max"},
+    {"key":"daily_variety","direction":"max"}
+  ]
+}

@@ -80,7 +80,7 @@ def finalize_optimization_operation(operation_id: str, body: OptimizationOperati
 
 @router.post('/operations/{operation_id}/cancel', response_model=OptimizationOperationStatus)
 def cancel_optimization_operation(operation_id: str, body: OptimizationOperationCancel, request: Request, db: Session = Depends(get_db)):
-    return _operation_call(lambda: operations.cancel_operation(db, operation_id, request.state.planner_auth))
+    return _operation_call(lambda: operations.cancel_operation(db, operation_id, request.state.planner_auth, reason=body.reason))
 
 
 @router.post("/prepare", response_model=OptimizationPreparationResponse)

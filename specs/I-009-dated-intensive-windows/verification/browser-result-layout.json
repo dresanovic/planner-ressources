@@ -1,0 +1,18 @@
+{
+  "browser": "157.0.4341.42",
+  "fixture": "two new synthetic same-cohort courses, 4LE current/generated, currentvariety0/generated2",
+  "currentText": "Aktuelle intensive Planung\n\nGesamt: 4 LE · Intensive LE: 4 · Tägliche LV-Vielfalt: 0\n\nZuerst zählt die gesamte Lehre, dann die intensive Lehre, dann die tägliche LV-Vielfalt. Eine einzelne LV bleibt zulässig; eine Markierung garantiert keine Platzierung.\n\n09.11.2026 · Kohorte 21: 1 verschiedene LVs · 0 Vielfaltspunkte\n10.11.2026 · Kohorte 21: 1 verschiedene LVs · 0 Vielfaltspunkte",
+  "generatedText": "Erzeugte intensive Planung\n\nGesamt: 4 LE · Intensive LE: 4 · Tägliche LV-Vielfalt: 2\n\nZuerst zählt die gesamte Lehre, dann die intensive Lehre, dann die tägliche LV-Vielfalt. Eine einzelne LV bleibt zulässig; eine Markierung garantiert keine Platzierung.\n\n09.11.2026 · Kohorte 21: 2 verschiedene LVs · 1 Vielfaltspunkte\n10.11.2026 · Kohorte 21: 2 verschiedene LVs · 1 Vielfaltspunkte",
+  "widths": {
+    "viewport": 320,
+    "document": 320,
+    "dialogClient": 304,
+    "dialogScroll": 304
+  },
+  "errors": [],
+  "savedText": "Gespeicherte intensive Planung\n\nGesamt: 4 LE · Intensive LE: 4 · Tägliche LV-Vielfalt: 2\n\nZuerst zählt die gesamte Lehre, dann die intensive Lehre, dann die tägliche LV-Vielfalt. Eine einzelne LV bleibt zulässig; eine Markierung garantiert keine Platzierung.\n\n09.11.2026 · Kohorte 21: 2 verschiedene LVs · 1 Vielfaltspunkte\n10.11.2026 · Kohorte 21: 2 verschiedene LVs · 1 Vielfaltspunkte",
+  "acceptedOnlySyntheticCourses": [
+    21,
+    22
+  ]
+}

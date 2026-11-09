@@ -1,5 +1,5 @@
 import type { PlanningEntity } from './draftSchedule'
-import type { Availability } from './academicCatalog'
+import type { Availability, TeachingWindowShape } from './academicCatalog'
 import type { LecturerRecord, ResourceCandidate, RoomRecord } from './resourceCatalog'
 import { plannerFetch } from './plannerFetch'
 
@@ -26,10 +26,9 @@ export type SemesterOption = {
   endDate: string
 }
 
-export type TimeWindowOption = {
+export type TimeWindowOption = TeachingWindowShape & {
   id: number
   studyTypeId: number
-  weekday: number
   startTime: string
   endTime: string
   sortOrder: number

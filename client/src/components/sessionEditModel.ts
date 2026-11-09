@@ -110,12 +110,12 @@ export function teachingDraftsEqual(
 }
 
 export function teachingEndTime(startTime: string, units: number): string {
-  if (!/^\d{2}:\d{2}$/.test(startTime) || !Number.isSafeInteger(units) || units <= 0) return ''
-  const [hour, minute] = startTime.split(':').map(Number)
-  if (hour > 23 || minute > 59) return ''
-  const end = hour * 60 + minute + units * 45 + (units - 1) * 10
+  const clock = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d(?:\.\d{1,6})?)?$/.exec(startTime)
+  if (!clock || !Number.isSafeInteger(units) || units <= 0) return ''
+  // Session lengths are whole minutes. Carry the exact seconds suffix intact.
+  const end = Number(clock[1]) * 60 + Number(clock[2]) + units * 45 + (units - 1) * 10
   if (end >= 24 * 60) return ''
-  return `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
+  return `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}${clock[3] ?? ''}`
 }
 
 export function resourceLabel(resource: { name: string; referenceCode?: string | null }): string {

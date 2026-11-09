@@ -147,6 +147,43 @@ class AcceptRegenerationRequest(OptimizationGenerationRequest):
     )
 
 
+class IntensiveRational(BaseModel):
+    numerator: int = Field(ge=0, strict=True)
+    denominator: Literal[2700000000] = 2700000000
+
+
+class IntensiveCohortDate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    cohort_id: int = Field(alias='cohortId')
+    date: date
+    distinct_course_ids: list[int] = Field(alias='distinctCourseIds')
+    distinct_lv_count: int = Field(alias='distinctLvCount',ge=1)
+    variety_contribution: int = Field(alias='varietyContribution',ge=0)
+
+    @model_validator(mode='after')
+    def exact_counts(self):
+        if self.distinct_course_ids != sorted(set(self.distinct_course_ids)) or self.distinct_lv_count != len(self.distinct_course_ids) or self.variety_contribution != max(0,self.distinct_lv_count-1):
+            raise ValueError('Variety must count distinct courses once per cohort/date')
+        return self
+
+
+class IntensiveFacts(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    total_units: int = Field(alias='totalUnits',ge=0)
+    intensive_le: IntensiveRational = Field(alias='intensiveLe')
+    daily_variety: int = Field(alias='dailyVariety',ge=0)
+    cohort_dates: list[IntensiveCohortDate] = Field(alias='cohortDates')
+    prepared_snapshot_token: str = Field(alias='preparedSnapshotToken',pattern=r'^[0-9a-f]{64}$')
+    candidate_fingerprint: str = Field(alias='candidateFingerprint',pattern=r'^[0-9a-f]{64}$')
+
+    @model_validator(mode='after')
+    def exact_total(self):
+        pairs = [(row.date,row.cohort_id) for row in self.cohort_dates]
+        if pairs != sorted(set(pairs)) or self.daily_variety != sum(row.variety_contribution for row in self.cohort_dates):
+            raise ValueError('Variety facts must be ordered, unique and sum to their total')
+        return self
+
+
 class CoverageFacts(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
@@ -154,6 +191,7 @@ class CoverageFacts(BaseModel):
     scheduled_units: int = Field(alias="scheduledUnits", ge=0)
     remaining_units: int = Field(alias="remainingUnits", ge=0)
     status: Literal["complete", "partial"]
+    intensive_facts: IntensiveFacts | None = Field(default=None,alias='intensiveFacts')
 
 
 class ResolvedWarning(BaseModel):
@@ -228,6 +266,7 @@ class OptimizationGenerationResult(BaseModel):
     summary: OptimizationSummary
     outcomes: list[CourseOptimizationOutcome]
     proof: "CandidateProof | None" = None
+    intensive_facts: IntensiveFacts | None = Field(default=None,alias='intensiveFacts')
 
 
 class OptimizationDecisionRequiredResult(BaseModel):
@@ -272,7 +311,7 @@ class OptimizationBudgetPolicy(BaseModel):
         return self
 
 
-OBJECTIVE_KEYS = ('total_units', 'conflicts', 'schedule_shape', 'lecturer_changes',
+OBJECTIVE_KEYS = ('total_units', 'intensive_teaching_time', 'daily_variety', 'conflicts', 'schedule_shape', 'lecturer_changes',
     'room_changes', 'retained_drafts', 'canonical_temporal', 'canonical_resource')
 
 
@@ -307,6 +346,9 @@ class CandidateProof(BaseModel):
             raise ValueError('Objective priorities must be complete and ordered')
         preceding_proven=True
         for index, item in enumerate(self.objectives):
+            expected_direction = 'max' if item.objective_key in ('total_units','intensive_teaching_time','daily_variety','retained_drafts') else 'min'
+            if item.direction != expected_direction:
+                raise ValueError('Objective direction must match its priority')
             if item.prepared_snapshot_token != self.prepared_snapshot_token or item.candidate_fingerprint != self.candidate_fingerprint:
                 raise ValueError('Objective evidence must describe this candidate and prepared problem')
             if item.proof_status == 'proven' and not preceding_proven:

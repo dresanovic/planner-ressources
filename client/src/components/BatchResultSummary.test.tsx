@@ -8,6 +8,17 @@ import { mixedOptimizationResultFixture, optimizationResultFixture, candidatePro
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('BatchResultSummary', () => {
+  it('shows the saved arrangement intensive facts and cohort/date counts', () => {
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    const intensiveFacts={totalUnits:14,intensiveLe:{numerator:1_800_000_000,denominator:2_700_000_000 as const},dailyVariety:1,
+      cohortDates:[{cohortId:1,date:'2026-11-09',distinctCourseIds:[1,2],distinctLvCount:2,varietyContribution:1}],
+      preparedSnapshotToken:'d'.repeat(64),candidateFingerprint:'a'.repeat(64)}
+    act(()=>root.render(<BatchResultSummary result={{...optimizationResultFixture,intensiveFacts}} onRetryFailed={vi.fn()}/>))
+    expect(document.body.textContent).toContain('Intensive LE: 0,666')
+    expect(document.body.textContent).toContain('09.11.2026')
+    expect(document.body.textContent).toContain('2 verschiedene LVs')
+    expect(document.body.textContent).toContain('Eine einzelne LV bleibt zulässig')
+  })
   it('describes zero-unit saved coverage and excluded holidays without claiming improvement or a failed save',()=>{
     const root=createRoot(document.body.appendChild(document.createElement('div')))
     const result={...optimizationResultFixture,

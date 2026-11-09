@@ -10,16 +10,17 @@ export type CohortCapacityImpact = { removedRelationships: Array<{ courseId: num
 export type CohortMutationResult = CohortRecord & { cohort: CohortRecord; capacityImpact: CohortCapacityImpact }
 export type EntitySummary = { id: number; name: string }
 export type Availability = { available: boolean; reasons: string[] }
-export type TimeWindowRecord = CatalogAudit & { id: number; studyTypeId: number; weekday: number; startTime: string; endTime: string; sortOrder: number; availability: Availability; usage: UsageSummary }
+export type TeachingWindowShape = { kind?: 'weekly'; weekday: number; date?: null; isIntensive?: false } | { kind: 'dated'; weekday: null; date: string; isIntensive: boolean }
+export type TimeWindowRecord = CatalogAudit & TeachingWindowShape & { id: number; studyTypeId: number; startTime: string; endTime: string; sortOrder: number; overlapNotice?: string | null; availability: Availability; usage: UsageSummary }
 export type StudyTypeRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; timeWindows: TimeWindowRecord[]; usage: UsageSummary }
-export type CourseRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; totalUnits: number; minSessionUnits: number; maxSessionUnits: number; preferredSessionUnits?: number | null; semester: EntitySummary | null; cohort: EntitySummary; studyType: EntitySummary; lecturer: EntitySummary | null; room: EntitySummary | null; availability: Availability; usage: UsageSummary }
+export type CourseRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; totalUnits: number; overallUnits?: number; minSessionUnits: number; maxSessionUnits: number; preferredSessionUnits?: number | null; semester: EntitySummary | null; cohort: EntitySummary; studyType: EntitySummary; lecturer: EntitySummary | null; room: EntitySummary | null; availability: Availability; usage: UsageSummary }
 export type CatalogPage<T> = { page: number; pageSize: number; total: number; items: T[] }
-export type CourseInput = { name: string; totalUnits: number; minSessionUnits: number; maxSessionUnits: number; preferredSessionUnits?: number | null; semesterId: number; cohortId: number; studyTypeId: number; lecturerId: number; roomId: number }
+export type CourseInput = { name: string; totalUnits: number; overallUnits?: number; minSessionUnits: number; maxSessionUnits: number; preferredSessionUnits?: number | null; semesterId: number; cohortId: number; studyTypeId: number; lecturerId: number; roomId: number }
 export type CourseUpdateInput = Omit<CourseInput, 'lecturerId' | 'roomId'> & { expectedRevision: number }
 export type SemesterInput = { name: string; startDate: string; endDate: string }
 export type CohortInput = { name: string; studentCount: number }
 export type StudyTypeInput = { name: string }
-export type TimeWindowInput = { weekday: number; startTime: string; endTime: string; sortOrder: number }
+export type TimeWindowInput = TeachingWindowShape & { startTime: string; endTime: string; sortOrder: number; studyTypeId?: number }
 
 export class AcademicCatalogApiError extends Error {
   status: number

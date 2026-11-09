@@ -1,5 +1,35 @@
 import pytest
 
+
+def test_window_concurrent_edits_cannot_silently_overwrite_and_duplicates_rollback():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+    from sqlalchemy.orm.exc import StaleDataError
+    from app.db.schema import initialize_database
+    from app.models.planning import StudyTypeTimeWindow
+    from app.services.academic_catalog import create_time_window, update_time_window
+    from tests.fixtures.dated_intensive_windows import seed_forms
+    engine = create_engine('sqlite://')
+    initialize_database(engine)
+    with Session(engine) as db:
+        seed_forms(db)
+        row = create_time_window(db,1,kind='dated',date='2026-11-09',start_time='09:00',end_time='12:00')
+        db.commit()
+        row_id = row.id
+    with Session(engine) as first, Session(engine) as second:
+        one, two = first.get(StudyTypeTimeWindow,row_id), second.get(StudyTypeTimeWindow,row_id)
+        update_time_window(first,one,kind='dated',date='2026-11-09',start_time='09:00',end_time='13:00',expected_revision=1)
+        first.commit()
+        with pytest.raises(StaleDataError):
+            update_time_window(second,two,kind='dated',date='2026-11-09',start_time='09:00',end_time='14:00',expected_revision=1)
+        second.rollback()
+        assert second.get(StudyTypeTimeWindow,row_id).end_time.hour == 13
+        with pytest.raises(AcademicCatalogError) as duplicate:
+            create_time_window(second,1,kind='dated',date='2026-11-09',start_time='09:00',end_time='13:00',is_intensive=True)
+        second.rollback()
+        assert duplicate.value.status_code == 409
+        assert second.query(StudyTypeTimeWindow).count() == 1
+
 from app.services.academic_catalog import (
     AcademicCatalogError,
     course_availability_reasons,

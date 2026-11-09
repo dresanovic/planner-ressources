@@ -161,8 +161,9 @@ def load_time_windows(db: Session, study_type_id: int) -> list[TimeWindowPlan]:
             .where(
                 StudyTypeTimeWindow.study_type_id == study_type_id,
                 StudyTypeTimeWindow.is_active.is_(True),
+                StudyTypeTimeWindow.study_type.has(is_active=True),
             )
-            .order_by(StudyTypeTimeWindow.sort_order, StudyTypeTimeWindow.weekday)
+            .order_by(StudyTypeTimeWindow.kind == 'dated', StudyTypeTimeWindow.weekday, StudyTypeTimeWindow.date, StudyTypeTimeWindow.start_time, StudyTypeTimeWindow.end_time, StudyTypeTimeWindow.sort_order, StudyTypeTimeWindow.id)
         )
         .scalars()
         .all()
@@ -170,6 +171,7 @@ def load_time_windows(db: Session, study_type_id: int) -> list[TimeWindowPlan]:
     return [
         TimeWindowPlan(
             id=row.id,
+            kind=row.kind, date=row.date, is_intensive=row.is_intensive, revision=row.revision,
             weekday=row.weekday,
             start_time=row.start_time,
             end_time=row.end_time,

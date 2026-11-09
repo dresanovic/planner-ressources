@@ -8,6 +8,23 @@ import { decisionRequiredGenerationFixture, candidateProofFixture } from '../tes
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('ReplacementConfirmationDialog', () => {
+  it('keeps current and generated intensive facts separate and hides mismatched prepared facts', () => {
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    const scope='d'.repeat(64), fingerprint='a'.repeat(64)
+    const makeFacts=(totalUnits:number,numerator:number,candidateFingerprint:string)=>({totalUnits,intensiveLe:{numerator,denominator:2700000000 as const},dailyVariety:0,cohortDates:[],preparedSnapshotToken:scope,candidateFingerprint})
+    const preview={...decisionRequiredGenerationFixture,candidateFingerprint:fingerprint,
+      proof:{...candidateProofFixture,preparedSnapshotToken:scope,candidateFingerprint:fingerprint},
+      preparedEvidence:{...decisionRequiredGenerationFixture.preparedEvidence,sharedSnapshotToken:'b'.repeat(64)},
+      comparison:{...decisionRequiredGenerationFixture.comparison,
+        current:{...decisionRequiredGenerationFixture.comparison.current,intensiveFacts:makeFacts(4,2700000000,'c'.repeat(64))},
+        generated:{...decisionRequiredGenerationFixture.comparison.generated,intensiveFacts:makeFacts(14,5400000000,fingerprint)}}}
+    act(()=>root.render(<ReplacementConfirmationDialog preview={preview} onAccept={vi.fn()} onCancel={vi.fn()}/>))
+    expect(document.querySelector('[aria-label="Aktuelle intensive Planung"]')?.textContent).toContain('Intensive LE: 1')
+    expect(document.querySelector('[aria-label="Erzeugte intensive Planung"]')?.textContent).toContain('Intensive LE: 2')
+    preview.comparison.generated.intensiveFacts.preparedSnapshotToken='e'.repeat(64)
+    act(()=>root.render(<ReplacementConfirmationDialog preview={preview} onAccept={vi.fn()} onCancel={vi.fn()}/>))
+    expect(document.querySelector('[aria-label="Erzeugte intensive Planung"]')).toBeNull()
+  })
   it('localizes provisional holiday evidence from structured fields instead of displaying raw English',()=>{
     const root=createRoot(document.body.appendChild(document.createElement('div')))
     const courses=decisionRequiredGenerationFixture.comparison.courses.map((c,index)=>index?c:{...c,remainingReasons:[{
@@ -46,7 +63,7 @@ describe('ReplacementConfirmationDialog', () => {
     expect(retry).not.toHaveBeenCalled()
     act(()=>button('Zurück zum Vergleich')?.click())
     expect(document.activeElement).toBe(button('Erneut optimieren'))
-    expect(document.querySelectorAll('.optimization-objectives li')).toHaveLength(8)
+    expect(document.querySelectorAll('.optimization-objectives li')).toHaveLength(10)
     expect(retry).not.toHaveBeenCalled()
     act(()=>button('Erneut optimieren')?.click())
     act(()=>button('Verwerfen und neuen Versuch vorbereiten')?.click())
@@ -62,7 +79,7 @@ describe('ReplacementConfirmationDialog', () => {
     expect(document.body.textContent).toContain('Verbleibende erforderliche Lehreinheiten: 20')
     expect(document.body.textContent).toContain(known?'höchstens 10 zusätzliche Lehreinheiten':'Abstand zum möglichen Maximum unbekannt')
     expect(document.body.textContent).toContain('Wochenverteilung und Termingröße')
-    expect(document.querySelectorAll('.optimization-objectives li')).toHaveLength(8)
+    expect(document.querySelectorAll('.optimization-objectives li')).toHaveLength(10)
     expect(document.body.textContent).toContain('keine Aussage über ein globales Semesteroptimum')
   })
   it('shows factual aggregate and per-course comparison with only the atomic actions', () => {

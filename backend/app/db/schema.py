@@ -19,142 +19,176 @@ def initialize_database(engine: Engine) -> None:
         if engine.dialect.name == "sqlite":
             connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
             connection.commit()
-        with connection.begin():
-            inspector = inspect(connection)
-            if "optimization_operations" in inspector.get_table_names() and not _has_complete_optimization_schema(inspector):
-                raise UnsupportedSchemaStateError("Incomplete optimization operation schema; back up and inspect migration 0011.")
-            if not inspector.get_table_names():
-                Base.metadata.create_all(bind=connection)
+        try:
+            with connection.begin():
+                if engine.dialect.name == "sqlite" and not connection.connection.driver_connection.in_transaction:
+                    # Python sqlite legacy transaction mode does not begin for DDL.
+                    # Make every upgrade (including batch table creation) atomic.
+                    connection.exec_driver_sql("BEGIN")
                 inspector = inspect(connection)
-            elif not _is_current_schema(inspector):
-                if _is_fs016_schema(inspector):
-                    pass  # Complete predecessor; apply 0011 below.
-                elif _is_pre_planner_authentication_schema(inspector):
-                    migration = _load_migration("0010_planner_authentication.py")
-                    migration.op = Operations(MigrationContext.configure(connection))
-                    migration.upgrade()
+                window_columns = _column_names(inspector, "study_type_time_windows")
+                if window_columns.intersection({"kind", "date", "is_intensive"}) and not _has_complete_dated_windows(inspector):
+                    raise UnsupportedSchemaStateError("Incomplete dated window schema; back up and inspect migration 0013.")
+                if "optimization_operations" in inspector.get_table_names() and not _has_complete_optimization_schema(inspector):
+                    raise UnsupportedSchemaStateError("Incomplete optimization operation schema; back up and inspect migration 0011.")
+                if not inspector.get_table_names():
+                    Base.metadata.create_all(bind=connection)
                     inspector = inspect(connection)
-                elif _has_any_planner_authentication_table(inspector):
-                    if _has_complete_planner_authentication_schema(inspector):
-                        if not _has_complete_calendar_workspace_schema(inspector):
-                            raise UnsupportedSchemaStateError(
-                                "Database schema is not a supported FS-001 through FS-012 state. "
-                                "Back up the database and inspect its lifecycle tables."
-                            )
-                        if not _has_complete_lecturer_review_schema(inspector):
-                            raise UnsupportedSchemaStateError(
-                                "Database schema is not a complete FS-015 state. Back up the "
-                                "database and inspect its lecturer review tables."
-                            )
-                    raise UnsupportedSchemaStateError(
-                        "Database schema is not a complete FS-016 state. Back up "
-                        "the database and inspect its planner authentication tables."
-                    )
-                elif _is_pre_lecturer_review_schema(inspector):
-                    migration = _load_migration("0009_lecturer_token_review.py")
-                    migration.op = Operations(MigrationContext.configure(connection))
-                    migration.upgrade()
-                    inspector = inspect(connection)
-                elif _has_any_lecturer_review_table(inspector):
-                    raise UnsupportedSchemaStateError(
-                        "Database schema is not a supported FS-001 through FS-012 state "
-                        "or a complete FS-015 state. Back up the database and inspect "
-                        "its lifecycle and lecturer review tables."
-                    )
-                else:
-                    if _is_pre_calendar_workspace_schema(inspector):
-                        migration = _load_migration("0008_calendar_workspace_outcomes.py")
+                elif not _is_current_schema(inspector):
+                    if _is_fs016_schema(inspector):
+                        pass  # Complete predecessor; apply 0011 below.
+                    elif _is_pre_planner_authentication_schema(inspector):
+                        migration = _load_migration("0010_planner_authentication.py")
                         migration.op = Operations(MigrationContext.configure(connection))
                         migration.upgrade()
                         inspector = inspect(connection)
-                    elif _has_any_lifecycle_table(inspector):
+                    elif _has_any_planner_authentication_table(inspector):
+                        if _has_complete_planner_authentication_schema(inspector):
+                            if not _has_complete_calendar_workspace_schema(inspector):
+                                raise UnsupportedSchemaStateError(
+                                    "Database schema is not a supported FS-001 through FS-012 state. "
+                                    "Back up the database and inspect its lifecycle tables."
+                                )
+                            if not _has_complete_lecturer_review_schema(inspector):
+                                raise UnsupportedSchemaStateError(
+                                    "Database schema is not a complete FS-015 state. Back up the "
+                                    "database and inspect its lecturer review tables."
+                                )
                         raise UnsupportedSchemaStateError(
-                            "Database schema is not a supported FS-001 through FS-012 state or a complete FS-013 state. "
-                            "Back up the database and inspect its lifecycle tables."
+                            "Database schema is not a complete FS-016 state. Back up "
+                            "the database and inspect its planner authentication tables."
                         )
-                    if _is_slice_1_to_5_schema(inspector):
-                        migration = _load_migration("0002_course_semester_drafts.py")
-                        migration.op = Operations(MigrationContext.configure(connection))
-                        migration.upgrade()
-                        inspector = inspect(connection)
-                    if _is_slice_6_schema(inspector):
-                        migration = _load_migration("0003_academic_catalog_administration.py")
-                        migration.op = Operations(MigrationContext.configure(connection))
-                        migration.upgrade()
-                        inspector = inspect(connection)
-                    if _is_slice_7_schema(inspector):
-                        migration = _load_migration("0004_resource_eligibility_availability.py")
-                        migration.op = Operations(MigrationContext.configure(connection))
-                        migration.upgrade()
-                        inspector = inspect(connection)
-                    if _is_pre_exam_schema(inspector):
-                        migration = _load_migration("0006_conflict_aware_exam_scheduling.py")
-                        migration.op = Operations(MigrationContext.configure(connection))
-                        migration.upgrade()
-                        inspector = inspect(connection)
-                    elif not _is_pre_holiday_schema(inspector):
-                        raise UnsupportedSchemaStateError(
-                            "Database schema is not a supported FS-001 through FS-010 state. "
-                            "Back up the database and inspect its migration state."
-                        )
-
-                    if not _is_pre_exam_schema(inspector) and "institution_holidays" not in inspector.get_table_names():
-                        migration = _load_migration("0005_institution_holidays.py")
-                        migration.op = Operations(MigrationContext.configure(connection))
-                        migration.upgrade()
-                        inspector = inspect(connection)
-                    if _is_pre_exam_schema(inspector):
-                        migration = _load_migration("0006_conflict_aware_exam_scheduling.py")
-                        migration.op = Operations(MigrationContext.configure(connection))
-                        migration.upgrade()
-
-                    inspector = inspect(connection)
-                    if _is_pre_lifecycle_schema(inspector):
-                        migration = _load_migration("0007_versioned_schedule_lifecycle.py")
-                        migration.op = Operations(MigrationContext.configure(connection))
-                        migration.upgrade()
-                        inspector = inspect(connection)
-
-                    if _is_pre_calendar_workspace_schema(inspector):
-                        migration = _load_migration("0008_calendar_workspace_outcomes.py")
-                        migration.op = Operations(MigrationContext.configure(connection))
-                        migration.upgrade()
-                        inspector = inspect(connection)
-
-                    if _is_pre_lecturer_review_schema(inspector):
+                    elif _is_pre_lecturer_review_schema(inspector):
                         migration = _load_migration("0009_lecturer_token_review.py")
                         migration.op = Operations(MigrationContext.configure(connection))
                         migration.upgrade()
+                        inspector = inspect(connection)
+                    elif _has_any_lecturer_review_table(inspector):
+                        raise UnsupportedSchemaStateError(
+                            "Database schema is not a supported FS-001 through FS-012 state "
+                            "or a complete FS-015 state. Back up the database and inspect "
+                            "its lifecycle and lecturer review tables."
+                        )
+                    else:
+                        if _is_pre_calendar_workspace_schema(inspector):
+                            migration = _load_migration("0008_calendar_workspace_outcomes.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+                            inspector = inspect(connection)
+                        elif _has_any_lifecycle_table(inspector):
+                            raise UnsupportedSchemaStateError(
+                                "Database schema is not a supported FS-001 through FS-012 state or a complete FS-013 state. "
+                                "Back up the database and inspect its lifecycle tables."
+                            )
+                        if _is_slice_1_to_5_schema(inspector):
+                            migration = _load_migration("0002_course_semester_drafts.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+                            inspector = inspect(connection)
+                        if _is_slice_6_schema(inspector):
+                            migration = _load_migration("0003_academic_catalog_administration.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+                            inspector = inspect(connection)
+                        if _is_slice_7_schema(inspector):
+                            migration = _load_migration("0004_resource_eligibility_availability.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+                            inspector = inspect(connection)
+                        if _is_pre_exam_schema(inspector):
+                            migration = _load_migration("0006_conflict_aware_exam_scheduling.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+                            inspector = inspect(connection)
+                        elif not _is_pre_holiday_schema(inspector):
+                            raise UnsupportedSchemaStateError(
+                                "Database schema is not a supported FS-001 through FS-010 state. "
+                                "Back up the database and inspect its migration state."
+                            )
 
-                inspector = inspect(connection)
-                if _is_pre_planner_authentication_schema(inspector):
-                    migration = _load_migration("0010_planner_authentication.py")
+                        if not _is_pre_exam_schema(inspector) and "institution_holidays" not in inspector.get_table_names():
+                            migration = _load_migration("0005_institution_holidays.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+                            inspector = inspect(connection)
+                        if _is_pre_exam_schema(inspector):
+                            migration = _load_migration("0006_conflict_aware_exam_scheduling.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+
+                        inspector = inspect(connection)
+                        if _is_pre_lifecycle_schema(inspector):
+                            migration = _load_migration("0007_versioned_schedule_lifecycle.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+                            inspector = inspect(connection)
+
+                        if _is_pre_calendar_workspace_schema(inspector):
+                            migration = _load_migration("0008_calendar_workspace_outcomes.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+                            inspector = inspect(connection)
+
+                        if _is_pre_lecturer_review_schema(inspector):
+                            migration = _load_migration("0009_lecturer_token_review.py")
+                            migration.op = Operations(MigrationContext.configure(connection))
+                            migration.upgrade()
+
+                    inspector = inspect(connection)
+                    if _is_pre_planner_authentication_schema(inspector):
+                        migration = _load_migration("0010_planner_authentication.py")
+                        migration.op = Operations(MigrationContext.configure(connection))
+                        migration.upgrade()
+
+                    inspector = inspect(connection)
+                    if _is_fs016_schema(inspector) and "optimization_operations" not in inspector.get_table_names():
+                        migration = _load_migration("0011_optimization_operations.py")
+                        migration.op = Operations(MigrationContext.configure(connection))
+                        migration.upgrade()
+
+                if "preferred_session_units" not in _column_names(inspect(connection), "courses"):
+                    migration = _load_migration("0012_preferred_session_units.py")
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
-
-                inspector = inspect(connection)
-                if _is_fs016_schema(inspector) and "optimization_operations" not in inspector.get_table_names():
-                    migration = _load_migration("0011_optimization_operations.py")
+                if "kind" not in _column_names(inspect(connection), "study_type_time_windows"):
+                    migration = _load_migration("0013_dated_teaching_windows.py")
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
-
-            if "preferred_session_units" not in _column_names(inspect(connection), "courses"):
-                migration = _load_migration("0012_preferred_session_units.py")
-                migration.op = Operations(MigrationContext.configure(connection))
-                migration.upgrade()
-            if not _is_current_schema(inspect(connection)):
-                raise UnsupportedSchemaStateError(
-                    "Database migration completed without producing the expected schema."
-                )
-        if engine.dialect.name == "sqlite":
-            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
-            connection.commit()
+                if "overall_units" not in _column_names(inspect(connection), "courses"):
+                    migration = _load_migration("0014_course_overall_units.py")
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                if not _is_current_schema(inspect(connection)):
+                    raise UnsupportedSchemaStateError(
+                        "Database migration completed without producing the expected schema."
+                    )
+        finally:
+            if engine.dialect.name == "sqlite":
+                connection.rollback()
+                connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+                connection.commit()
     _configure_sqlite_foreign_keys(engine)
 
 
 def _is_current_schema(inspector) -> bool:
     return (_is_fs016_schema(inspector) and _has_complete_optimization_schema(inspector)
-            and "preferred_session_units" in _column_names(inspector, "courses"))
+            and "preferred_session_units" in _column_names(inspector, "courses")
+            and _has_complete_dated_windows(inspector)
+            and "overall_units" in _column_names(inspector, "courses"))
+
+
+def _has_complete_dated_windows(inspector) -> bool:
+    table = _planning.StudyTypeTimeWindow.__table__
+    if not set(table.columns.keys()).issubset(_column_names(inspector, table.name)):
+        return False
+    columns = {column['name']: column for column in inspector.get_columns(table.name)}
+    checks = {c['name'] for c in inspector.get_check_constraints(table.name)}
+    indexes = {i['name']: i for i in inspector.get_indexes(table.name)}
+    return (inspector.get_pk_constraint(table.name)['constrained_columns'] == ['id']
+            and all(columns[c.name]['nullable'] == c.nullable for c in table.columns)
+            and {c.name for c in table.constraints if c.__class__.__name__ == 'CheckConstraint'}.issubset(checks)
+            and all(name in indexes and indexes[name]['unique'] for name in ('uq_time_window_weekly', 'uq_time_window_dated'))
+            and any(fk['constrained_columns'] == ['study_type_id'] and fk['referred_table'] == 'study_types' for fk in inspector.get_foreign_keys(table.name)))
 
 
 def _has_complete_optimization_schema(inspector) -> bool:

@@ -55,6 +55,38 @@ def create_academic_chain(client):
     return semester.json(), cohort.json(), study_type.json(), window.json()
 
 
+def test_overall_units_default_persist_and_do_not_affect_planning(client, db_session):
+    from app.services.draft_schedule_repository import course_semester_progress
+
+    seed_resources(db_session)
+    semester, cohort, study_type, _ = create_academic_chain(client)
+    payload = dict(name="Independent course total", totalUnits=8, minSessionUnits=2,
+        maxSessionUnits=4, semesterId=semester['id'], cohortId=cohort['id'],
+        studyTypeId=study_type['id'], lecturerId=1, roomId=1)
+    created = client.post('/api/academic/courses', json=payload)
+    assert created.status_code == 201, created.text
+    row = created.json()
+    assert row['overallUnits'] == row['totalUnits'] == 8
+    update = {k: v for k, v in payload.items() if k not in ('lecturerId', 'roomId')}
+    for extra, expected_total in [({'overallUnits': 20}, 20), ({'totalUnits': 6}, 20)]:
+        update.update(extra)
+        result = client.patch(f"/api/academic/courses/{row['id']}",
+            json={**update, 'expectedRevision': row['revision']})
+        assert result.status_code == 200, result.text
+        row = result.json()
+        assert row['overallUnits'] == expected_total
+        update.pop('overallUnits', None)
+        assert course_semester_progress(db_session, row['id'], semester['id']) == (row['totalUnits'], 0, row['totalUnits'])
+    listed = client.get('/api/academic/courses').json()['items']
+    assert next(item for item in listed if item['id'] == row['id'])['overallUnits'] == 20
+    explicit = client.post('/api/academic/courses', json={**payload, 'name': 'Explicit total', 'overallUnits': 30})
+    assert explicit.status_code == 201, explicit.text
+    assert explicit.json()['overallUnits'] == 30
+    invalid = client.patch(f"/api/academic/courses/{row['id']}",
+        json={**update, 'overallUnits': 0, 'expectedRevision': row['revision']})
+    assert invalid.status_code == 422
+
+
 def test_optional_preferred_units_create_update_clear_and_bounds(client, db_session):
     seed_resources(db_session)
     semester, cohort, study_type, _ = create_academic_chain(client)

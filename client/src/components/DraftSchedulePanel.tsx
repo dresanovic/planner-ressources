@@ -547,9 +547,10 @@ export function GenerationConstraintEditor({
   onDirtyChange,
 }: GenerationConstraintEditorProps) {
   const [editorState, setEditorState] = useState({ source: constraints, planningPeriod: constraints.planningPeriod })
-  const planningPeriod = editorState.source === constraints
-    ? editorState.planningPeriod
-    : constraints.planningPeriod
+  const samePeriod = editorState.source.courseId === constraints.courseId && editorState.source.semesterId === constraints.semesterId
+    && editorState.source.planningPeriod.startDate === constraints.planningPeriod.startDate
+    && editorState.source.planningPeriod.endDate === constraints.planningPeriod.endDate
+  const planningPeriod = samePeriod ? editorState.planningPeriod : constraints.planningPeriod
   const dirty = planningPeriod.startDate !== constraints.planningPeriod.startDate
     || planningPeriod.endDate !== constraints.planningPeriod.endDate
   useEffect(() => onDirtyChange?.(dirty), [dirty, onDirtyChange])
@@ -584,10 +585,10 @@ export function GenerationConstraintEditor({
 
       <p className="constraint-study-type">Studienart: {constraints.studyType.name}</p>
 
-      <div className="constraint-window-list" aria-label="Erlaubte wöchentliche Lehrzeitfenster">
+      <div className="constraint-window-list" aria-label="Erlaubte Lehrzeitfenster">
         {constraints.allowedTeachingWindows.map((window, index) => (
           <div className="constraint-window-row" key={`${window.weekday}-${index}`}>
-            <span>{WEEKDAY_NAMES[window.weekday]}</span>
+            <span>{window.kind === 'dated' ? `Einmalig: ${window.date.split('-').reverse().join('.')} · ${window.isIntensive ? 'Intensivwoche' : 'Nicht intensiv'}` : `Wöchentlich: ${WEEKDAY_NAMES[window.weekday]}`}</span>
             <span>{window.startTime} - {window.endTime}</span>
           </div>
         ))}

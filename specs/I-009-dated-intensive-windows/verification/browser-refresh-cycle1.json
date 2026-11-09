@@ -1,0 +1,278 @@
+{
+  "browser": "157.0.4341.42",
+  "viewport": {
+    "width": 1280,
+    "height": 900
+  },
+  "dataset": {
+    "windows": 100,
+    "courses": 20,
+    "currentTeachingSessions": 100
+  },
+  "samples": [
+    {
+      "sample": 1,
+      "acknowledgedAt": 2008.300000000745,
+      "sawNonCurrent": true,
+      "mutation": "marker",
+      "allCurrentViewsMilliseconds": 644.1999999992549,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 644.1999999992549,
+        "derivedWindows": 644.1999999992549,
+        "calendarListDetail": 644.1999999992549
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 2,
+      "acknowledgedAt": 3416.39999999851,
+      "sawNonCurrent": true,
+      "mutation": "date",
+      "allCurrentViewsMilliseconds": 568,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 568,
+        "derivedWindows": 568,
+        "calendarListDetail": 568
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 3,
+      "acknowledgedAt": 4785.099999997765,
+      "sawNonCurrent": true,
+      "mutation": "hours",
+      "allCurrentViewsMilliseconds": 623.6000000014901,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 623.6000000014901,
+        "derivedWindows": 623.6000000014901,
+        "calendarListDetail": 623.6000000014901
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 4,
+      "acknowledgedAt": 6168.89999999851,
+      "sawNonCurrent": true,
+      "mutation": "activity",
+      "allCurrentViewsMilliseconds": 687.1000000014901,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 687.1000000014901,
+        "derivedWindows": 687.1000000014901,
+        "calendarListDetail": 687.1000000014901
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 5,
+      "acknowledgedAt": 7820.39999999851,
+      "sawNonCurrent": true,
+      "mutation": "marker",
+      "allCurrentViewsMilliseconds": 683.3000000007451,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 683.3000000007451,
+        "derivedWindows": 683.3000000007451,
+        "calendarListDetail": 683.3000000007451
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 6,
+      "acknowledgedAt": 9317.39999999851,
+      "sawNonCurrent": true,
+      "mutation": "date",
+      "allCurrentViewsMilliseconds": 660.5,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 660.5,
+        "derivedWindows": 660.5,
+        "calendarListDetail": 660.5
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 7,
+      "acknowledgedAt": 10733.199999999255,
+      "sawNonCurrent": true,
+      "mutation": "hours",
+      "allCurrentViewsMilliseconds": 612.1000000014901,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 612.1000000014901,
+        "derivedWindows": 612.1000000014901,
+        "calendarListDetail": 612.1000000014901
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 8,
+      "acknowledgedAt": 12037.800000000745,
+      "sawNonCurrent": true,
+      "mutation": "activity",
+      "allCurrentViewsMilliseconds": 625.5999999977648,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 625.5999999977648,
+        "derivedWindows": 625.5999999977648,
+        "calendarListDetail": 625.5999999977648
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 9,
+      "acknowledgedAt": 13469.89999999851,
+      "sawNonCurrent": true,
+      "mutation": "marker",
+      "allCurrentViewsMilliseconds": 629.1000000014901,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 629.1000000014901,
+        "derivedWindows": 629.1000000014901,
+        "calendarListDetail": 629.1000000014901
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 10,
+      "acknowledgedAt": 14884.699999999255,
+      "sawNonCurrent": true,
+      "mutation": "date",
+      "allCurrentViewsMilliseconds": 685.6000000014901,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 685.6000000014901,
+        "derivedWindows": 685.6000000014901,
+        "calendarListDetail": 685.6000000014901
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 11,
+      "acknowledgedAt": 16335,
+      "sawNonCurrent": true,
+      "mutation": "hours",
+      "allCurrentViewsMilliseconds": 693.3000000007451,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 693.3000000007451,
+        "derivedWindows": 693.3000000007451,
+        "calendarListDetail": 693.3000000007451
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 12,
+      "acknowledgedAt": 17765.39999999851,
+      "sawNonCurrent": true,
+      "mutation": "activity",
+      "allCurrentViewsMilliseconds": 597.4000000022352,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 597.4000000022352,
+        "derivedWindows": 597.4000000022352,
+        "calendarListDetail": 597.4000000022352
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 13,
+      "acknowledgedAt": 19222.89999999851,
+      "sawNonCurrent": true,
+      "mutation": "marker",
+      "allCurrentViewsMilliseconds": 645.9000000022352,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 645.9000000022352,
+        "derivedWindows": 645.9000000022352,
+        "calendarListDetail": 645.9000000022352
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 14,
+      "acknowledgedAt": 20605.39999999851,
+      "sawNonCurrent": true,
+      "mutation": "date",
+      "allCurrentViewsMilliseconds": 688.9000000022352,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 688.9000000022352,
+        "derivedWindows": 688.9000000022352,
+        "calendarListDetail": 688.9000000022352
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 15,
+      "acknowledgedAt": 22102.099999997765,
+      "sawNonCurrent": true,
+      "mutation": "hours",
+      "allCurrentViewsMilliseconds": 777.8000000007451,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 777.8000000007451,
+        "derivedWindows": 777.8000000007451,
+        "calendarListDetail": 777.8000000007451
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 16,
+      "acknowledgedAt": 23599.099999997765,
+      "sawNonCurrent": true,
+      "mutation": "activity",
+      "allCurrentViewsMilliseconds": 739.5,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 739.5,
+        "derivedWindows": 739.5,
+        "calendarListDetail": 739.5
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 17,
+      "acknowledgedAt": 25133.199999999255,
+      "sawNonCurrent": true,
+      "mutation": "marker",
+      "allCurrentViewsMilliseconds": 590,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 590,
+        "derivedWindows": 590,
+        "calendarListDetail": 590
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 18,
+      "acknowledgedAt": 26506.39999999851,
+      "sawNonCurrent": true,
+      "mutation": "date",
+      "allCurrentViewsMilliseconds": 615.6999999992549,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 615.6999999992549,
+        "derivedWindows": 615.6999999992549,
+        "calendarListDetail": 615.6999999992549
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 19,
+      "acknowledgedAt": 27817,
+      "sawNonCurrent": true,
+      "mutation": "hours",
+      "allCurrentViewsMilliseconds": 686.5,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 686.5,
+        "derivedWindows": 686.5,
+        "calendarListDetail": 686.5
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    },
+    {
+      "sample": 20,
+      "acknowledgedAt": 29227,
+      "sawNonCurrent": true,
+      "mutation": "activity",
+      "allCurrentViewsMilliseconds": 656.5999999977648,
+      "perViewUpperBoundsMilliseconds": {
+        "options": 656.5999999977648,
+        "derivedWindows": 656.5999999977648,
+        "calendarListDetail": 656.5999999977648
+      },
+      "renderedCurrency": "Die Validierung der aktuellen Planung ist aktuell."
+    }
+  ],
+  "maximumMilliseconds": 777.8000000007451,
+  "allUnderTwoSeconds": true,
+  "errors": [],
+  "measurement": "Real fetch acknowledgement to MutationObserver observation of aggregate current-render status. Per-view values are observed upper bounds: the status requires options, derived constraints, overview and Calendar to have rendered the acknowledged catalog revision. No fake timers or API-only substitution."
+}

@@ -305,7 +305,9 @@ beforeEach(() => {
   mocks.cancelOperation.mockImplementation(async (id: string) => ({...operationStatusFixture,operationId:id,phase:'cancelled'}))
   mocks.readOperation.mockImplementation(async (id: string) => ({...operationStatusFixture,operationId:id,phase:'interrupted'}))
   mocks.getPlanningOptions.mockResolvedValue(options)
-  mocks.getGenerationConstraints.mockResolvedValue(generationConstraintsFixture)
+  mocks.getGenerationConstraints.mockImplementation(async (courseId: number, semesterId: number) => ({
+    ...generationConstraintsFixture, courseId, semesterId,
+  }))
   mocks.getDraftSchedules.mockResolvedValue([])
   mocks.getExamPlanningOverview.mockResolvedValue(examOverview)
   mocks.getScheduleLifecycle.mockResolvedValue(lifecycleOverviewFixture())
@@ -405,18 +407,26 @@ describe('CourseSchedulePage multi-course mode', () => {
     act(() => root.unmount())
   })
 
-  it('explains possible cancellation triggers instead of suggesting a larger budget for a cancelled run',async()=>{
+    it.each([
+      [null,'kein genauer Abbruchgrund'],
+      ['CANCELLED_BY_USER','über „Abbrechen“'],
+      ['CANCELLED_BY_NAVIGATION','Verlassen des Planungskontexts'],
+      ['CANCELLED_BY_DISMISSAL','Schließen des Vergleichs'],
+      ['CANCELLED_FOR_RETRY','für einen neuen Versuch'],
+      ['CANCELLED_CONTEXT_LOST','Verlust des Anmeldungskontexts'],
+    ])('explains recorded cancellation reason %s without suggesting a larger budget',async(terminalCode,reason)=>{
     mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
     mocks.startOperation.mockImplementation(async(_p:OptimizationPreparation,c:OptimizationOperationContext)=>({
-      ...operationStatusFixture,operationId:c.operationId,phase:'cancelled',elapsedMilliseconds:286000}))
+        ...operationStatusFixture,operationId:c.operationId,phase:'cancelled',elapsedMilliseconds:286000,terminalCode}))
     await renderPage()
     act(()=>button('Plan erzeugen')?.click())
     act(()=>document.querySelector<HTMLInputElement>('.multi-course-panel input[type="checkbox"]')?.click())
     await act(async()=>{button('Ausgewählte Lehrveranstaltungen optimieren')?.click()})
     await act(async()=>button('Optimierung starten')?.click())
     const feedback=document.querySelector('.optimization-operation-status')?.textContent
-    expect(feedback).toContain('Mögliche Auslöser')
-    expect(feedback).toContain('Statusverbindung')
+      expect(feedback).toContain(reason)
+      expect(feedback).not.toContain('Mögliche Auslöser')
+      expect(feedback).not.toContain('Statusverbindung')
     expect(feedback).not.toContain('Für mehr Zeit')
   })
   it.each(['revision_not_editable','working_revision_required','stale_lifecycle_state','semester_not_found'])('offers fresh preparation after definitive lifecycle start rejection %s',async(code)=>{
@@ -1969,6 +1979,264 @@ describe('CourseSchedulePage academic option compatibility', () => {
     expect(document.body.textContent).toContain('genaue Ursache ist nicht verfügbar')
     expect(button('Erzeugen')).toBeUndefined()
     expect(document.querySelector('.multi-course-panel .generate-button')).not.toBeNull()
+  })
+})
+
+describe('dated catalog validation freshness', () => {
+  it.each(['course', 'semester'] as const)('blocks former constraints after a failed %s switch and recovers the selected context', async (selection) => {
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      semesters: [...options.semesters, { ...options.semesters[0], id: 2, name: 'Other semester' }],
+    })
+    mocks.getGenerationConstraints.mockResolvedValueOnce({ ...generationConstraintsFixture, isCustom: true, revision: 1 })
+    const root = await renderPage()
+    const pending = deferred<typeof generationConstraintsFixture>()
+    mocks.getGenerationConstraints.mockReturnValueOnce(pending.promise)
+    const selects = document.querySelectorAll<HTMLSelectElement>('.planning-selectors select')
+    await act(async () => {
+      const select = selects[selection === 'course' ? 0 : 1]
+      select.value = '2'
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(document.querySelector('.generation-constraints')).toBeNull()
+    await act(async () => pending.reject(new Error('constraint load unavailable')))
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toContain('nicht verfügbar')
+    expect(button('Datumsgrenzen speichern')).toBeUndefined()
+    expect(button('Benutzerdefinierte Regeln zurücksetzen')).toBeUndefined()
+    expect(mocks.saveGenerationConstraints).not.toHaveBeenCalled()
+    expect(mocks.clearGenerationConstraints).not.toHaveBeenCalled()
+
+    const courseId = selection === 'course' ? 2 : 1
+    const semesterId = selection === 'semester' ? 2 : 1
+    const current = {
+      ...generationConstraintsFixture, courseId, semesterId, isCustom: true, revision: 2,
+      planningPeriod: { startDate: '2026-10-05', endDate: '2026-11-30' },
+    }
+    mocks.getGenerationConstraints.mockResolvedValueOnce(current)
+    await act(async () => button('Validierung erneut laden')?.click())
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toBe('Die Validierung der aktuellen Planung ist aktuell.')
+    const start = document.querySelector<HTMLInputElement>('#generation-start-date')!
+    expect(start.value).toBe('05.10.2026')
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(start, '06.10.2026')
+      start.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    mocks.saveGenerationConstraints.mockResolvedValueOnce({ constraints: current })
+    await act(async () => button('Datumsgrenzen speichern')?.click())
+    expect(mocks.saveGenerationConstraints).toHaveBeenCalledWith(courseId, semesterId, 11, 2, {
+      startDate: '2026-10-06', endDate: '2026-11-30',
+    })
+    await act(async () => root.unmount())
+  })
+
+  it('retains same-selection date edits but blocks save and reset until a failed refresh recovers', async () => {
+    const current = { ...generationConstraintsFixture, isCustom: true, revision: 4 }
+    mocks.getGenerationConstraints.mockResolvedValue(current)
+    const root = await renderPage()
+    const start = document.querySelector<HTMLInputElement>('#generation-start-date')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(start, '08.09.2026')
+      start.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    mocks.getGenerationConstraints.mockRejectedValueOnce(new Error('constraint refresh unavailable'))
+    await act(async () => root.render(<CourseSchedulePage catalogRevision={1} />))
+    expect(document.querySelector<HTMLInputElement>('#generation-start-date')?.value).toBe('08.09.2026')
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toContain('nicht verfügbar')
+    expect(button('Datumsgrenzen speichern')?.disabled).toBe(true)
+    expect(button('Benutzerdefinierte Regeln zurücksetzen')?.disabled).toBe(true)
+    await act(async () => {
+      button('Datumsgrenzen speichern')?.click()
+      button('Benutzerdefinierte Regeln zurücksetzen')?.click()
+    })
+    expect(mocks.saveGenerationConstraints).not.toHaveBeenCalled()
+    expect(mocks.clearGenerationConstraints).not.toHaveBeenCalled()
+    await act(async () => button('Validierung erneut laden')?.click())
+    expect(document.querySelector<HTMLInputElement>('#generation-start-date')?.value).toBe('08.09.2026')
+    expect(button('Datumsgrenzen speichern')?.disabled).toBe(false)
+    expect(button('Benutzerdefinierte Regeln zurücksetzen')?.disabled).toBe(false)
+    await act(async () => root.unmount())
+  })
+
+  it.each(['initial load', 'catalog refresh'] as const)('allows other eligible courses when the focused course is unavailable after %s', async (stage) => {
+    const unavailable = {
+      ...options,
+      courses: options.courses.map((course, index) => ({
+        ...course, availability: { available: index !== 0, reasons: index === 0 ? ['MISSING_ACTIVE_TIME_WINDOW'] : [] },
+      })),
+    }
+    if (stage === 'initial load') mocks.getPlanningOptions.mockResolvedValue(unavailable)
+    const root = await renderPage()
+    if (stage === 'catalog refresh') {
+      mocks.getPlanningOptions.mockResolvedValue(unavailable)
+      mocks.getGenerationConstraints.mockRejectedValueOnce(new Error('focused course unavailable'))
+      await act(async () => root.render(<CourseSchedulePage catalogRevision={1} />))
+    }
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toBe('Die Validierung der aktuellen Planung ist aktuell.')
+    await act(async () => button('Plan erzeugen')?.click())
+    const boxes = document.querySelectorAll<HTMLInputElement>('.multi-course-panel .course-picker input')
+    expect(boxes[0].disabled).toBe(true)
+    expect(boxes[1].disabled).toBe(false)
+    await act(async () => boxes[1].click())
+    mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
+    expect(button('Ausgewählte Lehrveranstaltungen optimieren')?.disabled).toBe(false)
+    await act(async () => button('Ausgewählte Lehrveranstaltungen optimieren')?.click())
+    expect(mocks.prepare).toHaveBeenCalledWith(1, 11, [2], [])
+    await act(async () => root.unmount())
+  })
+
+  it.each(['broaden', 'reset'] as const)('repairs unusable focused-course date limits through %s and refreshes availability', async (action) => {
+    const unavailable = { ...options, courses: options.courses.map((course, index) => ({
+      ...course, availability: { available: index !== 0, reasons: index === 0 ? ['MISSING_ACTIVE_TIME_WINDOW'] : [] },
+    })) }
+    const current = { ...generationConstraintsFixture, isCustom: true, revision: 4,
+      planningPeriod: { startDate: '2026-11-10', endDate: '2026-11-11' } }
+    mocks.getPlanningOptions.mockResolvedValue(unavailable)
+    mocks.getGenerationConstraints.mockResolvedValue(current)
+    const root = await renderPage()
+    expect(mocks.getGenerationConstraints).not.toHaveBeenCalled()
+    await act(async () => button('Datumsgrenzen prüfen')?.click())
+    expect(mocks.getGenerationConstraints).toHaveBeenCalledWith(1, 1)
+    expect(button('Benutzerdefinierte Regeln zurücksetzen')?.disabled).toBe(false)
+    const restored = { ...current, isCustom: action !== 'reset', revision: 5,
+      planningPeriod: { startDate: '2026-11-09', endDate: '2026-11-11' } }
+    if (action === 'broaden') {
+      const start = document.querySelector<HTMLInputElement>('#generation-start-date')!
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(start, '09.11.2026')
+        start.dispatchEvent(new Event('input', { bubbles: true }))
+      })
+      mocks.saveGenerationConstraints.mockResolvedValue({ constraints: restored })
+    } else mocks.clearGenerationConstraints.mockResolvedValue({ constraints: restored })
+    mocks.getPlanningOptions.mockResolvedValue(options)
+    mocks.getGenerationConstraints.mockResolvedValue(restored)
+    await act(async () => button(action === 'broaden' ? 'Datumsgrenzen speichern' : 'Benutzerdefinierte Regeln zurücksetzen')?.click())
+    expect(action === 'broaden' ? mocks.saveGenerationConstraints : mocks.clearGenerationConstraints).toHaveBeenCalledOnce()
+    expect(mocks.getPlanningOptions).toHaveBeenCalledTimes(2)
+    await act(async () => button('Plan erzeugen')?.click())
+    expect(document.querySelector<HTMLInputElement>('.multi-course-panel .course-picker input')!.disabled).toBe(false)
+    await act(async () => root.unmount())
+  })
+
+  it('keeps other eligible generation available after optional date-limit inspection fails', async () => {
+    mocks.getPlanningOptions.mockResolvedValue({ ...options, courses: options.courses.map((course, index) => ({
+      ...course, availability: { available: index !== 0, reasons: index === 0 ? ['MISSING_ACTIVE_TIME_WINDOW'] : [] },
+    })) })
+    mocks.getGenerationConstraints.mockRejectedValue(new Error('offline'))
+    const root = await renderPage()
+    await act(async () => button('Datumsgrenzen prüfen')?.click())
+    expect(mocks.getGenerationConstraints).toHaveBeenCalledWith(1, 1)
+    await act(async () => button('Plan erzeugen')?.click())
+    const box = document.querySelectorAll<HTMLInputElement>('.multi-course-panel .course-picker input')[1]
+    await act(async () => box.click())
+    expect(button('Ausgewählte Lehrveranstaltungen optimieren')?.disabled).toBe(false)
+    await act(async () => root.unmount())
+  })
+
+  it('ignores a pending former-course constraint load when an unavailable course is focused', async () => {
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      courses: options.courses.map((course, index) => ({
+        ...course, availability: { available: index === 0, reasons: index === 1 ? ['MISSING_ACTIVE_TIME_WINDOW'] : [] },
+      })),
+    })
+    const pending = deferred<typeof generationConstraintsFixture>()
+    mocks.getGenerationConstraints.mockReturnValueOnce(pending.promise)
+    const root = await renderPage()
+    const select = document.querySelector<HTMLSelectElement>('.planning-selectors select')!
+    await act(async () => { select.value = '2'; select.dispatchEvent(new Event('change', { bubbles: true })) })
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toBe('Die Validierung der aktuellen Planung ist aktuell.')
+    await act(async () => button('Plan erzeugen')?.click())
+    const box = document.querySelector<HTMLInputElement>('.multi-course-panel .course-picker input')!
+    expect(box.disabled).toBe(false)
+    await act(async () => pending.resolve(generationConstraintsFixture))
+    expect(document.querySelector('.generation-constraints')).toBeNull()
+    expect(box.disabled).toBe(false)
+    await act(async () => root.unmount())
+  })
+
+  it('can revisit and recover a course whose constraint load previously failed', async () => {
+    const root = await renderPage()
+    const select = document.querySelector<HTMLSelectElement>('.planning-selectors select')!
+    mocks.getGenerationConstraints.mockRejectedValueOnce(new Error('course 2 unavailable'))
+    await act(async () => { select.value = '2'; select.dispatchEvent(new Event('change', { bubbles: true })) })
+    await act(async () => { select.value = '1'; select.dispatchEvent(new Event('change', { bubbles: true })) })
+    const pending = deferred<typeof generationConstraintsFixture>()
+    mocks.getGenerationConstraints.mockReturnValueOnce(pending.promise)
+    await act(async () => { select.value = '2'; select.dispatchEvent(new Event('change', { bubbles: true })) })
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toContain('wird aktualisiert')
+    await act(async () => pending.resolve({ ...generationConstraintsFixture, courseId: 2 }))
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toBe('Die Validierung der aktuellen Planung ist aktuell.')
+    expect(document.querySelector('.generation-constraints')).not.toBeNull()
+    await act(async () => root.unmount())
+  })
+
+  it('preserves edits on an unavailable focused course without blocking another eligible course', async () => {
+    const root = await renderPage()
+    const start = document.querySelector<HTMLInputElement>('#generation-start-date')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(start, '08.09.2026')
+      start.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    mocks.getPlanningOptions.mockResolvedValue({
+      ...options,
+      courses: options.courses.map((course, index) => ({
+        ...course, availability: { available: index !== 0, reasons: index === 0 ? ['MISSING_ACTIVE_TIME_WINDOW'] : [] },
+      })),
+    })
+    await act(async () => root.render(<CourseSchedulePage catalogRevision={1} />))
+    expect(document.querySelector<HTMLInputElement>('#generation-start-date')?.value).toBe('08.09.2026')
+    expect(button('Datumsgrenzen speichern')?.disabled).toBe(true)
+    await act(async () => button('Plan erzeugen')?.click())
+    const box = document.querySelectorAll<HTMLInputElement>('.multi-course-panel .course-picker input')[1]
+    expect(box.disabled).toBe(false)
+    await act(async () => box.click())
+    expect(button('Ausgewählte Lehrveranstaltungen optimieren')?.disabled).toBe(false)
+    await act(async () => root.unmount())
+  })
+
+  it.each(['save', 'reset'] as const)('does not restore a former course when its pending %s completes after switching', async (action) => {
+    const original = { ...generationConstraintsFixture, isCustom: true, revision: 1 }
+    mocks.getGenerationConstraints.mockResolvedValueOnce(original)
+    const root = await renderPage()
+    const pending = deferred<{ constraints: typeof original }>()
+    if (action === 'save') {
+      mocks.saveGenerationConstraints.mockReturnValueOnce(pending.promise)
+      const start = document.querySelector<HTMLInputElement>('#generation-start-date')!
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(start, '08.09.2026')
+        start.dispatchEvent(new Event('input', { bubbles: true }))
+      })
+    } else {
+      mocks.clearGenerationConstraints.mockReturnValueOnce(pending.promise)
+    }
+    await act(async () => button(action === 'save' ? 'Datumsgrenzen speichern' : 'Benutzerdefinierte Regeln zurücksetzen')?.click())
+    const current = {
+      ...original, courseId: 2,
+      planningPeriod: { startDate: '2026-10-05', endDate: '2026-11-30' },
+    }
+    mocks.getGenerationConstraints.mockResolvedValueOnce(current)
+    const select = document.querySelector<HTMLSelectElement>('.planning-selectors select')!
+    await act(async () => { select.value = '2'; select.dispatchEvent(new Event('change', { bubbles: true })) })
+    await act(async () => pending.resolve({ constraints: original }))
+    expect(document.querySelector<HTMLInputElement>('#generation-start-date')?.value).toBe('05.10.2026')
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toBe('Die Validierung der aktuellen Planung ist aktuell.')
+    await act(async () => root.unmount())
+  })
+
+  it('marks every current view non-current after acknowledgement, refreshes derived windows and retries failures without losing selection', async () => {
+    const root = await renderPage()
+    const before = document.querySelector<HTMLSelectElement>('.planning-selectors select')?.value
+    const pending = deferred<ReturnType<typeof loadedCalendarWorkspaceFixture>>()
+    mocks.getCalendarWorkspace.mockReturnValueOnce(pending.promise)
+    mocks.getGenerationConstraints.mockResolvedValueOnce({...generationConstraintsFixture,allowedTeachingWindows:[{kind:'dated',date:'2026-11-09',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00'}]})
+    await act(async () => root.render(<CourseSchedulePage catalogRevision={1} destination="calendar" />))
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toContain('nicht aktuell')
+    expect(mocks.getGenerationConstraints).toHaveBeenCalledTimes(2)
+    await act(async () => pending.reject(new Error('refresh unavailable')))
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toContain('nicht verfügbar')
+    expect(document.querySelector<HTMLSelectElement>('.planning-selectors select')?.value).toBe(before)
+    await act(async () => button('Validierung erneut laden')?.click())
+    expect(document.querySelector('[aria-label="Aktuelle Validierung"]')?.textContent).toContain('aktuell')
   })
 })
 

@@ -7,7 +7,7 @@ from app.models.planning import DraftSchedule, DraftSession, Lecturer, ResourceU
 from app.services.resource_rules import resource_is_unavailable
 from app.services.draft_schedule_repository import GenerationConstraints
 from app.services.holiday_calendar import HolidayReference
-from app.services.schedule_generation import TimeWindowPlan
+from app.services.schedule_generation import TimeWindowPlan, format_clock
 
 
 class ValidationAlertCode(StrEnum):
@@ -670,10 +670,11 @@ def _teaching_window_violation_reason_for_values(
     if not windows:
         return "No allowed teaching windows are configured."
 
+    from app.services.schedule_generation import window_applies
     weekday = session_date.weekday()
     weekday_label = day_name[weekday]
     windows_for_day = sorted(
-        (window for window in windows if window.weekday == weekday),
+        (window for window in windows if window_applies(window, session_date)),
         key=lambda window: (window.start_time, window.end_time),
     )
     if not windows_for_day:
@@ -694,12 +695,10 @@ def _teaching_window_violation_reason_for_values(
 
 
 def _format_windows(windows: list[TimeWindowPlan]) -> str:
-    ordered = sorted(
-        windows,
-        key=lambda window: (window.weekday, window.start_time, window.end_time),
-    )
+    from app.services.schedule_generation import window_sort_key
+    ordered = sorted(windows, key=window_sort_key)
     return ", ".join(
-        f"{day_name[window.weekday]} "
+        f"{window.date.strftime('%d.%m.%Y') if window.kind == 'dated' else day_name[window.weekday]} "
         f"{_format_time(window.start_time)}–{_format_time(window.end_time)}"
         for window in ordered
     )
@@ -715,9 +714,9 @@ def fits_any_validation_window(
     end_time: time,
     windows: list[TimeWindowPlan],
 ) -> bool:
-    weekday = session_date.weekday()
+    from app.services.schedule_generation import window_applies
     return any(
-        window.weekday == weekday
+        window_applies(window, session_date)
         and start_time >= window.start_time
         and end_time <= window.end_time
         for window in windows
@@ -777,8 +776,8 @@ def _related_session(
         course_id=draft.course_id,
         course_name=draft.course_name_snapshot,
         date=session.date,
-        start_time=session.start_time.strftime("%H:%M"),
-        end_time=session.end_time.strftime("%H:%M"),
+        start_time=format_clock(session.start_time),
+        end_time=format_clock(session.end_time),
         cohort_name=draft.cohort_name_snapshot,
         lecturer_name=lecturer.name if lecturer is not None else f"Lecturer {session.lecturer_id}",
         room_name=room.name if room is not None else f"Room {session.room_id}",

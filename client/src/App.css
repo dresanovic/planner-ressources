@@ -260,6 +260,18 @@
 .catalog-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 8px; }
 .catalog-list li { display: flex; justify-content: space-between; align-items: center; border: 1px solid #dfe4eb; border-radius: 6px; padding: 10px 12px; }
 .catalog-record-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.catalog-list li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.window-overlap-note { display: block; margin-top: .4em; }
+.catalog-editor input, .catalog-editor select { min-width: 0; max-width: 100%; box-sizing: border-box; font: inherit; }
+.catalog-editor :is(input,select,button):focus-visible, .catalog-record-actions button:focus-visible { outline: 3px solid #a33b00; outline-offset: 3px; }
+.intensive-facts { min-width: 0; overflow-wrap: anywhere; }
+.optimization-objectives li, .intensive-facts li { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .catalog-grid { grid-template-columns: minmax(0,1fr); }
+  .catalog-list li { flex-direction: column; align-items: stretch; gap: .75rem; }
+  .catalog-record-actions { justify-content: flex-start; }
+  .catalog-record-actions button { white-space: normal; }
+}
 .catalog-editor { display: grid; gap: 12px; margin-top: 18px; }
 .catalog-field { display: grid; gap: 4px; color: #526071; font-size: 13px; font-weight: 700; }
 .catalog-field input, .catalog-field select { border: 1px solid #cfd7e3; border-radius: 6px; padding: 9px 10px; }

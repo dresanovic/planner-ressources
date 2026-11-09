@@ -6,7 +6,7 @@ import type {
   OptimizationDecisionRequiredResult,
 } from '../api/conflictAwareGeneration'
 import { label } from '../config/terminology'
-import { OptimizationProofFacts } from './OptimizationProofFacts'
+import { OptimizationProofFacts, IntensiveArrangementFacts } from './OptimizationProofFacts'
 import { formatCalendarDate } from '../utils/datePresentation'
 
 type Props = {
@@ -105,6 +105,15 @@ export function ReplacementConfirmationDialog({
           {preview.hasSavedSessions === false ? ' Keine gespeicherten Lehrtermine in dieser Auswahl. Die Übernahme erstellt die erzeugten Stundenpläne.' : ' Beim Übernehmen werden alle ausgewählten gespeicherten Termine ersetzt, einschließlich plannerseitig erstellter oder bearbeiteter Termine.'}
         </p>
         {preview.proof && <><p role="status"><strong>Noch nicht gespeichert.</strong> Die gesamte Auswahl bleibt bis zur ausdrücklichen Übernahme vorläufig. Auch eine geringere Abdeckung darf übernommen werden.</p><OptimizationProofFacts proof={preview.proof}/></>}
+        {preview.proof && preview.proof.candidateFingerprint === preview.candidateFingerprint
+          && preview.comparison.current.intensiveFacts?.preparedSnapshotToken === preview.proof.preparedSnapshotToken
+          && preview.comparison.current.intensiveFacts.totalUnits === preview.comparison.current.scheduledUnits
+          && <IntensiveArrangementFacts facts={preview.comparison.current.intensiveFacts} label="Aktuelle intensive Planung" />}
+        {preview.proof && preview.proof.candidateFingerprint === preview.candidateFingerprint
+          && preview.comparison.generated.intensiveFacts?.preparedSnapshotToken === preview.proof.preparedSnapshotToken
+          && preview.comparison.generated.intensiveFacts.candidateFingerprint === preview.candidateFingerprint
+          && preview.comparison.generated.intensiveFacts.totalUnits === preview.comparison.generated.scheduledUnits
+          && <IntensiveArrangementFacts facts={preview.comparison.generated.intensiveFacts} label="Erzeugte intensive Planung" />}
 
         <ComparisonPair
           current={preview.comparison.current}

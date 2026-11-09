@@ -36,13 +36,18 @@ export function TeachingSessionEditor({
   const availableRooms = session.eligibleRooms.length > 0
     ? session.eligibleRooms
     : [{ ...session.room, capacity: session.context.cohortSize }]
+  // Native time inputs cannot retain six fractional digits. Use text only for
+  // precise sessions; resource-only edits keep their original clock values.
+  const preciseTimes = [session.startTime, session.endTime, draft.startTime, draft.endTime].some(value => value?.length > 5)
+  const clockPattern = '([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9]([.][0-9]{1,6})?)?'
+  const clockHintId = `teaching-clock-hint-${session.id}`
 
   return (
     <form className="session-edit-fields" onSubmit={(event) => { event.preventDefault(); onSave() }}>
       <EuropeanDateField id={`teaching-date-${session.id}`} className="inline-edit-field" label="Datum" autoFocus value={draft.date} disabled={isDisabled} onChange={(value) => onChange({ ...draft, date: value ?? '' })} required />
       <label className="inline-edit-field">
         <span>Beginn</span>
-        <input name="startTime" type="time" value={draft.startTime} disabled={isDisabled} required onChange={(event) => onChange({ ...draft, startTime: event.target.value, endTime: teachingEndTime(event.target.value, draft.units ?? session.units) })} />
+        <input name="startTime" type={preciseTimes ? 'text' : 'time'} pattern={preciseTimes ? clockPattern : undefined} aria-describedby={preciseTimes ? clockHintId : undefined} value={draft.startTime} disabled={isDisabled} required onChange={(event) => onChange({ ...draft, startTime: event.target.value, endTime: teachingEndTime(event.target.value, draft.units ?? session.units) })} />
       </label>
       <label className="inline-edit-field">
         <span>Lehreinheiten (LE)</span>
@@ -54,8 +59,9 @@ export function TeachingSessionEditor({
       </label>
       <label className="inline-edit-field">
         <span>Ende</span>
-        <input name="endTime" type="time" value={draft.endTime} required disabled={isDisabled} onChange={(event) => onChange({ ...draft, endTime: event.target.value })} />
+        <input name="endTime" type={preciseTimes ? 'text' : 'time'} pattern={preciseTimes ? clockPattern : undefined} aria-describedby={preciseTimes ? clockHintId : undefined} value={draft.endTime} required disabled={isDisabled} onChange={(event) => onChange({ ...draft, endTime: event.target.value })} />
       </label>
+      {preciseTimes && <p id={clockHintId}>Uhrzeit im Format HH:MM oder HH:MM:SS.ffffff. Vorhandene Sekundenbruchteile bleiben beim Speichern erhalten.</p>}
       <span>{derivedLengthLabel(draft.startTime, draft.endTime)}</span>
       <p>1 LE = 45 Minuten Unterricht; zwischen zwei LE werden 10 Minuten Pause eingerechnet. Änderungen an LE oder Beginn berechnen das Ende neu. Ein manuell geändertes Ende verändert die LE nicht.</p>
       <span>{session.context.course.name}</span>

@@ -17,6 +17,8 @@ backend/.pytest-*/
 backend/.pytest_*/
 backend/.tmp-pytest/
 backend/test-output-*/
+backend/pytest-run-temp/
+backend/backups/
 .mypy_cache/
 .ruff_cache/
 .coverage
