@@ -15,6 +15,7 @@ from app.schemas.conflict_aware_generation import OptimizationOperationStatus, O
 from app.services import conflict_aware_generation as generation
 from app.services.optimization_config import load_optimization_policy
 from app.services.optimization_worker import DetachedOptimizationInput, SolverProcess
+from app.services.optimization_incumbent import prefer_candidate
 from app.services.schedule_lifecycle import claim_active_working_revision, require_active_working_revision, LifecycleFailure
 from app.services.planning_outcomes import retain_planning_outcome
 
@@ -41,6 +42,8 @@ class LiveOperation:
     discarded: bool = False
     transient_phase: str | None = None
     errors: list = field(default_factory=list)
+    termination: str | None = None
+    continuation_requests: dict = field(default_factory=dict)
 
 
 _registry = {}
@@ -96,6 +99,14 @@ def get_status(db, operation_id, auth, secret=None):
     allowed = _live_allowed(db, row, live, auth, secret) if row.phase not in TERMINAL else False
     phase = live.transient_phase if live and live.transient_phase and row.phase not in TERMINAL else row.phase
     review = live.review if allowed and phase in ('awaiting_decision', 'ready_to_save') else None
+    saved_result = row.saved_result
+    if saved_result is not None and row.algorithm == 'standard':
+        # Normalize a detached copy of historical JSON; never rewrite a committed
+        # receipt or infer heuristic portions for a pre-strategy saved result.
+        saved_result = dict(saved_result)
+        saved_result.setdefault('algorithm', 'standard')
+        saved_result.setdefault('strategyProfile', row.strategy_profile)
+        saved_result.setdefault('strategySettings', dict(row.strategy_settings))
     return OptimizationOperationStatus(
         operationId=row.operation_id, semesterId=row.semester_id,
         scheduleRevisionId=row.schedule_revision_id, selectedCourseIds=row.selected_course_ids,
@@ -105,8 +116,10 @@ def get_status(db, operation_id, auth, secret=None):
         currentObjectiveKey=live.objective if live and row.phase == 'optimizing' else None,
         saved=row.phase == 'saved', canAccept=review is not None and phase == 'awaiting_decision',
         canFinalize=review is not None and phase == 'ready_to_save', review=review,
-        result=row.saved_result, terminalCode=row.terminal_code,
+        result=saved_result, terminalCode=row.terminal_code,
         errors=live.errors if live else [],
+        algorithm=row.algorithm, strategyProfile=row.strategy_profile, strategySettings=row.strategy_settings,
+        termination=None if phase in ('preparing', 'optimizing', 'checking') else (row.saved_result or {}).get('termination') if row.phase == 'saved' else 'cancelled' if row.phase == 'cancelled' else 'failed' if row.phase in ('failed', 'interrupted', 'stale') else live.termination if live else None,
     )
 
 
@@ -147,7 +160,7 @@ def start_operation(db, request, auth):
             return get_status(db, operation_id, auth, request.context_secret)
         policy = load_optimization_policy()
         if policy.policy_fingerprint != request.policy_fingerprint:
-            raise OperationFailure('BUDGET_POLICY_CHANGED', 'Das Zeitbudget wurde geändert. Bitte die Auswahl neu vorbereiten.')
+            raise OperationFailure('BUDGET_POLICY_CHANGED', 'Algorithmus oder Optimierungseinstellungen wurden geändert. Bitte die Auswahl neu vorbereiten.')
         require_active_working_revision(db, request.preparation.semester_id, request.preparation.schedule_revision_id)
         started = monotonic()
         row = OptimizationOperation(
@@ -158,6 +171,8 @@ def start_operation(db, request, auth):
             selected_course_ids=sorted(c.course_id for c in request.preparation.courses),
             budget_seconds=policy.default_seconds, captured_ceiling_seconds=policy.ceiling_seconds,
             policy_fingerprint=policy.policy_fingerprint, phase='preparing',
+            algorithm=policy.active_algorithm, strategy_profile=policy.strategy_profile,
+            strategy_settings=dict(policy.strategy_settings),
             started_at=datetime.now(timezone.utc), elapsed_milliseconds=0,
         )
         db.add(row)
@@ -187,11 +202,15 @@ def _finish(db, row, live, phase, code=None):
 
 def _run(operation_id, live):
     factory = sessionmaker(bind=live.engine, expire_on_commit=False)
+    incumbent = live.solution
     try:
         with factory() as db:
+            row = db.get(OptimizationOperation, operation_id)
             loaded = _check_prepared(db, live.request)
             problem = DetachedOptimizationInput(tuple(c.optimization for c in loaded.courses),
-                loaded.fixed_sessions, loaded.unavailable_dates, loaded.holidays, live.deadline)
+                loaded.fixed_sessions, loaded.unavailable_dates, loaded.holidays, live.deadline,
+                algorithm=row.algorithm, strategy_profile=row.strategy_profile,
+                strategy_settings=dict(row.strategy_settings), incumbent=incumbent)
         with live.lock:
             if live.discarded: return
             try:
@@ -218,7 +237,7 @@ def _run(operation_id, live):
                 completed = False
                 for message in messages:
                     if message['kind'] == 'objective': live.objective = message['objectiveKey']
-                    elif message['kind'] == 'checkpoint': checkpoint = message['result']
+                    elif message['kind'] == 'checkpoint': checkpoint = prefer_candidate(message['result'], checkpoint or incumbent)
                     elif message['kind'] == 'result': solution = message['result']; completed = True
                     elif message['kind'] == 'failed': raise OperationFailure(message['code'], 'Die Optimierung ist fehlgeschlagen.', 500)
                     elif message['kind'] == 'timeout':
@@ -234,12 +253,15 @@ def _run(operation_id, live):
             sleep(.02)
         with live.lock:
             if live.discarded: return
-            solution = solution or checkpoint
+            solution = prefer_candidate(prefer_candidate(solution, checkpoint), incumbent)
             live.worker.close()
             live.worker = None
             with factory() as db:
                 row = db.get(OptimizationOperation, operation_id)
                 row.budget_exhausted = search_exhausted or bool(solution and solution.search_exhausted)
+                live.termination = ('deadline' if row.budget_exhausted else solution.termination if solution else None) or {
+                    'standard': 'standard_completed', 'standard_optimized': 'standard_optimized_completed',
+                }.get(row.algorithm, 'heuristic_completed')
                 if solution is None or (not solution.optimal and solution.total_units <= 0):
                     _finish(db, row, live, 'timeout_no_candidate', 'NO_USABLE_CANDIDATE')
                     db.commit()
@@ -248,11 +270,18 @@ def _run(operation_id, live):
                 db.commit()
                 loaded = _check_prepared(db, live.request)
                 generation.validate_exact_candidate(tuple(c.optimization for c in loaded.courses),
-                    loaded.fixed_sessions, loaded.unavailable_dates, loaded.holidays, solution.courses)
+                    loaded.fixed_sessions, loaded.unavailable_dates, loaded.holidays, solution.courses, algorithm=row.algorithm)
+                if row.algorithm in ('cohort', 'lecturer') and solution.optimal:
+                    raise generation.InvalidExactCandidate('A heuristic cannot claim a globally optimal result')
                 live.solution = solution
                 live.review = generation._decision_required_result(db, loaded, solution,
-                    live.request.courses, live.request.shared_snapshot_token, live.request.schedule_revision_id)
-                row.phase = 'ready_to_save' if live.review.proof.preferences_proven and all(not c.draft or not c.draft.sessions for c in loaded.courses) else 'awaiting_decision'
+                    live.request.courses, live.request.shared_snapshot_token, live.request.schedule_revision_id,
+                    algorithm=row.algorithm, strategy_profile=row.strategy_profile, strategy_settings=row.strategy_settings,
+                    policy_fingerprint=row.policy_fingerprint)
+                live.review.algorithm = row.algorithm
+                live.review.strategy_profile = row.strategy_profile
+                live.review.strategy_settings = dict(row.strategy_settings)
+                row.phase = 'ready_to_save' if not live.continuation_requests and row.algorithm == 'standard' and live.review.proof.preferences_proven and all(not c.draft or not c.draft.sessions for c in loaded.courses) else 'awaiting_decision'
                 db.commit()
     except Exception as exc:
         with live.lock:
@@ -261,9 +290,68 @@ def _run(operation_id, live):
                 row = db.get(OptimizationOperation, operation_id)
                 if row and row.phase not in TERMINAL:
                     stale = isinstance(exc, LifecycleFailure) or (isinstance(exc, OperationFailure) and exc.code == 'STALE_PLANNING_INPUT')
+                    if incumbent is not None and not stale and live.review is not None:
+                        if live.worker:
+                            live.worker.close()
+                            live.worker = None
+                        live.solution = incumbent
+                        live.errors = [{'code': 'CONTINUATION_FAILED', 'message':
+                            'Die weitere Optimierung wurde unterbrochen. Der bisherige Vorschlag bleibt verfügbar.'}]
+                        live.termination = 'failed'
+                        row.phase = 'awaiting_decision'
+                        db.commit()
+                        return
                     _finish(db, row, live, 'stale' if stale else 'failed',
                         'STALE_PLANNING_INPUT' if stale else exc.code if isinstance(exc, OperationFailure) else 'OPTIMIZATION_OPERATION_FAILED')
                     db.commit()
+
+
+def continue_operation(db, operation_id, auth, secret, fingerprint, continuation_id):
+    """Grant one more allowance to the same retained proposal and operation."""
+    row = _owned(db, str(operation_id), auth)
+    live = _registry.get(_key(db, operation_id))
+    if not _live_allowed(db, row, live, auth, secret):
+        raise OperationFailure('REVIEW_CONTEXT_LOST', 'Der Vorschlag ist nicht mehr verfügbar. Bitte neu erzeugen.')
+    continuation_id = str(continuation_id)
+    with live.lock:
+        row = _owned(db, str(operation_id), auth)
+        if not _live_allowed(db, row, live, auth, secret):
+            raise OperationFailure('REVIEW_CONTEXT_LOST', 'Der Vorschlag ist nicht mehr verfügbar.')
+        if continuation_id in live.continuation_requests:
+            if live.continuation_requests[continuation_id] != fingerprint:
+                raise OperationFailure('CANDIDATE_MISMATCH', 'Die Fortsetzung gehört zu einem anderen Vorschlag.')
+            return get_status(db, operation_id, auth, secret)
+        if row.phase not in ('awaiting_decision', 'ready_to_save') or not live.review or not live.solution:
+            raise OperationFailure('REVIEW_CONTEXT_LOST', 'Dieser Lauf kann derzeit nicht fortgesetzt werden.')
+        if live.review.candidate_fingerprint != fingerprint:
+            raise OperationFailure('CANDIDATE_MISMATCH', 'Der Vorschlag stimmt nicht mit dem Ergebnis überein.')
+        try:
+            loaded = _check_prepared(db, live.request)
+            generation.validate_exact_candidate(tuple(c.optimization for c in loaded.courses),
+                loaded.fixed_sessions, loaded.unavailable_dates, loaded.holidays,
+                live.solution.courses, algorithm=row.algorithm)
+        except (OperationFailure, LifecycleFailure) as exc:
+            _finish(db, row, live, 'stale', 'STALE_PLANNING_INPUT')
+            db.commit()
+            raise OperationFailure('STALE_PLANNING_INPUT', 'Die Planungsdaten haben sich geändert. Bitte neu erzeugen.') from exc
+        live.continuation_requests[continuation_id] = fingerprint
+        live.started = monotonic()
+        live.deadline = live.started + row.budget_seconds
+        live.objective = None
+        live.errors = []
+        live.termination = None
+        row.phase = 'preparing'
+        row.budget_exhausted = False
+        row.elapsed_milliseconds = 0
+        db.commit()
+        try:
+            Thread(target=_run, args=(str(operation_id), live), daemon=True).start()
+        except Exception:
+            row.phase = 'awaiting_decision'
+            live.errors = [{'code': 'CONTINUATION_FAILED', 'message':
+                'Die weitere Optimierung konnte nicht gestartet werden. Der bisherige Vorschlag bleibt verfügbar.'}]
+            db.commit()
+    return get_status(db, operation_id, auth, secret)
 
 
 def apply_operation(db, operation_id, auth, secret, fingerprint, *, finalize=False):
@@ -289,7 +377,7 @@ def apply_operation(db, operation_id, auth, secret, fingerprint, *, finalize=Fal
             loaded = _check_prepared(db, live.request)
             solution = live.solution
             generation.validate_exact_candidate(tuple(c.optimization for c in loaded.courses),
-                loaded.fixed_sessions, loaded.unavailable_dates, loaded.holidays, solution.courses)
+                loaded.fixed_sessions, loaded.unavailable_dates, loaded.holidays, solution.courses, algorithm=row.algorithm)
             if finalize and (not live.review.proof.preferences_proven or any(c.draft and c.draft.sessions for c in loaded.courses)):
                 raise OperationFailure('EXPLICIT_ACCEPTANCE_REQUIRED', 'Bitte den erzeugten Stundenplan ausdrücklich prüfen und übernehmen.')
             outcomes = []
@@ -310,8 +398,11 @@ def apply_operation(db, operation_id, auth, secret, fingerprint, *, finalize=Fal
                     scheduledUnits=candidate.scheduled_units, remainingUnits=max(item.course.total_units-candidate.scheduled_units,0),
                     saved=True, improvement=None, reasons=comparisons[item.course.id].remaining_reasons,
                     errors=[],
+                    lecturerPortions=comparisons[item.course.id].lecturer_portions,
                 ))
             result = OptimizationGenerationResult(semesterId=row.semester_id, outcomes=outcomes, proof=live.review.proof,
+                algorithm=row.algorithm, strategyProfile=row.strategy_profile, strategySettings=dict(row.strategy_settings),
+                termination=live.termination,
                 intensiveFacts=live.review.comparison.generated.intensive_facts,
                 summary=OptimizationSummary(total=len(outcomes), complete=sum(o.status == 'complete' for o in outcomes),
                     improvedPartial=sum(o.status == 'improved_partial' for o in outcomes), unchanged=0, failed=0, stale=0,

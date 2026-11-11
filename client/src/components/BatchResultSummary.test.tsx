@@ -3,11 +3,20 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { BatchResultSummary } from './BatchResultSummary'
-import { mixedOptimizationResultFixture, optimizationResultFixture, candidateProofFixture } from '../test/optimizationFixtures'
+import { mixedOptimizationResultFixture, optimizationResultFixture, candidateProofFixture, heuristicProofFixture } from '../test/optimizationFixtures'
 
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('BatchResultSummary', () => {
+  it('separates a saved repair-limit heuristic from time exhaustion and optimality',()=>{
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    const result={...optimizationResultFixture,algorithm:'cohort' as const,strategyProfile:'heuristic-v1' as const,
+      termination:'repair_limit' as const,proof:heuristicProofFixture,summary:{...optimizationResultFixture.summary,optimalForPreparedSnapshot:false}}
+    act(()=>root.render(<BatchResultSummary result={result} onRetryFailed={vi.fn()}/>))
+    expect(document.body.textContent).toContain('Reparaturlimit erreicht — Optimalität nicht nachgewiesen')
+    expect(document.body.textContent).toContain('Gespeichert nach ausdrücklicher Übernahme')
+    expect(document.body.textContent).not.toContain('Zeitlimit erreicht')
+  })
   it('shows the saved arrangement intensive facts and cohort/date counts', () => {
     const root=createRoot(document.body.appendChild(document.createElement('div')))
     const intensiveFacts={totalUnits:14,intensiveLe:{numerator:1_800_000_000,denominator:2_700_000_000 as const},dailyVariety:1,

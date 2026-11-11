@@ -8,20 +8,47 @@ import { deferredResponse, operationStatusFixture, optimizationPreparationFixtur
 
 vi.mock('../api/conflictAwareGeneration', async (original) => ({
   ...await original<typeof api>(), startOptimizationOperation: vi.fn(), getOptimizationOperation: vi.fn(),
-  decideOptimizationOperation: vi.fn(), cancelOptimizationOperation: vi.fn(),
+  decideOptimizationOperation: vi.fn(), cancelOptimizationOperation: vi.fn(), continueOptimizationOperation: vi.fn(),
 }))
 let root: ReturnType<typeof createRoot> | undefined
 afterEach(() => { act(() => root?.unmount()); vi.clearAllMocks(); vi.useRealTimers(); sessionStorage.clear(); document.body.innerHTML='' })
 
 function mount() {
   let value!: ReturnType<typeof useOptimizationOperation>
-  function Probe({active}: {active:boolean}) { value=useOptimizationOperation(active, '1:11'); return <div>{value.busy ? 'busy' : 'idle'}</div> }
+  function Probe({active}: {active:boolean}) { value=useOptimizationOperation(); return <div hidden={!active}>{value.busy ? 'busy' : 'idle'}</div> }
   root=createRoot(document.body.appendChild(document.createElement('div')))
   act(()=>root!.render(<Probe active />))
   return { current:()=>value, hide:()=>act(()=>root!.render(<Probe active={false}/>)) }
 }
 
-it('acknowledges start immediately and cancels a late result after navigation', async()=>{
+it('continues the same reviewed operation without cancellation or new preparation', async()=>{
+  vi.mocked(api.startOptimizationOperation).mockImplementation(async(_prep,ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'awaiting_decision',canAccept:true,review:decisionRequiredGenerationFixture}))
+  vi.mocked(api.continueOptimizationOperation).mockImplementation(async(ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'optimizing'}))
+  const hook=mount()
+  await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+  const context=vi.mocked(api.startOptimizationOperation).mock.calls[0][1]
+  await act(async()=>{await hook.current().continueOptimization()})
+  expect(api.continueOptimizationOperation).toHaveBeenCalledWith(context,decisionRequiredGenerationFixture.candidateFingerprint,expect.any(String),expect.anything())
+  expect(api.cancelOptimizationOperation).not.toHaveBeenCalled()
+  expect(api.startOptimizationOperation).toHaveBeenCalledTimes(1)
+  expect(hook.current().status?.phase).toBe('optimizing')
+})
+
+it.each(['cohort','lecturer','standard_optimized'] as const)('keeps %s identity and waits for explicit acceptance', async algorithm=>{
+  const identity={algorithm,strategyProfile:algorithm === 'standard_optimized' ? 'standard-optimized-v1' as const : 'heuristic-v1' as const,strategySettings:{version:'teaching-v1'}}
+  const review={...decisionRequiredGenerationFixture,...identity,proof:null}
+  vi.mocked(api.startOptimizationOperation).mockImplementation(async(_prep,ctx)=>({...operationStatusFixture,...identity,operationId:ctx.operationId,phase:'awaiting_decision',canAccept:true,review}))
+  vi.mocked(api.decideOptimizationOperation).mockImplementation(async(ctx)=>({...operationStatusFixture,...identity,operationId:ctx.operationId,phase:'saved',saved:true,result:{...directSavedGenerationFixture,...identity}}))
+  const hook=mount()
+  await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+  expect(hook.current().status?.algorithm).toBe(algorithm)
+  expect(api.decideOptimizationOperation).not.toHaveBeenCalled()
+  await act(async()=>{await hook.current().accept()})
+  expect(vi.mocked(api.decideOptimizationOperation).mock.calls[0][2]).toBe(false)
+  expect(hook.current().status?.result?.algorithm).toBe(algorithm)
+})
+
+it('acknowledges start immediately and retains a late review result after navigation', async()=>{
   const response=deferredResponse<api.OptimizationOperationStatus>()
   vi.mocked(api.startOptimizationOperation).mockReturnValue(response.promise)
   vi.mocked(api.cancelOptimizationOperation).mockResolvedValue({...operationStatusFixture,phase:'cancelled'})
@@ -34,8 +61,8 @@ it('acknowledges start immediately and cancels a late result after navigation', 
   expect(JSON.stringify(sessionStorage)).not.toContain(context.contextSecret)
   hook.hide()
   await act(async()=>{response.resolve({...operationStatusFixture,operationId:context.operationId,phase:'awaiting_decision',review:decisionRequiredGenerationFixture,canAccept:true});await started})
-  expect(hook.current().status?.review).toBeFalsy()
-  expect(api.cancelOptimizationOperation).toHaveBeenCalled()
+  expect(hook.current().status?.review).toEqual(decisionRequiredGenerationFixture)
+  expect(api.cancelOptimizationOperation).not.toHaveBeenCalled()
 })
 
 it('automatically finalizes a fully proven new selection without another click', async()=>{
@@ -336,7 +363,7 @@ it('ends recovery cleanly when an unregistered start is definitively rejected',a
   expect(api.cancelOptimizationOperation).not.toHaveBeenCalled()
 })
 
-it.each(['navigation','pagehide','auth'])('still invalidates a reconnecting run on %s and ignores late status',async(boundary)=>{
+it.each(['pagehide','auth'])('still invalidates a reconnecting run on %s and ignores late status',async(boundary)=>{
   vi.useFakeTimers()
   const delayed=deferredResponse<api.OptimizationOperationStatus>()
   let id=''
@@ -350,8 +377,7 @@ it.each(['navigation','pagehide','auth'])('still invalidates a reconnecting run 
   await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
   await act(async()=>{await vi.advanceTimersByTimeAsync(5001)})
   expect(hook.current().unknown).toBe(true)
-  if(boundary==='navigation') hook.hide()
-  else act(()=>window.dispatchEvent(new Event(boundary==='auth'?PLANNER_AUTH_INVALIDATED_EVENT:'pagehide')))
+  act(()=>window.dispatchEvent(new Event(boundary==='auth'?PLANNER_AUTH_INVALIDATED_EVENT:'pagehide')))
   await act(async()=>delayed.resolve({...operationStatusFixture,operationId:id,phase:'ready_to_save',canFinalize:true,review:decisionRequiredGenerationFixture}))
   expect(api.cancelOptimizationOperation).toHaveBeenCalled()
   expect(api.decideOptimizationOperation).not.toHaveBeenCalled()

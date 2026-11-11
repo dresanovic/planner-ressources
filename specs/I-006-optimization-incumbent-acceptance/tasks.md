@@ -225,3 +225,8 @@ Deliver/verify the operator-budget/status increment first, preserving proven cur
 ## Review correction: prepared selection identity (2026-11-05)
 
 - [X] T074 In client/src/pages/CourseSchedulePage.tsx invalidate preparation synchronously when selected courses or unavailable-date text changes, reject stale queued starts and obsolete preparation responses, and require fresh preparation. Add red-first page regressions for clearing selection, valid/invalid date edits, fresh date preparation and queued starts. Verify client tests, lint, TypeScript and production build. Scope: high-priority code-review finding 1 only.
+
+## Navigation correction (2026-11-10)
+
+- [X] T075 Own the existing optimization hook at application-session level; retain original run identity and memory-only authority across view/tab/semester/revision/visibility changes. Add application-wide status, guarded return-to-run and explicit cancellation. Restore the captured selection and show retained review only on its matching generation surface; retain automatic finalization and block duplicate starts. Update FR-021/022/023a, operation contract, plan and operator documentation.
+- [X] T076 Verify real App navigation, changed displayed semester, background automatic saving, retained review/acceptance, stale rejection, global cancellation and fresh retry; replace obsolete navigation-cancellation expectations with retention/return regressions. Preserve auth/pagehide/reconciliation tests and verify existing backend atomic freshness/cancellation protections. Run frontend tests, targeted lint, TypeScript/production build and backend operation service tests. No live planning database writes are required for verification.

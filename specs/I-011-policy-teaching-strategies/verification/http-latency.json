@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-10",
+  "scope": "real TCP HTTP over loopback to isolated Uvicorn, real spawned worker; immediate cancel before acceptance",
+  "results": [
+    {
+      "algorithm": "standard",
+      "courses": 1,
+      "startSeconds": 0.015,
+      "cancelSeconds": 0.016,
+      "savedPlanningUnchanged": true
+    },
+    {
+      "algorithm": "standard",
+      "courses": 20,
+      "startSeconds": 0.015,
+      "cancelSeconds": 0.016,
+      "savedPlanningUnchanged": true
+    },
+    {
+      "algorithm": "cohort",
+      "courses": 1,
+      "startSeconds": 0.031,
+      "cancelSeconds": 0.094,
+      "savedPlanningUnchanged": true
+    },
+    {
+      "algorithm": "cohort",
+      "courses": 20,
+      "startSeconds": 0.015,
+      "cancelSeconds": 0.032,
+      "savedPlanningUnchanged": true
+    },
+    {
+      "algorithm": "lecturer",
+      "courses": 1,
+      "startSeconds": 0.031,
+      "cancelSeconds": 0.015,
+      "savedPlanningUnchanged": true
+    },
+    {
+      "algorithm": "lecturer",
+      "courses": 20,
+      "startSeconds": 0.016,
+      "cancelSeconds": 0.031,
+      "savedPlanningUnchanged": true
+    }
+  ]
+}

@@ -13,16 +13,16 @@ services:
       LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY: ${LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY:?Set LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY in .env}
       PLANNER_BOOTSTRAP_CREDENTIAL: ${PLANNER_BOOTSTRAP_CREDENTIAL:-}
       PLANNER_ADMIN_RECOVERY_CREDENTIAL: ${PLANNER_ADMIN_RECOVERY_CREDENTIAL:-}
-      TEACHING_OPTIMIZATION_POLICY_FILE: ${TEACHING_OPTIMIZATION_POLICY_FILE:-}
+      TEACHING_OPTIMIZATION_POLICY_FILE: ${TEACHING_OPTIMIZATION_POLICY_FILE:-/config/optimization/policy.json}
     ports:
       - "${PLANNER_PORT:-8080}:8080"
     volumes:
       - planner_data:/data
       # Optional customer terminology (create the host file before uncommenting):
       # - ./config/terminology-overrides.json:/config/terminology-overrides.json:ro
-      # Optional teaching policy: create config/optimization/policy.json first.
+      # Required for new teaching runs: provision policy.json before starting.
       # Mount the DIRECTORY so host-side atomic replacement remains visible.
-      # - ./config/optimization:/config/optimization:ro
+      - ./config/optimization:/config/optimization:ro
     security_opt:
       - no-new-privileges:true
     stop_grace_period: 30s

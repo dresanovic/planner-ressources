@@ -263,9 +263,11 @@ otherwise report an unknown improvement gap.
   Start applies to future runs only, including when the old candidate is
   awaiting acceptance. Acceptance revalidates planning inputs against the
   captured operation context, not newly loaded algorithm configuration.
-- Idempotent repeated Start for an existing operation returns that operation;
-  a fresh retry reads current policy and starts a new run. Do not rerun an
-  accepted candidate under whichever algorithm is active later.
+- Idempotent repeated Start for an existing operation returns that operation.
+  **Weiter optimieren** continues that operation with its captured policy and
+  incumbent proposal (I-013); only an explicitly prepared new operation reads
+  current policy. Do not rerun an accepted candidate under whichever algorithm
+  is active later.
 - Preserve operator time limits and shared cancellation/checkpoint handling.
   Bound every search phase, including candidate enumeration, capacity checks,
   scoring, backtracking and finalization.

@@ -127,6 +127,7 @@ class OptimizationCourse:
     latest_teaching_end: datetime | None = None
     latest_teaching_source_id: int | None = None
     preferred_session_units: float | None = None
+    explicit_lecturer_portions: tuple[tuple[int, int], ...] | None = None
 
     @property
     def preferred_size_twice(self) -> int:
@@ -201,6 +202,8 @@ class SemesterOptimizationResult:
     search_exhausted: bool = False
     intensive_teaching_time: int = 0
     daily_variety: int = 0
+    termination: str | None = None
+    repair_attempts: int = 0
 
 
 @dataclass
@@ -655,6 +658,7 @@ def optimize_semester(
     generated_only: bool = False,
     control: OptimizationSearchControl | None = None,
     allow_unproven: bool = False,
+    incumbent: SemesterOptimizationResult | None = None,
 ) -> SemesterOptimizationResult:
     started = monotonic()
     control = control or OptimizationSearchControl(deadline=started + deadline_seconds)
@@ -949,7 +953,7 @@ def optimize_semester(
     tracked_vars = [var for variables in course_vars.values() for var in (
         list(variables.temporal.values()) + list(variables.lecturer.values()) + list(variables.room.values()) + ([variables.retain] if variables.retain is not None else [])
     )]
-    if generated_only and any(_needs_completion_hint(course) for course in courses):
+    if incumbent is None and generated_only and any(_needs_completion_hint(course) for course in courses):
         _add_completion_hint(model, course_vars, control)
     objective_values: dict[str, int] = {}
     # Try the course's preferred size first, then fall back without excluding any
@@ -961,8 +965,15 @@ def optimize_semester(
     if preferred_decisions:
         model.add_decision_strategy([var for _, var in preferred_decisions],
                                     cp_model.CHOOSE_FIRST, cp_model.SELECT_MAX_VALUE)
-    last_candidate = None
-    unit_bound = None
+    last_candidate = incumbent
+    unit_bound = incumbent.unit_upper_bound if incumbent else None
+    coverage_upper = sum(c.total_units if generated_only else
+        max(c.total_units, sum(s.units for s in c.current_sessions)) for c in courses)
+    if incumbent is not None:
+        from app.services.optimization_incumbent import seed_incumbent
+        last_candidate, objective_values = seed_incumbent(model, course_vars, objectives,
+            incumbent, control, coverage_upper)
+        unit_bound = last_candidate.unit_upper_bound
     def unfinished(candidate, stage):
         candidate = replace(candidate, optimal=False, objectives=tuple(
             replace(evidence, proof_status='unfinished') if index == stage else evidence
@@ -971,6 +982,8 @@ def optimize_semester(
             control.checkpoint(candidate)
         return candidate
     for stage, (objective_name, direction, expression) in enumerate(objectives):
+        if objective_name in objective_values:
+            continue
         if stage not in (0,len(objectives)-1) and isinstance(expression,int):
             objective_values[objective_name] = expression
             if last_candidate is not None:
@@ -1013,15 +1026,20 @@ def optimize_semester(
                 if control.cancelled():
                     self.stop_search()
                     return
-                if monotonic() - self.last_sent < .25:
+                complete = stage == 0 and int(self.value(expression)) == coverage_upper
+                if monotonic() - self.last_sent < .25 and not complete:
                     return
                 self.last_sent = monotonic()
                 try:
-                    last_candidate = decode(self, objective_values, stage, unit_bound=unit_bound)
+                    proofs = {**objective_values, 'total_units': coverage_upper} if complete else objective_values
+                    last_candidate = decode(self, proofs, stage,
+                        unit_bound=coverage_upper if complete else unit_bound)
                     if control.checkpoint is not None:
                         control.checkpoint(last_candidate)
                 except NoGeneratedAlternative:
                     pass
+                if complete:
+                    self.stop_search()
         try:
             status = solver.solve(model, Checkpoint()) if allow_unproven and control.checkpoint is not None else solver.solve(model)
         finally:
@@ -1035,7 +1053,8 @@ def optimize_semester(
             value = int(solver.value(expression))
             if objective_name == 'total_units':
                 unit_bound = solver.best_objective_bound
-            if status == cp_model.OPTIMAL:
+            coverage_complete = stage == 0 and value == coverage_upper
+            if status == cp_model.OPTIMAL or coverage_complete:
                 objective_values[objective_name] = value
             if allow_unproven or stage == len(objectives)-1:
                 last_candidate = decode(solver, objective_values, stage,
@@ -1043,7 +1062,7 @@ def optimize_semester(
                     unit_bound=unit_bound)
                 if control.checkpoint is not None:
                     control.checkpoint(last_candidate)
-        if status != cp_model.OPTIMAL:
+        if status != cp_model.OPTIMAL and not (status == cp_model.FEASIBLE and coverage_complete):
             if allow_unproven and last_candidate is not None:
                 return unfinished(last_candidate, stage)
             raise OptimalResultNotProven(
@@ -1066,8 +1085,8 @@ def _needs_completion_hint(course: OptimizationCourse) -> bool:
             and 0 < course.total_units % preferred < course.min_session_units)
 
 
-def _add_completion_hint(model, course_vars, control):
-    """Suggest a hard-valid generated arrangement; never constrain or prove it.
+def _construct_completion(course_vars, control, *, date_order=None):
+    """Construct a generated arrangement; never constrain or prove preferences.
 
     Prefer the usual session size unless that would leave an unfillable tail.
     Scarce-date courses go first only in this constructive hint, not in an
@@ -1092,6 +1111,8 @@ def _add_completion_hint(model, course_vars, control):
         course = variables.course
         remaining = course.total_units
         dates = sorted(dates_by_course[course_id].items())
+        if date_order is not None:
+            dates = date_order(course, dates)
         for index, (_day, candidates) in enumerate(dates):
             control.check()
             if remaining < course.min_session_units:
@@ -1126,6 +1147,11 @@ def _add_completion_hint(model, course_vars, control):
             for kind, resource in (('cohort', course.cohort_id), ('lecturer', lecturer), ('room', room)):
                 occupied[(kind, resource, candidate.date)].append((candidate.start_time, candidate.end_time))
 
+    return selected
+
+
+def _add_completion_hint(model, course_vars, control):
+    selected = _construct_completion(course_vars, control)
     if not selected:
         return
     for course_id, variables in course_vars.items():
@@ -1210,30 +1236,39 @@ def _add_retained_alternatives(model, course_vars, fixed_sessions, *, control=No
     return conflict_terms
 
 
-def intensive_arrangement(courses, fixed_sessions, sessions_by_course):
+def intensive_arrangement(courses, fixed_sessions, sessions_by_course, *, control=None):
+    def checked(values):
+        for value in values:
+            if control:
+                control.check()
+            yield value
+    courses = tuple(checked(courses))
+    fixed_sessions = tuple(checked(fixed_sessions))
     cohorts = {c.cohort_id for c in courses}
     applicable = any(w.kind == 'dated' and w.is_intensive and window_has_occurrence(w,c.planning_period)
-                     for c in courses for w in c.windows)
+                     for c in checked(courses) for w in checked(c.windows))
     applicable = applicable or any(f.source_kind == 'teaching_session' and f.cohort_id in cohorts
-        and marked_intervals(f.date,f.marked_windows) for f in fixed_sessions)
+        and marked_intervals(f.date,f.marked_windows) for f in checked(fixed_sessions))
     if not applicable:
         return None
     total = ticks = 0
     presence = defaultdict(set)
-    for course in courses:
-        for session in sessions_by_course.get(course.course_id,()):
+    for course in checked(courses):
+        for session in checked(sessions_by_course.get(course.course_id,())):
             total += session.units
             overlap = intensive_instruction_ticks(session.date,session.start_time,session.end_time,session.units,course.windows)
             ticks += overlap
             if overlap:
                 presence[(session.date,course.cohort_id)].add(course.course_id)
-    for fixed in fixed_sessions:
+    for fixed in checked(fixed_sessions):
         if (fixed.source_kind == 'teaching_session' and fixed.cohort_id in cohorts
             and intensive_instruction_ticks(fixed.date,fixed.start_time,fixed.end_time,fixed.units,fixed.marked_windows)):
             presence[(fixed.date,fixed.cohort_id)].add(fixed.course_id)
     rows = [dict(cohortId=cohort,date=day.isoformat(),distinctCourseIds=sorted(ids),
                  distinctLvCount=len(ids),varietyContribution=max(0,len(ids)-1))
-            for (day,cohort),ids in sorted(presence.items())]
+            for (day,cohort),ids in checked(sorted(presence.items()))]
+    if control:
+        control.check()
     return total,ticks,sum(row['varietyContribution'] for row in rows),rows
 
 

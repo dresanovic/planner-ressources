@@ -6,9 +6,11 @@ from app.services.optimization_config import OptimizationConfigurationError, loa
 
 
 def test_shipped_defaults_and_fingerprint(monkeypatch):
+    from pathlib import Path
     monkeypatch.delenv("TEACHING_OPTIMIZATION_POLICY_FILE", raising=False)
     policy = load_optimization_policy()
-    assert (policy.default_seconds, policy.ceiling_seconds) == (300, 1800)
+    installed = json.loads((Path(__file__).resolve().parents[3] / 'config/optimization/policy.json').read_text())
+    assert (policy.default_seconds, policy.ceiling_seconds) == (installed.get('defaultSeconds', 300), installed.get('ceilingSeconds', 1800))
     assert len(policy.policy_fingerprint) == 64
     assert policy == load_optimization_policy()
 
@@ -65,3 +67,54 @@ def test_unreadable_file_reports_safe_operator_diagnostic(monkeypatch):
     assert "policy.json" in str(failure.value)
     assert "PermissionError" in str(failure.value)
     assert "private file contents" not in str(failure.value)
+
+
+@pytest.mark.parametrize('algorithm', ['standard', 'cohort', 'lecturer', 'standard_optimized'])
+def test_valid_algorithm_is_captured_and_fingerprinted(monkeypatch, tmp_path, algorithm):
+    path = tmp_path / 'policy.json'
+    monkeypatch.setenv('TEACHING_OPTIMIZATION_POLICY_FILE', str(path))
+    path.write_text('{}')
+    standard = load_optimization_policy()
+    assert standard.active_algorithm == 'standard'
+    path.write_text(json.dumps({'activeAlgorithm': algorithm}))
+    selected = load_optimization_policy()
+    assert selected.active_algorithm == algorithm
+    assert selected.strategy_profile == ({'standard':'standard-v1', 'standard_optimized':'standard-optimized-v1'}.get(algorithm, 'heuristic-v1'))
+    assert (selected.policy_fingerprint == standard.policy_fingerprint) == (algorithm == 'standard')
+    path.write_text(json.dumps({'ceilingSeconds': 1800, 'activeAlgorithm': algorithm, 'defaultSeconds': 300}, indent=4))
+    assert load_optimization_policy() == selected
+
+
+@pytest.mark.parametrize('value', [None, '', 'Standard', 'unknown', 1, True, [], {}])
+def test_invalid_explicit_algorithm_never_defaults(monkeypatch, tmp_path, value):
+    path = tmp_path / 'policy.json'
+    path.write_text(json.dumps({'activeAlgorithm': value}))
+    monkeypatch.setenv('TEACHING_OPTIMIZATION_POLICY_FILE', str(path))
+    with pytest.raises(OptimizationConfigurationError, match='activeAlgorithm'):
+        load_optimization_policy()
+
+
+def test_normal_policy_is_source_relative_even_from_different_cwd(monkeypatch, tmp_path):
+    monkeypatch.delenv('TEACHING_OPTIMIZATION_POLICY_FILE', raising=False)
+    expected = load_optimization_policy()
+    monkeypatch.chdir(tmp_path)
+    assert load_optimization_policy() == expected
+
+
+def test_normal_missing_policy_requires_provisioning(monkeypatch, tmp_path):
+    from app.services import optimization_config as config
+    monkeypatch.delenv('TEACHING_OPTIMIZATION_POLICY_FILE', raising=False)
+    monkeypatch.setattr(config, 'DEFAULT_POLICY_PATH', tmp_path / 'missing.json', raising=False)
+    with pytest.raises(OptimizationConfigurationError) as failure:
+        load_optimization_policy()
+    message = str(failure.value)
+    assert str(tmp_path / 'missing.json') in message
+    assert 'bereitstellen' in message
+
+
+def test_duplicate_selector_rejected(monkeypatch, tmp_path):
+    path = tmp_path / 'policy.json'
+    path.write_text('{"activeAlgorithm":"standard","activeAlgorithm":"cohort"}')
+    monkeypatch.setenv('TEACHING_OPTIMIZATION_POLICY_FILE', str(path))
+    with pytest.raises(OptimizationConfigurationError):
+        load_optimization_policy()

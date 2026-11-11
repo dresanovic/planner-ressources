@@ -11,8 +11,7 @@ COPY client/ ./
 RUN npm run build
 
 
-FROM python:3.15.0-slim-trixie@sha256:f5b92f2a669a4c347044f29367f31983280b648250ca94dea66f98c53bc87e58 AS python-dependencies
-
+FROM python:3.13-slim-bookworm AS python-dependencies
 WORKDIR /build/backend
 
 COPY backend/requirements-runtime.txt ./
@@ -24,7 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         -r requirements-runtime.txt
 
 
-FROM python:3.15.0-slim-trixie@sha256:f5b92f2a669a4c347044f29367f31983280b648250ca94dea66f98c53bc87e58 AS runtime
+FROM python:3.13-slim-bookworm  AS runtime
 
 ARG VERSION=""
 ARG VCS_REF=""

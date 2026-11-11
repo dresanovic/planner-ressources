@@ -1,0 +1,2047 @@
+{
+  "environment": {
+    "python": "3.12.8",
+    "platform": "Windows-11-10.0.22631-SP0"
+  },
+  "scope": "in-process search; excludes worker startup, API and save latency",
+  "results": [
+    {
+      "scenario": "single",
+      "algorithm": "standard",
+      "snapshot": "bbcb4efb3dbc42c3fd16d4305fa72188ca07195febceebf61a6e12d899c8cc88",
+      "allowanceSeconds": 2,
+      "requiredUnits": 6,
+      "status": "measured",
+      "scheduledUnits": 6,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.031,
+      "termination": "standard_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 6
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "proven",
+          "value": 18
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "proven",
+          "value": 4
+        }
+      ],
+      "objectiveProfile": "standard-v1",
+      "optimal": true,
+      "usableCandidate": true,
+      "unitUpperBound": 6,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "cohort_competition",
+      "algorithm": "standard",
+      "snapshot": "6b245e8307d870b005d050c0a0e775342fc5ddd16533328035ef74c259102258",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.375,
+      "termination": "standard_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 7,
+          "2026-09-14": 6
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 7,
+          "2026-09-14": 6
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "proven",
+          "value": 50
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "proven",
+          "value": 8
+        }
+      ],
+      "objectiveProfile": "standard-v1",
+      "optimal": true,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "shared_lecturer",
+      "algorithm": "standard",
+      "snapshot": "e5618be8b10b7a129f0db5815d4cd6d67dc382edd61ade0cbfebfa8f9171103f",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.062,
+      "termination": "standard_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        },
+        "2": {
+          "2026-09-07": 3,
+          "2026-09-14": 3
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 7,
+          "2026-09-14": 6
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "proven",
+          "value": 40
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "proven",
+          "value": 8
+        }
+      ],
+      "objectiveProfile": "standard-v1",
+      "optimal": true,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "intensive",
+      "algorithm": "standard",
+      "snapshot": "a15cabada2b39cb401ffbadfb01c63cfcc83b78b8aa833020d095f3dcbfa525f",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 2.0,
+      "termination": "standard_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 3,
+          "2026-09-14": 8,
+          "2026-09-21": 2
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 3,
+          "2026-09-14": 4
+        },
+        "2": {
+          "2026-09-14": 4,
+          "2026-09-21": 2
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 21600000000
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 2
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "unfinished",
+          "value": 38
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "not_attempted",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "not_attempted",
+          "value": 2
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "not_attempted",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "not_attempted",
+          "value": 1842
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "not_attempted",
+          "value": 12
+        }
+      ],
+      "objectiveProfile": "standard-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 21600000000,
+      "dailyVariety": 2
+    },
+    {
+      "scenario": "partial_week",
+      "algorithm": "standard",
+      "snapshot": "b96b6f40a96d18794f24a51660a26d791bfb0fbc98e86a9098573c854696031b",
+      "allowanceSeconds": 2,
+      "requiredUnits": 6,
+      "status": "measured",
+      "scheduledUnits": 6,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.016,
+      "termination": "standard_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 6
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "proven",
+          "value": 8
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "proven",
+          "value": 4
+        }
+      ],
+      "objectiveProfile": "standard-v1",
+      "optimal": true,
+      "usableCandidate": true,
+      "unitUpperBound": 6,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "twenty",
+      "algorithm": "standard",
+      "snapshot": "cf0802285e1d67adc26541fc54fea4134a9fbe159b4adf8ae49133f908dc14dd",
+      "allowanceSeconds": 2,
+      "requiredUnits": 40,
+      "status": "measured",
+      "scheduledUnits": 40,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.062,
+      "termination": "standard_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 3
+        },
+        "2": {
+          "2026-09-07": 2
+        },
+        "3": {
+          "2026-09-07": 2
+        },
+        "4": {
+          "2026-09-07": 2
+        },
+        "5": {
+          "2026-09-07": 2
+        },
+        "6": {
+          "2026-09-07": 2
+        },
+        "7": {
+          "2026-09-07": 2
+        },
+        "8": {
+          "2026-09-07": 2
+        },
+        "9": {
+          "2026-09-07": 2
+        },
+        "10": {
+          "2026-09-07": 2
+        },
+        "11": {
+          "2026-09-07": 2
+        },
+        "12": {
+          "2026-09-07": 2
+        },
+        "13": {
+          "2026-09-07": 2
+        },
+        "14": {
+          "2026-09-07": 2
+        },
+        "15": {
+          "2026-09-07": 2
+        },
+        "16": {
+          "2026-09-07": 2
+        },
+        "17": {
+          "2026-09-07": 2
+        },
+        "18": {
+          "2026-09-07": 2
+        },
+        "19": {
+          "2026-09-07": 2
+        },
+        "20": {
+          "2026-09-07": 2
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 3
+        },
+        "2": {
+          "2026-09-07": 2
+        },
+        "3": {
+          "2026-09-07": 2
+        },
+        "4": {
+          "2026-09-07": 2
+        },
+        "5": {
+          "2026-09-07": 2
+        },
+        "6": {
+          "2026-09-07": 2
+        },
+        "7": {
+          "2026-09-07": 2
+        },
+        "8": {
+          "2026-09-07": 2
+        },
+        "9": {
+          "2026-09-07": 2
+        },
+        "10": {
+          "2026-09-07": 2
+        },
+        "11": {
+          "2026-09-07": 2
+        },
+        "12": {
+          "2026-09-07": 2
+        },
+        "13": {
+          "2026-09-07": 2
+        },
+        "14": {
+          "2026-09-07": 2
+        },
+        "15": {
+          "2026-09-07": 2
+        },
+        "16": {
+          "2026-09-07": 2
+        },
+        "17": {
+          "2026-09-07": 2
+        },
+        "18": {
+          "2026-09-07": 2
+        },
+        "19": {
+          "2026-09-07": 2
+        },
+        "20": {
+          "2026-09-07": 2
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 40
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "proven",
+          "value": 20
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "proven",
+          "value": 40
+        }
+      ],
+      "objectiveProfile": "standard-v1",
+      "optimal": true,
+      "usableCandidate": true,
+      "unitUpperBound": 40,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "single",
+      "algorithm": "cohort",
+      "snapshot": "bbcb4efb3dbc42c3fd16d4305fa72188ca07195febceebf61a6e12d899c8cc88",
+      "allowanceSeconds": 2,
+      "requiredUnits": 6,
+      "status": "measured",
+      "scheduledUnits": 6,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.078,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-07": 1
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-07": 1
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 6
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 19.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 6,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "cohort_competition",
+      "algorithm": "cohort",
+      "snapshot": "6b245e8307d870b005d050c0a0e775342fc5ddd16533328035ef74c259102258",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 2.0,
+      "termination": "deadline",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-28": 3
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-28": 3
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 43.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "shared_lecturer",
+      "algorithm": "cohort",
+      "snapshot": "e5618be8b10b7a129f0db5815d4cd6d67dc382edd61ade0cbfebfa8f9171103f",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.312,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-07": 1
+        },
+        "2": {
+          "2026-09-07": 3,
+          "2026-09-14": 3
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-14": 6,
+          "2026-09-21": 3,
+          "2026-09-07": 4
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 37.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "intensive",
+      "algorithm": "cohort",
+      "snapshot": "a15cabada2b39cb401ffbadfb01c63cfcc83b78b8aa833020d095f3dcbfa525f",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 2.0,
+      "termination": "deadline",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-14": 8,
+          "2026-09-21": 4,
+          "2026-09-07": 1
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-14": 6,
+          "2026-09-07": 1
+        },
+        "2": {
+          "2026-09-14": 2,
+          "2026-09-21": 4
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 21600000000
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 1
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 4.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 49.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 1
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 21600000000,
+      "dailyVariety": 1
+    },
+    {
+      "scenario": "partial_week",
+      "algorithm": "cohort",
+      "snapshot": "b96b6f40a96d18794f24a51660a26d791bfb0fbc98e86a9098573c854696031b",
+      "allowanceSeconds": 2,
+      "requiredUnits": 6,
+      "status": "measured",
+      "scheduledUnits": 6,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.0,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 6
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 18.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 6,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "twenty",
+      "algorithm": "cohort",
+      "snapshot": "cf0802285e1d67adc26541fc54fea4134a9fbe159b4adf8ae49133f908dc14dd",
+      "allowanceSeconds": 2,
+      "requiredUnits": 40,
+      "status": "measured",
+      "scheduledUnits": 40,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.094,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 3
+        },
+        "2": {
+          "2026-09-07": 2
+        },
+        "3": {
+          "2026-09-07": 2
+        },
+        "4": {
+          "2026-09-07": 2
+        },
+        "5": {
+          "2026-09-07": 2
+        },
+        "6": {
+          "2026-09-07": 2
+        },
+        "7": {
+          "2026-09-07": 2
+        },
+        "8": {
+          "2026-09-07": 2
+        },
+        "9": {
+          "2026-09-07": 2
+        },
+        "10": {
+          "2026-09-07": 2
+        },
+        "11": {
+          "2026-09-07": 2
+        },
+        "12": {
+          "2026-09-07": 2
+        },
+        "13": {
+          "2026-09-07": 2
+        },
+        "14": {
+          "2026-09-07": 2
+        },
+        "15": {
+          "2026-09-07": 2
+        },
+        "16": {
+          "2026-09-07": 2
+        },
+        "17": {
+          "2026-09-07": 2
+        },
+        "18": {
+          "2026-09-07": 2
+        },
+        "19": {
+          "2026-09-07": 2
+        },
+        "20": {
+          "2026-09-07": 2
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 3
+        },
+        "2": {
+          "2026-09-07": 2
+        },
+        "3": {
+          "2026-09-07": 2
+        },
+        "4": {
+          "2026-09-07": 2
+        },
+        "5": {
+          "2026-09-07": 2
+        },
+        "6": {
+          "2026-09-07": 2
+        },
+        "7": {
+          "2026-09-07": 2
+        },
+        "8": {
+          "2026-09-07": 2
+        },
+        "9": {
+          "2026-09-07": 2
+        },
+        "10": {
+          "2026-09-07": 2
+        },
+        "11": {
+          "2026-09-07": 2
+        },
+        "12": {
+          "2026-09-07": 2
+        },
+        "13": {
+          "2026-09-07": 2
+        },
+        "14": {
+          "2026-09-07": 2
+        },
+        "15": {
+          "2026-09-07": 2
+        },
+        "16": {
+          "2026-09-07": 2
+        },
+        "17": {
+          "2026-09-07": 2
+        },
+        "18": {
+          "2026-09-07": 2
+        },
+        "19": {
+          "2026-09-07": 2
+        },
+        "20": {
+          "2026-09-07": 2
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 40
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 85.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 40,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "single",
+      "algorithm": "lecturer",
+      "snapshot": "bbcb4efb3dbc42c3fd16d4305fa72188ca07195febceebf61a6e12d899c8cc88",
+      "allowanceSeconds": 2,
+      "requiredUnits": 6,
+      "status": "measured",
+      "scheduledUnits": 6,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.062,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-07": 1
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-07": 1
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 6
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 19.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 6,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "cohort_competition",
+      "algorithm": "lecturer",
+      "snapshot": "6b245e8307d870b005d050c0a0e775342fc5ddd16533328035ef74c259102258",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.469,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-14": 3,
+          "2026-09-21": 6,
+          "2026-09-28": 3,
+          "2026-09-07": 1
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-07": 1
+        },
+        "2": {
+          "2026-09-21": 3,
+          "2026-09-28": 3
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 37.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "shared_lecturer",
+      "algorithm": "lecturer",
+      "snapshot": "e5618be8b10b7a129f0db5815d4cd6d67dc382edd61ade0cbfebfa8f9171103f",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.578,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        },
+        "2": {
+          "2026-09-21": 3,
+          "2026-09-28": 3
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3,
+          "2026-09-21": 3,
+          "2026-09-28": 3
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 43.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "intensive",
+      "algorithm": "lecturer",
+      "snapshot": "a15cabada2b39cb401ffbadfb01c63cfcc83b78b8aa833020d095f3dcbfa525f",
+      "allowanceSeconds": 2,
+      "requiredUnits": 12,
+      "status": "measured",
+      "scheduledUnits": 12,
+      "remainingUnits": 0,
+      "elapsedSeconds": 2.0,
+      "termination": "deadline",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-14": 8,
+          "2026-09-21": 4,
+          "2026-09-07": 1
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-14": 6,
+          "2026-09-07": 1
+        },
+        "2": {
+          "2026-09-14": 2,
+          "2026-09-21": 4
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 12
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 21600000000
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 1
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 4.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 37.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 1
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 12,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 21600000000,
+      "dailyVariety": 1
+    },
+    {
+      "scenario": "partial_week",
+      "algorithm": "lecturer",
+      "snapshot": "b96b6f40a96d18794f24a51660a26d791bfb0fbc98e86a9098573c854696031b",
+      "allowanceSeconds": 2,
+      "requiredUnits": 6,
+      "status": "measured",
+      "scheduledUnits": 6,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.0,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 4,
+          "2026-09-14": 3
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 6
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 18.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 6,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    },
+    {
+      "scenario": "twenty",
+      "algorithm": "lecturer",
+      "snapshot": "cf0802285e1d67adc26541fc54fea4134a9fbe159b4adf8ae49133f908dc14dd",
+      "allowanceSeconds": 2,
+      "requiredUnits": 40,
+      "status": "measured",
+      "scheduledUnits": 40,
+      "remainingUnits": 0,
+      "elapsedSeconds": 0.094,
+      "termination": "heuristic_completed",
+      "hardValid": true,
+      "weeklyCohortUnits": {
+        "1": {
+          "2026-09-07": 3
+        },
+        "2": {
+          "2026-09-07": 2
+        },
+        "3": {
+          "2026-09-07": 2
+        },
+        "4": {
+          "2026-09-07": 2
+        },
+        "5": {
+          "2026-09-07": 2
+        },
+        "6": {
+          "2026-09-07": 2
+        },
+        "7": {
+          "2026-09-07": 2
+        },
+        "8": {
+          "2026-09-07": 2
+        },
+        "9": {
+          "2026-09-07": 2
+        },
+        "10": {
+          "2026-09-07": 2
+        },
+        "11": {
+          "2026-09-07": 2
+        },
+        "12": {
+          "2026-09-07": 2
+        },
+        "13": {
+          "2026-09-07": 2
+        },
+        "14": {
+          "2026-09-07": 2
+        },
+        "15": {
+          "2026-09-07": 2
+        },
+        "16": {
+          "2026-09-07": 2
+        },
+        "17": {
+          "2026-09-07": 2
+        },
+        "18": {
+          "2026-09-07": 2
+        },
+        "19": {
+          "2026-09-07": 2
+        },
+        "20": {
+          "2026-09-07": 2
+        }
+      },
+      "weeklyLecturerUnits": {
+        "1": {
+          "2026-09-07": 3
+        },
+        "2": {
+          "2026-09-07": 2
+        },
+        "3": {
+          "2026-09-07": 2
+        },
+        "4": {
+          "2026-09-07": 2
+        },
+        "5": {
+          "2026-09-07": 2
+        },
+        "6": {
+          "2026-09-07": 2
+        },
+        "7": {
+          "2026-09-07": 2
+        },
+        "8": {
+          "2026-09-07": 2
+        },
+        "9": {
+          "2026-09-07": 2
+        },
+        "10": {
+          "2026-09-07": 2
+        },
+        "11": {
+          "2026-09-07": 2
+        },
+        "12": {
+          "2026-09-07": 2
+        },
+        "13": {
+          "2026-09-07": 2
+        },
+        "14": {
+          "2026-09-07": 2
+        },
+        "15": {
+          "2026-09-07": 2
+        },
+        "16": {
+          "2026-09-07": 2
+        },
+        "17": {
+          "2026-09-07": 2
+        },
+        "18": {
+          "2026-09-07": 2
+        },
+        "19": {
+          "2026-09-07": 2
+        },
+        "20": {
+          "2026-09-07": 2
+        }
+      },
+      "proofs": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 40
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "preferred_size_deviation",
+          "proof_status": "unfinished",
+          "value": 0.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_rhythm_penalty",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "owner_balance_penalty",
+          "proof_status": "unfinished",
+          "value": 85.0
+        },
+        {
+          "direction": "min",
+          "objective_key": "extra_cohort_day_rooms",
+          "proof_status": "unfinished",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "course_room_changes",
+          "proof_status": "unfinished",
+          "value": 0
+        }
+      ],
+      "objectiveProfile": "heuristic-v1",
+      "optimal": false,
+      "usableCandidate": true,
+      "unitUpperBound": 40,
+      "additionalPossibleUnits": 0,
+      "intensiveTeachingTime": 0,
+      "dailyVariety": 0
+    }
+  ],
+  "workerRuns": [
+    {
+      "algorithm": "standard",
+      "courseCount": 1,
+      "snapshot": "3dcf61ff4189f3a5a06a8a3768a15912a52611ade46f61bcc6511a34eeededb0",
+      "allowanceSeconds": 10,
+      "dispatchAcknowledgementSeconds": 0.031,
+      "elapsedSeconds": 1.687,
+      "scheduledUnits": 2,
+      "remainingUnits": 0,
+      "hardValid": true
+    },
+    {
+      "algorithm": "cohort",
+      "courseCount": 1,
+      "snapshot": "3dcf61ff4189f3a5a06a8a3768a15912a52611ade46f61bcc6511a34eeededb0",
+      "allowanceSeconds": 10,
+      "dispatchAcknowledgementSeconds": 0.0,
+      "elapsedSeconds": 1.454,
+      "scheduledUnits": 2,
+      "remainingUnits": 0,
+      "hardValid": true
+    },
+    {
+      "algorithm": "lecturer",
+      "courseCount": 1,
+      "snapshot": "3dcf61ff4189f3a5a06a8a3768a15912a52611ade46f61bcc6511a34eeededb0",
+      "allowanceSeconds": 10,
+      "dispatchAcknowledgementSeconds": 0.0,
+      "elapsedSeconds": 1.437,
+      "scheduledUnits": 2,
+      "remainingUnits": 0,
+      "hardValid": true
+    },
+    {
+      "algorithm": "standard",
+      "courseCount": 20,
+      "snapshot": "0185cdefe3cac56a8ade8559fd8a745c265269eb6e5133792545e98029fd87a7",
+      "allowanceSeconds": 10,
+      "dispatchAcknowledgementSeconds": 0.078,
+      "elapsedSeconds": 1.234,
+      "scheduledUnits": 40,
+      "remainingUnits": 0,
+      "hardValid": true
+    },
+    {
+      "algorithm": "cohort",
+      "courseCount": 20,
+      "snapshot": "0185cdefe3cac56a8ade8559fd8a745c265269eb6e5133792545e98029fd87a7",
+      "allowanceSeconds": 10,
+      "dispatchAcknowledgementSeconds": 0.079,
+      "elapsedSeconds": 1.532,
+      "scheduledUnits": 40,
+      "remainingUnits": 0,
+      "hardValid": true
+    },
+    {
+      "algorithm": "lecturer",
+      "courseCount": 20,
+      "snapshot": "0185cdefe3cac56a8ade8559fd8a745c265269eb6e5133792545e98029fd87a7",
+      "allowanceSeconds": 10,
+      "dispatchAcknowledgementSeconds": 0.078,
+      "elapsedSeconds": 1.516,
+      "scheduledUnits": 40,
+      "remainingUnits": 0,
+      "hardValid": true
+    }
+  ],
+  "workerControls": [
+    {
+      "algorithm": "standard",
+      "expiredDeadlineReturnedNoResult": true,
+      "cancellationAcknowledgementSeconds": 0.125
+    },
+    {
+      "algorithm": "cohort",
+      "expiredDeadlineReturnedNoResult": true,
+      "cancellationAcknowledgementSeconds": 0.219
+    },
+    {
+      "algorithm": "lecturer",
+      "expiredDeadlineReturnedNoResult": true,
+      "cancellationAcknowledgementSeconds": 0.219
+    }
+  ],
+  "activeDeadlines": [
+    {
+      "algorithm": "standard",
+      "snapshot": "adcba4bcab04aa5b1e332abeb00fb596cd242d2be4c3052df98f8c0bf6000786",
+      "allowanceSeconds": 2,
+      "elapsedSeconds": 1.937,
+      "budgetExhausted": false
+    },
+    {
+      "algorithm": "cohort",
+      "snapshot": "adcba4bcab04aa5b1e332abeb00fb596cd242d2be4c3052df98f8c0bf6000786",
+      "allowanceSeconds": 2,
+      "elapsedSeconds": 2.0,
+      "budgetExhausted": true
+    },
+    {
+      "algorithm": "lecturer",
+      "snapshot": "adcba4bcab04aa5b1e332abeb00fb596cd242d2be4c3052df98f8c0bf6000786",
+      "allowanceSeconds": 2,
+      "elapsedSeconds": 2.0,
+      "budgetExhausted": true
+    }
+  ]
+}

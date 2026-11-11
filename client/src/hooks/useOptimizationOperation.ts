@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { PLANNER_AUTH_INVALIDATED_EVENT } from '../api/plannerFetch'
-import { startOptimizationOperation, getOptimizationOperation, decideOptimizationOperation, cancelOptimizationOperation,
+import { startOptimizationOperation, getOptimizationOperation, decideOptimizationOperation, cancelOptimizationOperation, continueOptimizationOperation,
   type OptimizationOperationContext, type OptimizationOperationStatus, type OptimizationPreparation, type OptimizationError } from '../api/conflictAwareGeneration'
 
 const STORAGE_KEY='teaching-optimization-operation-id'
 const terminal=new Set(['saved','cancelled','failed','stale','interrupted','timeout_no_candidate'])
 const rejectedStart=new Set(['BUDGET_POLICY_CHANGED','OPTIMIZATION_CONFIGURATION_INVALID','INVALID_REQUEST','INVALID_OPTIMIZATION_SIZE','DUPLICATE_COURSE_SELECTION','OPERATION_ID_CONFLICT','csrf_protection_required','json_required',
   'revision_not_editable','working_revision_required','stale_lifecycle_state','semester_not_found'])
-type Action = 'starting' | 'saving' | 'cancelling' | null
+type Action = 'starting' | 'saving' | 'cancelling' | 'continuing' | null
 
-export function useOptimizationOperation(active: boolean, contextKey: string) {
+export function useOptimizationOperation() {
+  const [selection,setSelection]=useState<Pick<OptimizationOperationStatus,'semesterId'|'scheduleRevisionId'|'selectedCourseIds'>|null>(null)
   const [status,setStatus]=useState<OptimizationOperationStatus|null>(null)
   const [action,setAction]=useState<Action>(null)
   const [unknown,setUnknown]=useState(false)
@@ -26,7 +27,6 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
   const decisionPending=useRef(false)
   const lastConfirmed=useRef(0)
   const mounted=useRef(true)
-  const enabled=useRef(active)
   const observe=useRef<(id:string,generation:number)=>Promise<void>>(async()=>{})
   const consume=useRef<(value:OptimizationOperationStatus,generation:number)=>Promise<void>>(async()=>{})
   const expire=useRef<(id:string,generation:number)=>void>(()=>{})
@@ -98,7 +98,7 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
     // Only unchanged live contexts may recover from transport interruptions.
     if(!context) void cancelOptimizationOperation(value.operationId,cancellationReason.current).catch(()=>{})
     arm(value.operationId,generation)
-    if(value.canFinalize && context && !decisionPending.current) {
+    if(value.canFinalize && (value.algorithm ?? 'standard') === 'standard' && context && !decisionPending.current) {
       decisionPending.current=true;setAction('saving')
       const controller=new AbortController();request.current=controller
       try { await consume.current(await decideOptimizationOperation(context,value.review!.candidateFingerprint,true,controller.signal),generation) }
@@ -139,7 +139,7 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
   },[arm,reconnect,rejectStart])
 
   useLayoutEffect(()=>{
-    enabled.current=active;consume.current=consumeStatus;observe.current=observeStatus
+    consume.current=consumeStatus;observe.current=observeStatus
     expire.current=(id,generation)=>{
       if(epoch.current!==generation || unresolved.current!==id || !mounted.current) return
       setUnknown(true);setAction(null);setStatus(null);currentStatus.current=null
@@ -148,7 +148,7 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
       if(request.current) watchdog.current=setTimeout(()=>void reconnect(id,generation),25000)
       else void reconnect(id,generation)
     }
-  },[active,consumeStatus,observeStatus,reconnect])
+  },[consumeStatus,observeStatus,reconnect])
 
   const cancel=useCallback(async(reason='cancel',keepalive=false)=>{
     const id=unresolved.current
@@ -167,7 +167,8 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
   },[arm,clearObservation,publish,reconcile])
 
   const start=useCallback(async(preparation:OptimizationPreparation)=>{
-    if(!enabled.current || unresolved.current || decisionPending.current) return
+    if(unresolved.current || decisionPending.current) return
+    setSelection({semesterId:preparation.semesterId,scheduleRevisionId:preparation.scheduleRevisionId,selectedCourseIds:preparation.courses.map(course=>course.courseId)})
     clearObservation()
     const generation=++epoch.current
     const bytes=crypto.getRandomValues(new Uint8Array(32))
@@ -202,6 +203,24 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
     } finally {if(epoch.current===generation) decisionPending.current=false; if(request.current===controller) request.current=null}
   },[arm,clearObservation,reconnect])
 
+  const continueOptimization=useCallback(async()=>{
+    const context=live.current,preview=currentStatus.current?.review
+    if(!context || !preview || !currentStatus.current?.canAccept || decisionPending.current) return
+    decisionPending.current=true;setAction('continuing');setErrors([]);clearObservation()
+    const generation=epoch.current
+    const controller=new AbortController();request.current=controller;arm(context.operationId,generation)
+    try {
+      await consume.current(await continueOptimizationOperation(context,preview.candidateFingerprint,crypto.randomUUID(),controller.signal),generation)
+    } catch(error) {
+      if(epoch.current!==generation) return
+      if(Array.isArray(error)) setErrors(error)
+      if(live.current) await reconnect(context.operationId,generation)
+    } finally {
+      if(epoch.current===generation) decisionPending.current=false
+      if(request.current===controller) request.current=null
+    }
+  },[arm,clearObservation,reconnect])
+
   useEffect(()=>{
     mounted.current=true
     const stored=sessionStorage.getItem(STORAGE_KEY)
@@ -222,18 +241,14 @@ export function useOptimizationOperation(active: boolean, contextKey: string) {
     window.addEventListener(PLANNER_AUTH_INVALIDATED_EVENT,invalidate)
     document.addEventListener('visibilitychange',visibilityChanged)
     return ()=>{
-      mounted.current=false;void cancel('navigation',true);clearObservation()
+      mounted.current=false;void cancel('context_lost',true);clearObservation()
       window.removeEventListener('pagehide',invalidate)
       window.removeEventListener(PLANNER_AUTH_INVALIDATED_EVENT,invalidate)
       document.removeEventListener('visibilitychange',visibilityChanged)
     }
   },[arm,cancel,clearObservation,reconcile])
 
-  useEffect(()=>{
-    if(!active) void cancel('navigation')
-    return ()=>{void cancel('navigation',true)}
-  },[active,contextKey,cancel])
-
   const busy=Boolean(action) || unknown || Boolean(status && ['preparing','optimizing','checking','saving'].includes(status.phase))
-  return {status,busy,unknown,errors,action,start,accept,cancel}
+  const pending=busy || Boolean(status && ['ready_to_save','awaiting_decision'].includes(status.phase))
+  return {status,selection,busy,pending,unknown,errors,action,start,accept,cancel,continueOptimization}
 }

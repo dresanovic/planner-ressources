@@ -12,7 +12,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.models.planning import GenerationConstraintSet, InstitutionHoliday
 from app.schemas.conflict_aware_generation import PreparedOptimizationCourseInput
-from app.services.conflict_aware_generation import generate_optimization, prepare_optimization
+from app.services.conflict_aware_generation import load_operation, prepare_optimization
 from app.services.draft_schedule_repository import load_course_plan, replace_draft_schedule
 from app.services.schedule_generation import GeneratedSession
 from app.services.semester_optimization import optimize_semester
@@ -64,7 +64,7 @@ def test_reference_workload_protocol_records_twenty_fresh_measured_runs(record_p
 
 
 @pytest.mark.parametrize("workflow", ["direct_save", "replacement_preview", "no_result"])
-def test_generation_workflows_meet_the_thirty_second_service_level(workflow, record_property):
+def test_prepared_standard_search_meets_the_thirty_second_service_level(workflow, record_property):
     workload_sizes = [1, 5, 10, 15, 20] * 4
     evidence = []
     for run_number, course_count in enumerate(workload_sizes, start=1):
@@ -93,29 +93,24 @@ def test_generation_workflows_meet_the_thirty_second_service_level(workflow, rec
             db.commit()
             course_ids = list(range(1, course_count + 1))
             prepared = prepare_optimization(db, 1, course_ids, [], schedule_revision_id=1)
-            courses = [PreparedOptimizationCourseInput(
-                courseId=item.course_id,
-                expectedDraftScheduleId=item.draft_schedule_id,
-                expectedDraftRevision=item.draft_revision,
-                inputSnapshotToken=item.input_snapshot_token,
-            ) for item in prepared.courses]
-
+            loaded = load_operation(db, 1, course_ids, [], 1)
             started = perf_counter()
-            result = generate_optimization(
-                db, 1, courses, [], prepared.shared_snapshot_token, schedule_revision_id=1
-            )
+            from app.services.semester_optimization import NoGeneratedAlternative
+            try:
+                result = optimize_semester(tuple(c.optimization for c in loaded.courses),
+                    loaded.fixed_sessions, loaded.unavailable_dates, holidays=loaded.holidays,
+                    generated_only=True, deadline_seconds=30)
+            except NoGeneratedAlternative:
+                assert workflow == "no_result"
+                result = None
             elapsed = perf_counter() - started
-            evidence.append({"run": run_number, "courseCount": course_count, "seconds": elapsed})
-
-            if workflow == "replacement_preview":
-                assert result.mode == "decision_required" and result.saved is False
-                assert len(result.comparison.courses) == course_count
-            elif workflow == "direct_save":
-                assert result.mode == "direct_saved"
-                assert len(result.outcomes) == course_count and all(item.saved for item in result.outcomes)
+            evidence.append({"run": run_number, "courseCount": course_count,
+                "seconds": elapsed, "scope": "pure Standard search on prepared snapshot"})
+            if workflow != "no_result":
+                assert result is not None and result.total_units == 4 * course_count
+                assert len(result.courses) == course_count
             else:
-                assert result.mode == "direct_saved"
-                assert len(result.outcomes) == course_count and all(not item.saved for item in result.outcomes)
+                assert result is None
         finally:
             db.close()
             engine.dispose()

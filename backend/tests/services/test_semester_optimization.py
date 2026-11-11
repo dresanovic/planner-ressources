@@ -86,7 +86,8 @@ def test_first_candidate_completes_preferred_size_remainder_without_one_unit_ses
     assert first.total_units == total
     assert all(2 <= session.units <= 4 for session in first.courses[0].sessions)
     assert first.optimal is False
-    assert first.objectives[0].proof_status != 'proven'
+    assert first.objectives[0].proof_status == 'proven'
+    assert first.unit_upper_bound == total
 
 
 @pytest.mark.parametrize('total', [25, 34])
@@ -343,10 +344,23 @@ def solver_statuses(monkeypatch, statuses):
 def test_feasible_candidate_is_retained_without_later_search_or_fabricated_proof(monkeypatch):
     from app.services import semester_optimization as service
     calls=solver_statuses(monkeypatch,[service.cp_model.FEASIBLE])
-    result=optimize_semester([optimization_course(1,total_units=2)],[],generated_only=True,allow_unproven=True)
+    from dataclasses import replace
+    from app.services.schedule_generation import PlanningPeriodPlan
+    course = optimization_course(1,total_units=4,min_units=2,max_units=2)
+    course = replace(course, planning_period=PlanningPeriodPlan(SEMESTER_START, SEMESTER_START))
+    result=optimize_semester([course],[],generated_only=True,allow_unproven=True)
     assert result.total_units == 2 and not result.optimal
     assert [o.proof_status for o in result.objectives] == ['unfinished']+['not_attempted']*9
     assert calls == [service.cp_model.FEASIBLE]
+
+
+def test_full_required_coverage_proves_first_stage_even_with_feasible_status(monkeypatch):
+    from app.services import semester_optimization as service
+    calls=solver_statuses(monkeypatch,[service.cp_model.FEASIBLE, service.cp_model.UNKNOWN])
+    result=optimize_semester([optimization_course(1,total_units=2)],[],generated_only=True,allow_unproven=True)
+    assert result.objectives[0].proof_status == 'proven'
+    assert result.objectives[4].proof_status == 'unfinished'
+    assert calls == [service.cp_model.FEASIBLE, service.cp_model.UNKNOWN]
 
 
 def test_later_unknown_preserves_earlier_exact_candidate_with_its_evidence(monkeypatch):

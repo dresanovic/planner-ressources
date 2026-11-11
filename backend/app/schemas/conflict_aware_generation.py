@@ -1,4 +1,5 @@
 from datetime import date
+from math import isfinite
 from enum import StrEnum
 from typing import Literal
 from uuid import UUID
@@ -114,6 +115,9 @@ class OptimizationPreparationResponse(BaseModel):
     courses: list[PreparedOptimizationCourse]
     replacement_course_ids: list[int] = Field(alias="replacementCourseIds")
     budget_policy: "OptimizationBudgetPolicy" = Field(alias="budgetPolicy")
+    algorithm: Literal['standard', 'cohort', 'lecturer', 'standard_optimized'] = 'standard'
+    strategy_profile: Literal['standard-v1', 'heuristic-v1', 'standard-optimized-v1'] = Field(default='standard-v1', alias='strategyProfile')
+    strategy_settings: dict = Field(default_factory=dict, alias='strategySettings')
 
 
 class PreparedOptimizationCourseInput(BaseModel):
@@ -193,10 +197,41 @@ class CoverageFacts(BaseModel):
     status: Literal["complete", "partial"]
     intensive_facts: IntensiveFacts | None = Field(default=None,alias='intensiveFacts')
 
+    @model_validator(mode='after')
+    def reconciled_units(self):
+        # Historical/current manual plans may already exceed the requirement.
+        # Generated candidates are independently rejected for overallocation.
+        if self.remaining_units != max(0, self.required_units - self.scheduled_units):
+            raise ValueError('Required units must equal scheduled plus remaining units')
+        if (self.status == 'complete') != (self.remaining_units == 0):
+            raise ValueError('Coverage status must describe remaining units')
+        return self
+
 
 class ResolvedWarning(BaseModel):
     code: str
     count: int = Field(ge=1)
+
+
+class LecturerPortionFacts(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra='forbid')
+    lecturer_id: int = Field(alias='lecturerId', ge=1)
+    lecturer_code: str = Field(alias='lecturerCode')
+    sequence_index: int = Field(alias='sequenceIndex', ge=0)
+    source: Literal['derived', 'explicit']
+    required_units: int = Field(alias='requiredUnits', ge=0, strict=True)
+    scheduled_units: int = Field(alias='scheduledUnits', ge=0, strict=True)
+    remaining_units: int = Field(alias='remainingUnits', ge=0, strict=True)
+    reason_code: str | None = Field(default=None, alias='reasonCode')
+    reason: str | None = None
+
+    @model_validator(mode='after')
+    def reconciled(self):
+        if self.required_units != self.scheduled_units + self.remaining_units:
+            raise ValueError('Portion totals must reconcile')
+        if self.remaining_units and (not self.reason_code or not self.reason):
+            raise ValueError('Unfilled portions require a blocker or uncertainty')
+        return self
 
 
 class CourseRegenerationComparison(BaseModel):
@@ -210,6 +245,18 @@ class CourseRegenerationComparison(BaseModel):
         alias="resolvedCurrentWarnings"
     )
     remaining_reasons: list[BlockingReason] = Field(alias="remainingReasons")
+    lecturer_portions: list[LecturerPortionFacts] = Field(default_factory=list, alias='lecturerPortions')
+
+    @model_validator(mode='after')
+    def ordered_portions(self):
+        rows = self.lecturer_portions
+        if rows:
+            if [r.sequence_index for r in rows] != list(range(len(rows))) or len({r.lecturer_id for r in rows}) != len(rows):
+                raise ValueError('Portions must have unique identities in sequence order')
+            order = [(r.lecturer_code.strip().casefold(), r.lecturer_id) for r in rows]
+            if order != sorted(order) or sum(r.required_units for r in rows) != self.generated.required_units or sum(r.scheduled_units for r in rows) != self.generated.scheduled_units:
+                raise ValueError('Portion order and totals must describe the selected course')
+        return self
 
 
 class RegenerationComparison(BaseModel):
@@ -226,6 +273,16 @@ class RegenerationComparison(BaseModel):
         default=True, alias="mayReplacePlannerEdits"
     )
 
+    @model_validator(mode='after')
+    def complete_selected_scope(self):
+        if self.selected_course_ids != sorted(set(self.selected_course_ids)) or [c.course_id for c in self.courses] != self.selected_course_ids:
+            raise ValueError('Comparison must contain every selected course exactly once in order')
+        for name in ('current', 'generated'):
+            total = getattr(self, name)
+            if total.required_units != sum(getattr(c, name).required_units for c in self.courses) or total.scheduled_units != sum(getattr(c, name).scheduled_units for c in self.courses):
+                raise ValueError('Selection and course coverage must reconcile')
+        return self
+
 
 class CourseOptimizationOutcome(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -241,6 +298,7 @@ class CourseOptimizationOutcome(BaseModel):
     improvement: ArrangementImprovement | None
     reasons: list[BlockingReason]
     errors: list[OperationError]
+    lecturer_portions: list[LecturerPortionFacts] = Field(default_factory=list, alias='lecturerPortions')
 
 
 class OptimizationSummary(BaseModel):
@@ -267,6 +325,10 @@ class OptimizationGenerationResult(BaseModel):
     outcomes: list[CourseOptimizationOutcome]
     proof: "CandidateProof | None" = None
     intensive_facts: IntensiveFacts | None = Field(default=None,alias='intensiveFacts')
+    algorithm: Literal['standard', 'cohort', 'lecturer', 'standard_optimized'] = 'standard'
+    strategy_profile: Literal['standard-v1', 'heuristic-v1', 'standard-optimized-v1'] = Field(default='standard-v1', alias='strategyProfile')
+    strategy_settings: dict = Field(default_factory=dict, alias='strategySettings')
+    termination: Literal['standard_completed', 'standard_optimized_completed', 'heuristic_completed', 'repair_limit', 'deadline', 'cancelled', 'failed'] | None = None
 
 
 class OptimizationDecisionRequiredResult(BaseModel):
@@ -281,6 +343,9 @@ class OptimizationDecisionRequiredResult(BaseModel):
     comparison: RegenerationComparison
     proof: "CandidateProof | None" = None
     has_saved_sessions: bool = Field(default=True, alias="hasSavedSessions")
+    algorithm: Literal['standard', 'cohort', 'lecturer', 'standard_optimized'] = 'standard'
+    strategy_profile: Literal['standard-v1', 'heuristic-v1', 'standard-optimized-v1'] = Field(default='standard-v1', alias='strategyProfile')
+    strategy_settings: dict = Field(default_factory=dict, alias='strategySettings')
 
 
 class RequestFailureResponse(BaseModel):
@@ -300,6 +365,9 @@ class OptimizationOperationFailure(BaseModel):
 
 class OptimizationBudgetPolicy(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    active_algorithm: Literal['standard', 'cohort', 'lecturer', 'standard_optimized'] = Field(default='standard', alias='activeAlgorithm')
+    strategy_profile: Literal['standard-v1', 'heuristic-v1', 'standard-optimized-v1'] = Field(default='standard-v1', alias='strategyProfile')
+    strategy_settings: dict = Field(default_factory=dict, alias='strategySettings')
     default_seconds: int = Field(alias="defaultSeconds", gt=0, strict=True)
     ceiling_seconds: int = Field(alias="ceilingSeconds", gt=0, strict=True)
     policy_fingerprint: str = Field(alias="policyFingerprint", pattern=r"^[0-9a-f]{64}$")
@@ -313,6 +381,17 @@ class OptimizationBudgetPolicy(BaseModel):
 
 OBJECTIVE_KEYS = ('total_units', 'intensive_teaching_time', 'daily_variety', 'conflicts', 'schedule_shape', 'lecturer_changes',
     'room_changes', 'retained_drafts', 'canonical_temporal', 'canonical_resource')
+HEURISTIC_OBJECTIVE_KEYS = ('total_units', 'intensive_teaching_time', 'daily_variety',
+    'preferred_size_deviation', 'course_rhythm_penalty', 'owner_balance_penalty',
+    'extra_cohort_day_rooms', 'course_room_changes')
+
+
+OPTIMIZED_OBJECTIVE_KEYS = OBJECTIVE_KEYS[:4] + ('weekly_spread',) + OBJECTIVE_KEYS[4:]
+
+
+def objective_keys(profile):
+    return {'standard-v1': OBJECTIVE_KEYS, 'heuristic-v1': HEURISTIC_OBJECTIVE_KEYS,
+        'standard-optimized-v1': OPTIMIZED_OBJECTIVE_KEYS}[profile]
 
 
 class ObjectiveProof(BaseModel):
@@ -320,7 +399,7 @@ class ObjectiveProof(BaseModel):
     objective_key: str = Field(alias='objectiveKey')
     direction: Literal['max','min']
     proof_status: Literal['proven','unfinished','not_attempted','conditional'] = Field(alias='proofStatus')
-    value: int | None
+    value: int | float | None
     prepared_snapshot_token: str = Field(alias='preparedSnapshotToken', pattern=r'^[0-9a-f]{64}$')
     candidate_fingerprint: str = Field(alias='candidateFingerprint', pattern=r'^[0-9a-f]{64}$')
     condition: dict[str,int] | None = None
@@ -328,6 +407,7 @@ class ObjectiveProof(BaseModel):
 
 class CandidateProof(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra='forbid')
+    objective_profile: Literal['standard-v1', 'heuristic-v1', 'standard-optimized-v1'] = Field(default='standard-v1', alias='objectiveProfile')
     prepared_snapshot_token: str = Field(alias='preparedSnapshotToken', pattern=r'^[0-9a-f]{64}$')
     candidate_fingerprint: str = Field(alias='candidateFingerprint', pattern=r'^[0-9a-f]{64}$')
     selected_course_ids: list[int] = Field(alias='selectedCourseIds')
@@ -342,7 +422,8 @@ class CandidateProof(BaseModel):
 
     @model_validator(mode='after')
     def matching_proof(self):
-        if tuple(o.objective_key for o in self.objectives) != OBJECTIVE_KEYS:
+        keys = objective_keys(self.objective_profile)
+        if tuple(o.objective_key for o in self.objectives) != keys:
             raise ValueError('Objective priorities must be complete and ordered')
         preceding_proven=True
         for index, item in enumerate(self.objectives):
@@ -353,11 +434,22 @@ class CandidateProof(BaseModel):
                 raise ValueError('Objective evidence must describe this candidate and prepared problem')
             if item.proof_status == 'proven' and not preceding_proven:
                 raise ValueError('Full-priority proof requires every preceding priority proven')
-            if item.proof_status == 'conditional' and (not item.condition or not set(item.condition).issubset(OBJECTIVE_KEYS[:index])):
+            if item.value is not None and not isfinite(item.value):
+                raise ValueError('Objective values must be finite')
+            if self.objective_profile == 'heuristic-v1' and index > 0 and item.proof_status in ('proven', 'conditional'):
+                raise ValueError('Heuristics cannot prove preferences')
+            if item.proof_status == 'conditional' and (not item.condition or not set(item.condition).issubset(keys[:index])):
                 raise ValueError('Conditional proof must identify earlier fixed objectives')
             preceding_proven = preceding_proven and item.proof_status == 'proven'
         if self.coverage_proven != (self.objectives[0].proof_status == 'proven') or self.preferences_proven != preceding_proven:
             raise ValueError('Coverage and preference flags must match objective evidence')
+        if self.objective_profile == 'heuristic-v1' and self.coverage_proven and self.scheduled_units != self.required_units:
+            raise ValueError('Heuristic coverage proof requires complete demand equality')
+        if self.objectives[0].value is not None and self.objectives[0].value != self.scheduled_units:
+            raise ValueError('Coverage evidence must match scheduled units')
+        if (not self.selected_course_ids or self.selected_course_ids != sorted(set(self.selected_course_ids))
+                or self.scheduled_units > self.required_units):
+            raise ValueError('Invalid selection or coverage totals')
         if self.gap_known != (self.unit_upper_bound is not None) or (self.additional_possible_units is None) != (self.unit_upper_bound is None):
             raise ValueError('Unknown bounds require unknown gaps')
         if self.unit_upper_bound is not None and (self.unit_upper_bound < self.scheduled_units or self.additional_possible_units != self.unit_upper_bound-self.scheduled_units):
@@ -384,6 +476,10 @@ class OptimizationOperationDecision(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
     context_secret: str = Field(alias="contextSecret", pattern=r"^[0-9a-f]{64}$", repr=False)
     candidate_fingerprint: str = Field(alias="candidateFingerprint", pattern=r"^[0-9a-f]{64}$")
+
+
+class OptimizationOperationContinue(OptimizationOperationDecision):
+    continuation_id: UUID4 = Field(alias="continuationId")
 
 
 class OptimizationOperationCancel(BaseModel):
@@ -417,9 +513,19 @@ class OptimizationOperationStatus(BaseModel):
     result: OptimizationGenerationResult | None = None
     errors: list[OperationError] = Field(default_factory=list)
     terminal_code: str | None = Field(default=None, alias="terminalCode")
+    algorithm: Literal['standard', 'cohort', 'lecturer', 'standard_optimized'] = 'standard'
+    strategy_profile: Literal['standard-v1', 'heuristic-v1', 'standard-optimized-v1'] = Field(default='standard-v1', alias='strategyProfile')
+    strategy_settings: dict = Field(default_factory=dict, alias='strategySettings')
+    termination: Literal['standard_completed', 'standard_optimized_completed', 'heuristic_completed', 'repair_limit', 'deadline', 'cancelled', 'failed'] | None = None
 
     @model_validator(mode="after")
     def consistent_state(self):
+        if self.phase in ('preparing', 'optimizing', 'checking') and self.termination is not None:
+            raise ValueError('Active search has no terminal cause')
+        if self.strategy_profile != ({'standard': 'standard-v1', 'standard_optimized': 'standard-optimized-v1'}.get(self.algorithm, 'heuristic-v1')):
+            raise ValueError('Algorithm and profile must match')
+        if self.algorithm != 'standard' and (self.can_finalize or self.phase == 'ready_to_save'):
+            raise ValueError('Heuristic results require explicit acceptance')
         if self.selection_count != len(self.selected_course_ids) or len(set(self.selected_course_ids)) != self.selection_count or any(i <= 0 for i in self.selected_course_ids):
             raise ValueError("Invalid selected course identity")
         if self.saved != (self.phase == "saved") or (self.result is not None) != self.saved:
@@ -430,4 +536,6 @@ class OptimizationOperationStatus(BaseModel):
             raise ValueError("Finalization requires live checked candidate")
         if self.review is not None and self.phase not in ("awaiting_decision", "ready_to_save"):
             raise ValueError("Only live decision phases expose review")
+        if self.review is not None and self.review.comparison.generated.scheduled_units <= 0:
+            raise ValueError('A whole-zero selection has no usable review')
         return self

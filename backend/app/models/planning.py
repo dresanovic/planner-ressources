@@ -30,6 +30,9 @@ class OptimizationOperation(Base):
     """Durable outcome identity. Candidates and action credentials stay in memory."""
     __tablename__ = "optimization_operations"
     __table_args__ = (
+        CheckConstraint("algorithm IN ('standard','cohort','lecturer','standard_optimized')", name="ck_optimization_algorithm"),
+        CheckConstraint("strategy_profile IN ('standard-v1','heuristic-v1','standard-optimized-v1')", name="ck_optimization_strategy_profile"),
+        CheckConstraint("json_valid(strategy_settings) AND json_type(strategy_settings) = 'object'", name="ck_optimization_strategy_settings"),
         CheckConstraint("budget_seconds > 0 AND captured_ceiling_seconds >= budget_seconds", name="ck_optimization_budget"),
         CheckConstraint("elapsed_milliseconds >= 0", name="ck_optimization_elapsed"),
         CheckConstraint("originating_session_id > 0", name="ck_optimization_session"),
@@ -57,6 +60,9 @@ class OptimizationOperation(Base):
     budget_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
     captured_ceiling_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
     policy_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    algorithm: Mapped[str] = mapped_column(String(32), nullable=False, default='standard', server_default='standard')
+    strategy_profile: Mapped[str] = mapped_column(String(32), nullable=False, default='standard-v1', server_default='standard-v1')
+    strategy_settings: Mapped[dict] = mapped_column(JSON, nullable=False, default=lambda: {'version': 'legacy-standard-v1'}, server_default=text("'{\"version\":\"legacy-standard-v1\"}'"))
     phase: Mapped[str] = mapped_column(String(32), nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -484,9 +484,9 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 28 | I-006 | Configurable Optimization Time and Valid Incumbent Acceptance | Use longer optimization runs and consciously accept valid results without an optimality proof | I-003, I-004, FS-013, FS-019 | Implemented |
 | 29 | I-007 | Calendar Capacity Diagnostics and Additional Planning Slots | Understand open LE and approve useful extra timetable opportunities | I-003, I-004, I-006, FS-003, FS-008, FS-011, FS-019 | Ready for specification — requirements confirmed 2026-11-05 |
 | 30 | I-008 | Planner-Approved Shorter Break Alternatives | Recover feasible teaching time through explicit five-minute-break approval | I-007, I-006, FS-004, FS-009, FS-013 | Ready for specification — after I-007 |
-| 31 | I-009 | Dated Windows, Copying and Intensive-Week Scheduling | Copy independent Zeitfenster and prioritize teaching with daily LV variety in marked intensive windows | FS-007, FS-005, FS-011, FS-019, I-003, I-004 | Specified — ready for planning; quality checklist validated 2026-11-06 |
+| 31 | I-009 | Dated Windows, Copying and Intensive-Week Scheduling | Copy independent Zeitfenster and prioritize teaching with daily LV variety in marked intensive windows | FS-007, FS-005, FS-011, FS-019, I-003, I-004 | Implemented |
 | 32 | I-010 | Fixed Lecturer LE Allocations | Preserve agreed teaching portions and show per-lecturer remaining LE | FS-007, FS-008, FS-009, FS-013, FS-019, I-003, I-004, I-006 | Proposed — intent confirmed 2026-11-09; clarification gates before specification finalization |
-| 33 | I-011 | Policy-Selected Teaching Planning Strategies | Use Standard, Cohort or Lecturer planning through one safe generation workflow | I-003, I-004, I-006, FS-008, FS-011, FS-013, FS-019 | Ready for specification — scope confirmed 2026-11-09 |
+| 33 | I-011 | Policy-Selected Teaching Planning Strategies | Use Standard, Cohort or Lecturer planning through one safe generation workflow | I-003, I-004, I-006, FS-008, FS-011, FS-013, FS-019 | Ready for implementation — scope confirmed 2026-11-09 |
 
 **Improvement sequence:** `I-001` through `I-004`, with detailed artifacts in their matching `specs/I-.../` directories.
 
@@ -3900,10 +3900,11 @@ details remain implementation choices.
   valid unproven candidates; disclose the quality trade-offs.
 - Confirmed on 04.11.2026: five-minute default and thirty-minute initial ceiling,
   both operator-configurable; no planner per-run override.
-- A direct retry starts a fresh attempt from current saved inputs and discards
-  the provisional candidate after an explicit discard explanation. A longer
-  budget requires operator configuration; retry does not resume the solver or
-  guarantee improvement.
+- Superseded on 10.11.2026 by I-013: **Weiter optimieren** retains the current
+  proposal and same operation/algorithm, grants another captured time allowance,
+  and seeds further search from the proposal and its proven objective prefix.
+  No improvement leaves the proposal available; continuation alone saves nothing.
+  Changed inputs require fresh preparation. No improvement or optimum is guaranteed.
 - Running cancellation and deliberate navigation out of the generation context
   cancel and discard provisional work. Registered cancellation before commit
   preserves saved work; a commit that already completed is reported accurately.
@@ -5178,6 +5179,22 @@ implement, change live policy/database, create a plan/tasks or expand scope.
 - **Mandatory approval gates**: Lecturer acceptance is not required for publication.
 - **Automated destructive optimization of existing sessions**: Existing and manually controlled sessions are never silently deleted or moved.
 - **Student registration, grading, and downstream operational room booking**: These remain outside the confirmed Resource Planner boundary.
+
+## I-012 — Standard Optimized extension
+
+**Intent:** Keep the working Standard search unchanged while adding the separate
+`standard_optimized` strategy through I-011's existing registry and workflow.
+Reuse Standard's candidates, hard-constraint/resource helpers, types, independent
+validation and saving. Add soft course distribution across feasible teaching
+weeks and reserve search time for that objective. Preserve coverage and common
+higher-priority values, distinguish conditional proof, and require explicit
+whole-selection acceptance. No new configuration UI or live-policy activation.
+
+**Depends on:** I-011 selection/identity, I-006 operations and I-004 review.
+**Artifacts:** [Specification](../../specs/I-012-standard-optimized/spec.md),
+[plan](../../specs/I-012-standard-optimized/plan.md),
+[tasks](../../specs/I-012-standard-optimized/tasks.md),
+[activation](../../specs/I-012-standard-optimized/quickstart.md).
 
 ## Product-level open assumptions
 

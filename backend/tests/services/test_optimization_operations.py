@@ -15,6 +15,14 @@ from tests.planner_auth_fixtures import file_backed_engine, add_planner_account,
 from tests.fixtures.dated_intensive_windows import ACCEPTANCE_WINDOW_CHANGES
 
 
+@pytest.fixture(autouse=True)
+def isolated_standard_policy(tmp_path, monkeypatch):
+    path = tmp_path / 'operation-policy.json'
+    path.write_text('{"defaultSeconds":300,"ceilingSeconds":1800}')
+    monkeypatch.setenv('TEACHING_OPTIMIZATION_POLICY_FILE', str(path))
+    return path
+
+
 @pytest.fixture(params=[False,True],ids=['first-plan-finalize','existing-plan-accept'])
 def dated_acceptance_operation(tmp_path,monkeypatch,request):
     from tests.fixtures.dated_intensive_windows import seed_acceptance_context
@@ -101,6 +109,20 @@ def settled(factory, auth, request, secret=CONTEXT_SECRET):
         if status.phase not in ('preparing', 'optimizing', 'checking'): return status
         sleep(.01)
     pytest.fail('Operation did not settle')
+
+
+@pytest.fixture(params=['standard', 'cohort', 'lecturer', 'standard_optimized'])
+def setup_strategy_operation(setup_operation, isolated_standard_policy, request):
+    from app.services.teaching_strategies import get_strategy
+    factory, auth, _, worker = setup_operation
+    algorithm = request.param
+    isolated_standard_policy.write_text('{"activeAlgorithm":"' + algorithm + '","defaultSeconds":300,"ceilingSeconds":1800}')
+    with factory() as db:
+        prepared = prepare_optimization(db, 1, [1, 2], [], 1)
+        loaded = load_operation(db, 1, [1, 2], [], 1)
+        worker.result_override = get_strategy(algorithm).optimize(tuple(c.optimization for c in loaded.courses), loaded.fixed_sessions, generated_only=True, deadline_seconds=5, allow_unproven=True)
+    value = OptimizationOperationStart.model_validate(operation_start_payload(prepared.model_dump(by_alias=True, mode='json')))
+    return factory, auth, value, worker, algorithm
 
 
 def saved_state(factory):
@@ -377,6 +399,48 @@ def test_review_elapsed_does_not_consume_the_search_allowance(setup_operation):
         assert not status.budget_exhausted
 
 
+def test_optimized_checkpoint_survives_worker_deadline_and_requires_acceptance(setup_operation,
+        isolated_standard_policy, monkeypatch):
+    from app.services.teaching_strategies import get_strategy
+    factory, auth, _, worker = setup_operation
+    isolated_standard_policy.write_text('{"activeAlgorithm":"standard_optimized","defaultSeconds":300,"ceilingSeconds":1800}')
+    with factory() as db:
+        prepared = prepare_optimization(db, 1, [1,2], [], 1)
+        loaded = load_operation(db, 1, [1,2], [], 1)
+    checkpoints = []
+    from app.services.semester_optimization import OptimizationSearchControl
+    deadline = monotonic()+5
+    candidate = get_strategy('standard_optimized').optimize(
+        tuple(c.optimization for c in loaded.courses), loaded.fixed_sessions,
+        generated_only=True, allow_unproven=True, control=OptimizationSearchControl(deadline,
+            clock=lambda: deadline+1 if checkpoints else monotonic(), checkpoint=checkpoints.append))
+    assert candidate.total_units > 0 and not candidate.optimal
+    request = OptimizationOperationStart.model_validate(operation_start_payload(prepared.model_dump(by_alias=True, mode='json')))
+    monkeypatch.setattr(worker, 'receive', lambda self: [
+        {'kind':'checkpoint','result':candidate}, {'kind':'timeout','budgetExhausted':True}])
+    before = saved_state(factory)
+    with factory() as db: operations.start_operation(db, request, auth)
+    status = settled(factory, auth, request)
+    assert status.phase == 'awaiting_decision' and status.can_accept
+    assert status.termination == 'deadline' and status.budget_exhausted
+    assert status.review.comparison.generated.scheduled_units == candidate.total_units
+    assert saved_state(factory) == before
+
+
+@pytest.mark.parametrize('exhausted', [False, True])
+def test_optimized_no_candidate_uses_truthful_termination(setup_operation,
+        isolated_standard_policy, monkeypatch, exhausted):
+    factory, auth, _, worker = setup_operation
+    isolated_standard_policy.write_text('{"activeAlgorithm":"standard_optimized","defaultSeconds":300,"ceilingSeconds":1800}')
+    with factory() as db: prepared = prepare_optimization(db, 1, [1,2], [], 1)
+    request = OptimizationOperationStart.model_validate(operation_start_payload(prepared.model_dump(by_alias=True, mode='json')))
+    monkeypatch.setattr(worker, 'receive', lambda self: [{'kind':'timeout','budgetExhausted':exhausted}])
+    with factory() as db: operations.start_operation(db, request, auth)
+    status = settled(factory, auth, request)
+    assert status.phase == 'timeout_no_candidate' and not status.can_accept
+    assert status.termination == ('deadline' if exhausted else 'standard_optimized_completed')
+
+
 @pytest.mark.parametrize('with_checkpoint',[False,True])
 def test_unexpected_child_exit_is_failure_even_with_an_earlier_checkpoint(setup_operation,monkeypatch,with_checkpoint):
     factory,auth,request,worker=setup_operation
@@ -631,3 +695,84 @@ def test_owner_can_discard_unsaved_review_after_revision_becomes_noneditable(set
         status=operations.get_status(db,str(request.operation_id),auth,CONTEXT_SECRET)
         assert status.phase=='cancelled' and not status.can_accept and not status.can_finalize
     assert saved_state(factory)==before
+
+
+def test_captured_standard_identity_survives_policy_deletion_and_reload(setup_operation, isolated_standard_policy):
+    factory, auth, request, worker = setup_operation
+    with factory() as db:
+        first = operations.start_operation(db, request, auth)
+    assert first.algorithm == 'standard'
+    assert first.strategy_profile == 'standard-v1'
+    assert worker.calls <= 1
+    isolated_standard_policy.unlink()
+    status = settled(factory, auth, request)
+    with factory() as db:
+        replay = operations.start_operation(db, request, auth)
+        assert replay.algorithm == 'standard'
+        assert replay.strategy_settings == first.strategy_settings
+        row = db.get(OptimizationOperation, str(request.operation_id))
+        assert row.algorithm == 'standard'
+        assert row.strategy_profile == 'standard-v1'
+        assert isinstance(row.strategy_settings, dict)
+    assert status.phase in ('ready_to_save', 'awaiting_decision')
+
+
+def test_algorithm_only_change_requires_new_preparation(setup_operation, isolated_standard_policy):
+    factory, auth, request, worker = setup_operation
+    isolated_standard_policy.write_text('{"activeAlgorithm":"cohort","defaultSeconds":300,"ceilingSeconds":1800}')
+    with factory() as db:
+        with pytest.raises(operations.OperationFailure) as failure:
+            operations.start_operation(db, request, auth)
+        assert failure.value.code == 'BUDGET_POLICY_CHANGED'
+        assert db.get(OptimizationOperation, str(request.operation_id)) is None
+    assert worker.calls == 0
+
+
+@pytest.mark.parametrize('algorithm', ['cohort', 'lecturer'])
+def test_real_heuristic_result_requires_explicit_review_and_keeps_captured_policy(setup_operation, isolated_standard_policy, algorithm):
+    from app.services.teaching_strategies import get_strategy
+    factory, auth, request, worker = setup_operation
+    isolated_standard_policy.write_text('{"activeAlgorithm":"' + algorithm + '","defaultSeconds":300,"ceilingSeconds":1800}')
+    with factory() as db:
+        prepared = prepare_optimization(db, 1, [1, 2], [], 1)
+        loaded = load_operation(db, 1, [1, 2], [], 1)
+        worker.result_override = get_strategy(algorithm).optimize(tuple(c.optimization for c in loaded.courses), loaded.fixed_sessions, deadline_seconds=5)
+    request = OptimizationOperationStart.model_validate(operation_start_payload(prepared.model_dump(by_alias=True, mode='json')))
+    before = saved_state(factory)
+    with factory() as db:
+        operations.start_operation(db, request, auth)
+    status = settled(factory, auth, request)
+    assert status.phase == 'awaiting_decision'
+    assert status.algorithm == algorithm
+    assert status.termination in ('heuristic_completed', 'repair_limit')
+    assert status.can_accept and not status.can_finalize
+    assert status.review.proof.objective_profile == 'heuristic-v1'
+    assert status.review.proof.preferences_proven is False
+    assert saved_state(factory) == before
+    isolated_standard_policy.unlink()
+    with factory() as db:
+        saved = operations.apply_operation(db, str(request.operation_id), auth, CONTEXT_SECRET, status.review.candidate_fingerprint)
+    assert saved.saved and saved.result.algorithm == algorithm
+    assert saved.termination == status.termination
+
+
+def test_legacy_saved_receipt_normalizes_standard_identity_without_rewriting_payload(setup_operation):
+    factory, auth, request, worker = setup_operation
+    with factory() as db:
+        operations.start_operation(db,request,auth)
+    status = settled(factory,auth,request)
+    with factory() as db:
+        operations.apply_operation(db,str(request.operation_id),auth,CONTEXT_SECRET,status.review.candidate_fingerprint,finalize=True)
+        row = db.get(OptimizationOperation,str(request.operation_id))
+        legacy = dict(row.saved_result)
+        for key in ('algorithm','strategyProfile','strategySettings'):
+            legacy.pop(key,None)
+        row.saved_result = legacy
+        row.strategy_settings = {'version':'legacy-standard-v1'}
+        db.commit()
+    operations.shutdown_operations(factory.kw['bind'])
+    with factory() as db:
+        restored = operations.get_status(db,str(request.operation_id),auth)
+        assert restored.result.algorithm == restored.algorithm == 'standard'
+        assert restored.result.strategy_settings == restored.strategy_settings
+        assert 'algorithm' not in db.get(OptimizationOperation,str(request.operation_id)).saved_result

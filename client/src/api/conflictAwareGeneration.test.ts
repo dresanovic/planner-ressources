@@ -1,11 +1,49 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { acceptConflictAwareSchedules, generateConflictAwareSchedules, prepareConflictAwareGeneration,
-  startOptimizationOperation, getOptimizationOperation, decideOptimizationOperation, cancelOptimizationOperation } from './conflictAwareGeneration'
+  startOptimizationOperation, getOptimizationOperation, decideOptimizationOperation, cancelOptimizationOperation, continueOptimizationOperation } from './conflictAwareGeneration'
 import type { OptimizationOperationStatus } from './conflictAwareGeneration'
-import { decisionRequiredGenerationFixture, directSavedGenerationFixture, optimizationPreparationFixture, optimizationResultFixture, operationStatusFixture } from '../test/optimizationFixtures'
+import { decodeCandidateProof, decodeCourseComparison, decodeOptimizationStatus, teachingAlgorithmLabel } from './conflictAwareGeneration'
+import strategyContracts from '../test/teachingStrategyContracts.json'
+import { candidateProofFixture, decisionRequiredGenerationFixture, directSavedGenerationFixture, optimizationPreparationFixture, optimizationResultFixture, operationStatusFixture } from '../test/optimizationFixtures'
 
 afterEach(() => vi.restoreAllMocks())
+
+describe('teaching strategy response decoding', () => {
+  it('accepts Standard Optimized with its own ordered distribution profile and explicit review', () => {
+    const original = candidateProofFixture
+    const proof = { ...original, objectiveProfile: 'standard-optimized-v1',
+      objectives: [...original.objectives.slice(0,4), { ...original.objectives[4], objectiveKey:'weekly_spread', direction:'min' }, ...original.objectives.slice(4)] }
+    expect(decodeCandidateProof(proof).objectiveProfile).toBe('standard-optimized-v1')
+    expect(teachingAlgorithmLabel('standard_optimized')).toBe('Standard optimiert')
+    expect(decodeOptimizationStatus({ ...operationStatusFixture, algorithm:'standard_optimized', strategyProfile:'standard-optimized-v1',
+      phase:'awaiting_decision', canAccept:true, review:{ ...decisionRequiredGenerationFixture, algorithm:'standard_optimized', strategyProfile:'standard-optimized-v1', proof },
+      termination:'standard_optimized_completed' }).algorithm).toBe('standard_optimized')
+    expect(() => decodeOptimizationStatus({ ...operationStatusFixture, algorithm:'standard_optimized', strategyProfile:'standard-v1' })).toThrow()
+    expect(() => decodeOptimizationStatus({ ...operationStatusFixture, algorithm:'standard_optimized', strategyProfile:'standard-optimized-v1', phase:'ready_to_save', canFinalize:true })).toThrow()
+  })
+  for (const extra of [{algorithm:'unknown'},{algorithm:'cohort',strategyProfile:'standard-v1'}]) {
+    it(`rejects unsupported preparation identity ${JSON.stringify(extra)}`, async () => {
+      vi.spyOn(globalThis,'fetch').mockResolvedValue(new Response(JSON.stringify({...optimizationPreparationFixture,...extra}),{status:200}))
+      await expect(prepareConflictAwareGeneration(1,11,[1,2])).rejects.toBeDefined()
+    })
+  }
+  for (const entry of strategyContracts.cases.filter(row => row.kind === 'proof' || row.kind === 'comparison')) {
+    it(entry.name, () => {
+      const decode = entry.kind === 'proof' ? decodeCandidateProof : decodeCourseComparison
+      if (entry.valid) expect(() => decode(entry.value)).not.toThrow()
+      else expect(() => decode(entry.value)).toThrow()
+    })
+  }
+  for (const entry of strategyContracts.cases.filter(row => row.kind === 'status')) {
+    it(entry.name, async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(entry.value), { status: 200 }))
+      const response = getOptimizationOperation('00000000-0000-4000-8000-000000000001')
+      if (entry.valid) await expect(response).resolves.toMatchObject(entry.value)
+      else await expect(response).rejects.toBeDefined()
+    })
+  }
+})
 
 describe('conflict-aware generation API', () => {
   it('uses short operation routes, passive outcome polling and memory-only decision evidence', async () => {
@@ -35,6 +73,10 @@ describe('conflict-aware generation API', () => {
     expect(fetchMock.mock.calls[5][0]).toBe('/api/draft-schedules/optimization/operations/test-operation/cancel')
     expect(fetchMock.mock.calls[5][1]?.keepalive).toBe(true)
     expect(String(fetchMock.mock.calls[5][1]?.body)).not.toContain(context.contextSecret)
+    await continueOptimizationOperation(context,'a'.repeat(64),'continued-round')
+    expect(fetchMock.mock.calls[6][0]).toBe('/api/draft-schedules/optimization/operations/test-operation/continue')
+    expect(JSON.parse(String(fetchMock.mock.calls[6][1]?.body))).toEqual({contextSecret:context.contextSecret,candidateFingerprint:'a'.repeat(64),continuationId:'continued-round'})
+    expect(new Headers(fetchMock.mock.calls[6][1]?.headers).get('X-Planner-Activity')).toBe('user')
   })
   it('keeps outcome identity, nullable evidence and long-running status separate from live secrets', () => {
     const status: OptimizationOperationStatus = { ...operationStatusFixture, elapsedMilliseconds: 65001 }

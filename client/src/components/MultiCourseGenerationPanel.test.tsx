@@ -15,6 +15,13 @@ const courses: CourseOption[] = [1, 2, 3].map((id) => ({
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('MultiCourseGenerationPanel', () => {
+  it('announces the captured algorithm as read-only text', () => {
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    act(() => root.render(<MultiCourseGenerationPanel courses={courses} selectedCourseIds={[1]} algorithm="cohort" onChange={vi.fn()} onGenerate={vi.fn()} />))
+    expect(document.body.textContent).toContain('Algorithmus: Kohorte')
+    expect(document.querySelector('select[aria-label="Algorithmus"]')).toBeNull()
+    expect([...document.querySelectorAll('[role="status"]')].some(node => node.textContent?.includes('Algorithmus: Kohorte'))).toBe(true)
+  })
   it('shows the optimized selection limit, unavailable dates, selection, and clear behavior', () => {
     const onChange = vi.fn()
     const onDates = vi.fn()

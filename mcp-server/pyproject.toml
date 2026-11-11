@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "planner-resource-mcp"
+version = "0.1.0"
+description = "Local stdio MCP bridge to the Planner Resource HTTP API"
+requires-python = ">=3.11"
+dependencies = ["mcp>=1.28,<2", "httpx>=0.28.1,<0.29"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+planner-resource-mcp = "planner_resource_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

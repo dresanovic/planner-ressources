@@ -3,7 +3,7 @@ from app.services.schedule_generation import window_applies, window_has_occurren
 
 import hashlib
 import json
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, asdict
 from collections import Counter
 from datetime import date, datetime, timedelta
 from time import monotonic
@@ -39,7 +39,7 @@ from app.schemas.conflict_aware_generation import (
     PreparedOptimizationCourseInput,
     RegenerationComparison,
     ResolvedWarning,
-    CandidateProof, ObjectiveProof, OBJECTIVE_KEYS,
+    CandidateProof, ObjectiveProof, objective_keys,
 )
 from app.services.academic_catalog import planning_eligibility_reasons
 from app.services.draft_schedule_repository import (
@@ -102,7 +102,7 @@ class InvalidExactCandidate(ValueError):
     pass
 
 
-def validate_exact_candidate(courses, fixed_sessions, unavailable_dates, holidays, candidates):
+def validate_exact_candidate(courses, fixed_sessions, unavailable_dates, holidays, candidates, *, algorithm='standard'):
     """Check detached exact assignments independently of solver status, without writes."""
     expected = {course.course_id: course for course in courses}
     ids = [candidate.course_id for candidate in candidates]
@@ -148,6 +148,23 @@ def validate_exact_candidate(courses, fixed_sessions, unavailable_dates, holiday
                 raise InvalidExactCandidate("Candidate overlaps selected or protected occupancy")
             occupancy.append(FixedSession(course.course_id, course.cohort_id,
                 session.lecturer_id, session.room_id, session.date, session.start_time, session.end_time))
+        if algorithm == 'lecturer':
+            from app.services.teaching_preferences import derive_portions
+            portions = derive_portions(course, course.explicit_lecturer_portions)
+            predecessor_complete = True
+            predecessor_end = None
+            for portion in portions:
+                sessions = tuple(s for s in candidate.sessions if s.lecturer_id == portion.lecturer_id)
+                units = sum(s.units for s in sessions)
+                if units > portion.required_units:
+                    raise InvalidExactCandidate('Lecturer portion was transferred or overallocated')
+                if sessions and not predecessor_complete:
+                    raise InvalidExactCandidate('Incomplete lecturer predecessor was bypassed')
+                if sessions and predecessor_end is not None and min(datetime.combine(s.date, s.start_time) for s in sessions) < predecessor_end:
+                    raise InvalidExactCandidate('Lecturer portions alternate or reverse authoritative code order')
+                predecessor_complete = predecessor_complete and units == portion.required_units
+                if sessions:
+                    predecessor_end = max(datetime.combine(s.date, s.end_time) for s in sessions)
 
 
 @dataclass(frozen=True)
@@ -238,6 +255,9 @@ def prepare_optimization(
         courses=prepared,
         replacementCourseIds=replacement_ids,
         budgetPolicy=budget_policy,
+        algorithm=budget_policy.active_algorithm,
+        strategyProfile=budget_policy.strategy_profile,
+        strategySettings=dict(budget_policy.strategy_settings),
     )
 
 
@@ -249,14 +269,7 @@ def generate_optimization(
     shared_snapshot_token: str,
     schedule_revision_id: int | None = None,
 ) -> OptimizationGenerationResult | OptimizationDecisionRequiredResult:
-    return _execute_optimization(
-        db,
-        semester_id,
-        prepared_courses,
-        unavailable_dates,
-        shared_snapshot_token,
-        schedule_revision_id,
-    )
+    raise InvalidOptimizationSelection('OPERATION_API_REQUIRED', 'Bitte den aktuellen Optimierungslauf verwenden.')
 
 
 def accept_optimization(
@@ -268,354 +281,9 @@ def accept_optimization(
     schedule_revision_id: int,
     expected_candidate_fingerprint: str,
 ) -> OptimizationGenerationResult:
-    result = _execute_optimization(
-        db,
-        semester_id,
-        prepared_courses,
-        unavailable_dates,
-        shared_snapshot_token,
-        schedule_revision_id,
-        expected_candidate_fingerprint=expected_candidate_fingerprint,
-    )
-    if not isinstance(result, OptimizationGenerationResult):
-        raise RuntimeError("Acceptance must produce a saved generation result.")
-    return result
+    raise InvalidOptimizationSelection('OPERATION_API_REQUIRED', 'Bitte den aktuellen Optimierungslauf verwenden.')
 
 
-def _execute_optimization(
-    db: Session,
-    semester_id: int,
-    prepared_courses: list[PreparedOptimizationCourseInput],
-    unavailable_dates,
-    shared_snapshot_token: str,
-    schedule_revision_id: int | None = None,
-    *,
-    expected_candidate_fingerprint: str | None = None,
-) -> OptimizationGenerationResult | OptimizationDecisionRequiredResult:
-    started = monotonic()
-    deadline = started + OPERATION_DEADLINE_SECONDS
-    course_ids = [item.course_id for item in prepared_courses]
-    _validate_selection(course_ids)
-    loaded = load_operation(
-        db, semester_id, course_ids, unavailable_dates, schedule_revision_id
-    )
-    decision_required = any(
-        item.draft is not None and bool(item.draft.sessions)
-        for item in loaded.courses
-    )
-    accepting = expected_candidate_fingerprint is not None
-    if accepting and not decision_required:
-        raise StaleOptimizationCandidate(
-            "The selected schedules no longer require the compared replacement. Generate again."
-        )
-    if decision_required and schedule_revision_id is None:
-        raise InvalidOptimizationSelection(
-            "WORKING_REVISION_REQUIRED",
-            "Regeneration comparison requires the active Working revision.",
-        )
-    supplied = {item.course_id: item for item in prepared_courses}
-    stale_ids: set[int] = set()
-    for item in loaded.courses:
-        expected = supplied[item.course.id]
-        current_id = item.draft.id if item.draft else None
-        current_revision = item.draft.revision if item.draft else None
-        if (
-            expected.input_snapshot_token != item.input_snapshot_token
-            or expected.expected_draft_schedule_id != current_id
-            or expected.expected_draft_revision != current_revision
-        ):
-            stale_ids.add(item.course.id)
-    # A changed preparation cannot be reconstructed from opaque fingerprints.
-    # Require a fresh operation rather than silently optimizing refreshed input.
-    if stale_ids or shared_snapshot_token != loaded.shared_snapshot_token:
-        stale_ids.update(course_ids)
-    if decision_required and stale_ids:
-        raise StaleOptimizationCandidate(
-            "Planning inputs changed after preparation. Generate a new alternative."
-        )
-
-    availability = {
-        item.course.id: (
-            _course_available(db, item.course, semester_id)
-            and _windows_host_minimum_session(item)
-        )
-        for item in loaded.courses
-    }
-    eligible = [
-        item for item in loaded.courses
-        if item.course.id not in stale_ids and availability[item.course.id]
-    ]
-    unavailable_ids = {
-        item.course.id for item in loaded.courses
-        if item.course.id not in stale_ids and not availability[item.course.id]
-    }
-    if unavailable_ids:
-        unavailable_course_id = min(unavailable_ids)
-        unavailable = _unavailable_selection_error(
-            db,
-            next(item for item in loaded.courses if item.course.id == unavailable_course_id),
-            semester_id,
-        )
-        raise unavailable or InvalidOptimizationSelection(
-            "INVALID_PLANNING_INPUT",
-            f"Course {unavailable_course_id} is not available for planning in this semester.",
-        )
-    solve_occupancy = list(loaded.fixed_sessions)
-    solution = _empty_solution()
-    optimal_for_prepared_snapshot = False
-    if eligible:
-        remaining_seconds = deadline - monotonic() - POST_SOLVE_RESERVE_SECONDS
-        if remaining_seconds <= 0:
-            raise OptimalResultNotProven("The optimization deadline elapsed before solving could begin.")
-        solution = optimize_semester(
-            [item.optimization for item in eligible],
-            solve_occupancy,
-            loaded.unavailable_dates,
-            holidays=loaded.holidays,
-            deadline_seconds=remaining_seconds,
-            generated_only=decision_required,
-        )
-        optimal_for_prepared_snapshot = True
-    solved = {item.course_id: item for item in solution.courses}
-
-    if decision_required and not accepting:
-        _require_time_remaining(
-            deadline,
-            "The optimization deadline elapsed before final preview validation.",
-        )
-        db.expire_all()
-        refreshed = load_operation(
-            db, semester_id, course_ids, unavailable_dates, schedule_revision_id
-        )
-        refreshed_by_id = {item.course.id: item for item in refreshed.courses}
-        if (
-            refreshed.shared_snapshot_token != loaded.shared_snapshot_token
-            or any(
-                refreshed_by_id[item.course.id].input_snapshot_token
-                != item.input_snapshot_token
-                for item in loaded.courses
-            )
-        ):
-            raise StaleOptimizationCandidate(
-                "Planning inputs changed while generating the alternative. Generate again."
-            )
-        return _decision_required_result(
-            db,
-            loaded,
-            solution,
-            prepared_courses,
-            shared_snapshot_token,
-            schedule_revision_id,
-        )
-
-    if accepting:
-        reproduced_fingerprint = candidate_fingerprint(
-            solution,
-            {item.course.id: item.course.cohort_id for item in loaded.courses},
-        )
-        if reproduced_fingerprint != expected_candidate_fingerprint:
-            raise CandidateNotReproducible(
-                "The compared generated result could not be reproduced. Generate a new alternative."
-            )
-
-    if eligible:
-        _require_time_remaining(deadline, "The optimization deadline elapsed before final input validation.")
-        # Establish the physical write transaction before the final reload. This
-        # both closes SQLite's validation-to-write race and keeps later SAVEPOINTs
-        # under the operation-level rollback boundary.
-        if schedule_revision_id is None:
-            db.execute(update(Semester).where(Semester.id == semester_id).values(id=Semester.id))
-        else:
-            claim_active_working_revision(
-                db, semester_id, schedule_revision_id
-            )
-    # The final result must always describe current persisted state. This also
-    # covers stale or unavailable selections for which no solver run occurs.
-    db.expire_all()
-    refreshed = load_operation(
-        db, semester_id, course_ids, unavailable_dates, schedule_revision_id
-    )
-    refreshed_by_id = {item.course.id: item for item in refreshed.courses}
-    original_by_id = {item.course.id: item for item in loaded.courses}
-    if refreshed.semester_snapshot_token != loaded.semester_snapshot_token:
-        stale_ids.update(course_ids)
-    for course_id in course_ids:
-        if refreshed_by_id[course_id].input_snapshot_token != original_by_id[course_id].input_snapshot_token:
-            stale_ids.add(course_id)
-    if stale_ids:
-        # A unified generation request is one transactional operation. Once any
-        # selected input is stale, no sibling result from the old snapshot may
-        # be persisted or described as optimal for that snapshot.
-        stale_ids.update(course_ids)
-        optimal_for_prepared_snapshot = False
-        if accepting:
-            raise StaleOptimizationCandidate(
-                "Planning inputs changed before acceptance. Generate a new alternative."
-            )
-    unavailable_ids.difference_update(stale_ids)
-
-    improvements: dict[int, ArrangementImprovement] = {}
-    planned_save_ids: set[int] = set()
-    for course_id, course_solution in solved.items():
-        if course_id in stale_ids or course_id in unavailable_ids:
-            continue
-        if accepting:
-            planned_save_ids.add(course_id)
-            continue
-        improvement = _candidate_improvement(original_by_id[course_id], course_solution, loaded)
-        if improvement is not None:
-            improvements[course_id] = improvement
-            planned_save_ids.add(course_id)
-
-    preserved_occupancy = list(refreshed.fixed_sessions)
-    preserved_ids = stale_ids | unavailable_ids | (set(solved) - planned_save_ids)
-    for course_id in preserved_ids:
-        item = refreshed_by_id[course_id]
-        if item.draft is not None:
-            preserved_occupancy.extend(_draft_as_fixed(item.draft))
-
-    # A newly preserved draft can invalidate another exact result. Repeat until
-    # every remaining candidate is valid against the complete preserved state.
-    while True:
-        newly_stale = set()
-        for course_id in sorted(planned_save_ids - stale_ids):
-            item = refreshed_by_id[course_id]
-            if not _exact_sessions_valid(solved[course_id].sessions, item.course.cohort_id, preserved_occupancy):
-                newly_stale.add(course_id)
-        if not newly_stale:
-            break
-        stale_ids.update(newly_stale)
-        for course_id in newly_stale:
-            item = refreshed_by_id[course_id]
-            if item.draft is not None:
-                preserved_occupancy.extend(_draft_as_fixed(item.draft))
-    planned_save_ids.difference_update(stale_ids)
-
-    saved_ids: set[int] = set()
-    components, component_dependencies = _save_plan(planned_save_ids, solved, refreshed_by_id)
-    pending_components = set(range(len(components)))
-    # One savepoint covers the complete selected result. Any persistence error
-    # propagates to the API's operation transaction, so no successful sibling
-    # course can be committed after another selected course fails to save.
-    with db.begin_nested():
-        while pending_components:
-            ready = sorted(
-                (
-                    component_id for component_id in pending_components
-                    if not (component_dependencies[component_id] & pending_components)
-                ),
-                key=lambda component_id: min(components[component_id]),
-            )
-            if not ready:
-                raise RuntimeError("The condensed save-dependency graph must be acyclic.")
-            for component_id in ready:
-                component = components[component_id]
-                _require_time_remaining(deadline, "The optimization deadline elapsed before all result groups could be saved.")
-                for course_id in sorted(component):
-                    item = refreshed_by_id[course_id]
-                    if accepting and not solved[course_id].sessions:
-                        if item.draft is not None:
-                            db.delete(item.draft)
-                    else:
-                        replace_draft_schedule(
-                            db,
-                            item.plan,
-                            semester_id,
-                            list(solved[course_id].sessions),
-                            existing_draft=item.draft,
-                            reload=False,
-                        )
-                db.flush()
-                saved_ids.update(component)
-                pending_components.remove(component_id)
-
-    outcomes: list[CourseOptimizationOutcome] = []
-    for item in loaded.courses:
-        if item.course.id in stale_ids:
-            current_item = replace(refreshed_by_id[item.course.id], draft=get_draft_schedule(db, item.course.id, semester_id))
-            outcomes.append(_stale_outcome(current_item))
-            continue
-        if item.course.id in unavailable_ids:
-            current_item = replace(refreshed_by_id[item.course.id], draft=get_draft_schedule(db, item.course.id, semester_id))
-            if not _windows_host_minimum_session(current_item):
-                outcomes.append(_failed_outcome(
-                    current_item,
-                    "STUDY_TYPE_WINDOW_UNAVAILABLE",
-                    "The current study type has no active teaching window long enough for the minimum session.",
-                ))
-            else:
-                outcomes.append(_failed_outcome(current_item, "INVALID_PLANNING_INPUT", "The course is not available for planning in this semester."))
-            continue
-        course_solution = solved[item.course.id]
-        baseline_units = sum(session.units for session in item.draft.sessions) if item.draft else 0
-        saved = item.course.id in saved_ids
-        final_draft = get_draft_schedule(db, item.course.id, semester_id) if saved else item.draft
-        status = (
-            OptimizationStatus.COMPLETE
-            if saved and course_solution.scheduled_units >= item.course.total_units
-            else OptimizationStatus.IMPROVED_PARTIAL
-            if saved
-            else OptimizationStatus.UNCHANGED
-        )
-        improvement = improvements.get(item.course.id) if saved else None
-        scheduled = (
-            course_solution.scheduled_units
-            if accepting and saved
-            else sum(session.units for session in final_draft.sessions)
-            if saved and final_draft is not None
-            else baseline_units
-        )
-        outcomes.append(CourseOptimizationOutcome(
-            courseId=item.course.id,
-            courseName=item.course.name,
-            status=status,
-            draftScheduleId=final_draft.id if final_draft else None,
-            draftRevision=final_draft.revision if final_draft else None,
-            scheduledUnits=scheduled,
-            remainingUnits=max(item.course.total_units - scheduled, 0),
-            saved=saved,
-            improvement=improvement,
-            reasons=[
-                BlockingReason(
-                    code=BlockingReasonCode(reason.code),
-                    message=reason.message,
-                    relatedCount=reason.count,
-                    holidayDate=reason.holiday_date,
-                    holidayName=reason.holiday_name,
-                    sourceKind=reason.source_kind,
-                    sourceId=reason.source_id,
-                )
-                for reason in course_solution.evidence
-                if scheduled < item.course.total_units
-            ],
-            errors=[],
-        ))
-
-    outcomes.sort(key=lambda outcome: outcome.course_id)
-    counts = {status: sum(outcome.status == status for outcome in outcomes) for status in OptimizationStatus}
-    elapsed_seconds = monotonic() - started
-    if started + elapsed_seconds > deadline:
-        raise OptimalResultNotProven("The optimization operation exceeded its 60-second deadline before completion.")
-    elapsed = int(elapsed_seconds * 1000)
-    return OptimizationGenerationResult(
-        intensiveFacts=_arrangement_facts(loaded, {c.course_id:c.sessions for c in solution.courses},
-            loaded.shared_snapshot_token,candidate_fingerprint(solution,{c.course.id:c.course.cohort_id for c in loaded.courses}))
-            if not counts[OptimizationStatus.STALE] and not counts[OptimizationStatus.FAILED] else None,
-        semesterId=semester_id,
-        summary=OptimizationSummary(
-            total=len(outcomes),
-            complete=counts[OptimizationStatus.COMPLETE],
-            improvedPartial=counts[OptimizationStatus.IMPROVED_PARTIAL],
-            unchanged=counts[OptimizationStatus.UNCHANGED],
-            failed=counts[OptimizationStatus.FAILED],
-            stale=counts[OptimizationStatus.STALE],
-            scheduledUnits=sum(item.scheduled_units for item in outcomes),
-            remainingUnits=sum(item.remaining_units for item in outcomes),
-            elapsedMilliseconds=elapsed,
-            optimalForPreparedSnapshot=optimal_for_prepared_snapshot,
-        ),
-        outcomes=outcomes,
-    )
 
 
 def load_operation(
@@ -790,6 +458,7 @@ def _decision_required_result(
     prepared_courses: list[PreparedOptimizationCourseInput],
     shared_snapshot_token: str,
     schedule_revision_id: int,
+    *, algorithm='standard', strategy_profile='standard-v1', strategy_settings=None, policy_fingerprint=None,
 ) -> OptimizationDecisionRequiredResult:
     actual = intensive_arrangement([c.optimization for c in loaded.courses],loaded.fixed_sessions,
                                   {c.course_id:c.sessions for c in solution.courses})
@@ -833,30 +502,37 @@ def _decision_required_result(
                     for reason in course_solution.evidence
                     if generated_units < required
                 ],
+                lecturerPortions=lecturer_portion_facts(item.optimization, course_solution.sessions) if algorithm == 'lecturer' else [],
             )
         )
-    fingerprint = candidate_fingerprint(solution, {item.course.id: item.course.cohort_id for item in loaded.courses})
+    identity = {'algorithm': algorithm, 'profile': strategy_profile, 'settings': strategy_settings or {}, 'policy': policy_fingerprint}
+    if algorithm == 'lecturer':
+        from app.services.teaching_preferences import derive_portions
+        identity['portions'] = {c.course.id: [asdict(p) for p in derive_portions(c.optimization, c.optimization.explicit_lecturer_portions)] for c in loaded.courses}
+    fingerprint = _fingerprint({'assignments': candidate_fingerprint(solution, {item.course.id: item.course.cohort_id for item in loaded.courses}), 'strategy': identity})
     scope = _fingerprint({'shared': shared_snapshot_token,
-        'courses': [item.model_dump(mode='json', by_alias=True) for item in sorted(prepared_courses, key=lambda c:c.course_id)]})
+        'courses': [item.model_dump(mode='json', by_alias=True) for item in sorted(prepared_courses, key=lambda c:c.course_id)], 'strategy': identity})
     objective_by_key = {item.objective_key: item for item in solution.objectives}
     objectives = [ObjectiveProof(objectiveKey=key, direction='max' if key in ('total_units','intensive_teaching_time','daily_variety','retained_drafts') else 'min',
         proofStatus=objective_by_key[key].proof_status if key in objective_by_key else 'not_attempted',
         value=objective_by_key[key].value if key in objective_by_key else None,
-        candidateFingerprint=fingerprint, preparedSnapshotToken=scope) for key in OBJECTIVE_KEYS]
+        candidateFingerprint=fingerprint, preparedSnapshotToken=scope,
+        condition={earlier: objective_by_key[earlier].value for earlier in objective_keys(strategy_profile)[:index]}
+            if key in objective_by_key and objective_by_key[key].proof_status == 'conditional' else None)
+        for index, key in enumerate(objective_keys(strategy_profile))]
     coverage_proven = objectives[0].proof_status == 'proven'
     upper = generated_total if coverage_proven else valid_unit_upper_bound(generated_total, required_total, solution.unit_upper_bound)
     proof = CandidateProof(preparedSnapshotToken=scope, candidateFingerprint=fingerprint,
+        objectiveProfile=strategy_profile,
         selectedCourseIds=[item.course.id for item in loaded.courses], requiredUnits=required_total, scheduledUnits=generated_total,
         coverageProven=coverage_proven, preferencesProven=all(o.proof_status == 'proven' for o in objectives),
         objectives=objectives, unitUpperBound=upper, additionalPossibleUnits=upper-generated_total if upper is not None else None,
         gapKnown=upper is not None)
     return OptimizationDecisionRequiredResult(
+        algorithm=algorithm, strategyProfile=strategy_profile, strategySettings=strategy_settings or {},
         proof=proof,
         hasSavedSessions=any(item.draft and item.draft.sessions for item in loaded.courses),
-        candidateFingerprint=candidate_fingerprint(
-            solution,
-            {item.course.id: item.course.cohort_id for item in loaded.courses},
-        ),
+        candidateFingerprint=fingerprint,
         preparedEvidence=OptimizationGenerationRequest(
             semesterId=loaded.semester.id,
             scheduleRevisionId=schedule_revision_id,
@@ -874,6 +550,24 @@ def _decision_required_result(
             courses=course_comparisons,
         ),
     )
+
+
+def lecturer_portion_facts(course, sessions):
+    from app.services.teaching_preferences import derive_portions
+    rows = []
+    predecessor_complete = True
+    for portion in derive_portions(course, course.explicit_lecturer_portions):
+        scheduled = sum(s.units for s in sessions if s.lecturer_id == portion.lecturer_id)
+        remaining = portion.required_units - scheduled
+        blocked = remaining and not predecessor_complete
+        rows.append(dict(lecturerId=portion.lecturer_id, lecturerCode=portion.lecturer_code,
+            sequenceIndex=portion.sequence_index, source=portion.source, requiredUnits=portion.required_units,
+            scheduledUnits=scheduled, remainingUnits=remaining,
+            reasonCode=('PREDECESSOR_INCOMPLETE' if blocked else 'SEARCH_UNCERTAIN') if remaining else None,
+            reason=('Vorheriger Lehrpersonenanteil ist noch nicht vollständig geplant.' if blocked else
+                    'Weitere zulässige Termine sind durch die begrenzte Suche nicht nachgewiesen.') if remaining else None))
+        predecessor_complete = predecessor_complete and remaining == 0
+    return rows
 
 
 def _arrangement_facts(loaded, sessions, scope, fingerprint):

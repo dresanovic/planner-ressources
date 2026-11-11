@@ -18,8 +18,14 @@ import {
 import { label } from './config/terminology'
 import type { CurrentAccount } from './api/authentication'
 import { PlannerAccountsPage } from './pages/PlannerAccountsPage'
+import { OptimizationSessionProvider } from './components/OptimizationSessionProvider'
+import { OptimizationProgress } from './components/OptimizationProgress'
+import { useOptimizationSession } from './hooks/optimizationSession'
 
-function App({ currentAccount, onCurrentAccountChange, onLogout, onPasswordChange }: { currentAccount?: CurrentAccount; onCurrentAccountChange?: (account: CurrentAccount) => void; onLogout?: () => void; onPasswordChange?: () => void }) {
+type AppProps = { currentAccount?: CurrentAccount; onCurrentAccountChange?: (account: CurrentAccount) => void; onLogout?: () => void; onPasswordChange?: () => void }
+
+function AppContent({ currentAccount, onCurrentAccountChange, onLogout, onPasswordChange }: AppProps) {
+  const optimizationSession = useOptimizationSession()
   const [view, setView] = useState<PlannerView>('schedule')
   const [scheduleDestination, setScheduleDestination] = useState<ScheduleDestination>('calendar')
   const [scheduleExpanded, setScheduleExpanded] = useState(true)
@@ -105,6 +111,16 @@ function App({ currentAccount, onCurrentAccountChange, onLogout, onPasswordChang
     setView('accounts')
   }
 
+  function openOptimization() {
+    const commit = () => {
+      commitScheduleDestination('calendar')
+      optimizationSession.requestOpen()
+    }
+    if (scheduleNavigationRequester.current) {
+      scheduleNavigationRequester.current({ label: 'dem Optimierungslauf', commit })
+    } else commit()
+  }
+
   return (
     <div className="application-shell" data-navigation-pinned={navigationPinned ? 'true' : 'false'}>
       <ApplicationNavigation
@@ -134,6 +150,7 @@ function App({ currentAccount, onCurrentAccountChange, onLogout, onPasswordChang
         aria-hidden={navigationOpen || undefined}
         inert={navigationOpen || undefined}
       >
+        <OptimizationProgress onOpen={openOptimization} />
         <div hidden={activeView !== 'schedule'}><CourseSchedulePage active={activeView === 'schedule'} catalogRevision={catalogRevision} destination={scheduleDestination} onNavigationRequesterChange={setScheduleNavigationRequester} onScheduleDestinationChange={commitScheduleDestination} /></div>
         {activeView === 'academic' && <AcademicDataPage courseFilters={courseFilters} onCourseFiltersChange={setCourseFilters} category={selectedCategory} onCatalogChanged={() => setCatalogRevision((value) => value + 1)} />}
         {activeView === 'accounts' && currentAccount?.isAdministrator && <PlannerAccountsPage currentAccount={currentAccount} onCurrentAccountChange={onCurrentAccountChange} />}
@@ -142,4 +159,6 @@ function App({ currentAccount, onCurrentAccountChange, onLogout, onPasswordChang
   )
 }
 
-export default App
+export default function App(props: AppProps) {
+  return <OptimizationSessionProvider><AppContent {...props} /></OptimizationSessionProvider>
+}

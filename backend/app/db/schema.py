@@ -31,6 +31,12 @@ def initialize_database(engine: Engine) -> None:
                     raise UnsupportedSchemaStateError("Incomplete dated window schema; back up and inspect migration 0013.")
                 if "optimization_operations" in inspector.get_table_names() and not _has_complete_optimization_schema(inspector):
                     raise UnsupportedSchemaStateError("Incomplete optimization operation schema; back up and inspect migration 0011.")
+                identity_columns = {'algorithm', 'strategy_profile', 'strategy_settings'}
+                present_identity = identity_columns & _column_names(inspector, 'optimization_operations')
+                if present_identity and (present_identity != identity_columns or not _has_complete_optimization_schema(inspector, require_strategy=True)):
+                    raise UnsupportedSchemaStateError('Incomplete teaching strategy identity; back up and inspect migration 0015.')
+                if present_identity:
+                    _has_optimized_strategy_schema(inspector)  # Reject partially widened identities.
                 if not inspector.get_table_names():
                     Base.metadata.create_all(bind=connection)
                     inspector = inspect(connection)
@@ -159,6 +165,15 @@ def initialize_database(engine: Engine) -> None:
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
                 if not _is_current_schema(inspect(connection)):
+                    if not identity_columns.issubset(_column_names(inspect(connection), 'optimization_operations')):
+                        migration = _load_migration('0015_teaching_strategy_identity.py')
+                        migration.op = Operations(MigrationContext.configure(connection))
+                        migration.upgrade()
+                if not _has_optimized_strategy_schema(inspect(connection)):
+                    migration = _load_migration('0016_standard_optimized.py')
+                    migration.op = Operations(MigrationContext.configure(connection))
+                    migration.upgrade()
+                if not _is_current_schema(inspect(connection)):
                     raise UnsupportedSchemaStateError(
                         "Database migration completed without producing the expected schema."
                     )
@@ -171,10 +186,22 @@ def initialize_database(engine: Engine) -> None:
 
 
 def _is_current_schema(inspector) -> bool:
-    return (_is_fs016_schema(inspector) and _has_complete_optimization_schema(inspector)
+    return (_is_fs016_schema(inspector) and _has_complete_optimization_schema(inspector, require_strategy=True)
+            and _has_optimized_strategy_schema(inspector)
             and "preferred_session_units" in _column_names(inspector, "courses")
             and _has_complete_dated_windows(inspector)
             and "overall_units" in _column_names(inspector, "courses"))
+
+
+def _has_optimized_strategy_schema(inspector) -> bool:
+    if 'optimization_operations' not in inspector.get_table_names():
+        return False
+    checks = {c['name']: c['sqltext'] for c in inspector.get_check_constraints('optimization_operations')}
+    algorithm = 'standard_optimized' in checks.get('ck_optimization_algorithm', '')
+    profile = 'standard-optimized-v1' in checks.get('ck_optimization_strategy_profile', '')
+    if algorithm != profile:
+        raise UnsupportedSchemaStateError('Incomplete Standard Optimized identity; back up and inspect migration 0016.')
+    return algorithm and profile
 
 
 def _has_complete_dated_windows(inspector) -> bool:
@@ -191,16 +218,20 @@ def _has_complete_dated_windows(inspector) -> bool:
             and any(fk['constrained_columns'] == ['study_type_id'] and fk['referred_table'] == 'study_types' for fk in inspector.get_foreign_keys(table.name)))
 
 
-def _has_complete_optimization_schema(inspector) -> bool:
+def _has_complete_optimization_schema(inspector, *, require_strategy=False) -> bool:
     table = _planning.OptimizationOperation.__table__
-    if not set(table.columns.keys()).issubset(_column_names(inspector, table.name)):
+    identity = {'algorithm', 'strategy_profile', 'strategy_settings'}
+    expected_columns = [c for c in table.columns if require_strategy or c.name not in identity]
+    if not {c.name for c in expected_columns}.issubset(_column_names(inspector, table.name)):
         return False
     columns = {column["name"]: column for column in inspector.get_columns(table.name)}
     expected_checks = {constraint.name for constraint in table.constraints if constraint.__class__.__name__ == "CheckConstraint"}
+    if not require_strategy:
+        expected_checks -= {'ck_optimization_' + name for name in identity}
     actual_checks = {constraint["name"] for constraint in inspector.get_check_constraints(table.name)}
     return (
         inspector.get_pk_constraint(table.name)["constrained_columns"] == ["operation_id"]
-        and all(columns[column.name]["nullable"] == column.nullable for column in table.columns)
+        and all(columns[column.name]["nullable"] == column.nullable for column in expected_columns)
         and expected_checks.issubset(actual_checks)
         and {"owner_account_id", "semester_id", "schedule_revision_id"}.issubset({
             item["constrained_columns"][0] for item in inspector.get_foreign_keys(table.name)

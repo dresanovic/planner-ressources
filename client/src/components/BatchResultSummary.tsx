@@ -1,8 +1,9 @@
 import type { BlockingReason, OptimizationGenerationResult } from '../api/conflictAwareGeneration'
+import { teachingAlgorithmLabel, teachingTerminationLabel } from '../api/conflictAwareGeneration'
 import { formatCalendarDate } from '../utils/datePresentation'
 import { safeReasonText } from '../utils/userProblems'
 import { label } from '../config/terminology'
-import { OptimizationProofFacts, IntensiveArrangementFacts } from './OptimizationProofFacts'
+import { OptimizationProofFacts, IntensiveArrangementFacts, OrderedLecturerPortions } from './OptimizationProofFacts'
 
 type Props = {
   result: OptimizationGenerationResult
@@ -83,6 +84,8 @@ export function BatchResultSummary({ result, retryDisabled = false, onRetryFaile
           </button>
         )}
       </div>
+      <p>Algorithmus: {teachingAlgorithmLabel(result.algorithm)}</p>
+      {result.termination && <p>{teachingTerminationLabel(result.termination)}</p>}
       <p className="batch-counts">
         {result.summary.complete} vollständig · {result.summary.improvedPartial} unvollständig · {result.summary.unchanged} unverändert · {result.summary.failed} fehlgeschlagen · {result.summary.stale} veraltet
       </p>
@@ -106,6 +109,7 @@ export function BatchResultSummary({ result, retryDisabled = false, onRetryFaile
               <span>{statusLabels[outcome.status]}</span>
             </div>
             <p>{outcome.scheduledUnits} geplant · {outcome.remainingUnits} offen</p>
+            <OrderedLecturerPortions portions={outcome.lecturerPortions}/>
             {outcome.remainingUnits > 0 && outcome.reasons.length === 0 && <p>Für die verbleibenden Lehreinheiten liegen keine belegten Gründe vor.</p>}
             {outcome.improvement && <p>+{outcome.improvement.addedUnits} Lehreinheiten; {outcome.improvement.reducedConflicts} Konflikte weniger; {outcome.improvement.reducedLecturerChanges} Wechsel der Lehrperson weniger; {outcome.improvement.reducedRoomChanges} Raumwechsel weniger</p>}
             {outcome.reasons.map((reason) => <p key={`${outcome.courseId}-${reason.code}-${reason.holidayDate ?? ''}-${reason.sourceKind ?? ''}-${reason.sourceId ?? ''}`}><strong>Hinweis</strong>: {blockerText(reason, outcome.courseName ?? `Lehrveranstaltung ${outcome.courseId}`)}{reason.holidayDate ? ` ${reason.holidayName ? `Feiertag „${reason.holidayName}“, ` : ''}betroffenes Datum: ${formatCalendarDate(reason.holidayDate)}.` : ''} ({reason.relatedCount} betroffen)</p>)}

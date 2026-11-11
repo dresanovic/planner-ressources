@@ -17,12 +17,15 @@ import {
 } from '../api/draftSchedule'
 import {
   prepareConflictAwareGeneration,
+  teachingAlgorithmLabel,
+  teachingTerminationLabel,
   type OptimizationDecisionRequiredResult,
   type OptimizationError,
   type OptimizationGenerationResult,
   type OptimizationPreparation,
 } from '../api/conflictAwareGeneration'
-import { useOptimizationOperation } from '../hooks/useOptimizationOperation'
+import { useOptimizationSession } from '../hooks/optimizationSession'
+import { OptimizationSessionProvider } from '../components/OptimizationSessionProvider'
 import {
   getPlanningOptions,
   type CourseOption,
@@ -141,7 +144,11 @@ type CourseSchedulePageProps = {
   ) => void
 }
 
-export function CourseSchedulePage({
+export function CourseSchedulePage(props: CourseSchedulePageProps) {
+  return <OptimizationSessionProvider><CourseScheduleContent {...props} /></OptimizationSessionProvider>
+}
+
+function CourseScheduleContent({
   catalogRevision = 0,
   destination = 'calendar',
   active = true,
@@ -249,12 +256,6 @@ export function CourseSchedulePage({
   useEffect(() => { selectedSemesterIdRef.current = selectedSemesterId }, [selectedSemesterId])
 
   useEffect(() => {
-    if (active && destination === 'calendar') return
-    const discardPreview = window.setTimeout(() => setBatchPreview(null), 0)
-    return () => window.clearTimeout(discardPreview)
-  }, [active, destination])
-
-  useEffect(() => {
     if (!calendarNavigationStatus) return
     const focusResults = () => {
       document
@@ -315,9 +316,24 @@ export function CourseSchedulePage({
     [schedules, selectedCourseId, selectedSemesterId],
   )
   const activeScheduleRevisionId = lifecycleOverview?.activeWorkingRevision?.revisionId ?? null
-  const operation = useOptimizationOperation(active && destination === 'calendar' && planningInputsVisible && planningInputTab === 'generation'
-    && (selectedLifecycleRevisionId == null || selectedLifecycleRevisionId === activeScheduleRevisionId),
-    `${selectedSemesterId}:${selectedLifecycleRevisionId ?? activeScheduleRevisionId}:${catalogRevision}`)
+  const { operation, openRequest } = useOptimizationSession()
+  const handledOpenRequest = useRef(0)
+  useEffect(() => {
+    if (!active || destination !== 'calendar' || openRequest === handledOpenRequest.current) return
+    const scope = operation.status ?? operation.selection
+    if (!scope) return
+    handledOpenRequest.current = openRequest
+    queueMicrotask(() => {
+      setSelectedSemesterId(scope.semesterId)
+      setSelectedLifecycleRevisionId(scope.scheduleRevisionId)
+      setSelectedBatchCourseIds([...scope.selectedCourseIds])
+      setSelectedCourseId(scope.selectedCourseIds[0] ?? null)
+      setGenerationCohortId(null)
+      setPlanningInputsVisible(true)
+      setPlanningInputTab('generation')
+      window.requestAnimationFrame(() => document.getElementById('planning-tab-generation')?.focus({ preventScroll: true }))
+    })
+  }, [openRequest, active, destination, operation.status, operation.selection])
   const batchExecuting = operation.busy
   useEffect(() => {
     return () => { preparationEpoch.current += 1 }
@@ -325,14 +341,15 @@ export function CourseSchedulePage({
   useEffect(() => {
     const status = operation.status
     queueMicrotask(() => {
-      setBatchPreview(status?.canAccept && active ? status.review : null)
+      setBatchPreview(status?.canAccept && active && destination === 'calendar' && planningInputsVisible && planningInputTab === 'generation'
+        && status.semesterId === selectedSemesterId && status.scheduleRevisionId === selectedLifecycleRevisionId ? status.review : null)
       if (status?.saved && status.result && lastSavedOperation.current !== status.operationId) {
         lastSavedOperation.current = status.operationId
         setBatchResult(status.result)
         void refreshOverview(status.semesterId, false)
       }
     })
-  }, [operation.status, active])
+  }, [operation.status, active, destination, planningInputsVisible, planningInputTab, selectedSemesterId, selectedLifecycleRevisionId, validationKey])
   const selectedLifecycleRevision = lifecycleOverview?.revisions.find((item) => item.revisionId === selectedLifecycleRevisionId) ?? lifecycleOverview?.activeWorkingRevision ?? lifecycleOverview?.currentPublication ?? null
   useEffect(() => {
     selectedLifecycleRevisionIdRef.current = selectedLifecycleRevision?.revisionId ?? null
@@ -358,12 +375,12 @@ export function CourseSchedulePage({
   const currentValidationReady = workspaceValidationReady && (!constraintsRequired || constraintsReady)
   const currentValidationError = optionsFreshness === 'error' || constraintsRefreshError || overviewRefreshError || Boolean(calendarWorkspaceError)
   useEffect(() => {
-    const discard = window.setTimeout(() => { setBatchPreview(null); setBatchPreparation(null) },0)
+    const discard = window.setTimeout(() => { setBatchPreparation(null) },0)
     return () => window.clearTimeout(discard)
   }, [validationKey])
   const mutationBusy = batchPreparing || batchExecuting || manualSaving || sessionUpdating || deletionBusy || lifecycleBusy
   const contextBusy = mutationBusy || overviewLoading || examBusy
-  const writeBusy = !currentValidationReady || contextBusy || batchPreview != null || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
+  const writeBusy = !currentValidationReady || contextBusy || operation.pending || batchPreview != null || overviewRefreshError || examRefreshError || lifecycleRefreshError || activeScheduleRevisionId == null
   const examConfigurationBusy = contextBusy || batchPreview != null || overviewRefreshError || examRefreshError
   const currentExamOverview = examOverview?.semesterId === selectedSemesterId ? examOverview : null
   const selectedExamState = useMemo(() => currentExamOverview?.courses.find((course) => course.courseId === selectedCourseId) ?? null, [currentExamOverview, selectedCourseId])
@@ -905,7 +922,7 @@ export function CourseSchedulePage({
   }
 
   async function startBatch(courseIds = selectedBatchCourseIds) {
-    if (!currentValidationReady || optionsFreshness !== 'ready' || !selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty || batchPreview || operation.busy || operation.unknown) return
+    if (!currentValidationReady || optionsFreshness !== 'ready' || !selectedSemesterId || !activeScheduleRevisionId || constraintsLoading || constraintsDirty || batchPreview || operation.pending) return
     setBatchPreparing(true)
     setBatchErrors([])
     setBatchPreparation(null)
@@ -948,13 +965,9 @@ export function CourseSchedulePage({
     await startBatchForSemester(batchResult.semesterId, failedIds)
   }
 
-  async function retryReviewedSelection() {
-    const preview = batchPreview
-    if (!preview || batchExecuting) return
-    const discarded = await operation.cancel('retry')
-    if (discarded?.phase !== 'cancelled') return
-    setBatchPreview(null)
-    await startBatchForSemester(preview.preparedEvidence.semesterId, preview.comparison.selectedCourseIds)
+  async function continueReviewedSelection() {
+    if (!batchPreview || batchExecuting) return
+    await operation.continueOptimization()
   }
 
   async function startBatchForSemester(semesterId: number, courseIds: number[]) {
@@ -1430,7 +1443,6 @@ export function CourseSchedulePage({
       onRequestClose={() => requestPaneIntent({
         label: 'the calendar',
         commit: () => {
-          void operation.cancel('navigation')
           setBatchPreparation(null)
           commitPaneSelection(null)
           window.setTimeout(() => {
@@ -1457,7 +1469,7 @@ export function CourseSchedulePage({
         : null
     if (nextTab == null) return
     event.preventDefault()
-    if (nextTab === 'course') { void operation.cancel('navigation'); setBatchPreparation(null) }
+    if (nextTab === 'course') setBatchPreparation(null)
     setPlanningInputTab(nextTab)
     window.requestAnimationFrame(() => document.getElementById(`planning-tab-${nextTab}`)?.focus())
   }
@@ -1523,7 +1535,7 @@ export function CourseSchedulePage({
                     aria-controls="planning-panel-course"
                     tabIndex={planningInputTab === 'course' ? 0 : -1}
                     className={planningInputTab === 'course' ? 'planning-input-tab active' : 'planning-input-tab'}
-                    onClick={() => { void operation.cancel('navigation'); setBatchPreparation(null); setPlanningInputTab('course') }}
+                    onClick={() => { setBatchPreparation(null); setPlanningInputTab('course') }}
                     onKeyDown={handlePlanningInputTabKeyDown}
                   >
                     Kursdetails
@@ -1588,10 +1600,10 @@ export function CourseSchedulePage({
                   aria-labelledby="planning-tab-generation"
                   hidden={planningInputTab !== 'generation'}
                 >
-                  <MultiCourseGenerationPanel freshness={optionsFreshness} cohorts={planningOptions.cohorts} cohortId={generationCohortId} onCohortChange={setGenerationCohortId} semesterName={selectedSemester?.name} courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={(value) => { invalidateBatchPreparation(); setUnavailableDatesInput(value) }} onChange={(ids) => { invalidateBatchPreparation(); setSelectedBatchCourseIds(ids) }} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading || batchPreview != null} busy={batchPreparing || batchExecuting} disabledReason={batchPreview ? 'Entscheiden oder verwerfen Sie zuerst den geöffneten Vergleich.' : constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
+                  <MultiCourseGenerationPanel algorithm={batchPreparation?.algorithm ?? operation.status?.algorithm} freshness={optionsFreshness} cohorts={planningOptions.cohorts} cohortId={generationCohortId} onCohortChange={setGenerationCohortId} semesterName={selectedSemester?.name} courses={semesterCourses} courseDraftStatuses={batchCourseDraftStatuses} selectedCourseIds={selectedBatchCourseIds} unavailableDatesInput={unavailableDatesInput} unavailableDateErrors={parsedUnavailableDates.invalid} onUnavailableDatesInputChange={(value) => { invalidateBatchPreparation(); setUnavailableDatesInput(value) }} onChange={(ids) => { invalidateBatchPreparation(); setSelectedBatchCourseIds(ids) }} onGenerate={() => void startBatch()} disabled={writeBusy || constraintsDirty || constraintsLoading || batchPreview != null} busy={batchPreparing || batchExecuting} disabledReason={batchPreview ? 'Entscheiden oder verwerfen Sie zuerst den geöffneten Vergleich.' : constraintsDirty ? 'Speichern oder verwerfen Sie zuerst die geänderten Datumsgrenzen.' : constraintsLoading ? 'Die Datumsgrenzen werden gerade aktualisiert.' : undefined} />
                   {batchPreparation && batchPreparation.semesterId === selectedSemesterId && batchPreparation.scheduleRevisionId === activeScheduleRevisionId && (
                     <section aria-label="Zeitbudget vor dem Start">
-                      <p>Optimierungszeit: {batchPreparation.budgetPolicy.defaultSeconds} Sekunden. Installationsgrenze: {batchPreparation.budgetPolicy.ceilingSeconds} Sekunden. Die Installationsbetreuung kann das Zeitbudget ändern.</p>
+                      <p>Algorithmus: {teachingAlgorithmLabel(batchPreparation.algorithm)}. Optimierungszeit: {batchPreparation.budgetPolicy.defaultSeconds} Sekunden. Installationsgrenze: {batchPreparation.budgetPolicy.ceilingSeconds} Sekunden. Die Installationsbetreuung kann das Zeitbudget ändern.</p>
                       <button type="button" disabled={batchExecuting || constraintsDirty || constraintsLoading} onClick={() => void executeBatch(batchPreparation)}>Optimierung starten</button>
                       <button type="button" onClick={() => setBatchPreparation(null)}>Zurück zur Auswahl</button>
                     </section>
@@ -1599,9 +1611,10 @@ export function CourseSchedulePage({
                   {(operation.status || operation.busy || operation.unknown) && (
                     <section className="optimization-operation-status" aria-label="Optimierungslauf">
                       <p role="status" aria-live="polite">{operation.unknown ? 'Status unbestätigt. Die Verbindung wird erneut geprüft. Bis zur Bestätigung sind keine Speicherentscheidungen möglich.' : operation.action === 'cancelling' ? 'Abbruch angefordert. Die Bestätigung wird abgewartet.' : operation.action === 'saving' ? 'Stundenplan wird gespeichert. Die Bestätigung wird abgewartet.' : operation.status ? operationPhaseLabel(operation.status.phase) : 'Optimierung wird gestartet…'}</p>
-                      {operation.status && <p>Semester #{operation.status.semesterId} · Revision #{operation.status.scheduleRevisionId} · {operation.status.selectionCount} Kurse · Zeitbudget {operation.status.budgetSeconds} Sekunden · vergangen {Math.floor(operation.status.elapsedMilliseconds / 1000)} Sekunden{operation.status.budgetExhausted ? ['preparing', 'optimizing'].includes(operation.status.phase) ? ' · Optimierungszeit beendet; Ergebnis wird geprüft.' : ' · Die Suche hat ihr Zeitbudget ausgeschöpft.' : ''}</p>}
+                      {operation.status && <p>Algorithmus: {teachingAlgorithmLabel(operation.status.algorithm)} · Semester #{operation.status.semesterId} · Revision #{operation.status.scheduleRevisionId} · {operation.status.selectionCount} Kurse · Zeitbudget {operation.status.budgetSeconds} Sekunden · vergangen {Math.floor(operation.status.elapsedMilliseconds / 1000)} Sekunden{operation.status.budgetExhausted ? ['preparing', 'optimizing'].includes(operation.status.phase) ? ' · Optimierungszeit beendet; Ergebnis wird geprüft.' : ' · Die Suche hat ihr Zeitbudget ausgeschöpft.' : ''}</p>}
                       {(operation.busy || operation.unknown) && <button type="button" onClick={() => void operation.cancel()}>Abbrechen</button>}
                       {operation.status && ['timeout_no_candidate', 'failed', 'stale', 'interrupted'].includes(operation.status.phase) && <p>Nichts aus diesem Lauf wurde gespeichert. Prüfen Sie die Auswahl und starten Sie einen neuen Versuch. Für mehr Zeit kontaktieren Sie die Installationsbetreuung; eine kleinere Auswahl ist ebenfalls möglich.</p>}
+                      {operation.status?.termination && <p role="status" aria-live="polite">{teachingTerminationLabel(operation.status.termination)}</p>}
                       {operation.status?.phase === 'cancelled' && <p>Nichts aus diesem Lauf wurde gespeichert. {operationCancellationReason(operation.status.terminalCode)} Prüfen Sie die Auswahl und starten Sie erneut.</p>}
                       {operation.status?.phase === 'timeout_no_candidate' && <p>Es liegt kein verwendbarer Vorschlag vor. Dies allein beweist keine Unmöglichkeit. {operation.status.errors.length === 0 ? 'Es liegen keine belegten Gründe für die fehlenden Termine vor.' : ''}</p>}
                       {operation.status?.errors.map((error, index) => <p key={`${error.code}-${index}`}>{error.message}</p>)}
@@ -1733,7 +1746,7 @@ export function CourseSchedulePage({
           disabled={batchExecuting || constraintsLoading || constraintsDirty}
           onCancel={() => { setBatchPreview(null); void operation.cancel('dismiss') }}
           onAccept={() => void acceptBatchPreview()}
-          onRetry={() => void retryReviewedSelection()}
+          onContinue={() => void continueReviewedSelection()}
         />
       )}
       {sessionDeletion && (
@@ -1810,7 +1823,7 @@ function safeGenerationFailure(error: { code: string; message?: string; field?: 
   if (error.code === 'semester_not_found') return 'Das ausgewählte Semester ist nicht mehr verfügbar. Laden Sie den aktuellen Stand, wählen Sie ein Semester mit aktiver Arbeitsrevision und bereiten Sie die Auswahl erneut vor.'
   if (error.code === 'OPTIMIZATION_CONFIGURATION_INVALID') return 'Die Optimierungskonfiguration ist ungültig. Die Installationsbetreuung muss defaultSeconds und ceilingSeconds als positive ganze Sekunden prüfen; der Standardwert darf die Grenze nicht überschreiten. Danach neu vorbereiten.'
   if (error.code === 'OPTIMIZATION_CONFIGURATION_UNAVAILABLE') return 'Die Optimierungskonfiguration kann nicht gelesen werden. Die Installationsbetreuung muss Datei, Verzeichniseinbindung und Leserechte prüfen. Danach neu vorbereiten.'
-  if (error.code === 'BUDGET_POLICY_CHANGED') return 'Das konfigurierte Zeitbudget hat sich geändert. Bereiten Sie die Auswahl erneut vor und prüfen Sie das angezeigte Budget vor dem Start.'
+  if (error.code === 'BUDGET_POLICY_CHANGED') return 'Der konfigurierte Algorithmus oder die Optimierungseinstellungen haben sich geändert. Bereiten Sie die Auswahl erneut vor und prüfen Sie Algorithmus und Zeitbudget vor dem Start.'
   if (error.code === 'OPTIMIZATION_WORKER_FAILED' || error.code === 'OPERATION_INTERRUPTED') return 'Die Suche wurde unerwartet unterbrochen. Nichts aus diesem Lauf wurde gespeichert. Prüfen Sie den aktuellen Stand und bereiten Sie einen neuen Versuch vor.'
   if (isStaleGenerationFailure(error.code)) return 'Die angezeigten Daten sind nicht mehr aktuell. Laden Sie den aktuellen Stand neu, prüfen Sie die Werte und wiederholen Sie die Aktion danach.'
   if (error.code === 'NO_VALID_ALTERNATIVE') return `Keine gültige Alternative konnte erzeugt werden. ${error.message ?? 'Prüfen Sie die angezeigten Planungsgrenzen und Ressourcen.'}`

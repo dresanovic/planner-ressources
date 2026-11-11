@@ -119,6 +119,43 @@ def test_operation_http_start_poll_finalize_and_passive_auth(setup_operation):
         app.dependency_overrides.clear()
 
 
+def test_http_continuation_keeps_operation_and_requires_explicit_acceptance(setup_operation):
+    from uuid import uuid4
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from app.db.session import get_db
+    from tests.services.test_optimization_operations import settled, saved_state
+    from app.services import optimization_operations as operations
+    factory, auth, request, worker = setup_operation
+    def override():
+        with factory() as db:
+            yield db
+    app.dependency_overrides[get_db] = override
+    try:
+        with TestClient(app) as client:
+            client.cookies.set('planner_session', 's' * 43)
+            headers = {'X-CSRF-Protection': '1', 'Content-Type': 'application/json'}
+            with factory() as db:
+                operations.start_operation(db, request, auth)
+            status = settled(factory, auth, request)
+            before = saved_state(factory)
+            payload = {'contextSecret': CONTEXT_SECRET,
+                'candidateFingerprint': status.review.candidate_fingerprint,
+                'continuationId': str(uuid4())}
+            path = f'/api/draft-schedules/optimization/operations/{OPERATION_ID}/continue'
+            assert client.post(path, json=payload, headers=headers).status_code == 202
+            status = settled(factory, auth, request)
+            assert status.phase == 'awaiting_decision' and status.can_accept
+            assert client.post(path, json=payload, headers=headers).status_code == 202
+            assert worker.calls == 2
+            assert saved_state(factory) == before
+            result = client.post(f'/api/draft-schedules/optimization/operations/{OPERATION_ID}/accept',
+                json={'contextSecret': CONTEXT_SECRET, 'candidateFingerprint': status.review.candidate_fingerprint}, headers=headers)
+            assert result.status_code == 200 and result.json()['saved']
+    finally:
+        app.dependency_overrides.clear()
+
+
 def test_retired_synchronous_routes_cannot_bypass_operation_identity(setup_operation):
     from fastapi.testclient import TestClient
     from app.main import app

@@ -8,6 +8,35 @@ import { decisionRequiredGenerationFixture, candidateProofFixture } from '../tes
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('ReplacementConfirmationDialog', () => {
+  it('explains the separate Standard Optimized distribution objective without claiming optimality', () => {
+    const root = createRoot(document.body.appendChild(document.createElement('div')))
+    const original = candidateProofFixture
+    const proof = { ...original, objectiveProfile:'standard-optimized-v1' as const,
+      objectives:[...original.objectives.slice(0,4), {...original.objectives[4], objectiveKey:'weekly_spread'}, ...original.objectives.slice(4)] }
+    act(() => root.render(<ReplacementConfirmationDialog preview={{...decisionRequiredGenerationFixture,
+      algorithm:'standard_optimized', strategyProfile:'standard-optimized-v1', proof}} onAccept={vi.fn()} onCancel={vi.fn()} />))
+    expect(document.body.textContent).toContain('Standard optimiert')
+    expect(document.body.textContent).toContain('Verteilung über den Lehrzeitraum')
+    expect(document.body.textContent).toContain('gleichmäßig verteilten Lehreinheiten')
+    expect(document.body.textContent).toContain('Vollständige Abdeckung bedeutet keine optimalen Präferenzen')
+    act(() => root.unmount())
+  })
+  it('shows ordered lecturer shares and predecessor uncertainty without an editor', () => {
+    const root=createRoot(document.body.appendChild(document.createElement('div')))
+    const preview={...decisionRequiredGenerationFixture,algorithm:'lecturer' as const,
+      comparison:{...decisionRequiredGenerationFixture.comparison,courses:[{
+        ...decisionRequiredGenerationFixture.comparison.courses[0],lecturerPortions:[
+          {lecturerId:1,lecturerCode:'A',sequenceIndex:0,source:'derived' as const,requiredUnits:11,scheduledUnits:9,remainingUnits:2,reasonCode:'SEARCH_UNCERTAIN',reason:'Weitere Termine sind nicht nachgewiesen.'},
+          {lecturerId:2,lecturerCode:'B',sequenceIndex:1,source:'derived' as const,requiredUnits:11,scheduledUnits:0,remainingUnits:11,reasonCode:'PREDECESSOR_INCOMPLETE',reason:'Vorheriger Lehrpersonenanteil ist noch nicht vollständig geplant.'},
+        ],
+      }]}}
+    act(()=>root.render(<ReplacementConfirmationDialog preview={preview} onAccept={vi.fn()} onCancel={vi.fn()}/>))
+    const list=document.querySelector('[aria-label="Lehrpersonenanteile in fester Reihenfolge"]')
+    expect(list?.textContent).toContain('A')
+    expect(list?.textContent).toContain('9 / 11 LE')
+    expect(list?.textContent).toContain('Vorheriger Lehrpersonenanteil')
+    expect(list?.querySelector('input,select')).toBeNull()
+  })
   it('keeps current and generated intensive facts separate and hides mismatched prepared facts', () => {
     const root=createRoot(document.body.appendChild(document.createElement('div')))
     const scope='d'.repeat(64), fingerprint='a'.repeat(64)
@@ -53,20 +82,15 @@ describe('ReplacementConfirmationDialog', () => {
     expect(document.body.textContent).toContain('Geplante Lehreinheiten = 80')
     expect(document.body.textContent).toContain('keine belegten Gründe')
   })
-  it('keeps review on retry back-out and requires confirmation before discarding',()=>{
+  it('continues from the current proposal without a discard confirmation',()=>{
     const retry=vi.fn()
     const root=createRoot(document.body.appendChild(document.createElement('div')))
-    act(()=>root.render(<ReplacementConfirmationDialog preview={{...decisionRequiredGenerationFixture,proof:candidateProofFixture}} onRetry={retry} onAccept={vi.fn()} onCancel={vi.fn()}/>))
+    act(()=>root.render(<ReplacementConfirmationDialog preview={{...decisionRequiredGenerationFixture,proof:candidateProofFixture}} onContinue={retry} onAccept={vi.fn()} onCancel={vi.fn()}/>))
     const button=(text:string)=>[...document.querySelectorAll('button')].find(b=>b.textContent===text)
-    act(()=>button('Erneut optimieren')?.click())
-    expect(document.body.textContent).toContain('kann schlechter ausfallen oder kein Ergebnis liefern')
-    expect(retry).not.toHaveBeenCalled()
-    act(()=>button('Zurück zum Vergleich')?.click())
-    expect(document.activeElement).toBe(button('Erneut optimieren'))
+    expect(document.body.textContent).toContain('Der bisherige Vorschlag bleibt erhalten')
+    expect(button('Erneut optimieren')).toBeUndefined()
     expect(document.querySelectorAll('.optimization-objectives li')).toHaveLength(10)
-    expect(retry).not.toHaveBeenCalled()
-    act(()=>button('Erneut optimieren')?.click())
-    act(()=>button('Verwerfen und neuen Versuch vorbereiten')?.click())
+    act(()=>button('Weiter optimieren')?.click())
     expect(retry).toHaveBeenCalledOnce()
   })
   it.each([true,false])('explains provisional validity, coverage and known/unknown gap (%s)', (known) => {

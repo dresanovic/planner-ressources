@@ -26,3 +26,9 @@ client/*.log
 *.log
 .env
 .env.*
+**/node_modules/
+**/__pycache__/
+**/.venv/
+coverage/
+Dockerfile*
+.dockerignore
