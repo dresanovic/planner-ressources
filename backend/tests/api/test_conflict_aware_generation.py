@@ -1,4 +1,15 @@
 import pytest
+
+
+@pytest.mark.parametrize('entry', ['generate_optimization', 'accept_optimization'])
+def test_retired_synchronous_service_cannot_place_or_save(entry):
+    from app.services import conflict_aware_generation as service
+    args = [None, 1, [], [], 'prepared', 1]
+    if entry == 'accept_optimization':
+        args.append('a' * 64)
+    with pytest.raises(service.InvalidOptimizationSelection) as failure:
+        getattr(service, entry)(*args)
+    assert failure.value.code == 'OPERATION_API_REQUIRED'
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -40,7 +51,7 @@ def db_session(tmp_path):
 
 
 @pytest.fixture()
-def client(db_session, monkeypatch):
+def client(db_session, monkeypatch, isolated_standard_policy):
     from app.services import optimization_operations as operations
     import app.services.conflict_aware_generation as generation
     from app.services.semester_optimization import OptimalResultNotProven, NoGeneratedAlternative

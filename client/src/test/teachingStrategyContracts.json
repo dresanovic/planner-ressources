@@ -1,0 +1,1928 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "algorithm-standard",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": "standard",
+        "strategyProfile": "standard-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": true
+    },
+    {
+      "name": "algorithm-cohort",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": "cohort",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": true
+    },
+    {
+      "name": "algorithm-lecturer",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": "lecturer",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": true
+    },
+    {
+      "name": "invalid-algorithm-None",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": null,
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": false
+    },
+    {
+      "name": "invalid-algorithm-",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": "",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": false
+    },
+    {
+      "name": "invalid-algorithm-Standard",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": "Standard",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": false
+    },
+    {
+      "name": "invalid-algorithm-bogus",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": "bogus",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": false
+    },
+    {
+      "name": "invalid-algorithm-4",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": 4,
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": false
+    },
+    {
+      "name": "invalid-algorithm-True",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": true,
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": false
+    },
+    {
+      "name": "termination-standard_completed",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "timeout_no_candidate",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": "NO_USABLE_CANDIDATE",
+        "algorithm": "cohort",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": "standard_completed"
+      },
+      "valid": true
+    },
+    {
+      "name": "termination-heuristic_completed",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "timeout_no_candidate",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": "NO_USABLE_CANDIDATE",
+        "algorithm": "cohort",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": "heuristic_completed"
+      },
+      "valid": true
+    },
+    {
+      "name": "termination-repair_limit",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "timeout_no_candidate",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": "NO_USABLE_CANDIDATE",
+        "algorithm": "cohort",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": "repair_limit"
+      },
+      "valid": true
+    },
+    {
+      "name": "termination-deadline",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "timeout_no_candidate",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": "NO_USABLE_CANDIDATE",
+        "algorithm": "cohort",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": "deadline"
+      },
+      "valid": true
+    },
+    {
+      "name": "termination-cancelled",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "timeout_no_candidate",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": "NO_USABLE_CANDIDATE",
+        "algorithm": "cohort",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": "cancelled"
+      },
+      "valid": true
+    },
+    {
+      "name": "termination-failed",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "timeout_no_candidate",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": "NO_USABLE_CANDIDATE",
+        "algorithm": "cohort",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": "failed"
+      },
+      "valid": true
+    },
+    {
+      "name": "invalid-termination",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": "cohort",
+        "strategyProfile": "heuristic-v1",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": "optimal"
+      },
+      "valid": false
+    },
+    {
+      "name": "invalid-profile",
+      "kind": "status",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "semesterId": 1,
+        "scheduleRevisionId": 1,
+        "selectedCourseIds": [
+          1
+        ],
+        "selectionCount": 1,
+        "phase": "optimizing",
+        "budgetSeconds": 300,
+        "elapsedMilliseconds": 0,
+        "budgetExhausted": false,
+        "currentObjectiveKey": null,
+        "saved": false,
+        "canAccept": false,
+        "canFinalize": false,
+        "review": null,
+        "result": null,
+        "errors": [],
+        "terminalCode": null,
+        "algorithm": "cohort",
+        "strategyProfile": "unknown",
+        "strategySettings": {
+          "version": "teaching-v1",
+          "repairAlternatives": 1000,
+          "maxDisplacedSessions": 8,
+          "checkpointSeconds": 5
+        },
+        "termination": null
+      },
+      "valid": false
+    },
+    {
+      "name": "standard-v1",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "standard-v1",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "conflicts",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "schedule_shape",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "lecturer_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "retained_drafts",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "canonical_temporal",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "canonical_resource",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": true
+    },
+    {
+      "name": "heuristic-v1",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "heuristic-v1",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "preferred_size_deviation",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_rhythm_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "owner_balance_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "extra_cohort_day_rooms",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": true
+    },
+    {
+      "name": "legacy-proof",
+      "kind": "proof",
+      "value": {
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "conflicts",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "schedule_shape",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "lecturer_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "retained_drafts",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "canonical_temporal",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "canonical_resource",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": true
+    },
+    {
+      "name": "wrong-order",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "heuristic-v1",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "course_room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "extra_cohort_day_rooms",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "owner_balance_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_rhythm_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "preferred_size_deviation",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong-key",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "heuristic-v1",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "conflicts",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "preferred_size_deviation",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_rhythm_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "owner_balance_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "extra_cohort_day_rooms",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong-direction",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "heuristic-v1",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "preferred_size_deviation",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_rhythm_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "owner_balance_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "extra_cohort_day_rooms",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong-identity",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "heuristic-v1",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          {
+            "objectiveKey": "preferred_size_deviation",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_rhythm_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "owner_balance_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "extra_cohort_day_rooms",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong-bound",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "heuristic-v1",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "preferred_size_deviation",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_rhythm_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "owner_balance_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "extra_cohort_day_rooms",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 21,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": false
+    },
+    {
+      "name": "false-preference-proof",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "heuristic-v1",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": true,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "preferred_size_deviation",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_rhythm_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "owner_balance_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "extra_cohort_day_rooms",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong-profile",
+      "kind": "proof",
+      "value": {
+        "objectiveProfile": "unknown",
+        "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "selectedCourseIds": [
+          1
+        ],
+        "requiredUnits": 22,
+        "scheduledUnits": 22,
+        "coverageProven": true,
+        "preferencesProven": false,
+        "objectives": [
+          {
+            "objectiveKey": "total_units",
+            "direction": "max",
+            "proofStatus": "proven",
+            "value": 22,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "intensive_teaching_time",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "daily_variety",
+            "direction": "max",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "preferred_size_deviation",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_rhythm_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "owner_balance_penalty",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "extra_cohort_day_rooms",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "objectiveKey": "course_room_changes",
+            "direction": "min",
+            "proofStatus": "unfinished",
+            "value": 0,
+            "preparedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "candidateFingerprint": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "unitUpperBound": 22,
+        "additionalPossibleUnits": 0,
+        "gapKnown": true
+      },
+      "valid": false
+    },
+    {
+      "name": "reconciled-coverage",
+      "kind": "coverage",
+      "value": {
+        "requiredUnits": 22,
+        "scheduledUnits": 11,
+        "remainingUnits": 11,
+        "status": "partial"
+      },
+      "valid": true
+    },
+    {
+      "name": "unreconciled-coverage",
+      "kind": "coverage",
+      "value": {
+        "requiredUnits": 22,
+        "scheduledUnits": 11,
+        "remainingUnits": 12,
+        "status": "partial"
+      },
+      "valid": false
+    },
+    {
+      "name": "start-unchanged",
+      "kind": "start",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "contextSecret": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "policyFingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "preparation": {
+          "semesterId": 1,
+          "scheduleRevisionId": 1,
+          "unavailableDates": [],
+          "sharedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "courses": [
+            {
+              "courseId": 1,
+              "inputSnapshotToken": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ]
+        }
+      },
+      "valid": true
+    },
+    {
+      "name": "override-activeAlgorithm",
+      "kind": "start",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "contextSecret": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "policyFingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "preparation": {
+          "semesterId": 1,
+          "scheduleRevisionId": 1,
+          "unavailableDates": [],
+          "sharedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "courses": [
+            {
+              "courseId": 1,
+              "inputSnapshotToken": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ]
+        },
+        "activeAlgorithm": "cohort"
+      },
+      "valid": false
+    },
+    {
+      "name": "override-algorithm",
+      "kind": "start",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "contextSecret": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "policyFingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "preparation": {
+          "semesterId": 1,
+          "scheduleRevisionId": 1,
+          "unavailableDates": [],
+          "sharedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "courses": [
+            {
+              "courseId": 1,
+              "inputSnapshotToken": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ]
+        },
+        "algorithm": "cohort"
+      },
+      "valid": false
+    },
+    {
+      "name": "override-strategyProfile",
+      "kind": "start",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "contextSecret": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "policyFingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "preparation": {
+          "semesterId": 1,
+          "scheduleRevisionId": 1,
+          "unavailableDates": [],
+          "sharedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "courses": [
+            {
+              "courseId": 1,
+              "inputSnapshotToken": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ]
+        },
+        "strategyProfile": "cohort"
+      },
+      "valid": false
+    },
+    {
+      "name": "override-strategySettings",
+      "kind": "start",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "contextSecret": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "policyFingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "preparation": {
+          "semesterId": 1,
+          "scheduleRevisionId": 1,
+          "unavailableDates": [],
+          "sharedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "courses": [
+            {
+              "courseId": 1,
+              "inputSnapshotToken": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ]
+        },
+        "strategySettings": "cohort"
+      },
+      "valid": false
+    },
+    {
+      "name": "override-budgetSeconds",
+      "kind": "start",
+      "value": {
+        "operationId": "00000000-0000-4000-8000-000000000001",
+        "contextSecret": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "policyFingerprint": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "preparation": {
+          "semesterId": 1,
+          "scheduleRevisionId": 1,
+          "unavailableDates": [],
+          "sharedSnapshotToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "courses": [
+            {
+              "courseId": 1,
+              "inputSnapshotToken": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            }
+          ]
+        },
+        "budgetSeconds": "cohort"
+      },
+      "valid": false
+    },
+    {
+      "name": "ordered-portions",
+      "kind": "comparison",
+      "value": {
+        "courseId": 1,
+        "courseName": null,
+        "current": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "generated": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "resolvedCurrentWarnings": [],
+        "remainingReasons": [],
+        "lecturerPortions": [
+          {
+            "lecturerId": 1,
+            "lecturerCode": "A",
+            "sequenceIndex": 0,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 11,
+            "remainingUnits": 0,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          },
+          {
+            "lecturerId": 2,
+            "lecturerCode": "B",
+            "sequenceIndex": 1,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 0,
+            "remainingUnits": 11,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          }
+        ]
+      },
+      "valid": true
+    },
+    {
+      "name": "wrong-portion-total",
+      "kind": "comparison",
+      "value": {
+        "courseId": 1,
+        "courseName": null,
+        "current": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "generated": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "resolvedCurrentWarnings": [],
+        "remainingReasons": [],
+        "lecturerPortions": [
+          {
+            "lecturerId": 1,
+            "lecturerCode": "A",
+            "sequenceIndex": 0,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 11,
+            "remainingUnits": 1,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          },
+          {
+            "lecturerId": 2,
+            "lecturerCode": "B",
+            "sequenceIndex": 1,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 0,
+            "remainingUnits": 11,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          }
+        ]
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong-portion-order",
+      "kind": "comparison",
+      "value": {
+        "courseId": 1,
+        "courseName": null,
+        "current": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "generated": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "resolvedCurrentWarnings": [],
+        "remainingReasons": [],
+        "lecturerPortions": [
+          {
+            "lecturerId": 2,
+            "lecturerCode": "B",
+            "sequenceIndex": 1,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 0,
+            "remainingUnits": 11,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          },
+          {
+            "lecturerId": 1,
+            "lecturerCode": "A",
+            "sequenceIndex": 0,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 11,
+            "remainingUnits": 0,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          }
+        ]
+      },
+      "valid": false
+    },
+    {
+      "name": "duplicate-portion-id",
+      "kind": "comparison",
+      "value": {
+        "courseId": 1,
+        "courseName": null,
+        "current": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "generated": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "resolvedCurrentWarnings": [],
+        "remainingReasons": [],
+        "lecturerPortions": [
+          {
+            "lecturerId": 1,
+            "lecturerCode": "A",
+            "sequenceIndex": 0,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 11,
+            "remainingUnits": 0,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          },
+          {
+            "lecturerId": 1,
+            "lecturerCode": "B",
+            "sequenceIndex": 1,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 0,
+            "remainingUnits": 11,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          }
+        ]
+      },
+      "valid": false
+    },
+    {
+      "name": "invalid-portion-source",
+      "kind": "comparison",
+      "value": {
+        "courseId": 1,
+        "courseName": null,
+        "current": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "generated": {
+          "requiredUnits": 22,
+          "scheduledUnits": 11,
+          "remainingUnits": 11,
+          "status": "partial"
+        },
+        "resolvedCurrentWarnings": [],
+        "remainingReasons": [],
+        "lecturerPortions": [
+          {
+            "lecturerId": 1,
+            "lecturerCode": "A",
+            "sequenceIndex": 0,
+            "source": "guessed",
+            "requiredUnits": 11,
+            "scheduledUnits": 11,
+            "remainingUnits": 0,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          },
+          {
+            "lecturerId": 2,
+            "lecturerCode": "B",
+            "sequenceIndex": 1,
+            "source": "derived",
+            "requiredUnits": 11,
+            "scheduledUnits": 0,
+            "remainingUnits": 11,
+            "reasonCode": "SEARCH_UNCERTAIN",
+            "reason": "Weitere Termine sind nicht nachgewiesen."
+          }
+        ]
+      },
+      "valid": false
+    }
+  ],
+  "portionTargets": [
+    [
+      22,
+      2,
+      [
+        11,
+        11
+      ]
+    ],
+    [
+      24,
+      3,
+      [
+        8,
+        8,
+        8
+      ]
+    ],
+    [
+      23,
+      2,
+      [
+        12,
+        11
+      ]
+    ],
+    [
+      22,
+      3,
+      [
+        8,
+        7,
+        7
+      ]
+    ]
+  ],
+  "policyLifetime": [
+    "prepare_then_material_change_reject",
+    "formatting_immaterial",
+    "start_then_delete_frozen",
+    "replay_before_read",
+    "fresh_retry_reads_current"
+  ]
+}

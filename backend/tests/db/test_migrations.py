@@ -1456,7 +1456,7 @@ def test_optimization_receipt_fresh_and_current_upgrade_are_idempotent():
         "selected_course_ids", "budget_seconds", "captured_ceiling_seconds",
         "policy_fingerprint", "phase", "started_at", "finished_at",
         "elapsed_milliseconds", "terminal_code", "saved_result",
-        "budget_exhausted",
+        "budget_exhausted", "algorithm", "strategy_profile", "strategy_settings",
     }
     with engine.begin() as connection:
         assert expected == set(_columns_by_name(inspect(connection), "optimization_operations"))
@@ -1513,3 +1513,93 @@ def test_optimization_receipt_unique_identity_and_rollback():
         db.flush()
         db.rollback()
         assert db.get(OptimizationOperation, OPERATION_ID).phase == "preparing"
+
+
+@pytest.fixture
+def teaching_receipt():
+    from app.models.planning import OptimizationOperation
+    from tests.optimization_fixtures import seed_optimization_planner, OPERATION_ID
+    from tests.planner_auth_fixtures import add_planner_account
+    engine = create_engine('sqlite://')
+    initialize_database(engine)
+    payload = {'legacySaved': {'units': 2, 'source': 'manual', 'nested': [1, {'untouched': True}]}}
+    with Session(engine) as db:
+        seed_optimization_planner(db, course_count=1)
+        account = add_planner_account(db)
+        db.flush()
+        db.add(OptimizationOperation(operation_id=OPERATION_ID,owner_account_id=account.id,
+            originating_session_id=1,originating_session_secret_digest='a'*64,
+            context_secret_digest='b'*64,request_fingerprint='c'*64,
+            semester_id=1,schedule_revision_id=1,selected_course_ids=[1],
+            budget_seconds=300,captured_ceiling_seconds=1800,policy_fingerprint='d'*64,
+            phase='saved',started_at=datetime.now(timezone.utc),finished_at=datetime.now(timezone.utc),
+            elapsed_milliseconds=10,saved_result=payload))
+        db.commit()
+    yield engine, OPERATION_ID, payload
+    engine.dispose()
+
+
+def test_teaching_identity_upgrade_backfills_without_rewriting_saved_payload(teaching_receipt):
+    engine, operation_id, payload = teaching_receipt
+    migration = _load_migration('0015_teaching_strategy_identity.py', 'teaching_identity')
+    with engine.begin() as connection:
+        migration.op = Operations(MigrationContext.configure(connection))
+        migration.downgrade()
+    initialize_database(engine)
+    initialize_database(engine)
+    columns = _columns_by_name(inspect(engine), 'optimization_operations')
+    assert all(not columns[name]['nullable'] for name in ('algorithm', 'strategy_profile', 'strategy_settings'))
+    with engine.connect() as connection:
+        assert connection.exec_driver_sql('PRAGMA foreign_key_check').fetchall() == []
+        row = connection.exec_driver_sql('SELECT algorithm,strategy_profile,strategy_settings,saved_result FROM optimization_operations').one()
+        assert row[0:2] == ('standard', 'standard-v1')
+        assert json.loads(row[2]) == {'version':'legacy-standard-v1'}
+        assert json.loads(row[3]) == payload
+
+
+@pytest.mark.parametrize('statement', [
+    "algorithm=NULL", "algorithm='other'", "strategy_profile=NULL", "strategy_profile='unknown'",
+    "strategy_settings=NULL", "strategy_settings='[]'", "strategy_settings='42'",
+])
+def test_teaching_identity_constraints_reject_invalid_rows(teaching_receipt,statement):
+    from sqlalchemy.exc import IntegrityError
+    engine, _, _ = teaching_receipt
+    with pytest.raises(IntegrityError), engine.begin() as connection:
+        connection.exec_driver_sql('UPDATE optimization_operations SET '+statement)
+
+
+def test_partial_teaching_identity_is_rejected():
+    from app.db.schema import UnsupportedSchemaStateError
+    engine = create_engine('sqlite://')
+    initialize_database(engine)
+    with engine.begin() as connection:
+        connection.exec_driver_sql('DROP TABLE optimization_operations')
+        connection.exec_driver_sql('CREATE TABLE optimization_operations (operation_id TEXT PRIMARY KEY, algorithm TEXT NOT NULL)')
+    with pytest.raises(UnsupportedSchemaStateError, match='0015|strategy|optimization'):
+        initialize_database(engine)
+
+
+def test_standard_optimized_upgrade_preserves_receipt_and_expands_constraints(teaching_receipt):
+    engine, operation_id, payload = teaching_receipt
+    migration = _load_migration('0016_standard_optimized.py', 'standard_optimized')
+    with engine.begin() as connection:
+        migration.op = Operations(MigrationContext.configure(connection))
+        migration.downgrade()
+    initialize_database(engine)
+    initialize_database(engine)
+    with engine.begin() as connection:
+        connection.exec_driver_sql("UPDATE optimization_operations SET algorithm='standard_optimized',strategy_profile='standard-optimized-v1'")
+        row = connection.exec_driver_sql('SELECT operation_id,saved_result FROM optimization_operations').one()
+        assert row[0] == operation_id
+        assert json.loads(row[1]) == payload
+        assert connection.exec_driver_sql('PRAGMA foreign_key_check').fetchall() == []
+
+
+def test_standard_optimized_downgrade_refuses_to_destroy_new_receipts(teaching_receipt):
+    engine, _, _ = teaching_receipt
+    with engine.begin() as connection:
+        connection.exec_driver_sql("UPDATE optimization_operations SET algorithm='standard_optimized',strategy_profile='standard-optimized-v1'")
+    migration = _load_migration('0016_standard_optimized.py', 'standard_optimized_downgrade')
+    with pytest.raises(ValueError, match='receipts'), engine.begin() as connection:
+        migration.op = Operations(MigrationContext.configure(connection))
+        migration.downgrade()

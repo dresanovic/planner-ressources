@@ -19,6 +19,7 @@ const effectiveConstraints = {
 }
 
 export const optimizationPreparationFixture: OptimizationPreparation = {
+  algorithm:'standard',strategyProfile:'standard-v1',strategySettings:{version:'teaching-v1'},
   budgetPolicy: { defaultSeconds: 300, ceilingSeconds: 1800, policyFingerprint: 'c'.repeat(64) },
   semesterId: 1,
   scheduleRevisionId: 11,
@@ -79,6 +80,7 @@ export const regenerationComparisonFixture: RegenerationComparison = {
 }
 
 export const decisionRequiredGenerationFixture: OptimizationDecisionRequiredResult = {
+  algorithm:'standard',strategyProfile:'standard-v1',strategySettings:{version:'teaching-v1'},
   mode: 'decision_required',
   saved: false,
   candidateFingerprint: 'a'.repeat(64),
@@ -98,6 +100,7 @@ export const decisionRequiredGenerationFixture: OptimizationDecisionRequiredResu
 }
 
 export const directSavedGenerationFixture: OptimizationGenerationResult = {
+  algorithm:'standard',strategyProfile:'standard-v1',strategySettings:{version:'teaching-v1'},
   ...optimizationResultFixture,
 }
 
@@ -110,6 +113,7 @@ export const budgetPolicyFixture = {
 }
 
 export const operationStatusFixture: OptimizationOperationStatus = {
+  algorithm:'standard',strategyProfile:'standard-v1',strategySettings:{version:'teaching-v1'},termination:null,
   operationId: operationIdFixture,
   semesterId: 1,
   scheduleRevisionId: 11,
@@ -167,4 +171,14 @@ export const candidateProofFixture: CandidateProof = {
     preparedSnapshotToken:'d'.repeat(64),candidateFingerprint:'a'.repeat(64),condition:null,
   })),
   unitUpperBound:90,additionalPossibleUnits:10,gapKnown:true,
+}
+
+export const heuristicProofFixture: CandidateProof = {
+  ...candidateProofFixture,objectiveProfile:'heuristic-v1',requiredUnits:16,scheduledUnits:14,
+  unitUpperBound:16,additionalPossibleUnits:2,
+  objectives:['total_units','intensive_teaching_time','daily_variety','preferred_size_deviation',
+    'course_rhythm_penalty','owner_balance_penalty','extra_cohort_day_rooms','course_room_changes'].map((objectiveKey,index)=>({
+      objectiveKey,direction:index<3?'max':'min',proofStatus:'unfinished',value:index===0?14:0,
+      preparedSnapshotToken:'d'.repeat(64),candidateFingerprint:'a'.repeat(64),condition:null,
+    })),
 }

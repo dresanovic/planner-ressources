@@ -1,0 +1,10 @@
+# Merge into ~/.codex/config.toml; adjust these absolute paths for your checkout.
+[mcp_servers.planner_resource]
+command = 'C:\Codex\planner-resource\mcp-server\.venv\Scripts\python.exe'
+args = ["-m", "planner_resource_mcp.server"]
+env_vars = ["PLANNER_LOGIN_NAME", "PLANNER_PASSWORD"]
+startup_timeout_sec = 20
+tool_timeout_sec = 45
+
+[mcp_servers.planner_resource.env]
+PLANNER_API_URL = "http://127.0.0.1:8000"

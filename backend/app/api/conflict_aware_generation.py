@@ -34,7 +34,7 @@ from app.services.optimization_config import OptimizationConfigurationError
 from app.services import optimization_operations as operations
 from app.schemas.conflict_aware_generation import (
     OptimizationOperationStart, OptimizationOperationDecision, OptimizationOperationCancel,
-    OptimizationOperationStatus,
+    OptimizationOperationStatus, OptimizationOperationContinue,
 )
 
 
@@ -70,6 +70,12 @@ def read_optimization_operation(operation_id: str, request: Request, db: Session
 def accept_optimization_operation(operation_id: str, body: OptimizationOperationDecision, request: Request, db: Session = Depends(get_db)):
     return _operation_call(lambda: operations.apply_operation(db, operation_id, request.state.planner_auth,
         body.context_secret, body.candidate_fingerprint))
+
+
+@router.post('/operations/{operation_id}/continue', response_model=OptimizationOperationStatus, status_code=202)
+def continue_optimization_operation(operation_id: str, body: OptimizationOperationContinue, request: Request, db: Session = Depends(get_db)):
+    return _operation_call(lambda: operations.continue_operation(db, operation_id, request.state.planner_auth,
+        body.context_secret, body.candidate_fingerprint, body.continuation_id))
 
 
 @router.post('/operations/{operation_id}/finalize', response_model=OptimizationOperationStatus)

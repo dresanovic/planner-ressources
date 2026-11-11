@@ -1,9 +1,11 @@
 import type { CourseOption } from '../api/planningOptions'
+import { teachingAlgorithmLabel, type TeachingAlgorithm } from '../api/conflictAwareGeneration'
 import { label } from '../config/terminology'
 import { safeReasonText } from '../utils/userProblems'
 import { useLayoutEffect, useRef } from 'react'
 
 type Props = {
+  algorithm?: TeachingAlgorithm
   courses: CourseOption[]
   cohorts?: { id: number; name: string }[]
   cohortId?: number | null
@@ -23,6 +25,7 @@ type Props = {
 }
 
 export function MultiCourseGenerationPanel({
+  algorithm,
   courses,
   cohorts = [],
   cohortId = null,
@@ -70,6 +73,7 @@ export function MultiCourseGenerationPanel({
           Auswahl aufheben
         </button>
       </div>
+      {algorithm && <p role="status" aria-live="polite">Algorithmus: {teachingAlgorithmLabel(algorithm)}</p>}
       <p className="constraint-note">
         Maximiert die geplanten Lehreinheiten der Auswahl, ohne Überschneidungen bei {label('lecturer.plural')}, {label('room.plural')} oder {label('cohort.plural')} zu erzeugen.
       </p>

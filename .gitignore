@@ -77,6 +77,10 @@ tmp/
 .tmp/
 temp/
 .cache/
+*.tmp
+*.swp
+.vscode/
+*.egg-info/
 
 # Local Spec Kit migration backups and rollback evidence
 /.specify-migration-backups/

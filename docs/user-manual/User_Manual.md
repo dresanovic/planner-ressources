@@ -593,6 +593,25 @@ One unified conflict-aware workflow is used for every teaching-generation reques
 5. If a comparison opens, review the current and proposed schedules for the complete selection, including hidden selected courses.
 6. Accept the alternative only if you want to replace the selected saved teaching sessions, including any manual edits. Choose **Abbrechen** to keep all current sessions.
 
+If you want to improve the proposal before saving, select **Weiter optimieren**.
+The same operation continues from the current proposal with another time allowance
+of the same duration and the same selected algorithm. Proven higher-priority goals
+are retained; a lower-priority preference may change when a higher-priority goal
+improves. If no improvement is found, the previous proposal remains available.
+Continuation does not save schedules. Review and accept the proposal when ready.
+Changed planning inputs require a fresh preparation instead of continuation.
+
+When the installation uses **Standard optimiert**, a newly prepared run also
+evaluates the selected saved schedules as a possible starting arrangement. They
+must satisfy the current planning rules and protected occupancy. The algorithm
+compares them with fresh constructions and keeps the best valid arrangement
+according to its ordered priorities. It spreads ordinary teaching over feasible
+weeks of each course's configured planning period while retaining higher-priority
+coverage and intensive placement. A timeout keeps the best validated proposal
+available for review; it does not establish preference optimality. Saved schedules
+change only after explicit acceptance. Courses outside the selection remain
+protected occupancy.
+
 The optimizer:
 
 - maximizes scheduled teaching units

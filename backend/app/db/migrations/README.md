@@ -1,5 +1,10 @@
 # Alembic migrations
 
+Migration `0016_standard_optimized.py` widens the allowed optimization algorithm
+and proof-profile identities and the algorithm column. Startup upgrades complete
+0015 databases atomically; existing receipts and saved JSON are preserved.
+Downgrade refuses to remove support while Standard Optimized receipts exist.
+
 This directory is reserved for Alembic migration scripts. The first implementation uses
 SQLAlchemy metadata for local test setup and keeps migration-ready model definitions in
 `backend/app/models/planning.py`.

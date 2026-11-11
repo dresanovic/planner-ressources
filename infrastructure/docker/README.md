@@ -230,21 +230,29 @@ The image defaults to production mode and
 
 GitHub's current GHCR authentication and visibility guidance is available at
 <https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry>.
-# Optional teaching optimization policy
+# Required teaching optimization policy
 
 Keep the existing single application process and SQLite volume. To configure
-teaching search time, create host `config/optimization/policy.json`, using
-`config/optimization/policy.example.json` as the initial 300/1800-second policy.
-Uncomment the directory mount `./config/optimization:/config/optimization:ro` in
-Compose and set `TEACHING_OPTIMIZATION_POLICY_FILE=/config/optimization/policy.json`.
+teaching search, provision host `config/optimization/policy.json`. For a new
+installation copy `config/optimization/policy.example.json` (Standard, 900/1800
+seconds); preserve an existing operator policy and its budgets. Compose mounts
+the directory `./config/optimization:/config/optimization:ro` and defaults
+`TEACHING_OPTIMIZATION_POLICY_FILE` to `/config/optimization/policy.json`.
 Do not bind-mount the individual file. After initial configuration, atomically
 replace `policy.json` inside that host directory to change policy without
 restarting/rebuilding the container. Existing operations keep their captured
 time allowance; later preparations see the replacement. Policy changes between
 preparation and start require preparing again.
 
-An unset policy path uses shipped defaults. Missing keys use their individual
-defaults; supplied invalid/unreadable files block new generation with actionable
+Without an explicit override local operation resolves the required logical file
+relative to the installation source. There is no absent-file fallback. Missing
+budget keys in a valid file use 300/1800; an omitted selector means Standard.
+Explicit selector values must be `standard`, `standard_optimized`, `cohort` or
+`lecturer`; all four have concrete implementations. Standard Optimized and
+heuristic results require explicit acceptance. Deploy the updated application
+and allow startup migration 0016 before selecting Standard Optimized; existing
+receipts are preserved. Leave active runs to finish before restarting.
+Invalid/unreadable/missing files block new generation with actionable
 configuration errors. Both positive whole-second values are operator-controlled,
 and default must not exceed ceiling. There is no planner override. Correct the
 host file, then retry preparation. Do not restart a running operation merely to

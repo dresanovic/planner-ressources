@@ -1,15 +1,17 @@
 """Spawn-safe solver boundary. Only detached planning values cross this pipe."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 import multiprocessing
 from threading import Thread
 from time import monotonic
 
 from app.services.holiday_calendar import HolidayReference
+from app.services.teaching_strategies import get_strategy
 from app.services.semester_optimization import (
     FixedSession, OptimizationCourse, OptimalResultNotProven,
-    OptimizationModelInvalid, NoGeneratedAlternative, optimize_semester,
+    OptimizationModelInvalid, NoGeneratedAlternative,
     OptimizationSearchControl, OptimizationCancelled,
+    SemesterOptimizationResult,
 )
 
 
@@ -21,6 +23,10 @@ class DetachedOptimizationInput:
     holidays: dict[date, HolidayReference]
     deadline: float
     generated_only: bool = True
+    algorithm: str = 'standard'
+    strategy_profile: str = 'standard-v1'
+    strategy_settings: dict = field(default_factory=dict)
+    incumbent: SemesterOptimizationResult | None = None
 
 
 def _solve(problem: DetachedOptimizationInput, output, stop, control):
@@ -42,11 +48,12 @@ def _solve(problem: DetachedOptimizationInput, output, stop, control):
             output.send({"kind": "timeout", "budgetExhausted": remaining <= 0})
             return
         output.send({"kind": "phase", "phase": "optimizing"})
-        result = optimize_semester(
+        result = get_strategy(problem.algorithm).optimize(
             problem.courses, problem.fixed_sessions, problem.unavailable_dates,
             holidays=problem.holidays, deadline_seconds=remaining,
             generated_only=problem.generated_only,
             allow_unproven=True,
+            incumbent=problem.incumbent,
             control=OptimizationSearchControl(
                 deadline=problem.deadline, cancelled=stop.is_set,
                 progress=lambda objective: output.send({"kind": "objective", "objectiveKey": objective}),

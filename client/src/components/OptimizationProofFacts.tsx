@@ -1,14 +1,25 @@
-import type { CandidateProof, IntensiveFacts } from '../api/conflictAwareGeneration'
+import type { CandidateProof, IntensiveFacts, LecturerPortionFacts } from '../api/conflictAwareGeneration'
 import { formatCalendarDate } from '../utils/datePresentation'
 
 const objectiveLabels: Record<string,string> = {
   total_units:'Geplante Lehreinheiten', conflicts:'Überschneidungen',
   intensive_teaching_time:'Intensive Lehreinheiten', daily_variety:'Tägliche LV-Vielfalt',
   schedule_shape:'Wochenverteilung und Termingröße', lecturer_changes:'Wechsel der Lehrperson',
+  weekly_spread:'Verteilung über den Lehrzeitraum',
   room_changes:'Raumwechsel', retained_drafts:'Beibehaltene Entwürfe',
   canonical_temporal:'Eindeutige zeitliche Reihenfolge', canonical_resource:'Eindeutige Ressourcenauswahl',
+  preferred_size_deviation:'Abweichung von der bevorzugten Termingröße', course_rhythm_penalty:'Lücken und zusätzliche Wochentermine',
+  owner_balance_penalty:'Wöchentliche Lehrlast', extra_cohort_day_rooms:'Zusätzliche Räume je Kohorte und Tag', course_room_changes:'Raumwechsel innerhalb der LV',
 }
 const proofLabels = {proven:'Nachgewiesen',unfinished:'Unvollständig nachgewiesen',not_attempted:'Nicht versucht',conditional:'Nur bedingt nachgewiesen'}
+
+export function OrderedLecturerPortions({portions}: {portions?: LecturerPortionFacts[]}) {
+  if (!portions?.length) return null
+  return <section aria-label="Lehrpersonenanteile in fester Reihenfolge"><h4>Lehrpersonenanteile in fester Reihenfolge</h4>
+    <ol>{portions.map(row=><li key={row.lecturerId}><strong>{row.lecturerCode}</strong>: {row.scheduledUnits} / {row.requiredUnits} LE · Verbleibend: {row.remainingUnits} LE{row.reason && <p>{row.reason}</p>}</li>)}</ol>
+  </section>
+}
+
 
 function objectiveValue(key: string, value: number): string {
   return key === 'intensive_teaching_time' ? `${(value/2700000000).toLocaleString('de-AT',{maximumFractionDigits:6})} LE` : String(value)
@@ -35,6 +46,7 @@ export function OptimizationProofFacts({proof}: {proof:CandidateProof}) {
       <strong>{objectiveLabels[objective.objectiveKey] ?? objective.objectiveKey}</strong>: {proofLabels[objective.proofStatus]}
       {objective.value != null ? ` · Gemessener Kandidatenwert ${objectiveValue(objective.objectiveKey,objective.value)}` : ' · Wert unbekannt'}
       {objective.objectiveKey === 'schedule_shape' && <span> · Zusammengesetzter Strafwert: zusätzliche Termine in derselben Woche und Abweichungen von der bevorzugten Termingröße; kleinere Werte sind günstiger. Dies sind keine Lehreinheiten oder Minuten.</span>}
+      {objective.objectiveKey === 'weekly_spread' && <span> · Abweichung von gleichmäßig verteilten Lehreinheiten über die verfügbaren Wochen des Lehrzeitraums; kleinere Werte sind günstiger. Die Verteilung ist eine Präferenz und erzwingt keine gesperrten Termine.</span>}
       {objective.objectiveKey === 'room_changes' && <span> · Strafwert aus Raumwechseln innerhalb einer LV und zusätzlichen Räumen je Kohorte und Tag.</span>}
       {objective.condition && <span> · Bedingung: {Object.entries(objective.condition).map(([key,value])=>`${objectiveLabels[key]??key} = ${objectiveValue(key,value)}`).join(', ')}</span>}
     </li>)}</ol>

@@ -1,0 +1,347 @@
+{
+  "single": {
+    "snapshot": "3dcf61ff4189f3a5a06a8a3768a15912a52611ade46f61bcc6511a34eeededb0",
+    "result": {
+      "conflicts": 0,
+      "courses": [
+        {
+          "course_id": 1,
+          "evidence": [],
+          "lecturer_changes": 0,
+          "retained_current": false,
+          "room_changes": 0,
+          "scheduled_units": 2,
+          "sessions": [
+            {
+              "constraint_window_index": 0,
+              "date": "2026-09-07",
+              "end_time": "09:40:00",
+              "lecturer_id": 1,
+              "room_id": 1,
+              "start_time": "08:00:00",
+              "time_window_id": 1,
+              "units": 2
+            }
+          ]
+        }
+      ],
+      "daily_variety": 0,
+      "intensive_teaching_time": 0,
+      "lecturer_changes": 0,
+      "objectives": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 2
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "proven",
+          "value": 1
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "proven",
+          "value": 2
+        }
+      ],
+      "optimal": true,
+      "retained_drafts": 0,
+      "room_changes": 0,
+      "search_exhausted": false,
+      "total_units": 2,
+      "unit_upper_bound": 2
+    }
+  },
+  "competition": {
+    "snapshot": "90653d039ca0a0e3b268e97cfa03591260d90b7143f821df7ebe131c50f62ef4",
+    "result": {
+      "conflicts": 0,
+      "courses": [
+        {
+          "course_id": 1,
+          "evidence": [],
+          "lecturer_changes": 0,
+          "retained_current": false,
+          "room_changes": 0,
+          "scheduled_units": 2,
+          "sessions": [
+            {
+              "constraint_window_index": 0,
+              "date": "2026-09-07",
+              "end_time": "09:40:00",
+              "lecturer_id": 1,
+              "room_id": 1,
+              "start_time": "08:00:00",
+              "time_window_id": 1,
+              "units": 2
+            }
+          ]
+        },
+        {
+          "course_id": 2,
+          "evidence": [],
+          "lecturer_changes": 0,
+          "retained_current": false,
+          "room_changes": 0,
+          "scheduled_units": 2,
+          "sessions": [
+            {
+              "constraint_window_index": 0,
+              "date": "2026-09-07",
+              "end_time": "11:20:00",
+              "lecturer_id": 1,
+              "room_id": 1,
+              "start_time": "09:40:00",
+              "time_window_id": 1,
+              "units": 2
+            }
+          ]
+        }
+      ],
+      "daily_variety": 0,
+      "intensive_teaching_time": 0,
+      "lecturer_changes": 0,
+      "objectives": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 4
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "proven",
+          "value": 3
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "proven",
+          "value": 4
+        }
+      ],
+      "optimal": true,
+      "retained_drafts": 0,
+      "room_changes": 0,
+      "search_exhausted": false,
+      "total_units": 4,
+      "unit_upper_bound": 4
+    }
+  },
+  "protected_exam": {
+    "snapshot": "7614e4b14d260b07306244b6ac92072a36b18a31087b0ba2038b60312fa9e5c7",
+    "result": {
+      "conflicts": 0,
+      "courses": [
+        {
+          "course_id": 1,
+          "evidence": [
+            {
+              "code": "COHORT_OCCUPIED",
+              "count": 1,
+              "holiday_date": null,
+              "holiday_name": null,
+              "message": "Die Kohorte ist durch feste Termine belegt.",
+              "source_id": 711,
+              "source_kind": "exam_session"
+            },
+            {
+              "code": "LECTURER_OCCUPIED",
+              "count": 1,
+              "holiday_date": null,
+              "holiday_name": null,
+              "message": "Zul\u00e4ssige Lehrpersonen sind durch feste Termine belegt.",
+              "source_id": 711,
+              "source_kind": "exam_session"
+            },
+            {
+              "code": "ROOM_OCCUPIED",
+              "count": 1,
+              "holiday_date": null,
+              "holiday_name": null,
+              "message": "Zul\u00e4ssige R\u00e4ume sind durch feste Termine belegt.",
+              "source_id": 711,
+              "source_kind": "exam_session"
+            }
+          ],
+          "lecturer_changes": 0,
+          "retained_current": false,
+          "room_changes": 0,
+          "scheduled_units": 2,
+          "sessions": [
+            {
+              "constraint_window_index": 0,
+              "date": "2026-09-07",
+              "end_time": "10:40:00",
+              "lecturer_id": 1,
+              "room_id": 1,
+              "start_time": "09:00:00",
+              "time_window_id": 1,
+              "units": 2
+            }
+          ]
+        }
+      ],
+      "daily_variety": 0,
+      "intensive_teaching_time": 0,
+      "lecturer_changes": 0,
+      "objectives": [
+        {
+          "direction": "max",
+          "objective_key": "total_units",
+          "proof_status": "proven",
+          "value": 2
+        },
+        {
+          "direction": "max",
+          "objective_key": "intensive_teaching_time",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "daily_variety",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "conflicts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "schedule_shape",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "lecturer_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "room_changes",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "max",
+          "objective_key": "retained_drafts",
+          "proof_status": "proven",
+          "value": 0
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_temporal",
+          "proof_status": "proven",
+          "value": 1
+        },
+        {
+          "direction": "min",
+          "objective_key": "canonical_resource",
+          "proof_status": "proven",
+          "value": 2
+        }
+      ],
+      "optimal": true,
+      "retained_drafts": 0,
+      "room_changes": 0,
+      "search_exhausted": false,
+      "total_units": 2,
+      "unit_upper_bound": 2
+    }
+  }
+}

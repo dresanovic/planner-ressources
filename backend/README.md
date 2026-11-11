@@ -200,6 +200,8 @@ A hard-valid nonempty candidate lacking any required objective proof remains pro
 
 Accept/finalize apply the exact retained candidate without solving again, after fresh revision/input/hard-rule validation. All selected replacements/creations/deletions and the durable saved receipt commit atomically and at most once. Any relevant stale change rejects the entire candidate; there is no unaffected-course partial application. Precommit failure/cancellation preserves saved work. Cancellation after commit returns the actual saved receipt. Refresh, authentication/context loss or restart permits outcome-only reconciliation, never restored review authority. The old synchronous `/generate` and replay `/accept` routes return `409 OPERATION_API_REQUIRED`. See [the operation contract](../specs/I-006-optimization-incumbent-acceptance/contracts/optimization-operation.md) and the operator-budget section below.
 
+The client application session owns the active optimization. Switching application views, planning tabs, displayed semester/revision, or hiding planning inputs keeps the original run alive. An application-wide status bar offers return-to-run and explicit cancellation; pending comparisons wait for return and proven new selections retain automatic finalization. Return restores the captured semester, revision and course selection. Relevant edits still fail the existing atomic stale-input checks before saving. Browser refresh/closure, authentication loss and application-session teardown still discard live authority and reconcile outcome only.
+
 Install the pinned solver runtime with `pip install -r requirements.txt`. Run focused verification from `backend/` with:
 
 ```text
@@ -255,18 +257,25 @@ Each success returns `courseId`, `semesterId`, authoritative `scheduledUnits`, a
 Manual creation accepts explicit `lecturerId`, `cohortId`, and `roomId` values and returns structured `422` errors for date, time, whole-unit, remaining-unit, duplicate-date, and selected-Cohort room-capacity rules. A missing or inactive selected source record returns `404`. Confirmed deletions return `409 STALE_DRAFT` when the target, parent identity, or revision no longer matches; no deletion occurs and the client must refresh and obtain a new confirmation.
 
 All mutations preserve Course, Semester, Lecturer, Room, Cohort, Study Type, and saved Generation Constraint Set records. Manual creation defaults Lecturer, Cohort, and Room from the Course in the planner UI, persists any active-record overrides only on the new session, accepts active Rooms that are capacity-valid for the selected Cohort, and retains established non-blocking validation alerts.
-# Teaching optimization time policy
+# Teaching optimization policy
 
 Teaching generation uses short operation requests and a separate solver process.
-The operator may set `TEACHING_OPTIMIZATION_POLICY_FILE` to a JSON file containing
-`defaultSeconds` and `ceilingSeconds`. Missing keys use 300 and 1800 respectively;
-an unset path uses both defaults. Values must be finite positive whole seconds,
+The operator may set `TEACHING_OPTIMIZATION_POLICY_FILE` to an explicit JSON file.
+Otherwise the installation's `config/optimization/policy.json` is required,
+resolved relative to the installed source, independently of the working directory.
+The only keys are `activeAlgorithm`, `defaultSeconds` and `ceilingSeconds`.
+Selector omission means `standard`; explicit invalid values never default.
+Missing budget keys use 300 and 1800 respectively. Values must be finite positive whole seconds,
 excluding strings and booleans, with default no greater than ceiling. Unknown or
 duplicate keys, malformed/unreadable files, and invalid values block new
 preparation with `OPTIMIZATION_CONFIGURATION_INVALID`; unrelated health/startup
 remains available. Correct the file and prepare again; no rebuild is required.
 
-Copy `config/optimization/policy.example.json` to an operator-owned `policy.json`.
+For a new installation, copy `config/optimization/policy.example.json` to
+`config/optimization/policy.json`. Preserve an existing operator file and its
+budgets (this installation uses 900/1800); do not overwrite it with the example.
+Missing/unreadable policy blocks new teaching preparation/Start, while unrelated
+health/startup remains available. An empty explicit environment value is invalid.
 For containers, mount host `./config/optimization` read-only at
 `/config/optimization`, and set the policy path to
 `/config/optimization/policy.json`. Mount the directory, never the individual
@@ -274,7 +283,25 @@ file: replacing a single-file mount can leave the container reading its old inod
 Write the replacement beside the original, then atomically rename it over
 `policy.json` on the host filesystem (for example Python `os.replace`). The next
 preparation reads the new values while a running operation retains its captured
-budget. A change between preparation and start requires preparation again.
+algorithm/settings/budget. A material change between preparation and Start
+requires preparation again; JSON formatting and key order do not. Idempotent
+Start replay and acceptance of an existing operation do not reread the policy.
+
+Select `standard`, `standard_optimized`, `cohort` or `lecturer` through
+`activeAlgorithm`. These are four concrete searches through a fixed registry,
+with no automatic fallback.
+Standard retains the existing CP-SAT objectives and exam generation is unchanged.
+Standard Optimized reuses Standard's candidate and hard-constraint helpers with
+separate search orchestration, reserved stage budgets and a soft cumulative
+weekly-unit distribution objective. Its `standard-optimized-v1` proof profile
+distinguishes globally proved priorities from conditional lower-stage proofs.
+It always requires explicit acceptance. See [I-012 activation](../specs/I-012-standard-optimized/quickstart.md).
+Cohort balances cohort teaching; Lecturer balances lecturer teaching and splits
+each course into fixed code-ordered sequential shares. Both preserve course
+rhythm below coverage and intensive priorities, with bounded provisional repair.
+Every nonempty heuristic result requires explicit review/acceptance; full
+coverage is not a preference-optimality proof. The interface shows captured
+identity, termination and ordered Lecturer shares without a configuration editor.
 
 The planner has no per-run budget override or configuration editor. More time
 does not guarantee a better result; reducing the selected courses is another
@@ -282,4 +309,15 @@ recovery option. Keep the supported single application process/SQLite deployment
 this operation registry is not a distributed queue. A restart interrupts live
 work and review; outcome receipts preserve committed saves without restoring
 candidate authority. Use isolated databases for acceptance trials.
+
+In proposal review, **Weiter optimieren** retains the same operation and proposal
+and grants another allowance of its captured duration. Exact strategies receive
+the previous assignment as a hint, constrain search against lexicographic quality
+regressions, and skip the proven objective prefix. Full required coverage is an
+attained coverage bound. Heuristic strategies continue repair from the proposal.
+Timeout without improvement or continuation worker failure leaves the previous
+proposal available. Changed planning inputs invalidate continuation. The endpoint
+is `POST /api/draft-schedules/optimization/operations/{operationId}/continue` with
+the live context secret, candidate fingerprint and idempotent continuation UUID.
+Continuation never saves automatically; the planner reviews and accepts the result.
 

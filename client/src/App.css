@@ -2424,6 +2424,22 @@ button:disabled[aria-busy='true'] {
   overflow-wrap: anywhere;
 }
 .optimization-objectives { padding-inline-start: 1.5rem; }
+.optimization-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #1264a3;
+  border-radius: .5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.optimization-progress p { margin: .25rem 0; }
+.optimization-progress-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.optimization-progress-actions button { white-space: normal; max-width: 100%; }
 .optimization-objectives li { margin-block: .5rem; }
 .retry-confirmation .dialog-actions { flex-wrap: wrap; }
 @media (max-width: 40rem) {

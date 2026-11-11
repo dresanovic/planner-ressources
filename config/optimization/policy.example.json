@@ -1,4 +1,8 @@
 {
+//  "activeAlgorithm": "standard",
+  "activeAlgorithm": "cohort",
+  //"activeAlgorithm": "lecturer",
+ // "activeAlgorithm": "standard_optimized",
   "defaultSeconds": 900,
   "ceilingSeconds": 1800
 }

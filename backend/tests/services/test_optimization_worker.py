@@ -35,6 +35,33 @@ def test_input_is_detached_picklable_and_solver_process_returns_exact_result():
     assert not worker.is_alive()
 
 
+def test_spawned_continuation_receives_incumbent_and_skips_proven_prefix():
+    from dataclasses import replace
+    from app.services.semester_optimization import optimize_semester
+    value = problem()
+    incumbent = optimize_semester(value.courses, (), generated_only=True)
+    incumbent = replace(incumbent, optimal=False, objectives=tuple(
+        e if i < 4 else replace(e, proof_status='not_attempted')
+        for i, e in enumerate(incumbent.objectives)))
+    value = pickle.loads(pickle.dumps(replace(value, incumbent=incumbent)))
+    worker = SolverProcess(value)
+    try:
+        messages = []
+        end = time.monotonic() + 30
+        while time.monotonic() < end:
+            messages.extend(worker.receive())
+            if any(item['kind'] in ('result', 'failed', 'timeout') for item in messages):
+                break
+            time.sleep(.02)
+        result = next(item['result'] for item in messages if item['kind'] == 'result')
+        assert result.total_units == incumbent.total_units
+        stages = [m['objectiveKey'] for m in messages if m['kind'] == 'objective']
+        assert stages[0] == 'schedule_shape'
+        assert 'total_units' not in stages
+    finally:
+        worker.close()
+
+
 def test_exhausted_deadline_never_starts_search():
     worker = SolverProcess(problem(seconds=-1))
     try:

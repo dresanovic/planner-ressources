@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-10",
+  "scope": "isolated FastAPI TestClient, real spawned workers, accepted save and post-commit cancel reconciliation",
+  "results": [
+    {
+      "algorithm": "standard",
+      "courses": 1,
+      "startAcknowledgementSeconds": 0.014999999999417923,
+      "postCommitCancelAcknowledgementSeconds": 0.0
+    },
+    {
+      "algorithm": "cohort",
+      "courses": 1,
+      "startAcknowledgementSeconds": 0.0319999999992433,
+      "postCommitCancelAcknowledgementSeconds": 0.01600000000144064
+    },
+    {
+      "algorithm": "lecturer",
+      "courses": 1,
+      "startAcknowledgementSeconds": 0.01600000000144064,
+      "postCommitCancelAcknowledgementSeconds": 0.015000000001236913
+    },
+    {
+      "algorithm": "standard",
+      "courses": 20,
+      "startAcknowledgementSeconds": 0.015000000001236913,
+      "postCommitCancelAcknowledgementSeconds": 0.01600000000144064
+    },
+    {
+      "algorithm": "cohort",
+      "courses": 20,
+      "startAcknowledgementSeconds": 0.031000000000858563,
+      "postCommitCancelAcknowledgementSeconds": 0.01599999999962165
+    },
+    {
+      "algorithm": "lecturer",
+      "courses": 20,
+      "startAcknowledgementSeconds": 0.031000000000858563,
+      "postCommitCancelAcknowledgementSeconds": 0.0
+    }
+  ]
+}
