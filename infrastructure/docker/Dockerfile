@@ -12,6 +12,7 @@ RUN npm run build
 
 
 FROM python:3.13-slim-bookworm AS python-dependencies
+
 WORKDIR /build/backend
 
 COPY backend/requirements-runtime.txt ./
@@ -23,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         -r requirements-runtime.txt
 
 
-FROM python:3.13-slim-bookworm  AS runtime
+FROM python:3.13-slim-bookworm AS runtime
 
 ARG VERSION=""
 ARG VCS_REF=""
