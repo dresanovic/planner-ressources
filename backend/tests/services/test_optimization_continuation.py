@@ -9,7 +9,7 @@ from app.services.teaching_strategies import get_strategy
 from app.services.semester_optimization import OptimizationSearchControl
 from tests.optimization_fixtures import CONTEXT_SECRET, optimization_course
 from tests.services.test_optimization_operations import (
-    setup_operation, isolated_standard_policy, settled, saved_state,
+    setup_operation, settled, saved_state,
 )
 
 

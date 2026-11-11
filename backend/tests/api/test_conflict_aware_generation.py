@@ -51,7 +51,7 @@ def db_session(tmp_path):
 
 
 @pytest.fixture()
-def client(db_session, monkeypatch):
+def client(db_session, monkeypatch, isolated_standard_policy):
     from app.services import optimization_operations as operations
     import app.services.conflict_aware_generation as generation
     from app.services.semester_optimization import OptimalResultNotProven, NoGeneratedAlternative

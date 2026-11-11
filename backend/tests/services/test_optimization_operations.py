@@ -15,16 +15,11 @@ from tests.planner_auth_fixtures import file_backed_engine, add_planner_account,
 from tests.fixtures.dated_intensive_windows import ACCEPTANCE_WINDOW_CHANGES
 
 
-@pytest.fixture(autouse=True)
-def isolated_standard_policy(tmp_path, monkeypatch):
-    path = tmp_path / 'operation-policy.json'
-    path.write_text('{"defaultSeconds":300,"ceilingSeconds":1800}')
-    monkeypatch.setenv('TEACHING_OPTIMIZATION_POLICY_FILE', str(path))
-    return path
+pytestmark = pytest.mark.usefixtures("isolated_standard_policy")
 
 
 @pytest.fixture(params=[False,True],ids=['first-plan-finalize','existing-plan-accept'])
-def dated_acceptance_operation(tmp_path,monkeypatch,request):
+def dated_acceptance_operation(tmp_path,monkeypatch,request,isolated_standard_policy):
     from tests.fixtures.dated_intensive_windows import seed_acceptance_context
     engine=file_backed_engine(tmp_path/'dated-acceptance.db')
     factory=sessionmaker(bind=engine,expire_on_commit=False)
@@ -68,7 +63,7 @@ def test_dated_and_fixed_context_changes_after_candidate_reject_final_apply(date
 
 
 @pytest.fixture
-def setup_operation(tmp_path, monkeypatch):
+def setup_operation(tmp_path, monkeypatch, isolated_standard_policy):
     engine = file_backed_engine(tmp_path / 'operations.db')
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     with factory() as db:

@@ -11,7 +11,7 @@ from tests.planner_auth_fixtures import authenticate_test_client
 
 
 @pytest.fixture()
-def client(tmp_path):
+def client(tmp_path, isolated_standard_policy):
     engine = create_engine(f"sqlite:///{tmp_path / 'resources.db'}", connect_args={"check_same_thread": False})
     initialize_database(engine)
     session = sessionmaker(bind=engine)()

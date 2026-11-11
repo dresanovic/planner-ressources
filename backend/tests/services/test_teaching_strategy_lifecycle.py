@@ -7,7 +7,7 @@ from app.models.planning import Lecturer, Room, Course
 from app.services import optimization_operations as operations
 from tests.optimization_fixtures import CONTEXT_SECRET
 from tests.services.test_optimization_operations import (
-    setup_operation, isolated_standard_policy, setup_strategy_operation, settled, saved_state,
+    setup_operation, setup_strategy_operation, settled, saved_state,
 )
 
 
