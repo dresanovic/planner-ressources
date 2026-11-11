@@ -16,6 +16,7 @@ import { SessionPane } from '../components/SessionPane'
 import { adaptLecturerReviewToWorkspace } from '../components/calendarWorkspaceUtils'
 import '../App.css'
 import { formatCalendarDate, formatViennaDateTime } from '../utils/datePresentation'
+import { randomUuid } from '../utils/randomUuid'
 import { label } from '../config/terminology'
 
 
@@ -237,7 +238,7 @@ export function LecturerReviewPage({ secret }: LecturerReviewPageProps) {
   ) {
     if (secret === null || pendingKey !== null) return
     const clientSubmissionId =
-      submissionIds[key] ?? globalThis.crypto.randomUUID()
+      submissionIds[key] ?? randomUuid()
     if (submissionIds[key] == null) {
       setSubmissionIds((current) => ({ ...current, [key]: clientSubmissionId }))
     }

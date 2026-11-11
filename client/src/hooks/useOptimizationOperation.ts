@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { PLANNER_AUTH_INVALIDATED_EVENT } from '../api/plannerFetch'
+import { randomUuid } from '../utils/randomUuid'
 import { startOptimizationOperation, getOptimizationOperation, decideOptimizationOperation, cancelOptimizationOperation, continueOptimizationOperation,
   type OptimizationOperationContext, type OptimizationOperationStatus, type OptimizationPreparation, type OptimizationError } from '../api/conflictAwareGeneration'
 
@@ -171,10 +172,18 @@ export function useOptimizationOperation() {
     setSelection({semesterId:preparation.semesterId,scheduleRevisionId:preparation.scheduleRevisionId,selectedCourseIds:preparation.courses.map(course=>course.courseId)})
     clearObservation()
     const generation=++epoch.current
-    const bytes=crypto.getRandomValues(new Uint8Array(32))
-    const context={operationId:crypto.randomUUID(),contextSecret:[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('')}
+    let context: OptimizationOperationContext
+    try {
+      const bytes=crypto.getRandomValues(new Uint8Array(32))
+      context={operationId:randomUuid(),contextSecret:[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('')}
+      sessionStorage.setItem(STORAGE_KEY,context.operationId)
+    } catch {
+      setErrors([{code:'CLIENT_OPERATION_START_FAILED',message:'Die Optimierung konnte im Browser nicht gestartet werden. Prüfen Sie, ob sichere Zufallswerte und Sitzungsspeicher verfügbar sind.'}])
+      setStatus(null);currentStatus.current=null;setAction(null);setUnknown(false)
+      return
+    }
     cancellationReason.current='context_lost'
-    live.current=context;startPreparation.current=preparation;unresolved.current=context.operationId;sessionStorage.setItem(STORAGE_KEY,context.operationId)
+    live.current=context;startPreparation.current=preparation;unresolved.current=context.operationId
     setAction('starting');setUnknown(false);setErrors([]);setStatus(null);currentStatus.current=null
     lastConfirmed.current=Date.now();arm(context.operationId,generation)
     const controller=new AbortController();request.current=controller
@@ -210,7 +219,7 @@ export function useOptimizationOperation() {
     const generation=epoch.current
     const controller=new AbortController();request.current=controller;arm(context.operationId,generation)
     try {
-      await consume.current(await continueOptimizationOperation(context,preview.candidateFingerprint,crypto.randomUUID(),controller.signal),generation)
+      await consume.current(await continueOptimizationOperation(context,preview.candidateFingerprint,randomUuid(),controller.signal),generation)
     } catch(error) {
       if(epoch.current!==generation) return
       if(Array.isArray(error)) setErrors(error)

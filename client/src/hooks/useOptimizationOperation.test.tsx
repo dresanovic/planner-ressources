@@ -21,6 +21,43 @@ function mount() {
   return { current:()=>value, hide:()=>act(()=>root!.render(<Probe active={false}/>)) }
 }
 
+it('starts and continues optimization on HTTP without crypto.randomUUID', async()=>{
+  const getRandomValues=globalThis.crypto.getRandomValues.bind(globalThis.crypto)
+  vi.stubGlobal('crypto',{getRandomValues})
+  try {
+    vi.mocked(api.startOptimizationOperation).mockImplementation(async(_prep,ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'awaiting_decision',canAccept:true,review:decisionRequiredGenerationFixture}))
+    vi.mocked(api.continueOptimizationOperation).mockImplementation(async(ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'optimizing'}))
+    const hook=mount()
+    await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+    const context=vi.mocked(api.startOptimizationOperation).mock.calls[0][1]
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    expect(context.operationId).toMatch(uuid)
+    expect(context.contextSecret).toMatch(/^[0-9a-f]{64}$/)
+    await act(async()=>{await hook.current().continueOptimization()})
+    const continuationId=vi.mocked(api.continueOptimizationOperation).mock.calls[0][2]
+    expect(continuationId).toMatch(uuid)
+    expect(continuationId).not.toBe(context.operationId)
+    expect(hook.current().status?.phase).toBe('optimizing')
+  } finally {vi.unstubAllGlobals()}
+})
+
+it('shows a browser initialization failure and allows retry without starting an orphan operation',async()=>{
+  const store=vi.spyOn(sessionStorage,'setItem').mockImplementation(()=>{throw new Error('storage blocked')})
+  const hook=mount()
+  try {
+    await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+    expect(api.startOptimizationOperation).not.toHaveBeenCalled()
+    expect(hook.current().errors[0]?.code).toBe('CLIENT_OPERATION_START_FAILED')
+    expect(hook.current().busy).toBe(false)
+    expect(hook.current().unknown).toBe(false)
+  } finally {store.mockRestore()}
+  vi.mocked(api.startOptimizationOperation).mockImplementation(async(_prep,ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'optimizing'}))
+  await act(async()=>{await hook.current().start(optimizationPreparationFixture)})
+  expect(api.startOptimizationOperation).toHaveBeenCalledOnce()
+  expect(hook.current().errors).toEqual([])
+  expect(hook.current().status?.phase).toBe('optimizing')
+})
+
 it('continues the same reviewed operation without cancellation or new preparation', async()=>{
   vi.mocked(api.startOptimizationOperation).mockImplementation(async(_prep,ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'awaiting_decision',canAccept:true,review:decisionRequiredGenerationFixture}))
   vi.mocked(api.continueOptimizationOperation).mockImplementation(async(ctx)=>({...operationStatusFixture,operationId:ctx.operationId,phase:'optimizing'}))
