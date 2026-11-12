@@ -141,7 +141,7 @@ def course_plan(document, mapping, catalogs=None, minimum=None, maximum=None, ap
             if preferred is not None and (type(preferred) is not int or 2 * preferred != lower + upper):
                 raise ImportFailure("The optimizer prefers the midpoint of min/max; preferredSessionUnits must match it.")
             lookup = {"semesterName": mapping.get("semesterName"),
-                      **{k: row.get(k) for k in ("cohortName", "studyTypeName", "lecturerReferenceCode", "roomReferenceCode")}}
+                      **{k: row.get(k) for k in ("cohortName", "lecturerReferenceCode", "roomReferenceCode")}}
             missing = [k for k, v in lookup.items() if not isinstance(v, str) or not v.strip()]
             if missing:
                 raise ImportFailure("Missing mapping fields: " + ", ".join(missing))
@@ -160,7 +160,6 @@ def course_plan(document, mapping, catalogs=None, minimum=None, maximum=None, ap
             relations = {}
             for group, field, value_field in (
                 ("semesters", "semesterId", "semesterName"), ("cohorts", "cohortId", "cohortName"),
-                ("study-types", "studyTypeId", "studyTypeName"),
                 ("lecturers", "lecturerId", "lecturerReferenceCode"), ("rooms", "roomId", "roomReferenceCode")):
                 relation = find_active(catalogs[group], "referenceCode" if group in {"lecturers", "rooms"} else "name",
                                        lookup[value_field], value_field)
@@ -174,8 +173,9 @@ def course_plan(document, mapping, catalogs=None, minimum=None, maximum=None, ap
                     for reference in additional]], "roomIds": [payload["roomId"], *[r["id"] for r in extra_rooms]]}
             if any(r["capacity"] < relations["cohorts"]["studentCount"] for r in [relations["rooms"], *extra_rooms]):
                 raise ImportFailure("Selected room is smaller than the cohort.")
-            if not any(window.get("isActive") for window in relations["study-types"].get("timeWindows", [])):
-                raise ImportFailure("Study type has no active time windows; complete them before importing courses.")
+            calendar = next((c for c in catalogs.get('cohort-calendars',[]) if c.get('cohortId')==payload['cohortId'] and c.get('semesterId')==payload['semesterId'] and c.get('isActive')),None)
+            if calendar is None or not any(window.get("isActive") for window in calendar.get("timeWindows", [])):
+                raise ImportFailure("Cohort semester calendar has no active time windows; complete them before importing courses.")
             matches = [r for r in catalogs["courses"] if key(r["name"]) == key(name)]
             entry["status"] = "would_create"
             if len(matches) > 1:
@@ -204,7 +204,7 @@ def matches_payload(kind, actual, payload):
         return False
     return all((actual.get(response) or {}).get("id") == payload[field]
                for response, field in (("semester", "semesterId"), ("cohort", "cohortId"),
-                                       ("studyType", "studyTypeId"), ("lecturer", "lecturerId"), ("room", "roomId")))
+ ("lecturer", "lecturerId"), ("room", "roomId")))
 
 
 def matches_entry(kind, actual, entry):
@@ -330,7 +330,7 @@ def main(argv=None):
                 report["plan"] = holiday_plan(document, list_all(api, "/api/holidays"))
             else:
                 catalogs = {group: list_all(api, "/api/" + ("resources/" if group in {"lecturers", "rooms"} else "academic/") + group)
-                            for group in ("semesters", "cohorts", "study-types", "lecturers", "rooms", "courses")}
+                            for group in ("semesters", "cohorts", "cohort-calendars", "lecturers", "rooms", "courses")}
                 report["plan"] = course_plan(document, mapping, catalogs, args.min_session_units, args.max_session_units, api)
             write_report(report_path, report)
         issues = any(e["status"] in {"blocked", "conflict"} for e in report["plan"])

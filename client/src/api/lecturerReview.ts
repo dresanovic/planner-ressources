@@ -69,7 +69,7 @@ export type LecturerReviewSessionContext = {
   timeZone: string
   roomName: string
   cohortName: string
-  studyType?: string | null
+  cohortCalendar?: string | null
   teachingUnits?: number | null
   examDurationMinutes?: number | null
 }
@@ -127,7 +127,7 @@ export type PublicReviewSession = {
 export type PublicReviewCourse = ReviewCourseIdentity & {
   courseRef: string
   cohortName: string
-  studyType: string
+  cohortCalendar: string
   sessions: PublicReviewSession[]
 }
 export type PublicReviewValidationFinding = {
@@ -151,7 +151,7 @@ export type PublicReviewFilterFacets = {
   courses: PublicReviewFacetValue[]
   cohorts: PublicReviewFacetValue[]
   rooms: PublicReviewFacetValue[]
-  studyTypes: PublicReviewFacetValue[]
+  cohortCalendars: PublicReviewFacetValue[]
   sessionTypes: PublicReviewFacetValue[]
   lifecycleContexts: PublicReviewFacetValue[]
   validationCategories: PublicReviewFacetValue[]
@@ -785,7 +785,7 @@ function validateSessionContext(value: unknown): void {
     'timeZone',
     'roomName',
     'cohortName',
-    'studyType',
+    'cohortCalendar',
     'teachingUnits',
     'examDurationMinutes',
   ])
@@ -806,9 +806,9 @@ function validateSessionContext(value: unknown): void {
     !SESSION_REF.test(String(value.sessionRef)) ||
     !['teaching', 'exam'].includes(String(value.sessionKind)) ||
     value.sessionRef !== `${value.sessionKind}:${value.sourceSessionId}` ||
-    (value.studyType !== undefined &&
-      value.studyType !== null &&
-      typeof value.studyType !== 'string') ||
+    (value.cohortCalendar !== undefined &&
+      value.cohortCalendar !== null &&
+      typeof value.cohortCalendar !== 'string') ||
     (value.teachingUnits !== undefined &&
       !isNullablePositiveInteger(value.teachingUnits)) ||
     (value.examDurationMinutes !== undefined &&
@@ -832,7 +832,7 @@ function validatePublicCourse(value: unknown): void {
     'code',
     'title',
     'cohortName',
-    'studyType',
+    'cohortCalendar',
     'sessions',
   ])
   requirePositiveIntegers(value, ['sourceCourseId'])
@@ -841,7 +841,7 @@ function validatePublicCourse(value: unknown): void {
     'code',
     'title',
     'cohortName',
-    'studyType',
+    'cohortCalendar',
   ])
   if (value.courseRef !== `course:${value.sourceCourseId}`) invalidResponse()
   if (!Array.isArray(value.sessions)) invalidResponse()
@@ -928,7 +928,7 @@ function validatePublicFacets(value: unknown): void {
     'courses',
     'cohorts',
     'rooms',
-    'studyTypes',
+    'cohortCalendars',
     'sessionTypes',
     'lifecycleContexts',
     'validationCategories',

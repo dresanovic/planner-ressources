@@ -43,7 +43,7 @@ def event(
             f"Terminart: {'Prüfung' if kind == 'exam' else 'Lehrtermin'}",
             f"Lehrveranstaltung: COURSE-{number} – Beispiellehrveranstaltung",
             "Kohorte: CS-26",
-            "Studienart: Vollzeit",
+            "Kohortenkalender: Vollzeit",
             "Prüfungsdauer: 90 Minuten" if kind == "exam" else "Lehreinheiten: 2",
             "Semester: Wintersemester 2026",
             "Revision: Revision 2",

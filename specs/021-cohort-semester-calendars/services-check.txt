@@ -1,0 +1,53 @@
+........................................................................ [ 10%]
+........................................................................ [ 20%]
+........................................................................ [ 31%]
+........................................................................ [ 41%]
+........................................................................ [ 51%]
+........................................................................ [ 62%]
+........................................................................ [ 72%]
+.......F........F....................................................... [ 82%]
+.......................................................................F [ 93%]
+..............................................                           [100%]
+================================== FAILURES ===================================
+E   NameError: name 'date' is not defined
+C:\Codex\planner-resource\backend\tests\services\test_schedule_lifecycle.py:199: NameError: name 'date' is not defined
+E   NameError: name 'date' is not defined
+C:\Codex\planner-resource\backend\tests\services\test_schedule_lifecycle_concurrency.py:34: NameError: name 'date' is not defined
+E   AssertionError: assert 'c1f7623e8705...d32749b4ea933' == '7614e4b14d26...b60312fa9e5c7'
+      
+      - 7614e4b14d260b07306244b6ac92072a36b18a31087b0ba2038b60312fa9e5c7
+      + c1f7623e87057e276e9fe2246f2c42644d727b6c4fe97722fb1d32749b4ea933
+C:\Codex\planner-resource\backend\tests\services\test_teaching_strategy_baselines.py:17: AssertionError: assert 'c1f7623e8705...d32749b4ea933' == '7614e4b14d26...b60312fa9e5c7'
+============================== warnings summary ===============================
+backend\.venv\Lib\site-packages\fastapi\testclient.py:1
+  C:\Codex\planner-resource\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/services/test_calendar_workspace.py: 10 warnings
+tests/services/test_conflict_aware_generation.py: 1 warning
+tests/services/test_conflict_aware_generation_concurrency.py: 11 warnings
+tests/services/test_dated_intensive_windows.py: 2 warnings
+tests/services/test_draft_schedule_repository.py: 62 warnings
+tests/services/test_draft_schedule_validation.py: 23 warnings
+tests/services/test_exam_scheduling.py: 10 warnings
+tests/services/test_lecturer_calendar_export.py: 27 warnings
+tests/services/test_lecturer_review.py: 141 warnings
+tests/services/test_lecturer_review_concurrency.py: 36 warnings
+tests/services/test_optimization_operations.py: 58 warnings
+tests/services/test_resource_catalog.py: 3 warnings
+tests/services/test_schedule_lifecycle.py: 17 warnings
+tests/services/test_schedule_lifecycle_concurrency.py: 3 warnings
+tests/services/test_teaching_strategy_lifecycle.py: 10 warnings
+  C:\Codex\planner-resource\backend\.venv\Lib\site-packages\sqlalchemy\sql\schema.py:3624: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/services/test_planner_auth_concurrency.py::test_reset_racing_login_and_request_leaves_no_usable_session
+  C:\Codex\planner-resource\backend\app\services\planner_auth.py:332: SAWarning: DELETE statement on table 'planner_sessions' expected to delete 1 row(s); 0 were matched.  Please set confirm_deleted_rows=False within the mapper configuration to prevent this warning.
+    db.flush()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED backend\tests\services\test_schedule_lifecycle.py::test_publication_uses_current_cohort_calendar_for_default_generation_constraints
+FAILED backend\tests\services\test_schedule_lifecycle_concurrency.py::test_competing_first_draft_creation_retains_one_working_revision
+FAILED backend\tests\services\test_teaching_strategy_baselines.py::test_prechange_completed_standard_baseline[protected_exam]
+3 failed, 691 passed, 416 warnings in 253.04s (0:04:13)

@@ -38,8 +38,8 @@ from app.models.planning import (  # noqa: E402
     ResourceUnavailabilityWeekday,
     Room,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
 )
 
 ModelT = TypeVar("ModelT")
@@ -184,30 +184,35 @@ def sync_course_eligibility(
 
 def upsert_time_window(
     db: Session,
-    study_type: StudyType,
+    cohort_calendar: CohortCalendar,
     *,
-    weekday: int,
+    weekday: int | None,
     start_time: time,
     end_time: time,
     sort_order: int,
     is_active: bool,
     revision: int,
-) -> StudyTypeTimeWindow:
+    kind: str = "weekly",
+    window_date: date | None = None,
+    is_intensive: bool = False,
+) -> CohortCalendarTimeWindow:
     record = (
         db.execute(
-            select(StudyTypeTimeWindow).where(
-                StudyTypeTimeWindow.study_type_id == study_type.id,
-                StudyTypeTimeWindow.weekday == weekday,
-                StudyTypeTimeWindow.start_time == start_time,
-                StudyTypeTimeWindow.end_time == end_time,
+            select(CohortCalendarTimeWindow).where(
+                CohortCalendarTimeWindow.cohort_calendar_id == cohort_calendar.id,
+                CohortCalendarTimeWindow.weekday == weekday,
+                CohortCalendarTimeWindow.kind == kind,
+                CohortCalendarTimeWindow.date == window_date,
+                CohortCalendarTimeWindow.start_time == start_time,
+                CohortCalendarTimeWindow.end_time == end_time,
             )
         )
         .scalars()
         .first()
     )
     if record is None:
-        record = StudyTypeTimeWindow(
-            study_type_id=study_type.id,
+        record = CohortCalendarTimeWindow(
+            cohort_calendar_id=cohort_calendar.id, kind=kind, date=window_date,is_intensive=is_intensive,
             weekday=weekday,
             start_time=start_time,
             end_time=end_time,
@@ -217,6 +222,7 @@ def upsert_time_window(
         )
         db.add(record)
     else:
+        record.is_intensive = is_intensive
         record.sort_order = sort_order
         record.is_active = is_active
         record.revision = revision
@@ -274,17 +280,20 @@ def seed_from_data(data: JsonObject) -> dict[str, int]:
                 revision=semester.get("revision", 1),
             )
 
-        for study_type in data.get("study_types", []):
-            upsert_named(db, StudyType, **study_type)
+        for cohort_calendar in data.get("cohort_calendars", []):
+            upsert_named(db,CohortCalendar,cohort_calendar['name'],cohort_id=require_by_name(db,Cohort,cohort_calendar['cohort']).id,semester_id=require_by_name(db,Semester,cohort_calendar['semester']).id,start_date=parse_date(cohort_calendar['start_date']),end_date=parse_date(cohort_calendar['end_date']))
 
         db.flush()
 
-        for window in data.get("study_type_time_windows", []):
-            study_type = require_by_name(db, StudyType, window["study_type"])
+        for window in data.get("cohort_calendar_time_windows", []):
+            cohort_calendar = require_by_name(db, CohortCalendar, window["cohort_calendar"])
             upsert_time_window(
                 db,
-                study_type,
+                cohort_calendar,
                 weekday=window["weekday"],
+                kind=window.get("kind","weekly"),
+                window_date=parse_date(window["date"]) if window.get("date") else None,
+                is_intensive=window.get("is_intensive",False),
                 start_time=parse_time(window["start_time"]),
                 end_time=parse_time(window["end_time"]),
                 sort_order=window.get("sort_order", 0),
@@ -296,7 +305,6 @@ def seed_from_data(data: JsonObject) -> dict[str, int]:
 
         for course in data.get("courses", []):
             cohort = require_by_name(db, Cohort, course["cohort"])
-            study_type = require_by_name(db, StudyType, course["study_type"])
             semester = require_by_name(db, Semester, course["current_semester"])
             configured_course = upsert_named(
                 db,
@@ -306,7 +314,6 @@ def seed_from_data(data: JsonObject) -> dict[str, int]:
                 min_session_units=course["min_session_units"],
                 max_session_units=course["max_session_units"],
                 cohort_id=cohort.id,
-                study_type_id=study_type.id,
                 current_semester_id=semester.id,
                 is_active=course.get("is_active", True),
                 revision=course.get("revision", 1),
@@ -396,8 +403,8 @@ def seed_from_data(data: JsonObject) -> dict[str, int]:
         "rooms": len(data.get("rooms", [])),
         "cohorts": len(data.get("cohorts", [])),
         "semesters": len(data.get("semesters", [])),
-        "study_types": len(data.get("study_types", [])),
-        "study_type_time_windows": len(data.get("study_type_time_windows", [])),
+        "cohort_calendars": len(data.get("cohort_calendars", [])),
+        "cohort_calendar_time_windows": len(data.get("cohort_calendar_time_windows", [])),
         "courses": len(data.get("courses", [])),
         "institution_holidays": len(data.get("institution_holidays", [])),
         "resource_unavailability_periods": len(
@@ -450,17 +457,22 @@ def export_current_configuration(path: Path) -> None:
                 }
                 for semester in db.execute(select(Semester).order_by(Semester.start_date)).scalars()
             ],
-            "study_types": [
+            "cohort_calendars": [
                 {
-                    "name": study_type.name,
-                    "is_active": study_type.is_active,
-                    "revision": study_type.revision,
+                    "name": cohort_calendar.name,
+                    "cohort": cohort_calendar.cohort.name,
+                    "semester": cohort_calendar.semester.name,
+                    "start_date":serialize_date(cohort_calendar.start_date),
+                    "end_date":serialize_date(cohort_calendar.end_date),
+                    "is_active": cohort_calendar.is_active,
+                    "revision": cohort_calendar.revision,
                 }
-                for study_type in db.execute(select(StudyType).order_by(StudyType.name)).scalars()
+                for cohort_calendar in db.execute(select(CohortCalendar).order_by(CohortCalendar.name)).scalars()
             ],
-            "study_type_time_windows": [
+            "cohort_calendar_time_windows": [
                 {
-                    "study_type": window.study_type.name,
+                    "cohort_calendar": window.cohort_calendar.name,
+                    "kind":window.kind,"date":serialize_date(window.date) if window.date else None,"is_intensive":window.is_intensive,
                     "weekday": window.weekday,
                     "start_time": serialize_time(window.start_time),
                     "end_time": serialize_time(window.end_time),
@@ -469,10 +481,10 @@ def export_current_configuration(path: Path) -> None:
                     "revision": window.revision,
                 }
                 for window in db.execute(
-                    select(StudyTypeTimeWindow).join(StudyType).order_by(
-                        StudyType.name,
-                        StudyTypeTimeWindow.sort_order,
-                        StudyTypeTimeWindow.weekday,
+                    select(CohortCalendarTimeWindow).join(CohortCalendar).order_by(
+                        CohortCalendar.name,
+                        CohortCalendarTimeWindow.sort_order,
+                        CohortCalendarTimeWindow.weekday,
                     )
                 ).scalars()
             ],
@@ -483,7 +495,6 @@ def export_current_configuration(path: Path) -> None:
                     "min_session_units": course.min_session_units,
                     "max_session_units": course.max_session_units,
                     "cohort": course.cohort.name,
-                    "study_type": course.study_type.name,
                     "current_semester": course.current_semester.name
                     if course.current_semester
                     else None,
@@ -584,8 +595,8 @@ def seed(data_file: Path = DEFAULT_DATA_FILE) -> None:
     print(f"- Rooms: {counts['rooms']}")
     print(f"- Cohorts: {counts['cohorts']}")
     print(f"- Semesters: {counts['semesters']}")
-    print(f"- Study types: {counts['study_types']}")
-    print(f"- Time windows: {counts['study_type_time_windows']}")
+    print(f"- Cohort calendars: {counts['cohort_calendars']}")
+    print(f"- Time windows: {counts['cohort_calendar_time_windows']}")
     print(f"- Courses: {counts['courses']}")
     print(f"- Institution holidays: {counts['institution_holidays']}")
     print(f"- Resource unavailability periods: {counts['resource_unavailability_periods']}")

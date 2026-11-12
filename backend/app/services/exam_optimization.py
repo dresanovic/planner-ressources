@@ -60,7 +60,7 @@ class ExamCandidate:
 
 def build_candidates(spec: CandidateInput) -> tuple[list[ExamCandidate], list[OptimizationIssue]]:
     if not spec.start_proposals:
-        return [], [OptimizationIssue("AUTOMATIC_START_TIME_UNAVAILABLE", "No active Study Type time-window start is available for automatic placement.")]
+        return [], [OptimizationIssue("AUTOMATIC_START_TIME_UNAVAILABLE", "No active Cohort Calendar time-window start is available for automatic placement.")]
     candidates: list[ExamCandidate] = []
     blocked: list[OptimizationIssue] = []
     day = max(spec.semester_start, spec.final_teaching_date)

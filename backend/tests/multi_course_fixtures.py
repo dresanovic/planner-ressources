@@ -9,8 +9,8 @@ from app.models.planning import (
     Room,
     ScheduleRevision,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
 )
 from app.services.draft_schedule_repository import (
     load_course_plan,
@@ -28,12 +28,12 @@ def seed_multi_course_planner(db, *, course_count: int = 3, invalid_course_id: i
         Semester(id=2, name="Spring 2027", start_date=date(2027, 2, 15), end_date=date(2027, 6, 20)),
         ScheduleRevision(id=1, semester_id=1, revision_number=1, row_version=1, state="draft"),
         ScheduleRevision(id=2, semester_id=2, revision_number=1, row_version=1, state="draft"),
-        StudyType(id=1, name="Full-time"),
-        StudyTypeTimeWindow(
-            id=1, study_type_id=1, weekday=0, start_time=time(8), end_time=time(12), sort_order=1
+        CohortCalendar(cohort_id=1, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), id=1, name="Full-time"),
+        CohortCalendarTimeWindow(
+            id=1, cohort_calendar_id=1, weekday=0, start_time=time(8), end_time=time(12), sort_order=1
         ),
-        StudyTypeTimeWindow(
-            id=2, study_type_id=1, weekday=2, start_time=time(8), end_time=time(12), sort_order=2
+        CohortCalendarTimeWindow(
+            id=2, cohort_calendar_id=1, weekday=2, start_time=time(8), end_time=time(12), sort_order=2
         ),
     ])
     for course_id in range(1, course_count + 1):
@@ -48,12 +48,14 @@ def seed_multi_course_planner(db, *, course_count: int = 3, invalid_course_id: i
                 min_session_units=2,
                 max_session_units=4,
                 cohort_id=course_id,
-                study_type_id=1,
+
                 current_semester_id=1,
                 eligible_lecturers=[CourseEligibleLecturer(lecturer_id=course_id)],
                 eligible_rooms=[CourseEligibleRoom(room_id=course_id)],
             ),
         ])
+    from tests.calendar_fixtures import complete_fixture_calendars
+    complete_fixture_calendars(db)
     db.commit()
 
 

@@ -246,7 +246,7 @@ def _description_lines(course, session, semester_label: str, revision_label: str
         f"Terminart: {session.session_type}",
         f"{course_label}: {course_display}",
         f"{cohort_label}: {session.cohort_name}",
-        f"Studienart: {course.study_type}",
+        f"Kohortenkalender: {course.cohort_calendar}",
     ]
     if session.session_kind == "teaching" and session.teaching_units is not None:
         lines.append(f"Lehreinheiten: {session.teaching_units}")

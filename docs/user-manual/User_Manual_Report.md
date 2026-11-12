@@ -1,5 +1,169 @@
 # User Manual Update Report
 
+## Current update — 11.11.2026
+
+Updated [User_Manual.md](User_Manual.md) against all 35 entries in the reconciled
+[scope map](../planning/Feature_slices.md), current source, behavioral tests and
+feature verification records. Accurate baseline instructions are retained.
+Application code, specifications, task markers, live policy and databases were not changed.
+The preceding scope-map correction belongs to the earlier user request.
+
+### Changes delivered
+
+- Shortened Quick Start by moving Docker/source installation and first-administrator setup to the Detailed Guide. Preserved setup procedures and links.
+- Corrected teaching generation to preparation, displayed algorithm/allowance, explicit Start, whole-selection comparison and exact acceptance actions. Removed the outdated per-course non-worsening claim.
+- Explained all four installed teaching strategies, captured settings, operator-only selection, ordered lecturer portions, coverage versus preference proof, conditional proof and uncertainty.
+- Retained and clarified Standard Optimized starting-arrangement behavior and continuation from the current proposal; documented cancellation, lost context and unconfirmed outcomes.
+- Added recurring/dated windows, independent copying, duplicate rules and intensive priorities. Clarified preferred half-step session size versus whole actual LE.
+- Added the verified lecturer `.ics` download workflow with static-file/privacy/reimport guidance. Representative Outlook import instructions are withheld pending institutional validation.
+- Added operator policy-file configuration and symptom-based recovery. Removed the obsolete claim that algorithm selection is entirely unavailable.
+
+### Slice coverage and evidence inventory
+
+This table is a documentation assessment, not a rewrite of product slice statuses.
+`partially-implemented` conservatively means only the independently verified workflow
+is documented while recorded essential acceptance, verification or rollout conditions
+remain open. It does not assert a newly discovered functional defect. For unchanged
+baseline areas, prior verified manual/report evidence is retained; no new product-wide
+release audit is claimed. `implemented` does not imply that the current live installation
+has deployed or activated that increment.
+
+| Slice | Status | Intended user | Entry point | Main use case | Evidence | Limitations | Manual action |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FS-001 | implemented | Planner | Kalender > Plan erzeugen | Generate one course | Prior verified baseline; current generation UI/tests | Unified workflow supersedes legacy single-course entry | include-quick-start-and-detailed |
+| FS-002 | implemented | Planner | Kalender | Review sessions | Prior baseline and current workspace | No new full visual audit | include-quick-start-and-detailed |
+| FS-003 | implemented | Planner | Kursdetails | Set date boundaries | Current constraints UI; retained tests/evidence | Window editing belongs to Stammdaten | include-detailed-only |
+| FS-004 | partially-implemented | Planner | Session pane | Edit session | Prior verified baseline; slice tasks | Manual smoke evidence open | include-with-limitation |
+| FS-005 | partially-implemented | Planner | Current warnings | Inspect conflicts | Prior verified baseline; slice tasks | Manual acceptance open; no automatic repair | include-with-limitation |
+| FS-006 | partially-implemented | Planner | Plan erzeugen | Plan a selection | Current unified UI; retained verification | Historical usability/performance evidence open | include-with-limitation |
+| FS-007 | partially-implemented | Planner | Stammdaten | Maintain planning data | AcademicDataPage; fresh tests; slice tasks | Representative usability evidence open | include-with-limitation |
+| FS-008 | partially-implemented | Planner | Lehrende/Räume/course eligibility | Maintain resources | Prior verified resource evidence; slice tasks | Manual/usability reconciliation open | include-with-limitation |
+| FS-009 | partially-implemented | Planner | Kalender session actions | Add/delete teaching | Prior verified baseline; slice tasks | Verification/usability follow-ups open | include-with-limitation |
+| FS-010 | partially-implemented | Planner | Plan erzeugen | Joint optimization | Current operations UI/tests; prior solver evidence | Historical acceptance/final audit open; later increments govern decisions | include-with-limitation |
+| FS-011 | partially-implemented | Planner | Feiertage | Avoid holidays | Prior verified baseline; dated-window tests | Manual/usability evidence open | include-with-limitation |
+| FS-012 | implemented | Planner | Prüfungen | Schedule exams | Prior verified baseline; complete slice tasks | No new full exam audit | include-quick-start-and-detailed |
+| FS-013 | partially-implemented | Planner | Versionen | Publish revisions | Prior verified lifecycle evidence | Manual/usability evidence open | include-with-limitation |
+| FS-014 | partially-implemented | Planner | Kalender | Operate calendar | Prior verified workspace evidence and parity record | Manual parity, legacy retirement and follow-up verification open | include-with-limitation |
+| FS-015 | partially-implemented | Planner/Lecturer | Coordination/private link | Scoped review and feedback | Prior verified baseline; fresh LecturerReviewPage tests | Manual/deployment acceptance open | include-with-limitation |
+| FS-016 | partially-implemented | Planner/Administrator/Operator | Anmelden; Planer-Konten | Protect planner access | Prior auth verification; current scope/tasks | Production memory, security/deployment and manual acceptance open | include-with-limitation |
+| FS-017 | not-implemented | Planner/provider | None | External synchronization | Proposed scope; no implemented entry | Excluded | exclude |
+| FS-018 | partially-implemented | Planner | Navigation | Reach destinations | Prior verified baseline; current route integration | Manual/usability/final audit open | include-with-limitation |
+| FS-019 | partially-implemented | Planner | Kalender/session pane | Focus planning work | Prior verified baseline; fresh page tests | Manual/usability/final review open | include-with-limitation |
+| FS-020 | partially-implemented | Lecturer | Kalender herunterladen | Download complete scoped `.ics` | Current dialog/page; fresh UI/serializer tests; independent validation record | Outlook, manual AT/usability and designated performance acceptance pending | include-with-limitation |
+| FS-021 | not-implemented | Planner/Lecturer | None | Submit pre-planning unavailability | Ready-for-specification scope only | Excluded; planner-entered availability remains available | exclude |
+| FS-022 | not-implemented | Lecturer | None | Ongoing authenticated lecturer access | Deferred scope | Excluded; private review links remain separate | exclude |
+| I-001 | implemented | Operator | Container startup | Run one application image | Prior verified container baseline and current Compose | No fresh deployment run | include-detailed-only |
+| I-002 | partially-implemented | All users/operator | Current UI/terminology file | German labels/dates/messages | Prior verified surface evidence; current editor/dialog labels | Source inventory/deployment/browser/participant gaps remain | include-with-limitation |
+| I-003 | partially-implemented | Planner | Plan erzeugen | Unified teaching generation | Current page and fresh page tests | Manual List/workflow/usability follow-ups open | include-with-limitation |
+| I-004 | partially-implemented | Planner | Stundenpläne vergleichen | Accept/cancel complete selection | Current dialog/operations; fresh dialog/page tests | Broader manual acceptance open | include-with-limitation |
+| I-005 | implemented | Planner | Course-list filters | Discover cohort courses | Prior reviewed source/user PASS; fresh administration/page tests | Human PASS lacks detailed browser/AT provenance | include-quick-start-and-detailed |
+| I-006 | partially-implemented | Planner/Operator | Budget preview/progress/comparison | Bounded search and valid unproved acceptance | Current config/operations/hook; fresh relevant tests | Responsive/manual acceptance open; continuation superseded by I-013 | include-with-limitation |
+| I-007 | not-implemented | Planner | None | Capacity diagnostics/proposals | Confirmed future scope only | Excluded | exclude |
+| I-008 | not-implemented | Planner | None | Approve shorter breaks | Future scope dependent on I-007 | Excluded | exclude |
+| I-009 | partially-implemented | Planner | Zeitfenster; result facts | Dated/intensive windows and copying | Current editor/page; fresh tests; feature validation | Full regression/reconciliation and actual AT/zoom/reviewer evidence open | include-with-limitation |
+| I-010 | not-implemented | Planner | None for general allocation editor | Enter fixed lecturer LE portions | Proposed scope only | Excluded; I-011's derived Lecturer portions documented separately | exclude |
+| I-011 | partially-implemented | Planner/Operator | Algorithm preview/policy file | Select and run teaching strategies | Current registry/config/UI; fresh tests; feature validation | Container deployment and final reconciliation open; human speech/zoom acceptance recorded | include-with-limitation |
+| I-012 | implemented | Planner/Operator | Standard optimiert | Distribute across feasible weeks | Current strategy/labels; validation and scoped review | Activation/migration required; no universal gain claimed | include-detailed-only |
+| I-013 | implemented | Planner | Weiter optimieren | Continue same proposal | Current service/hook/dialog; fresh continuation and UI tests; scoped review | No fresh live browser/deployment acceptance | include-detailed-only |
+
+Coverage: **8 implemented and documented; 21 partially implemented and documented with
+limitations; 6 excluded; 0 wholly unclear/request-verification slices.** Total: 35.
+Outstanding verification within included slices remains explicit below.
+
+### Verification performed for this update
+
+- Fresh frontend verification on portable Node 24.22.2: **213 passed, 8 files**.
+  `AcademicRecordEditor`, `AcademicDataPage`, `OptimizationProofFacts`,
+  `ReplacementConfirmationDialog`, `useOptimizationOperation`,
+  `LecturerCalendarDownloadDialog`, `LecturerReviewPage`, `CourseSchedulePage`.
+- Fresh backend verification: **91 passed**, existing dependency deprecation warnings.
+  `test_optimization_config.py`, `test_teaching_strategies.py`,
+  `test_optimization_continuation.py`, `test_dated_intensive_windows.py`,
+  `test_lecturer_calendar_export.py`. Tests used disposable databases and
+  `--basetemp=../.tmp/manual-update-verified-pytest`.
+- Initial sandbox runs were inconclusive: Vite could not spawn its helper (`EPERM`)
+  and pytest temporary-directory access was denied. Both commands passed after
+  approved execution outside the sandbox; no production planning data was used.
+- Checked documentation whitespace, local links/anchors, all 35 slice IDs and
+  current visible action labels. These documentation changes do not need a new
+  application build. No browser, screen-reader, container or Outlook session was
+  performed during this update; earlier evidence is attributed below.
+
+### Evidence and conflicts resolved
+
+- [I-011 validation](../../specs/I-011-policy-teaching-strategies/validation.md)
+  records automated strategy/worker/acceptance matrices and supported Node 24
+  verification. Human confirmations on 10.11.2026 accept screen-reader and true
+  200% zoom; those are human-reported, without tool versions. Container acceptance
+  and final reconciliation remain open. The manual does not present policy mounting
+  as a completed deployment acceptance check.
+- [I-012 validation](../../specs/I-012-standard-optimized/validation.md) and
+  [activation](../../specs/I-012-standard-optimized/quickstart.md) support the
+  separate strategy, explicit review, conditional proofs and migration caveat.
+- [I-013 verification](../../specs/I-013-continue-optimization/verification.md)
+  supersedes old fresh-retry/discard instructions. Fresh continuation tests support
+  same-operation seeding, quality/proven-prefix retention, stale rejection,
+  duplicate-request protection and failure/timeout fallback.
+- [I-009 validation](../../specs/I-009-dated-intensive-windows/validation.md)
+  and current editor/page tests support copying and intensive behavior. Pending
+  feature-wide browser/AT/human gates are not inferred from component tests.
+- [FS-020 release checklist](../../specs/020-lecturer-calendar-export/validation/release-checklist.md)
+  resolves the older report's unclear export entry point: download and independent
+  RFC validation exist, but representative Outlook import, designated performance
+  and manual accessibility/usability gates are pending. The manual documents file
+  download only and defers application-specific import instructions.
+- `optimization_operations.py` and `useOptimizationOperation.ts` establish that
+  only eligible fully proved initial Standard runs without selected saved teaching
+  can auto-save. Explicit comparison governs the other documented cases. The old
+  blanket claim of never replacing a course with fewer units was removed.
+- The old report's presentation-work identifier FS-022 refers historically to what
+  is now I-002. Current FS-022 is deferred authenticated lecturer access.
+
+### Exclusions, assumptions and limitations
+
+Excluded slices: **FS-017, FS-021, FS-022, I-007, I-008, I-010**. No normal workflow
+is invented for synchronization, lecturer unavailability submissions, lecturer
+accounts, capacity proposals, five-minute breaks or a general fixed-allocation editor.
+Current derived Lecturer portions are distinct from the proposed general editor.
+
+The manual describes the current checkout, not proof of deployment on a particular
+institution's server. Access address, image release, private delivery channels and
+Outlook version remain organization-specific. Shipped German labels are used;
+customer terminology may differ. No secrets or live policy values are embedded.
+
+Existing baseline manual acceptance gaps remain as listed in slice tasks, including
+FS-004–FS-011, FS-013–FS-016, FS-018/019, I-002–I-004, I-006, I-009 and I-011.
+FS-014 includes a still-open legacy-retirement/parity boundary. The manual teaches
+verified current workspace actions without claiming that boundary is closed.
+
+### Recommended verification
+
+1. Have a first-time planner follow the shortened Quick Start through preparation,
+   Start and result acceptance; check the actual installed algorithm and allowance.
+2. Complete I-011 container policy directory/replacement/permission acceptance and
+   final reconciliation on a disposable deployment before rollout.
+3. Complete FS-020 institutional Outlook import, timezone/device observations,
+   designated performance and manual accessibility/usability protocols. Until then,
+   retain the manual's import limitation.
+4. Complete the remaining recorded auth, calendar parity, generation and intensive
+   accessibility/usability/regression gates using actual environments/reviewers.
+5. If visual guidance is needed, capture the current authenticated window editor,
+   algorithm/budget preview, comparison/proof panel and download notice. No new
+   screenshot was created or implied by this update.
+
+Quality checklist: scope reviewed; every slice classified; only verified parts
+included; Quick Start numbered and outcome-based; role-specific installation and
+policy details separated; planned scope excluded; limitations and recovery
+explicit; source/test conflicts resolved or reported; labels checked; links and
+formatting checked. No application code or requirement change was required.
+
+## Historical update records
+
+Everything below is dated historical evidence. Its counts, exclusions, branch names,
+identifier mappings and suggested actions are superseded by the current inventory
+above. Historical test results are not claimed as fresh runs.
+
+
 ## I-005 update — 2026-11-04
 
 Scope: focused update for filterable generation and administration course lists on `codex/i-005-filter-course-plan-list`. The user invoked user-manual-creation after Goal 4 completed. This authorizes the documentation work; no new runtime Goal was created and no Git operation is authorized. Application code, specifications, slice statuses, and task markers were not changed.

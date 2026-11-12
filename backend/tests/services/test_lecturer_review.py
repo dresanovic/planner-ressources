@@ -415,7 +415,7 @@ def test_public_projection_is_exactly_minimum_scope(db):
             "code",
             "title",
             "cohortName",
-            "studyType",
+            "cohortCalendar",
             "sessions",
         }
         for item in course["sessions"]:
@@ -723,7 +723,7 @@ def test_session_feedback_captures_authoritative_current_context(db):
         "timeZone": "Europe/Vienna",
         "roomName": "Room 201",
         "cohortName": "Cohort 1",
-        "studyType": "Full-time",
+        "cohortCalendar": "Full-time",
         "teachingUnits": 2,
         "examDurationMinutes": None,
     }

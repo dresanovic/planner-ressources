@@ -21,7 +21,7 @@ from app.models.planning import (
     Room,
     ScheduleRevision,
     Semester,
-    StudyTypeTimeWindow,
+    CohortCalendarTimeWindow,
 )
 from app.services.draft_schedule_validation import (
     ValidationOccurrenceRecord,
@@ -262,7 +262,7 @@ def _working_content(
             )
             .options(
                 selectinload(Course.cohort),
-                selectinload(Course.study_type),
+                selectinload(Course.cohort_calendar),
                 selectinload(Course.eligible_lecturers).selectinload(
                     CourseEligibleLecturer.lecturer
                 ),
@@ -286,16 +286,16 @@ def _working_content(
             .options(selectinload(GenerationConstraintSet.windows))
         ).unique()
     }
-    study_windows: dict[int, list[StudyTypeTimeWindow]] = {}
+    study_windows: dict[int, list[CohortCalendarTimeWindow]] = {}
     for row in db.scalars(
-        select(StudyTypeTimeWindow)
-        .where(StudyTypeTimeWindow.is_active.is_(True))
+        select(CohortCalendarTimeWindow)
+        .where(CohortCalendarTimeWindow.is_active.is_(True))
         .order_by(
-            StudyTypeTimeWindow.study_type_id,
-            StudyTypeTimeWindow.sort_order,
+            CohortCalendarTimeWindow.cohort_calendar_id,
+            CohortCalendarTimeWindow.sort_order,
         )
     ):
-        study_windows.setdefault(row.study_type_id, []).append(row)
+        study_windows.setdefault(row.cohort_calendar_id, []).append(row)
     courses: list[dict[str, Any]] = []
     occurrences: list[dict[str, Any]] = []
     for course in course_rows:
@@ -312,14 +312,14 @@ def _working_content(
                 saved_constraint.revision if saved_constraint is not None else None
             ),
             "planningStartDate": (
-                saved_constraint.planning_start_date.isoformat()
+                max(saved_constraint.planning_start_date, course.cohort_calendar.start_date).isoformat()
                 if saved_constraint
-                else semester.start_date.isoformat()
+                else max(semester.start_date, course.cohort_calendar.start_date).isoformat()
             ),
             "planningEndDate": (
-                saved_constraint.planning_end_date.isoformat()
+                min(saved_constraint.planning_end_date, course.cohort_calendar.end_date).isoformat()
                 if saved_constraint
-                else semester.end_date.isoformat()
+                else min(semester.end_date, course.cohort_calendar.end_date).isoformat()
             ),
             "allowedTeachingWindows": [
                 {
@@ -331,7 +331,7 @@ def _working_content(
                     "sortOrder": window.sort_order,
                     "sourceTimeWindowId": window.id,
                 }
-                for window in study_windows.get(course.study_type_id, [])
+                for window in study_windows.get(course.cohort_calendar_id, [])
             ],
         }
         courses.append(
@@ -340,7 +340,7 @@ def _working_content(
                 name=course.name,
                 cohort=course.cohort.name,
                 cohort_size=course.cohort.student_count,
-                study_type=course.study_type.name,
+                cohort_calendar=course.cohort_calendar.name,
                 total=course.total_units,
                 scheduled=scheduled,
                 lecturer_refs=[
@@ -387,7 +387,7 @@ def _working_content(
                     name=exam.course_name_snapshot,
                     cohort=exam.cohort_name_snapshot,
                     cohort_size=exam.required_capacity,
-                    study_type=exam.course.study_type.name,
+                    cohort_calendar=exam.course.cohort_calendar.name,
                     total=exam.course.total_units,
                     scheduled=0,
                     lecturer_refs=[f"lecturer:{exam.lecturer_id}"],
@@ -466,7 +466,7 @@ def _published_content(
             name=source["name"],
             cohort=source["cohort"]["name"],
             cohort_size=source["cohort"]["size"],
-            study_type=source["studyType"]["name"],
+            cohort_calendar=source["cohortCalendar"]["name"],
             total=source["totalUnits"],
             scheduled=source["scheduledUnits"],
             lecturer_refs=sorted(
@@ -516,7 +516,7 @@ def _published_content(
                 name=exam["course"]["name"],
                 cohort=exam["cohort"]["name"],
                 cohort_size=exam["requiredCapacity"],
-                study_type="Captured",
+                cohort_calendar="Captured",
                 total=0,
                 scheduled=0,
                 lecturer_refs=[f"lecturer:{exam['lecturer']['sourceId']}"],
@@ -1220,8 +1220,8 @@ def _facets(
             (row["roomRef"], room_labels.get(row["roomRef"], row["roomRef"].replace(":", " ")))
             for row in occurrences
         ),
-        "studyTypes": _facet(
-            (row["studyType"], row["studyType"]) for row in courses
+        "cohortCalendars": _facet(
+            (row["cohortCalendar"], row["cohortCalendar"]) for row in courses
         ),
         "sessionTypes": _facet(
             (row["kind"], row["kind"].title()) for row in occurrences
@@ -1252,7 +1252,7 @@ def _mark_planning_eligibility(
             .where(Course.id.in_(course_ids))
             .options(
                 selectinload(Course.cohort),
-                selectinload(Course.study_type),
+                selectinload(Course.cohort_calendar),
             )
         )
     }
@@ -1264,7 +1264,7 @@ def _mark_planning_eligibility(
             and semester.is_active
             and current.current_semester_id == semester.id
             and current.cohort.is_active
-            and current.study_type.is_active
+            and current.cohort_calendar is not None and current.cohort_calendar.is_active
         )
 
 
@@ -1274,7 +1274,7 @@ def _course(
     name,
     cohort,
     cohort_size,
-    study_type,
+    cohort_calendar,
     total,
     scheduled,
     lecturer_refs,
@@ -1288,7 +1288,7 @@ def _course(
         "cohort": cohort,
         "cohortSize": cohort_size,
         "lecturerRefs": lecturer_refs,
-        "studyType": study_type,
+        "cohortCalendar": cohort_calendar,
         "totalTeachingUnits": total,
         "scheduledTeachingUnits": scheduled,
         "remainingTeachingUnits": remaining,
@@ -1308,7 +1308,7 @@ def _no_revision_response(semester: Semester) -> dict[str, Any]:
             "cohorts",
             "lecturers",
             "rooms",
-            "studyTypes",
+            "cohortCalendars",
             "sessionTypes",
             "lifecycleContexts",
             "validationCategories",

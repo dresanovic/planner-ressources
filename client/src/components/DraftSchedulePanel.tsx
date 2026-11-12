@@ -265,10 +265,10 @@ function DraftSchedulePanelStateful({
               onChange={setFilter}
             />
             <FilterSelect
-              label="Studienart"
-              name="studyTypeId"
-              value={filters.studyTypeId}
-              options={filterOptions.studyTypes}
+              label="Kohortenkalender"
+              name="cohortCalendarId"
+              value={filters.cohortCalendarId}
+              options={filterOptions.cohortCalendars}
               onChange={setFilter}
             />
             <button type="button" onClick={() => setFilters({})} disabled={!hasActiveFilters}>
@@ -306,7 +306,7 @@ function DraftSchedulePanelStateful({
                 <span>{label('cohort.tableHeading')}</span>
                 <span>{label('lecturer.tableHeading')}</span>
                 <span>{label('room.tableHeading')}</span>
-                <span>Studienart</span>
+                <span>Kohortenkalender</span>
                  {!readOnly && <span>Aktionen</span>}
               </div>
               {visibleSessions.map((session) => (
@@ -340,7 +340,7 @@ function DraftSchedulePanelStateful({
                     <span data-label={label('cohort.tableHeading')}>{session.context.cohort.name}</span>
                     <span data-label={label('lecturer.tableHeading')}>{resourceLabel(session.lecturer)}</span>
                     <span data-label={label('room.tableHeading')}>{resourceLabel(session.room)}</span>
-                    <span data-label="Studienart">{session.context.studyType.name}</span>
+                    <span data-label="Kohortenkalender">{session.context.cohortCalendar.name}</span>
                     {!readOnly && <span className="session-actions" data-label="Aktionen">
                       <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>Bearbeiten</button>
                       <button type="button" className="destructive-button compact-button" onClick={() => requestDelete(session)} disabled={isBusy}>Löschen</button>
@@ -368,7 +368,7 @@ function DraftSchedulePanelStateful({
                             <span>{session.context.cohort.name}</span>
                             <span>{resourceLabel(session.lecturer)}</span>
                             <span>{resourceLabel(session.room)}</span>
-                            <span>{session.context.studyType.name}</span>
+                            <span>{session.context.cohortCalendar.name}</span>
                             <SessionAlerts alerts={session.validationAlerts} lecturerName={resourceLabel(session.lecturer)} roomName={resourceLabel(session.room)} cohortName={session.context.cohort.name} />
                             {!readOnly && <button type="button" className="secondary-button compact-button" onClick={() => openEdit(session)} disabled={isBusy}>
                               Bearbeiten
@@ -489,7 +489,7 @@ function conflictPresentation(code: DraftSession['validationAlerts'][number]['co
   if (code === 'COHORT_OVERLAP') return { title: 'Kohortenkonflikt', detail: `Die Kohorte „${resources.cohortName}“ hat zur selben Zeit einen weiteren Termin.` }
   if (code === 'ROOM_CAPACITY') return { title: 'Raumkapazität reicht nicht aus', detail: `Der Raum „${resources.roomName}“ ist für die zugeordnete Kohorte „${resources.cohortName}“ zu klein.` }
   if (code === 'GENERATION_CONSTRAINT_VIOLATION') return { title: 'Datumsgrenzen verletzt', detail: 'Der Termin liegt außerhalb der aktuell gespeicherten Start- und Enddaten dieser Lehrveranstaltung.' }
-  if (code === 'STUDY_TYPE_WINDOW_VIOLATION') return { title: 'Studienart-Zeitfenster verletzt', detail: 'Der Termin liegt außerhalb eines aktuell aktiven Zeitfensters der zugeordneten Studienart.' }
+  if (code === 'COHORT_CALENDAR_WINDOW_VIOLATION') return { title: 'Kohortenkalender-Zeitfenster verletzt', detail: 'Der Termin liegt außerhalb eines aktuell aktiven Zeitfensters der zugeordneten Kohortenkalender.' }
   if (code === 'LECTURER_UNAVAILABLE') return { title: 'Lehrende Person nicht verfügbar', detail: `Die lehrende Person „${resources.lecturerName}“ ist für diesen Zeitraum als nicht verfügbar hinterlegt.` }
   if (code === 'ROOM_UNAVAILABLE') return { title: 'Raum nicht verfügbar', detail: `Der Raum „${resources.roomName}“ ist für diesen Zeitraum als nicht verfügbar hinterlegt.` }
   if (code === 'LECTURER_INELIGIBLE') return { title: 'Lehrende Person nicht freigegeben', detail: `Die lehrende Person „${resources.lecturerName}“ ist für diese Lehrveranstaltung nicht freigegeben.` }
@@ -583,7 +583,7 @@ export function GenerationConstraintEditor({
         <EuropeanDateField id="generation-end-date" label="Ende" value={planningPeriod.endDate} min={planningPeriod.startDate} onChange={(value) => updatePeriod({ ...planningPeriod, endDate: value ?? '' })} required />
       </div>
 
-      <p className="constraint-study-type">Studienart: {constraints.studyType.name}</p>
+      <p className="constraint-study-type">Kohortenkalender: {constraints.cohortCalendar.name}</p>
 
       <div className="constraint-window-list" aria-label="Erlaubte Lehrzeitfenster">
         {constraints.allowedTeachingWindows.map((window, index) => (
@@ -611,7 +611,7 @@ type FilterOptions = {
   cohorts: PlanningEntity[]
   lecturers: PlanningEntity[]
   rooms: PlanningEntity[]
-  studyTypes: PlanningEntity[]
+  cohortCalendars: PlanningEntity[]
 }
 
 function buildFilterOptions(sessions: TeachingSessionEditModel[], schedules: DraftSchedule[], exams: ExamSession[] = [], examCourseNames: Record<number, string> = {}): FilterOptions {
@@ -620,7 +620,7 @@ function buildFilterOptions(sessions: TeachingSessionEditModel[], schedules: Dra
     cohorts: uniqueEntities([...schedules.map((schedule) => schedule.context.cohort), ...exams.map((exam) => ({ id: exam.cohort.id, name: exam.cohort.name }))]),
     lecturers: uniqueEntities([...sessions.map((session) => ({ id: session.lecturerId, name: resourceLabel(session.lecturer) })), ...exams.map((exam) => ({ id: exam.lecturer.id, name: resourceLabel(exam.lecturer) }))]),
     rooms: uniqueEntities([...sessions.map((session) => ({ id: session.roomId, name: resourceLabel(session.room) })), ...exams.map((exam) => ({ id: exam.room.id, name: resourceLabel(exam.room) }))]),
-    studyTypes: uniqueEntities(schedules.map((schedule) => schedule.context.studyType)),
+    cohortCalendars: uniqueEntities(schedules.map((schedule) => schedule.context.cohortCalendar)),
   }
 }
 
@@ -664,6 +664,6 @@ function matchesFilters(session: TeachingSessionEditModel, filters: ReviewFilter
     (filters.cohortId === undefined || session.cohortId === filters.cohortId) &&
     (filters.lecturerId === undefined || session.lecturerId === filters.lecturerId) &&
     (filters.roomId === undefined || session.roomId === filters.roomId) &&
-    (filters.studyTypeId === undefined || session.studyTypeId === filters.studyTypeId)
+    (filters.cohortCalendarId === undefined || session.cohortCalendarId === filters.cohortCalendarId)
   )
 }

@@ -144,7 +144,7 @@ export function SessionPane({
             <div><dt>Revision</dt><dd>{restrictedReview.revisionLabel}</dd></div>
             <div><dt>Status</dt><dd>{stateLabel(restrictedReview.lifecycleState)}</dd></div>
             <div><dt>{label('course.singular')}</dt><dd>{course ? `${course.code} · ${course.name}` : occurrence.courseRef}</dd></div>
-            <div><dt>Studienart</dt><dd>{course?.studyType ?? 'Nicht verfügbar'}</dd></div>
+            <div><dt>Kohortenkalender</dt><dd>{course?.cohortCalendar ?? 'Nicht verfügbar'}</dd></div>
             <div><dt>Datum und Uhrzeit</dt><dd>{formatCalendarDate(occurrence.date)}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
             <div><dt>{label('cohort.singular')}</dt><dd>{occurrence.cohort}</dd></div>
             <div><dt>{label('lecturer.singular')}</dt><dd>{restrictedReview.lecturerName}</dd></div>
@@ -186,7 +186,7 @@ export function SessionPane({
             <div><dt>Status</dt><dd>{stateLabel(workspace.selectedRevision.lifecycleState)}</dd></div>
             <div><dt>Revision</dt><dd>R{workspace.selectedRevision.revisionNumber} · {workspace.selectedRevision.designation === 'active_working' ? 'Arbeitsrevision' : 'Aktuelle Veröffentlichung'}</dd></div>
             <div><dt>{label('course.singular')}</dt><dd>{course?.name ?? occurrence.courseRef}</dd></div>
-            <div><dt>Studienart</dt><dd>{course?.studyType ?? 'Nicht verfügbar'}</dd></div>
+            <div><dt>Kohortenkalender</dt><dd>{course?.cohortCalendar ?? 'Nicht verfügbar'}</dd></div>
             <div><dt>Datum und Uhrzeit</dt><dd>{formatCalendarDate(occurrence.date)}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
             <div><dt>{label('cohort.singular')}</dt><dd>{occurrence.cohort}</dd></div>
             <div><dt>{label('lecturer.singular')}</dt><dd>{occurrence.lecturerRefs.map((ref) => workspace.filterFacets.lecturers.find((item) => item.value === ref)?.label ?? 'Nicht verfügbar').join(', ')}</dd></div>

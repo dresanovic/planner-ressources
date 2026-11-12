@@ -1009,7 +1009,7 @@ def _published_public_courses(
                     "code": f"COURSE-{course_id}",
                     "title": source.get("name"),
                     "cohortName": cohort.get("name"),
-                    "studyType": source.get("studyType", {}).get("name"),
+                    "cohortCalendar": source.get("cohortCalendar", {}).get("name"),
                     "sessions": [],
                 },
             )
@@ -1048,7 +1048,7 @@ def _published_public_courses(
                 "code": f"COURSE-{course_id}",
                 "title": course.get("name"),
                 "cohortName": exam.get("cohort", {}).get("name"),
-                "studyType": _published_study_type(
+                "cohortCalendar": _published_cohort_calendar(
                     db, snapshot, course_id
                 ),
                 "sessions": [],
@@ -1081,7 +1081,7 @@ def _published_public_courses(
                     "courseRef",
                     "title",
                     "cohortName",
-                    "studyType",
+                    "cohortCalendar",
                 )
             )
             or any(
@@ -1133,7 +1133,7 @@ def _validate_published_calendar_snapshot(snapshot: Any, lecturer_id: int) -> No
             )
         course_metadata_is_invalid = (
             not isinstance(course.get("cohort", {}), dict)
-            or not isinstance(course.get("studyType", {}), dict)
+            or not isinstance(course.get("cohortCalendar", {}), dict)
         )
         if (
             course.get("sourceCourseId") in scoped_exam_course_ids
@@ -1187,17 +1187,17 @@ def _validate_published_calendar_snapshot(snapshot: Any, lecturer_id: int) -> No
             )
 
 
-def _published_study_type(
+def _published_cohort_calendar(
     db: Session, snapshot: dict[str, Any], course_id: int
 ) -> str | None:
     for source in snapshot.get("courses", []):
         if source.get("sourceCourseId") == course_id:
-            value = source.get("studyType", {}).get("name")
+            value = source.get("cohortCalendar", {}).get("name")
             if isinstance(value, str) and value:
                 return value
     course = db.get(Course, course_id)
-    if course is not None and course.study_type is not None:
-        return course.study_type.name
+    if course is not None and course.cohort_calendar is not None:
+        return course.cohort_calendar.name
     return None
 
 
@@ -1354,9 +1354,9 @@ def _public_filter_facets(
                 for session in sessions
             ]
         ),
-        "studyTypes": facets(
+        "cohortCalendars": facets(
             [
-                (course["studyType"], course["studyType"])
+                (course["cohortCalendar"], course["cohortCalendar"])
                 for course in courses
             ]
         ),
@@ -1565,7 +1565,7 @@ def _current_session_context(
             "timeZone": institution_timezone_from_environment(),
             "roomName": room.name,
             "cohortName": cohort.name,
-            "studyType": course.study_type.name,
+            "cohortCalendar": course.cohort_calendar.name,
             "teachingUnits": (
                 session.units if session_kind == "teaching" else None
             ),
@@ -1592,7 +1592,7 @@ def _current_session_context(
                     "timeZone": session["timeZone"],
                     "roomName": session["roomName"],
                     "cohortName": session["cohortName"],
-                    "studyType": course["studyType"],
+                    "cohortCalendar": course["cohortCalendar"],
                     "teachingUnits": session["teachingUnits"],
                     "examDurationMinutes": session["examDurationMinutes"],
                 }
@@ -1849,7 +1849,7 @@ def _public_course(course: Course) -> dict[str, Any]:
         **_course_identity(course),
         "courseRef": f"course:{course.id}",
         "cohortName": course.cohort.name,
-        "studyType": course.study_type.name,
+        "cohortCalendar": course.cohort_calendar.name,
         "sessions": [],
     }
 

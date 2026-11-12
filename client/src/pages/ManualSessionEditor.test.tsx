@@ -16,7 +16,7 @@ it('blocks an incomplete manual-session date before the mutation and focuses the
     course={{
       id: 1, name: 'Algorithmen', totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4,
       lecturer: { id: 1, name: 'Ada' }, cohort: { id: 2, name: 'A1' }, cohortSize: 20,
-      room: { id: 3, name: 'R1' }, studyType: { id: 4, name: 'Vollzeit' },
+      room: { id: 3, name: 'R1' }, cohortCalendar: { id: 4, name: 'Vollzeit' },
     }}
     semester={{ id: 1, name: 'Wintersemester', startDate: '2026-09-01', endDate: '2027-01-31' }}
     lecturers={[{ id: 1, name: 'Ada' }] as never}

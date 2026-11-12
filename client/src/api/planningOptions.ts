@@ -16,7 +16,7 @@ export type CourseOption = {
   cohort: PlanningEntity
   cohortSize: number
   room: PlanningEntity | null
-  studyType: PlanningEntity
+  cohortCalendar: PlanningEntity
 }
 
 export type SemesterOption = {
@@ -28,7 +28,7 @@ export type SemesterOption = {
 
 export type TimeWindowOption = TeachingWindowShape & {
   id: number
-  studyTypeId: number
+  cohortCalendarId: number
   startTime: string
   endTime: string
   sortOrder: number

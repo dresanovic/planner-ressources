@@ -503,7 +503,7 @@ def test_real_deleted_session_and_relogin_with_reused_id_is_outcome_only(setup_o
 def test_exact_apply_rechecks_each_material_freshness_category(setup_operation, changed):
     from datetime import date, time
     from app.models.planning import (CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Cohort,
-        Semester, StudyTypeTimeWindow, ResourceUnavailabilityPeriod, ResourceUnavailabilityWeekday,
+        Semester, CohortCalendarTimeWindow, ResourceUnavailabilityPeriod, ResourceUnavailabilityWeekday,
         ScheduleRevision, InstitutionHoliday)
     from tests.optimization_fixtures import active_exam
     from tests.services.test_conflict_aware_generation import save_custom_constraints
@@ -520,7 +520,7 @@ def test_exact_apply_rechecks_each_material_freshness_category(setup_operation, 
             db.add(ResourceUnavailabilityPeriod(**{('lecturer_id' if changed.startswith('lecturer') else 'room_id'):1},
                 kind='recurring', start_time=time(8), end_time=time(12),
                 weekdays=[ResourceUnavailabilityWeekday(weekday=0)]))
-        elif changed == 'window': db.get(StudyTypeTimeWindow, 1).is_active = False
+        elif changed == 'window': db.get(CohortCalendarTimeWindow, 1).is_active = False
         elif changed == 'cohort_size': db.get(Cohort, 1).student_count += 1
         elif changed == 'semester_dates': db.get(Semester, 1).end_date = date(2026, 12, 1)
         elif changed == 'constraints': save_custom_constraints(db, 1, 0, 1)

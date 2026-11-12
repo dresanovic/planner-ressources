@@ -44,11 +44,11 @@ def test_recurring_and_dated_periods_combine_as_unavailability_union():
 def test_validation_reports_separate_unavailability_alerts_without_mutating_session():
     lecturer_period = recurring([0], time(9), time(11))
     room_period = ResourceUnavailabilityPeriod(room_id=1, kind="dated", start_date=date(2026, 9, 7), end_date=date(2026, 9, 7), start_time=time(10), end_time=time(12))
-    draft = DraftSchedule(id=1, course_id=1, semester_id=1, course_name_snapshot="Course", course_total_units_snapshot=4, course_min_session_units_snapshot=2, course_max_session_units_snapshot=4, cohort_id_snapshot=1, cohort_name_snapshot="Cohort", cohort_size_snapshot=20, study_type_id_snapshot=1, study_type_name_snapshot="Type", semester_name_snapshot="Fall", semester_start_date_snapshot=date(2026, 9, 1), semester_end_date_snapshot=date(2026, 12, 20))
+    draft = DraftSchedule(id=1, course_id=1, semester_id=1, course_name_snapshot="Course", course_total_units_snapshot=4, course_min_session_units_snapshot=2, course_max_session_units_snapshot=4, cohort_id_snapshot=1, cohort_name_snapshot="Cohort", cohort_size_snapshot=20, cohort_calendar_id_snapshot=1, cohort_calendar_name_snapshot="Type", semester_name_snapshot="Fall", semester_start_date_snapshot=date(2026, 9, 1), semester_end_date_snapshot=date(2026, 12, 20))
     session = DraftSession(id=1, draft_schedule_id=1, course_id=1, lecturer_id=1, cohort_id=1, room_id=1, date=date(2026, 9, 7), start_time=time(10), end_time=time(11), units=2, constraint_window_index=0)
     draft.sessions = [session]
     before = (session.lecturer_id, session.room_id, session.date, session.start_time, session.end_time)
-    alerts = collect_validation_alerts([draft], rooms_by_id={1: Room(id=1, name="R", capacity=10)}, constraints_by_course_id={}, study_windows_by_study_type_id={}, unavailability_by_resource={("lecturer", 1): [lecturer_period], ("room", 1): [room_period]}, eligible_lecturer_ids_by_course={1: {2}}, eligible_room_ids_by_course={1: {2}}, active_lecturer_ids={1, 2}, active_room_ids={1, 2})
+    alerts = collect_validation_alerts([draft], rooms_by_id={1: Room(id=1, name="R", capacity=10)}, constraints_by_course_id={}, study_windows_by_cohort_calendar_id={}, unavailability_by_resource={("lecturer", 1): [lecturer_period], ("room", 1): [room_period]}, eligible_lecturer_ids_by_course={1: {2}}, eligible_room_ids_by_course={1: {2}}, active_lecturer_ids={1, 2}, active_room_ids={1, 2})
     codes = {alert.code for alert in alerts[1]}
     assert {ValidationAlertCode.LECTURER_UNAVAILABLE, ValidationAlertCode.ROOM_UNAVAILABLE}.issubset(codes)
     assert {ValidationAlertCode.LECTURER_INELIGIBLE, ValidationAlertCode.ROOM_INELIGIBLE, ValidationAlertCode.ROOM_CAPACITY}.issubset(codes)

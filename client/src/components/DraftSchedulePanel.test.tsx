@@ -673,7 +673,7 @@ describe('DraftSchedulePanel', () => {
     renderPanel({ schedules: [alertDraftScheduleFixture] })
 
     expect(document.body.textContent).toContain('Raumkapazität reicht nicht aus')
-    expect(document.body.textContent).toContain('Studienart-Zeitfenster')
+    expect(document.body.textContent).toContain('Kohortenkalender-Zeitfenster')
     expect(document.body.textContent).toContain('außerhalb eines aktuell aktiven Zeitfensters')
     expect(document.body.textContent).not.toContain('genaue Ursache ist nicht verfügbar')
   })
@@ -690,7 +690,7 @@ describe('DraftSchedulePanel', () => {
             relatedSessions: [],
           },
           {
-            code: 'STUDY_TYPE_WINDOW_VIOLATION' as const,
+            code: 'COHORT_CALENDAR_WINDOW_VIOLATION' as const,
             message: 'Outside the mapped weekly window.',
             relatedSessions: [],
           },
@@ -701,7 +701,7 @@ describe('DraftSchedulePanel', () => {
     renderPanel({ schedules: [constrained] })
 
     expect(document.body.textContent).toContain('Datumsgrenzen verletzt')
-    expect(document.body.textContent).toContain('Studienart-Zeitfenster verletzt')
+    expect(document.body.textContent).toContain('Kohortenkalender-Zeitfenster verletzt')
     expect(document.querySelectorAll('.validation-alert')).toHaveLength(3)
   })
 
@@ -736,11 +736,11 @@ describe('DraftSchedulePanel', () => {
     renderPanel({ schedules: [alertDraftScheduleFixture] })
     const header = document.querySelector('.teaching-session-row.session-header')
     expect([...header!.children].map((item) => item.textContent)).toEqual([
-      'Datum', 'Zeit', 'Dauer / LE', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Studienart', 'Aktionen',
+      'Datum', 'Zeit', 'Dauer / LE', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Kohortenkalender', 'Aktionen',
     ])
     const row = document.querySelector('.teaching-session-row:not(.session-header)')!
     expect([...row.children].map((item) => item.getAttribute('data-label'))).toEqual([
-      'Datum', 'Zeit', 'Dauer / LE', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Studienart', 'Aktionen',
+      'Datum', 'Zeit', 'Dauer / LE', 'Lehrveranstaltung', 'Kohorte', 'Lehrende Person', 'Raum', 'Kohortenkalender', 'Aktionen',
     ])
     expect(row.children[0].querySelector('.validation-alerts')).not.toBeNull()
     expect(row.children[8].querySelectorAll('button')).toHaveLength(2)

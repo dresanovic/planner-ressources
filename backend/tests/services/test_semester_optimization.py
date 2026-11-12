@@ -526,7 +526,7 @@ def test_current_draft_outside_active_course_dates_is_replaced():
     ]
 
 
-def test_current_draft_outside_active_study_type_window_is_replaced():
+def test_current_draft_outside_active_cohort_calendar_window_is_replaced():
     current = CurrentSession(1, 1, 1, 1, SEMESTER_START, time(8), time(11, 30), 4, 1, 0)
     course = replace(
         optimization_course(1, total_units=4, min_units=4, max_units=4),
@@ -697,7 +697,7 @@ def test_same_course_exam_deadline_allows_exact_end_and_reports_later_candidates
     assert result.courses[0].sessions[0].end_time == time(9, 40)
 
 
-def test_too_short_study_type_windows_are_reported_precisely():
+def test_too_short_cohort_calendar_windows_are_reported_precisely():
     course = replace(
         optimization_course(1, total_units=4, min_units=2, max_units=2),
         windows=(TimeWindowPlan(1, 0, time(8), time(9)),),
@@ -707,7 +707,7 @@ def test_too_short_study_type_windows_are_reported_precisely():
 
     assert candidates.candidates == ()
     assert {item.code for item in candidates.evidence} == {
-        "STUDY_TYPE_WINDOW_UNAVAILABLE"
+        "COHORT_CALENDAR_WINDOW_UNAVAILABLE"
     }
 
 

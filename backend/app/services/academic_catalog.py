@@ -19,8 +19,8 @@ from app.models.planning import (
     GenerationConstraintSet,
     GenerationConstraintWindow,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
 )
 from app.services.resource_catalog import validate_course_resource_candidates
 
@@ -73,7 +73,7 @@ def course_availability_reasons(
     semester_assigned: bool,
     semester_active: bool,
     cohort_active: bool,
-    study_type_active: bool,
+    cohort_calendar_active: bool,
     has_active_window: bool,
     resources_valid: bool,
 ) -> list[str]:
@@ -86,8 +86,8 @@ def course_availability_reasons(
         reasons.append("SEMESTER_INACTIVE")
     if not cohort_active:
         reasons.append("COHORT_INACTIVE")
-    if not study_type_active:
-        reasons.append("STUDY_TYPE_INACTIVE")
+    if not cohort_calendar_active:
+        reasons.append("COHORT_CALENDAR_INACTIVE")
     if not has_active_window:
         reasons.append("MISSING_ACTIVE_TIME_WINDOW")
     if not resources_valid:
@@ -95,7 +95,7 @@ def course_availability_reasons(
     return reasons
 
 
-NAMED_MODELS = (Semester, Cohort, Course, StudyType)
+NAMED_MODELS = (Semester, Cohort, Course, CohortCalendar)
 
 
 def validate_and_prepare_name(db: Session, model, value: str, *, exclude_id: int | None = None) -> tuple[str, str]:
@@ -158,11 +158,31 @@ def create_cohort(db: Session, *, name: str, student_count: int) -> Cohort:
     return row
 
 
-def create_study_type(db: Session, *, name: str) -> StudyType:
-    display, canonical = validate_and_prepare_name(db, StudyType, name)
-    row = StudyType(name=display, normalized_name=canonical, normalized_name_key=canonical)
+def _calendar_values(db, cohort_id, semester_id, start_date, end_date, exclude_id=None):
+    cohort, semester = db.get(Cohort, cohort_id), db.get(Semester, semester_id)
+    if cohort is None or semester is None:
+        raise AcademicCatalogError(422, [CatalogErrorItem("REQUIRED_RELATIONSHIP_INVALID", "Kohorte und Semester müssen vorhanden sein.")])
+    if not semester.start_date <= start_date <= end_date <= semester.end_date:
+        raise AcademicCatalogError(422, [CatalogErrorItem("VALIDATION_ERROR", "Der Unterrichtszeitraum muss innerhalb des Semesters liegen.", "startDate")])
+    other = db.scalar(select(CohortCalendar).where(CohortCalendar.cohort_id == cohort_id, CohortCalendar.semester_id == semester_id))
+    if other is not None and other.id != exclude_id:
+        raise AcademicCatalogError(409, [CatalogErrorItem("DUPLICATE_CALENDAR", "Für diese Kohorte und dieses Semester besteht bereits ein Kalender.")])
+    name = f"{cohort.name} · {semester.name}"
+    return dict(cohort_id=cohort_id, semester_id=semester_id, start_date=start_date, end_date=end_date,
+                name=name, normalized_name=name.casefold(), normalized_name_key=name.casefold())
+
+
+def create_cohort_calendar(db: Session, *, cohort_id, semester_id, start_date, end_date) -> CohortCalendar:
+    row = CohortCalendar(**_calendar_values(db, cohort_id, semester_id, start_date, end_date))
     db.add(row)
     db.flush()
+    return row
+
+
+def calendar_for_course(db, cohort_id, semester_id):
+    row = db.scalar(select(CohortCalendar).where(CohortCalendar.cohort_id == cohort_id, CohortCalendar.semester_id == semester_id))
+    if row is None:
+        raise AcademicCatalogError(422, [CatalogErrorItem("CALENDAR_REQUIRED", "Legen Sie zuerst einen Kohortenkalender für die gewählte Kohorte und das Semester an.", "cohortId")])
     return row
 
 
@@ -173,13 +193,13 @@ def parse_time(value: str, field: str) -> time:
         raise AcademicCatalogError(422, [CatalogErrorItem("VALIDATION_ERROR", "Enter a valid HH:MM time.", field)]) from exc
 
 
-def _window_values(db, study_type_id, *, kind, weekday, date, start_time, end_time, sort_order, is_intensive):
+def _window_values(db, cohort_calendar_id, *, kind, weekday, date, start_time, end_time, sort_order, is_intensive):
     errors = []
     def invalid(field, message):
         errors.append(CatalogErrorItem("VALIDATION_ERROR", message, field))
-    owner = db.get(StudyType, study_type_id) if type(study_type_id) is int else None
+    owner = db.get(CohortCalendar, cohort_calendar_id) if type(cohort_calendar_id) is int else None
     if owner is None or not owner.is_active:
-        invalid("studyTypeId", "Wählen Sie eine vorhandene aktive Studienform.")
+        invalid("cohortCalendarId", "Wählen Sie eine vorhandene aktive Kohortenkalender.")
     if kind not in ("weekly", "dated"):
         invalid("kind", "Wählen Sie Wöchentlich oder Einmaliges Datum.")
     parsed_date = None
@@ -218,16 +238,16 @@ def _window_values(db, study_type_id, *, kind, weekday, date, start_time, end_ti
         invalid('sortOrder', 'Die Reihenfolge muss eine nichtnegative ganze Zahl sein.')
     if errors:
         raise AcademicCatalogError(422, errors)
-    return dict(study_type_id=study_type_id, kind=kind, weekday=weekday, date=parsed_date,
+    return dict(cohort_calendar_id=cohort_calendar_id, kind=kind, weekday=weekday, date=parsed_date,
                 start_time=start, end_time=end, sort_order=sort_order, is_intensive=is_intensive)
 
 
 def _check_window_duplicate(db, values, exclude_id=None):
-    query = select(StudyTypeTimeWindow.id).where(*(
-        getattr(StudyTypeTimeWindow, key) == values[key]
-        for key in ('study_type_id', 'kind', 'weekday', 'date', 'start_time', 'end_time')))
+    query = select(CohortCalendarTimeWindow.id).where(*(
+        getattr(CohortCalendarTimeWindow, key) == values[key]
+        for key in ('cohort_calendar_id', 'kind', 'weekday', 'date', 'start_time', 'end_time')))
     if exclude_id is not None:
-        query = query.where(StudyTypeTimeWindow.id != exclude_id)
+        query = query.where(CohortCalendarTimeWindow.id != exclude_id)
     duplicate = db.scalar(query)
     if duplicate is not None:
         raise AcademicCatalogError(409, [CatalogErrorItem('DUPLICATE_TIME_WINDOW',
@@ -244,11 +264,11 @@ def _flush_window(db):
             'Das Zeitfenster wurde inzwischen gespeichert oder geändert. Aktualisieren Sie die Liste.')]) from exc
 
 
-def create_time_window(db: Session, study_type_id: int, *, weekday=None, start_time=None, end_time=None, sort_order=0, kind='weekly', date=None, is_intensive=False) -> StudyTypeTimeWindow:
-    values = _window_values(db, study_type_id, kind=kind, weekday=weekday, date=date,
+def create_time_window(db: Session, cohort_calendar_id: int, *, weekday=None, start_time=None, end_time=None, sort_order=0, kind='weekly', date=None, is_intensive=False) -> CohortCalendarTimeWindow:
+    values = _window_values(db, cohort_calendar_id, kind=kind, weekday=weekday, date=date,
         start_time=start_time, end_time=end_time, sort_order=sort_order, is_intensive=is_intensive)
     _check_window_duplicate(db, values)
-    row = StudyTypeTimeWindow(**values)
+    row = CohortCalendarTimeWindow(**values)
     db.add(row)
     _flush_window(db)
     return row
@@ -256,9 +276,9 @@ def create_time_window(db: Session, study_type_id: int, *, weekday=None, start_t
 
 def window_overlap_notice(db, row):
     # Positive occurrence overlap is informative; permission is never capacity.
-    for other in db.scalars(select(StudyTypeTimeWindow).where(
-            StudyTypeTimeWindow.study_type_id == row.study_type_id,
-            StudyTypeTimeWindow.id != row.id, StudyTypeTimeWindow.is_active.is_(True))):
+    for other in db.scalars(select(CohortCalendarTimeWindow).where(
+            CohortCalendarTimeWindow.cohort_calendar_id == row.cohort_calendar_id,
+            CohortCalendarTimeWindow.id != row.id, CohortCalendarTimeWindow.is_active.is_(True))):
         if not row.is_active or not (row.start_time < other.end_time and other.start_time < row.end_time):
             continue
         if row.kind == other.kind == 'weekly':
@@ -269,11 +289,13 @@ def window_overlap_notice(db, row):
             dated, weekly = (row, other) if row.kind == 'dated' else (other, row)
             same_day = dated.date.weekday() == weekly.weekday
         if same_day:
+            if row.kind != other.kind and dated.is_intensive:
+                return 'Intensive Stunden ersetzen an diesem Datum die wöchentlichen Zeitfenster.'
             return 'Zeitfenster überschneiden sich. Dadurch entsteht keine zusätzliche Kapazität.'
     return None
 
 
-def create_course(db: Session, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, lecturer_id: int, room_id: int, preferred_session_units: float | None = None, overall_units: int | None = None) -> Course:
+def create_course(db: Session, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, lecturer_id: int, room_id: int, preferred_session_units: float | None = None, overall_units: int | None = None) -> Course:
     errors: list[CatalogErrorItem] = []
     name_status = 422
     try:
@@ -289,7 +311,6 @@ def create_course(db: Session, *, name: str, total_units: int, min_session_units
     relationships = (
         (Semester, semester_id, "semesterId", "Semester"),
         (Cohort, cohort_id, "cohortId", "Cohort"),
-        (StudyType, study_type_id, "studyTypeId", "Study Type"),
     )
     errors.extend(CatalogErrorItem("REQUIRED_RELATIONSHIP_INVALID", f"{label} does not exist.", field) for model, record_id, field, label in relationships if db.get(model, record_id) is None)
     cohort = db.get(Cohort, cohort_id)
@@ -303,10 +324,11 @@ def create_course(db: Session, *, name: str, total_units: int, min_session_units
     errors.extend(CatalogErrorItem(item.code, item.message, resource_fields.get(item.field, item.field), item.meta) for item in resource_errors)
     if errors:
         raise AcademicCatalogError(name_status if len(errors) == 1 else 422, errors)
+    calendar_for_course(db, cohort_id, semester_id)
     row = Course(
         name=display, normalized_name=canonical, normalized_name_key=canonical,
         total_units=total_units, overall_units=total_units if overall_units is None else overall_units, min_session_units=min_session_units, max_session_units=max_session_units, preferred_session_units=preferred_session_units,
-        current_semester_id=semester_id, cohort_id=cohort_id, study_type_id=study_type_id,
+        current_semester_id=semester_id, cohort_id=cohort_id,
         eligible_lecturers=[CourseEligibleLecturer(lecturer_id=lecturer_id)],
         eligible_rooms=[CourseEligibleRoom(room_id=room_id)],
     )
@@ -341,14 +363,16 @@ def availability_for_course(
     db: Session,
     course: Course,
     *,
-    active_window_study_type_ids: set[int] | None = None,
-    active_windows_by_study_type: dict | None = None,
+    active_window_cohort_calendar_ids: set[int] | None = None,
+    active_windows_by_cohort_calendar: dict | None = None,
     constraint_sets_by_course_semester: dict | None = None,
 ) -> list[str]:
     from app.services.schedule_generation import PlanningPeriodPlan, session_duration_minutes, window_has_occurrence
+    if course.cohort_calendar is None:
+        return ["NO_COHORT_CALENDAR"]
     has_window = False
     if course.current_semester is not None:
-        period = PlanningPeriodPlan(course.current_semester.start_date, course.current_semester.end_date)
+        period = PlanningPeriodPlan(max(course.current_semester.start_date, course.cohort_calendar.start_date), min(course.current_semester.end_date, course.cohort_calendar.end_date))
         saved = (constraint_sets_by_course_semester.get((course.id,course.current_semester_id))
             if constraint_sets_by_course_semester is not None else db.scalar(select(GenerationConstraintSet).where(
                 GenerationConstraintSet.course_id == course.id,
@@ -356,8 +380,8 @@ def availability_for_course(
         if saved is not None:
             period = PlanningPeriodPlan(max(period.start_date, saved.planning_start_date), min(period.end_date, saved.planning_end_date))
         from datetime import datetime
-        windows = (active_windows_by_study_type.get(course.study_type_id,())
-                   if active_windows_by_study_type is not None else course.study_type.time_windows)
+        windows = (active_windows_by_cohort_calendar.get(course.cohort_calendar_id,())
+                   if active_windows_by_cohort_calendar is not None else course.cohort_calendar.time_windows)
         has_window = any(window_has_occurrence(w, period)
             and datetime.combine(calendar_date.min, w.end_time) - datetime.combine(calendar_date.min, w.start_time)
             >= timedelta(minutes=session_duration_minutes(course.min_session_units))
@@ -367,7 +391,7 @@ def availability_for_course(
         semester_assigned=course.current_semester is not None,
         semester_active=bool(course.current_semester and course.current_semester.is_active),
         cohort_active=course.cohort.is_active,
-        study_type_active=course.study_type.is_active,
+        cohort_calendar_active=course.cohort_calendar.is_active,
         has_active_window=has_window,
         resources_valid=True,
     )
@@ -415,22 +439,24 @@ def usage_for(db: Session, row) -> dict:
         constraint_count = _count(db, select(func.count()).select_from(GenerationConstraintSet).where(GenerationConstraintSet.semester_id == row.id))
         saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.semester_id == row.id)) + _count(db, select(func.count()).select_from(ExamSession).where(ExamSession.semester_id == row.id))
         dependent.extend(({"type": "course", "count": course_count}, {"type": "generation_constraint_set", "count": constraint_count}))
+        dependent.append({"type":"cohort_calendar", "count":_count(db,select(func.count()).select_from(CohortCalendar).where(CohortCalendar.semester_id==row.id))})
     elif isinstance(row, Cohort):
         course_count = _count(db, select(func.count()).select_from(Course).where(Course.cohort_id == row.id))
         saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.cohort_id_snapshot == row.id)) + _count(db, select(func.count()).select_from(ExamSession).where(ExamSession.cohort_id == row.id))
         dependent.append({"type": "course", "count": course_count})
+        dependent.append({"type":"cohort_calendar", "count":_count(db,select(func.count()).select_from(CohortCalendar).where(CohortCalendar.cohort_id==row.id))})
     elif isinstance(row, Course):
         constraint_count = _count(db, select(func.count()).select_from(GenerationConstraintSet).where(GenerationConstraintSet.course_id == row.id))
         saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.course_id == row.id)) + _count(db, select(func.count()).select_from(ExamSession).where(ExamSession.course_id == row.id))
         configuration_count = _count(db, select(func.count()).select_from(CourseExamConfiguration).where(CourseExamConfiguration.course_id == row.id))
         dependent.append({"type": "exam_configuration", "count": configuration_count})
         dependent.append({"type": "generation_constraint_set", "count": constraint_count})
-    elif isinstance(row, StudyType):
-        course_count = _count(db, select(func.count()).select_from(Course).where(Course.study_type_id == row.id))
-        window_count = _count(db, select(func.count()).select_from(StudyTypeTimeWindow).where(StudyTypeTimeWindow.study_type_id == row.id))
-        saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.study_type_id_snapshot == row.id))
+    elif isinstance(row, CohortCalendar):
+        course_count = _count(db, select(func.count()).select_from(Course).where((Course.cohort_id == row.cohort_id) & (Course.current_semester_id == row.semester_id)))
+        window_count = _count(db, select(func.count()).select_from(CohortCalendarTimeWindow).where(CohortCalendarTimeWindow.cohort_calendar_id == row.id))
+        saved_count = _count(db, select(func.count()).select_from(DraftSchedule).where(DraftSchedule.cohort_calendar_id_snapshot == row.id))
         dependent.extend(({"type": "course", "count": course_count}, {"type": "time_window", "count": window_count}))
-    elif isinstance(row, StudyTypeTimeWindow):
+    elif isinstance(row, CohortCalendarTimeWindow):
         constraint_count = _count(db, select(func.count()).select_from(GenerationConstraintWindow).where(GenerationConstraintWindow.source_time_window_id == row.id))
         dependent.append({"type": "generation_constraint_window", "count": constraint_count})
         selected_schedule_ids = set(db.execute(select(DraftSchedule.id).where(DraftSchedule.selected_time_window_id == row.id)).scalars())
@@ -457,9 +483,9 @@ def _snapshot_reference_count(db: Session, row) -> int:
             count += 1; continue
         if isinstance(row, Cohort) and any(item.get("cohort", {}).get("sourceId") == row.id for item in courses):
             count += 1; continue
-        if isinstance(row, StudyType) and any(item.get("studyType", {}).get("sourceId") == row.id for item in courses):
+        if isinstance(row, CohortCalendar) and any(item.get("cohortCalendar", {}).get("sourceId") == row.id for item in courses):
             count += 1; continue
-        if isinstance(row, StudyTypeTimeWindow) and any(session.get("timeWindowId") == row.id for item in courses for session in item.get("teachingSessions", [])):
+        if isinstance(row, CohortCalendarTimeWindow) and any(session.get("timeWindowId") == row.id for item in courses for session in item.get("teachingSessions", [])):
             count += 1
     return count
 
@@ -476,6 +502,9 @@ def update_semester(db: Session, row: Semester, *, name: str, start_date, end_da
     outside_exam = db.execute(select(ExamSession.exam_date).where(ExamSession.semester_id == row.id, (ExamSession.exam_date < start_date) | (ExamSession.exam_date > end_date)).limit(1)).scalar_one_or_none()
     if outside_exam is not None:
         errors.append(CatalogErrorItem("SAVED_EXAM_OUTSIDE_SEMESTER", "Saved exams must remain inside the Semester dates.", "startDate", {"examDate": outside_exam.isoformat()}))
+    outside_calendar = db.scalar(select(CohortCalendar.id).where(CohortCalendar.semester_id == row.id, (CohortCalendar.start_date < start_date) | (CohortCalendar.end_date > end_date)))
+    if outside_calendar is not None:
+        errors.append(CatalogErrorItem("CALENDAR_OUTSIDE_SEMESTER", "Kohortenkalender müssen innerhalb des Semesters liegen.", "startDate"))
     if errors:
         raise AcademicCatalogError(422, errors)
     row.name, row.normalized_name, row.normalized_name_key = display, canonical, canonical
@@ -530,17 +559,20 @@ def update_cohort_with_capacity_impact(db: Session, row: Cohort, *, name: str, s
     return updated, {"removedRelationships": removed, "coursesWithoutRooms": courses_without_rooms}
 
 
-def update_study_type(db: Session, row: StudyType, *, name: str, expected_revision: int) -> StudyType:
+def update_cohort_calendar(db: Session, row: CohortCalendar, *, cohort_id, semester_id, start_date, end_date, expected_revision: int):
     require_revision(row, expected_revision)
-    display, canonical = validate_and_prepare_name(db, StudyType, name, exclude_id=row.id)
-    row.name, row.normalized_name, row.normalized_name_key = display, canonical, canonical
-    row.name_repair_required = False; row.revision += 1
-    db.flush(); return row
+    if (row.cohort_id, row.semester_id) != (cohort_id, semester_id):
+        raise AcademicCatalogError(422, [CatalogErrorItem("CALENDAR_OWNER_IMMUTABLE", "Kohorte und Semester eines bestehenden Kalenders können nicht geändert werden.")])
+    for key, value in _calendar_values(db, cohort_id, semester_id, start_date, end_date, row.id).items():
+        setattr(row, key, value)
+    row.revision += 1
+    db.flush()
+    return row
 
 
-def update_time_window(db: Session, row: StudyTypeTimeWindow, *, weekday=None, start_time=None, end_time=None, sort_order=0, expected_revision: int, kind='weekly', date=None, is_intensive=False, study_type_id=None) -> StudyTypeTimeWindow:
+def update_time_window(db: Session, row: CohortCalendarTimeWindow, *, weekday=None, start_time=None, end_time=None, sort_order=0, expected_revision: int, kind='weekly', date=None, is_intensive=False, cohort_calendar_id=None) -> CohortCalendarTimeWindow:
     require_revision(row, expected_revision)
-    values = _window_values(db, row.study_type_id if study_type_id is None else study_type_id,
+    values = _window_values(db, row.cohort_calendar_id if cohort_calendar_id is None else cohort_calendar_id,
         kind=kind, weekday=weekday, date=date, start_time=start_time, end_time=end_time,
         sort_order=sort_order, is_intensive=is_intensive)
     if kind != row.kind:
@@ -550,13 +582,13 @@ def update_time_window(db: Session, row: StudyTypeTimeWindow, *, weekday=None, s
     for key, value in values.items():
         setattr(row, key, value)
     # Avoid a cached former owner after an owner-changing edit.
-    row.study_type = db.get(StudyType, values['study_type_id'])
+    row.cohort_calendar = db.get(CohortCalendar, values['cohort_calendar_id'])
     row.revision += 1
     _flush_window(db)
     return row
 
 
-def update_course(db: Session, row: Course, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, study_type_id: int, expected_revision: int, preferred_session_units: float | None = None, overall_units: int | None = None) -> Course:
+def update_course(db: Session, row: Course, *, name: str, total_units: int, min_session_units: int, max_session_units: int, semester_id: int, cohort_id: int, expected_revision: int, preferred_session_units: float | None = None, overall_units: int | None = None) -> Course:
     require_revision(row, expected_revision)
     errors: list[CatalogErrorItem] = []
     name_status = 422
@@ -570,7 +602,7 @@ def update_course(db: Session, row: Course, *, name: str, total_units: int, min_
         display, canonical = "", ""
         name_status = exc.status_code
         errors.extend(exc.errors)
-    relationships = ((Semester, semester_id, "semesterId", "Semester"), (Cohort, cohort_id, "cohortId", "Cohort"), (StudyType, study_type_id, "studyTypeId", "Study Type"))
+    relationships = ((Semester, semester_id, "semesterId", "Semester"), (Cohort, cohort_id, "cohortId", "Cohort"))
     errors.extend(CatalogErrorItem("REQUIRED_RELATIONSHIP_INVALID", f"{label} does not exist.", field) for model, record_id, field, label in relationships if db.get(model, record_id) is None)
     if errors: raise AcademicCatalogError(name_status if len(errors) == 1 else 422, errors)
     row.name, row.normalized_name, row.normalized_name_key = display, canonical, canonical
@@ -579,7 +611,9 @@ def update_course(db: Session, row: Course, *, name: str, total_units: int, min_
     if overall_units is not None:
         row.overall_units = overall_units
     row.preferred_session_units = preferred_session_units
-    row.current_semester_id, row.cohort_id, row.study_type_id = semester_id, cohort_id, study_type_id
+    calendar_for_course(db, cohort_id, semester_id)
+    row.current_semester_id, row.cohort_id = semester_id, cohort_id
+    db.expire(row, ["cohort_calendar"])
     row.revision += 1; db.flush(); return row
 
 
@@ -591,8 +625,8 @@ def set_lifecycle(db: Session, row, *, active: bool, expected_revision: int):
         reasons = availability_for_course(db, row)
         blocking = [reason for reason in reasons if reason != "RECORD_INACTIVE" and reason != "MISSING_ACTIVE_TIME_WINDOW"]
         if blocking: raise AcademicCatalogError(409, [CatalogErrorItem("REACTIVATION_BLOCKED", "Required relationships must be active before reactivation.", None, {"reasons": blocking})])
-    if active and isinstance(row, StudyTypeTimeWindow) and not row.study_type.is_active:
-        raise AcademicCatalogError(409, [CatalogErrorItem("REACTIVATION_BLOCKED", "Aktivieren Sie zuerst die Studienform.")])
+    if active and isinstance(row, CohortCalendarTimeWindow) and not row.cohort_calendar.is_active:
+        raise AcademicCatalogError(409, [CatalogErrorItem("REACTIVATION_BLOCKED", "Aktivieren Sie zuerst die Kohortenkalender.")])
     row.is_active = active; row.revision += 1; db.flush(); return row
 
 

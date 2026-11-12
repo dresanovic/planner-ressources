@@ -1,3 +1,5 @@
+from app.models.planning import Cohort
+from datetime import date
 from copy import deepcopy
 from datetime import time, timedelta
 from uuid import UUID
@@ -9,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 import pytest
 
 from app.db.schema import initialize_database
-from app.models.planning import Course, CourseExamConfiguration, DraftSchedule, DraftSession, ExamSession, GenerationConstraintSet, GenerationConstraintWindow, Lecturer, LecturerReviewActivityEvent, LecturerReviewFeedback, LecturerReviewLink, Room, ScheduleRevision, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Course, CourseExamConfiguration, DraftSchedule, DraftSession, ExamSession, GenerationConstraintSet, GenerationConstraintWindow, Lecturer, LecturerReviewActivityEvent, LecturerReviewFeedback, LecturerReviewLink, Room, ScheduleRevision, Semester, CohortCalendar, CohortCalendarTimeWindow
 from app.schemas.lecturer_review import FeedbackInput
 from app.services.academic_catalog import usage_for
 from app.services.lecturer_review import (
@@ -186,21 +188,23 @@ def test_publication_condition_for_enabled_unscheduled_exam_contains_course_cont
     assert condition["details"]["courseName"] == "Course 1"
 
 
-def test_publication_uses_current_study_type_for_default_generation_constraints(db):
+def test_publication_uses_current_cohort_calendar_for_default_generation_constraints(db):
     semester, _course = seed_lifecycle_semester(db, with_schedule=True)
+    db.add(Cohort(id=2,name="Other cohort",student_count=30))
+    db.flush()
     db.add_all([
-        StudyTypeTimeWindow(
-            study_type_id=1,
+        CohortCalendarTimeWindow(
+            cohort_calendar_id=1,
             weekday=0,
             start_time=time(9),
             end_time=time(11),
             sort_order=0,
         ),
-        StudyType(id=2, name="Current study type"),
+        CohortCalendar(cohort_id=2, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), id=2, name="Current cohort calendar"),
     ])
     db.flush()
-    current_window = StudyTypeTimeWindow(
-        study_type_id=2,
+    current_window = CohortCalendarTimeWindow(
+        cohort_calendar_id=2,
         weekday=1,
         start_time=time(9),
         end_time=time(11),
@@ -208,7 +212,8 @@ def test_publication_uses_current_study_type_for_default_generation_constraints(
     )
     db.add(current_window)
     db.flush()
-    db.get(Course, 1).study_type_id = 2
+    db.get(Course,1).cohort_id=2
+    db.expire(db.get(Course,1),["cohort_calendar"])
     db.add(
         GenerationConstraintSet(
             course_id=1,
@@ -246,7 +251,7 @@ def test_publication_uses_current_study_type_for_default_generation_constraints(
         if condition["code"] == "teaching_validation_alert"
     }
     assert "GENERATION_CONSTRAINT_VIOLATION" not in alert_codes
-    assert "STUDY_TYPE_WINDOW_VIOLATION" in alert_codes
+    assert "COHORT_CALENDAR_WINDOW_VIOLATION" in alert_codes
     db.refresh(original_session)
     assert (original_session.date, original_session.start_time, original_session.end_time) == original_interval
 

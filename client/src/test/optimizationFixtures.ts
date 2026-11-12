@@ -15,7 +15,7 @@ const effectiveConstraints = {
   isCustom: false,
   constraintSetId: null,
   revision: null,
-  studyType: { id: 1, name: 'Full-time' },
+  cohortCalendar: { id: 1, name: 'Full-time' },
 }
 
 export const optimizationPreparationFixture: OptimizationPreparation = {

@@ -6,7 +6,7 @@ export type WorkspaceFilters = {
   cohort?: string
   lecturer?: string
   room?: string
-  studyType?: string
+  cohortCalendar?: string
   sessionType?: 'teaching' | 'exam'
   lifecycle?: string
   validation?: string
@@ -58,7 +58,7 @@ export function adaptLecturerReviewToWorkspace(
       name: course.title,
       cohort: course.cohortName,
       lecturerRefs: [],
-      studyType: course.studyType,
+      cohortCalendar: course.cohortCalendar,
       planningEligible: false,
       totalTeachingUnits: teachingUnits,
       scheduledTeachingUnits: teachingUnits,
@@ -348,7 +348,7 @@ function matchesCourseContext(course: WorkspaceCourse, filters: WorkspaceFilters
   return (
     (filters.course == null || course.courseRef === filters.course)
     && (filters.cohort == null || course.cohort === filters.cohort)
-    && (filters.studyType == null || course.studyType === filters.studyType)
+    && (filters.cohortCalendar == null || course.cohortCalendar === filters.cohortCalendar)
   )
 }
 

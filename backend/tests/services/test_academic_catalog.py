@@ -6,7 +6,7 @@ def test_window_concurrent_edits_cannot_silently_overwrite_and_duplicates_rollba
     from sqlalchemy.orm import Session
     from sqlalchemy.orm.exc import StaleDataError
     from app.db.schema import initialize_database
-    from app.models.planning import StudyTypeTimeWindow
+    from app.models.planning import CohortCalendarTimeWindow
     from app.services.academic_catalog import create_time_window, update_time_window
     from tests.fixtures.dated_intensive_windows import seed_forms
     engine = create_engine('sqlite://')
@@ -17,18 +17,18 @@ def test_window_concurrent_edits_cannot_silently_overwrite_and_duplicates_rollba
         db.commit()
         row_id = row.id
     with Session(engine) as first, Session(engine) as second:
-        one, two = first.get(StudyTypeTimeWindow,row_id), second.get(StudyTypeTimeWindow,row_id)
+        one, two = first.get(CohortCalendarTimeWindow,row_id), second.get(CohortCalendarTimeWindow,row_id)
         update_time_window(first,one,kind='dated',date='2026-11-09',start_time='09:00',end_time='13:00',expected_revision=1)
         first.commit()
         with pytest.raises(StaleDataError):
             update_time_window(second,two,kind='dated',date='2026-11-09',start_time='09:00',end_time='14:00',expected_revision=1)
         second.rollback()
-        assert second.get(StudyTypeTimeWindow,row_id).end_time.hour == 13
+        assert second.get(CohortCalendarTimeWindow,row_id).end_time.hour == 13
         with pytest.raises(AcademicCatalogError) as duplicate:
             create_time_window(second,1,kind='dated',date='2026-11-09',start_time='09:00',end_time='13:00',is_intensive=True)
         second.rollback()
         assert duplicate.value.status_code == 409
-        assert second.query(StudyTypeTimeWindow).count() == 1
+        assert second.query(CohortCalendarTimeWindow).count() == 1
 
 from app.services.academic_catalog import (
     AcademicCatalogError,
@@ -76,7 +76,7 @@ def test_missing_window_is_visible_but_unavailable():
         semester_assigned=True,
         semester_active=True,
         cohort_active=True,
-        study_type_active=True,
+        cohort_calendar_active=True,
         has_active_window=False,
         resources_valid=True,
     )
@@ -89,13 +89,13 @@ def test_inactive_parent_reasons_are_categorized():
         semester_assigned=True,
         semester_active=False,
         cohort_active=False,
-        study_type_active=False,
+        cohort_calendar_active=False,
         has_active_window=False,
         resources_valid=True,
     )
     assert reasons == [
         "SEMESTER_INACTIVE",
         "COHORT_INACTIVE",
-        "STUDY_TYPE_INACTIVE",
+        "COHORT_CALENDAR_INACTIVE",
         "MISSING_ACTIVE_TIME_WINDOW",
     ]

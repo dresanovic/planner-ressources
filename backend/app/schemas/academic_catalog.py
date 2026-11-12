@@ -75,11 +75,15 @@ class CohortUpdate(CohortInput):
     expected_revision: int = Field(alias="expectedRevision")
 
 
-class StudyTypeInput(BaseModel):
-    name: str
+class CohortCalendarInput(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    cohort_id: int = Field(alias="cohortId", ge=1)
+    semester_id: int = Field(alias="semesterId", ge=1)
+    start_date: date = Field(alias="startDate")
+    end_date: date = Field(alias="endDate")
 
 
-class StudyTypeUpdate(StudyTypeInput):
+class CohortCalendarUpdate(CohortCalendarInput):
     model_config = ConfigDict(populate_by_name=True)
     expected_revision: int = Field(alias="expectedRevision")
 
@@ -99,7 +103,7 @@ class TimeWindowInput(BaseModel):
 
 class TimeWindowUpdate(TimeWindowInput):
     expected_revision: int = Field(alias="expectedRevision")
-    study_type_id: Any = Field(default=None, alias="studyTypeId")
+    cohort_calendar_id: Any = Field(default=None, alias="cohortCalendarId")
 
 
 class CourseDetailsInput(BaseModel):
@@ -112,7 +116,6 @@ class CourseDetailsInput(BaseModel):
     preferred_session_units: float | None = Field(default=None, alias="preferredSessionUnits", strict=True, allow_inf_nan=False, multiple_of=0.5)
     semester_id: int = Field(alias="semesterId")
     cohort_id: int = Field(alias="cohortId")
-    study_type_id: int = Field(alias="studyTypeId")
 
 
 class CourseInput(CourseDetailsInput):
@@ -170,7 +173,7 @@ class CohortMutationResult(CohortResponse):
 class TimeWindowResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     id: int
-    study_type_id: int = Field(alias="studyTypeId")
+    cohort_calendar_id: int = Field(alias="cohortCalendarId")
     kind: str
     weekday: int | None
     date: date | None
@@ -185,7 +188,7 @@ class TimeWindowResponse(BaseModel):
     usage: UsageSummaryResponse
 
 
-class StudyTypeResponse(BaseModel):
+class CohortCalendarResponse(CohortCalendarInput):
     model_config = ConfigDict(populate_by_name=True)
     id: int
     name: str
@@ -208,7 +211,7 @@ class CourseResponse(BaseModel):
     preferred_session_units: float | None = Field(default=None, alias="preferredSessionUnits")
     semester: EntitySummaryResponse | None
     cohort: EntitySummaryResponse
-    study_type: EntitySummaryResponse = Field(alias="studyType")
+    cohort_calendar: EntitySummaryResponse | None = Field(alias="cohortCalendar")
     lecturer: EntitySummaryResponse | None
     room: EntitySummaryResponse | None
     is_active: bool = Field(alias="isActive")

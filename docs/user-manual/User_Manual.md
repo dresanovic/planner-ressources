@@ -1,5 +1,7 @@
 # Resource Planner User Manual
 
+Updated: 11.11.2026. Instructions use the shipped German labels; customer terminology may differ.
+
 ## Quick Start
 
 ### What the system does
@@ -10,155 +12,13 @@ The planner application is German. Accountless lecturers can review only the ass
 
 ### Before you start
 
-Choose one way to access the application:
+Open the address supplied by your organization. You need an active planner account
+and the username plus password or one-time setup link supplied by the system administrator.
 
-- **Hosted installation:** use the address supplied by your organization.
-- **Docker Desktop installation:** use a current Docker Desktop installation, an exact Resource Planner image tag supplied by the maintainer, and a dedicated local data folder.
-- **Developer start:** use Python with `backend/requirements.txt`, Node.js and npm with `client/package.json`, and two terminal windows.
-
-You need an active planner account. If your organization already hosts the application, obtain your username and either your initial one-time setup link or password from the system administrator. If no administrator exists yet, the installation operator must complete [First administrator setup](#first-administrator-setup).
-
-### Install and open with Docker Desktop on Windows
-
-This procedure is for a local single-computer installation. It runs the complete browser application and backend in one Linux container. Docker Desktop's current Windows requirements and installer are available in the [official Docker Desktop installation guide](https://docs.docker.com/desktop/setup/install/windows-install/).
-
-#### Install Docker Desktop
-
-1. Download and run the official Docker Desktop installer.
-2. Use the recommended per-user installation and WSL 2 backend unless your organization requires another supported configuration.
-3. Start **Docker Desktop**, accept its terms when prompted, and wait until the container engine is running.
-4. On Windows, confirm Docker Desktop is using **Linux containers**.
-
-#### Download the Resource Planner image
-
-1. In Docker Desktop, open the integrated terminal from the bottom-right corner.
-2. Pull the exact release tag supplied by the maintainer:
-
-   ```powershell
-   docker pull ghcr.io/dresanovic/planner-ressources:<release-tag>
-   ```
-
-3. If the package is private, authenticate first with the GitHub username and package-read token supplied by your deployment administrator. Never put the token in the container settings, `.env`, or this manual.
-
-**Expected result:** The image appears under **Images** in Docker Desktop. Do not substitute `latest` when a tested exact release tag is available.
-
-#### Prepare persistent data and startup values
-
-1. Create a dedicated folder such as `C:\DockerData\planner-ressources`. Keep it outside OneDrive or another synchronized folder.
-2. Open PowerShell and generate the required stable private key:
-
-   ```powershell
-   $key = New-Object byte[] 32
-   $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
-   $rng.GetBytes($key)
-   $rng.Dispose()
-   [BitConverter]::ToString($key).Replace('-', '').ToLowerInvariant()
-   ```
-
-3. Copy the displayed 64-character value to a secure location. Keep the same value across container restarts and upgrades. Never publish or reuse it as an account credential.
-4. For the first administrator setup only, generate a separate one-time bootstrap value:
-
-   ```powershell
-   python -c "import secrets; print(secrets.token_hex(32))"
-   ```
-
-5. Keep the two values distinct and private. The bootstrap value is removed after it is redeemed.
-
-#### Create and run the container
-
-1. In Docker Desktop, open **Images**.
-2. Find the pulled Resource Planner image and select **Run**.
-3. Expand **Optional settings** and enter:
-
-   | Setting | Value |
-   | --- | --- |
-   | Container name | `planner-ressources` |
-   | Host port | `8080` |
-   | Container port | `8080` |
-   | Host path | `C:\DockerData\planner-ressources` or your dedicated folder |
-   | Container path | `/data` |
-   | Environment variable 1 | `LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY` |
-   | Environment value 1 | The stable generated 64-character key |
-   | Environment variable 2, first setup only | `PLANNER_BOOTSTRAP_CREDENTIAL` |
-   | Environment value 2 | The separate one-time bootstrap value |
-   | Optional environment variable 3, isolated local HTTP evaluation only | `APP_ENV` |
-   | Optional environment value 3 | `development` |
-
-4. Select **Run**.
-5. Open **Containers** and wait until `planner-ressources` is running and healthy.
-6. For an isolated local container explicitly configured with `APP_ENV=development`, open `http://localhost:8080`. Otherwise, open the installation's HTTPS address. Use `http://localhost:8080/health` only to confirm a production-mode local container is healthy; authenticated production use requires HTTPS.
-
-**Expected result:** Resource Planner opens at **Anmelden**. Its database is stored in the mapped host folder and remains available when the container is restarted or replaced. The health address `http://localhost:8080/health` returns `{"status":"ok"}`.
-
-If port `8080` is already occupied, use host port `8081` and keep container port `8080`. The local health check then uses `http://localhost:8081/health`; authenticated use still follows the installation's HTTPS address unless this is an isolated container explicitly started in development mode.
-
-### Open the system locally
-
-Use this developer procedure only when you need to run the frontend and backend from source instead of Docker Desktop.
-
-1. In the first PowerShell terminal, open the `backend` directory.
-2. Install the backend packages:
-
-   ```powershell
-   python -m pip install -r requirements.txt
-   ```
-
-3. Optional: create or refresh the demonstration dataset:
-
-   ```powershell
-   python scripts/seed_dummy_planning_data.py
-   ```
-
-4. Before the first administrator exists, generate a one-time bootstrap value and supply it to the backend process:
-
-   ```powershell
-   $env:PLANNER_BOOTSTRAP_CREDENTIAL=python -c "import secrets; print(secrets.token_hex(32))"
-   $env:PLANNER_BOOTSTRAP_CREDENTIAL
-   ```
-
-5. Start the backend:
-
-   ```powershell
-   python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-   ```
-
-6. In the second PowerShell terminal, open the `client` directory.
-7. Install the client packages:
-
-   ```powershell
-   npm install
-   ```
-
-8. Point the client at the backend and start it:
-
-   ```powershell
-   $env:VITE_API_BASE_URL='http://127.0.0.1:8000'
-   npm run dev -- --host 127.0.0.1 --port 5173
-   ```
-
-9. Open `http://127.0.0.1:5173` in a browser.
-
-**Expected result:** The application opens at **Anmelden**. The backend health address `http://127.0.0.1:8000/health` returns `{"status":"ok"}`.
-
-The default database is `backend/planner.db`. Set `DATABASE_URL` before starting the backend only when your environment uses a different SQLAlchemy database URL.
-
-When using IntelliJ's default Vite start instead of the command above, use `localhost` consistently: set `VITE_API_BASE_URL=http://localhost:8000` and open `http://localhost:5173`. Do not mix `localhost` and `127.0.0.1`; the strict session cookie will not cross between them.
-
-### First administrator setup
-
-Complete this procedure only while no administrator exists.
-
-1. On **Anmelden**, select **Erste Systemadministration einrichten**.
-2. Enter the one-time value in **Startzugang**.
-3. Choose a unique **Benutzername** and enter the administrator's **Anzeigename**.
-4. Enter and confirm a password containing 12–128 characters. It may contain spaces and does not need particular character classes, but it must not equal the username.
-5. Select **Systemadministration einrichten**.
-6. Remove `PLANNER_BOOTSTRAP_CREDENTIAL` from the backend or container configuration and restart it. Keep the database, `/data` mapping, and fingerprint key unchanged.
-7. Return to **Anmelden** and sign in with the new username and password.
-
-**Expected result:** Exactly one active system administrator exists and can use all planner workflows plus **Planer-Konten**. The bootstrap value cannot be reused and does not sign the administrator in automatically.
-
-For Docker Desktop, removing a container does not remove a bind-mounted database. Recreate the container without `PLANNER_BOOTSTRAP_CREDENTIAL`, using the same host folder, `/data` mapping, image, ports, HTTPS configuration, and stable fingerprint key.
+For a new local installation, the operator should first follow
+[Install and open with Docker Desktop](#install-and-open-with-docker-desktop-on-windows)
+or [Open the system locally](#open-the-system-locally), then complete
+[First administrator setup](#first-administrator-setup).
 
 ### Sign in and finish
 
@@ -200,9 +60,11 @@ If planning data already exists, skip this section.
 3. Under **Kursdetails**, review the inherited or custom date boundaries and the read-only Studienart time windows. If you change the dates, select **Datumsgrenzen speichern** before continuing.
 4. Open **Plan erzeugen**. Under **Stundenpläne erzeugen**, choose a cohort in **Kohorte filtern** to narrow the list, or leave **Alle Kohorten** selected.
 5. Select each intended Lehrveranstaltung individually, up to 20 in total. Open **Gesamte Auswahl prüfen** to check every selected course, including courses hidden by the current filter.
-6. Optionally enter future unavailable dates as comma-separated `TT.MM.JJJJ` values, then select **Ausgewählte Lehrveranstaltungen optimieren**. If a comparison opens for existing sessions, review it before accepting or cancelling.
+6. Optionally enter future unavailable dates as comma-separated `TT.MM.JJJJ` values, then select **Ausgewählte Lehrveranstaltungen optimieren**.
+7. Review the displayed **Algorithmus** and time allowance, then select **Optimierung starten**.
+8. If **Stundenpläne vergleichen** opens, check the whole selection and choose **Neu erzeugten Stundenplan übernehmen** to save, or **Abbrechen** to keep the saved schedules.
 
-**Expected result:** The same conflict-aware workflow handles both one and several selected Lehrveranstaltungen. It saves valid complete or improved partial results, keeps protected schedules unchanged, and explains remaining units or failures for each selection. If the prepared input becomes stale, no result from that preparation is saved.
+**Expected result:** One workflow plans the complete selection and reports coverage and remaining units. A proposal awaiting your decision remains unsaved until you accept it. Protected teaching and exams stay unchanged; stale preparations cannot be saved.
 
 #### Find a cohort's Lehrveranstaltungen for editing
 
@@ -253,7 +115,7 @@ If planning data already exists, skip this section.
 
 ### Where to go next
 
-Use the Detailed Guide for account administration, password and session behavior, catalog maintenance, custom constraints, calendar summaries and filters, resource availability, holidays, manual session management, exam rules, lifecycle recovery, limitations, and troubleshooting.
+Use the Detailed Guide for installation and account administration, dated/intensive windows, planning strategies, result proofs and continuation, lecturer calendar downloads, and troubleshooting.
 
 ## Detailed Guide
 
@@ -379,6 +241,155 @@ This procedure is for the infrastructure operator and the existing sole administ
 
 **Expected result:** The sole administrator receives the new password, any former session ends, and the recovery value becomes permanently unusable. There is no account selector, operator account, email, SSO, or external identity service.
 
+### Install and open with Docker Desktop on Windows
+
+This procedure is for a local single-computer installation. It runs the complete browser application and backend in one Linux container. Docker Desktop's current Windows requirements and installer are available in the [official Docker Desktop installation guide](https://docs.docker.com/desktop/setup/install/windows-install/).
+
+#### Install Docker Desktop
+
+1. Download and run the official Docker Desktop installer.
+2. Use the recommended per-user installation and WSL 2 backend unless your organization requires another supported configuration.
+3. Start **Docker Desktop**, accept its terms when prompted, and wait until the container engine is running.
+4. On Windows, confirm Docker Desktop is using **Linux containers**.
+
+#### Download the Resource Planner image
+
+1. In Docker Desktop, open the integrated terminal from the bottom-right corner.
+2. Pull the exact release tag supplied by the maintainer:
+
+   ```powershell
+   docker pull ghcr.io/dresanovic/planner-ressources:<release-tag>
+   ```
+
+3. If the package is private, authenticate first with the GitHub username and package-read token supplied by your deployment administrator. Never put the token in the container settings, `.env`, or this manual.
+
+**Expected result:** The image appears under **Images** in Docker Desktop. Do not substitute `latest` when a tested exact release tag is available.
+
+#### Prepare persistent data and startup values
+
+1. Create a dedicated folder such as `C:\DockerData\planner-ressources`. Keep it outside OneDrive or another synchronized folder.
+2. Open PowerShell and generate the required stable private key:
+
+   ```powershell
+   $key = New-Object byte[] 32
+   $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+   $rng.GetBytes($key)
+   $rng.Dispose()
+   [BitConverter]::ToString($key).Replace('-', '').ToLowerInvariant()
+   ```
+
+3. Copy the displayed 64-character value to a secure location. Keep the same value across container restarts and upgrades. Never publish or reuse it as an account credential.
+4. For the first administrator setup only, generate a separate one-time bootstrap value:
+
+   ```powershell
+   python -c "import secrets; print(secrets.token_hex(32))"
+   ```
+
+5. Keep the two values distinct and private. The bootstrap value is removed after it is redeemed.
+6. Create a separate folder such as `C:\DockerData\planner-optimization` and place a valid `policy.json` in it using [Configure teaching algorithms and time allowances](#configure-teaching-algorithms-and-time-allowances). This file is required for new teaching runs.
+
+#### Create and run the container
+
+1. In Docker Desktop, open **Images**.
+2. Find the pulled Resource Planner image and select **Run**.
+3. Expand **Optional settings** and enter:
+
+   | Setting | Value |
+   | --- | --- |
+   | Container name | `planner-ressources` |
+   | Host port | `8080` |
+   | Container port | `8080` |
+   | Host path | `C:\DockerData\planner-ressources` or your dedicated folder |
+   | Container path | `/data` |
+   | Environment variable 1 | `LECTURER_REVIEW_SOURCE_FINGERPRINT_KEY` |
+   | Environment value 1 | The stable generated 64-character key |
+   | Environment variable 2, first setup only | `PLANNER_BOOTSTRAP_CREDENTIAL` |
+   | Environment value 2 | The separate one-time bootstrap value |
+   | Optional environment variable 3, isolated local HTTP evaluation only | `APP_ENV` |
+   | Optional environment value 3 | `development` |
+   | Additional host path | `C:\DockerData\planner-optimization` |
+   | Additional container path | `/config/optimization` (read-only where supported) |
+   | Teaching policy environment variable | `TEACHING_OPTIMIZATION_POLICY_FILE` |
+   | Teaching policy environment value | `/config/optimization/policy.json` |
+
+4. Select **Run**.
+5. Open **Containers** and wait until `planner-ressources` is running and healthy.
+6. For an isolated local container explicitly configured with `APP_ENV=development`, open `http://localhost:8080`. Otherwise, open the installation's HTTPS address. Use `http://localhost:8080/health` only to confirm a production-mode local container is healthy; authenticated production use requires HTTPS.
+
+**Expected result:** Resource Planner opens at **Anmelden**. Its database is stored in the mapped host folder and remains available when the container is restarted or replaced. The health address `http://localhost:8080/health` returns `{"status":"ok"}`.
+
+If port `8080` is already occupied, use host port `8081` and keep container port `8080`. The local health check then uses `http://localhost:8081/health`; authenticated use still follows the installation's HTTPS address unless this is an isolated container explicitly started in development mode.
+
+### Open the system locally
+
+Use this developer procedure only when you need to run the frontend and backend from source instead of Docker Desktop.
+
+1. In the first PowerShell terminal, open the `backend` directory.
+2. Install the backend packages:
+
+   ```powershell
+   python -m pip install -r requirements.txt
+   ```
+
+3. Optional: create or refresh the demonstration dataset:
+
+   ```powershell
+   python scripts/seed_dummy_planning_data.py
+   ```
+
+4. Before the first administrator exists, generate a one-time bootstrap value and supply it to the backend process:
+
+   ```powershell
+   $env:PLANNER_BOOTSTRAP_CREDENTIAL=python -c "import secrets; print(secrets.token_hex(32))"
+   $env:PLANNER_BOOTSTRAP_CREDENTIAL
+   ```
+
+5. Start the backend:
+
+   ```powershell
+   python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+   ```
+
+6. In the second PowerShell terminal, open the `client` directory.
+7. Install the client packages:
+
+   ```powershell
+   npm install
+   ```
+
+8. Point the client at the backend and start it:
+
+   ```powershell
+   $env:VITE_API_BASE_URL='http://127.0.0.1:8000'
+   npm run dev -- --host 127.0.0.1 --port 5173
+   ```
+
+9. Open `http://127.0.0.1:5173` in a browser.
+
+**Expected result:** The application opens at **Anmelden**. The backend health address `http://127.0.0.1:8000/health` returns `{"status":"ok"}`.
+
+Before generating teaching, ensure `config/optimization/policy.json` at the project root exists and is valid, or set `TEACHING_OPTIMIZATION_POLICY_FILE` before starting the backend. See [Configure teaching algorithms and time allowances](#configure-teaching-algorithms-and-time-allowances).
+
+The default database is `backend/planner.db`. Set `DATABASE_URL` before starting the backend only when your environment uses a different SQLAlchemy database URL.
+
+When using IntelliJ's default Vite start instead of the command above, use `localhost` consistently: set `VITE_API_BASE_URL=http://localhost:8000` and open `http://localhost:5173`. Do not mix `localhost` and `127.0.0.1`; the strict session cookie will not cross between them.
+
+### First administrator setup
+
+Complete this procedure only while no administrator exists.
+
+1. On **Anmelden**, select **Erste Systemadministration einrichten**.
+2. Enter the one-time value in **Startzugang**.
+3. Choose a unique **Benutzername** and enter the administrator's **Anzeigename**.
+4. Enter and confirm a password containing 12–128 characters. It may contain spaces and does not need particular character classes, but it must not equal the username.
+5. Select **Systemadministration einrichten**.
+6. Remove `PLANNER_BOOTSTRAP_CREDENTIAL` from the backend or container configuration and restart it. Keep the database, `/data` mapping, and fingerprint key unchanged.
+7. Return to **Anmelden** and sign in with the new username and password.
+
+**Expected result:** Exactly one active system administrator exists and can use all planner workflows plus **Planer-Konten**. The bootstrap value cannot be reused and does not sign the administrator in automatically.
+
+For Docker Desktop, removing a container does not remove a bind-mounted database. Recreate the container without `PLANNER_BOOTSTRAP_CREDENTIAL`, using the same host folder, `/data` mapping, image, ports, HTTPS configuration, and stable fingerprint key.
+
 ### Operate a Docker Desktop installation
 
 These procedures are for the person responsible for the local installation.
@@ -447,6 +458,29 @@ The SQLite backup contains planner accounts, password hashes, consumed startup-v
 
 The image is replaceable; the mapped `/data` folder and its key are installation data and must be preserved.
 
+#### Configure teaching algorithms and time allowances
+
+This procedure is for the installation operator. It does not change exam generation.
+
+1. Provide a UTF-8 JSON policy file. For a source checkout, the default location is `config/optimization/policy.json` at the project root. An explicit `TEACHING_OPTIMIZATION_POLICY_FILE` path takes precedence.
+2. Set `activeAlgorithm` to exactly `standard`, `standard_optimized`, `cohort` or `lecturer`. Set `defaultSeconds` and `ceilingSeconds` to positive whole seconds, with the default no greater than the ceiling. For example:
+
+   ```json
+   {
+     "activeAlgorithm": "standard",
+     "defaultSeconds": 300,
+     "ceilingSeconds": 1800
+   }
+   ```
+
+3. With `compose.yaml`, provision the host file `config/optimization/policy.json` in the mounted directory. The supplied Compose configuration mounts that directory read-only at `/config/optimization` and selects `/config/optimization/policy.json`. For a Docker Desktop GUI container, add the equivalent directory mapping and policy-path environment value when creating/recreating it. Preserve the data and other installation settings.
+4. Replace the policy file as a complete valid JSON file. Do not add comments, duplicate/unknown keys or unsupported algorithm values.
+5. Prepare a new teaching selection and check its displayed algorithm and allowance before starting.
+
+**Expected result:** New preparations read the current policy without an application restart. A policy change between preparation and Start requires preparation again. Already-started operations and their continuations keep captured settings. Planners cannot edit the algorithm or allowance in the interface.
+
+A missing or invalid policy blocks new teaching preparation/Start with correction guidance; it does not silently select another algorithm. The health endpoint remains available. Actual container mount/permission acceptance is still pending; verify policy visibility and replacement in an isolated deployment before rollout. Follow [Standard Optimized activation](../../specs/I-012-standard-optimized/quickstart.md) for its required backend migration before selecting that algorithm.
+
 ### Language, terminology, and date format
 
 The application uses one German terminology set per installation. There is no language switch or in-application label editor. With the shipped defaults, the configurable concepts include **Lehrveranstaltung**, **Lehrende Person**, **Kohorte**, **Raum**, **Planung**, and **Stammdaten**. A customer installation may use different wording for these concepts while retaining the same functions and stored record names.
@@ -486,7 +520,29 @@ Use **Stammdaten** to create, edit, archive, reactivate, and safely delete the r
 4. Create Lehrende and Räume.
 5. Create the Lehrveranstaltung last, linking the required records.
 
-Lehrveranstaltungen, Kohorten, and Räume require positive whole-number values where applicable. A Lehrveranstaltung's minimum session size cannot exceed its maximum.
+Lehrveranstaltungen, Kohorten, and Räume require positive whole-number values where applicable. A Lehrveranstaltung's minimum session size cannot exceed its maximum. **Bevorzugte LE pro Termin (optional)** may use half steps: a half value gives equal preference to its two neighboring whole sizes; actual sessions still use whole LE. If left blank, the preference is the midpoint of minimum and maximum.
+
+#### Add recurring or dated teaching windows
+
+1. Open **Stammdaten > Zeitfenster**.
+2. Under **Erstellen: Zeitfenster**, choose **Art**: **Wöchentlich** for a recurring weekday or **Einmaliges Datum** for one calendar date.
+3. Select one **Studienform**. Enter the **Wochentag** or the full **Datum** in `TT.MM.JJJJ`.
+4. Enter **Beginn** and **Ende** within the same day. For a dated window, optionally select **Intensivwoche**.
+5. Select **Erstellen**.
+
+**Expected result:** The active window becomes an additional teaching opportunity for courses mapped to that Studienform. Dated windows appear under **Einmalige Datumsfenster**; recurring windows appear under **Wöchentliche Zeitfenster**. A dated window never repeats in a later year.
+
+The course's planning dates, holidays, resources and saved protected appointments still apply. A window outside the course's effective planning period adds no usable time. Overlapping windows contribute their combined available interval once, rather than creating duplicate capacity. The **Intensivwoche** flag expresses a preference; it does not force a session or override a holiday.
+
+#### Copy a teaching window
+
+1. Find the source under **Stammdaten > Zeitfenster** and select **Kopieren**.
+2. In **Ungespeicherte Kopie**, change the Studienform, weekday/date or times as needed. The source's window type is retained.
+3. Select **Kopie speichern**, or **Kopie verwerfen** to leave without creating anything.
+
+**Expected result:** Saving creates a separate record. Later edits to the copy do not affect the source, and later source edits do not affect the copy.
+
+An exact duplicate of the same type, Studienform, weekday/date and times is rejected, including duplicates of archived records. Changing only **Intensivwoche** does not make it a different window. Change the copied values or edit/reactivate the existing record. The type of an existing window or pending copy cannot be switched; create a new window to use another type.
 
 #### Find a course before editing it
 
@@ -566,7 +622,7 @@ When both exist, Kalender lets you switch between **Arbeitsrevision R…** and *
 
 #### Use default constraints
 
-The default planning period comes from the Semester. Weekly teaching windows always come from the Lehrveranstaltung's current Studienart mappings and are displayed read-only in Kalender. They apply whether one or several Lehrveranstaltungen are selected.
+The default planning period comes from the Semester. Recurring and dated teaching windows come from the Lehrveranstaltung's current Studienart mappings and are displayed read-only in Kalender. They apply whether one or several Lehrveranstaltungen are selected.
 
 #### Set custom date boundaries
 
@@ -576,7 +632,7 @@ The default planning period comes from the Semester. Weekly teaching windows alw
 
 The saved dates become active immediately and existing sessions are revalidated, but they are not moved automatically. Saving constraints is separate from generation, so a later failed or cancelled generation does not undo the saved dates. Unsaved date changes must be saved or discarded before optimization can start.
 
-To change weekly windows, update the Lehrveranstaltung's Studienart or its mapped Zeitfenster under **Stammdaten**. The new mapping becomes active immediately, revalidates existing sessions, and invalidates any preparation made with the previous mapping. A Lehrveranstaltung is unavailable for automatic generation when no active mapped window can hold its minimum session length.
+To change the windows, update the Lehrveranstaltung's Studienart or its mapped Zeitfenster under **Stammdaten**. The new mapping becomes active immediately, revalidates existing sessions, and invalidates any preparation made with the previous mapping. A Lehrveranstaltung is unavailable for automatic generation when no active mapped window can hold its minimum session length.
 
 #### Restore defaults
 
@@ -590,16 +646,44 @@ One unified conflict-aware workflow is used for every teaching-generation reques
 2. Under **Stundenpläne erzeugen**, optionally narrow the list with **Kohorte filtern**, then select 1 to 20 Lehrveranstaltungen individually. Review **Gesamte Auswahl prüfen** before proceeding.
 3. Optionally enter comma-separated future unavailable dates in `TT.MM.JJJJ` format, for example `26.10.2026, 02.11.2026`.
 4. Select **Ausgewählte Lehrveranstaltungen optimieren**.
-5. If a comparison opens, review the current and proposed schedules for the complete selection, including hidden selected courses.
-6. Accept the alternative only if you want to replace the selected saved teaching sessions, including any manual edits. Choose **Abbrechen** to keep all current sessions.
+5. Review **Algorithmus**, **Optimierungszeit** and **Installationsgrenze**, then select **Optimierung starten**. **Zurück zur Auswahl** returns without starting.
+6. Keep the page open while preparation, optimization and result checking finish. The progress area shows elapsed time and the captured allowance.
+7. If **Stundenpläne vergleichen** opens, review the current and proposed schedules for the complete selection, including hidden selected courses.
+8. Choose **Neu erzeugten Stundenplan übernehmen** only if you want to save the whole proposal, replacing selected saved teaching sessions including manual appointments. Choose **Abbrechen** to keep all current sessions.
 
-If you want to improve the proposal before saving, select **Weiter optimieren**.
+**Expected result:** The complete selection is planned together. A fully proved Standard result with no selected saved teaching can be saved automatically. Existing selected teaching, unproved results, heuristic results, Standard optimiert results and continued proposals require explicit acceptance. There is no per-course acceptance. Read the final saved/cancelled status before assuming a change occurred.
+
+#### Understand the teaching algorithm
+
+The installation operator chooses the teaching algorithm and allowance. Planners see the captured algorithm before starting; it stays fixed throughout that operation, including **Weiter optimieren**. Exam generation uses its separate workflow.
+
+| Displayed algorithm | What it aims to do |
+| --- | --- |
+| **Standard** | Uses the existing exact search and ordered preferences. The allowance can expire before coverage or preference proofs finish. |
+| **Standard optimiert** | Adds even distribution of each course's teaching across feasible weeks of its planning period and reserves search time for that preference. |
+| **Kohorte** | Builds and repairs a schedule with attention to weekly cohort load, course rhythm and room continuity. It does not prove global optimality. |
+| **Lehrperson** | Builds and repairs a schedule with attention to weekly lecturer load and ordered lecturer portions. It does not prove global optimality. |
+
+No strategy guarantees more coverage or faster completion on every selection.
+
+For **Lehrperson**, review **Lehrpersonenanteile in fester Reihenfolge** when shown. The current fallback divides whole required LE among active eligible lecturers in reference-code order; earlier lecturers receive any remainder. Portions are placed in that order, and unmet portions are not silently transferred to another lecturer. For example, 11 LE with two eligible lecturers produces portions of 6 and 5 LE. A general editor for planner-entered fixed allocations is not available. An unsuitable portion/session-size combination can leave LE open; check the displayed reasons before accepting.
+
+#### Continue searching without discarding the proposal
+
+1. In **Stundenpläne vergleichen**, select **Weiter optimieren**.
+2. Wait for the additional search and result check.
+3. Review the returned proposal, then accept, continue again, or cancel.
+
+**Expected result:** The proposal remains unsaved until you accept it.
 The same operation continues from the current proposal with another time allowance
 of the same duration and the same selected algorithm. Proven higher-priority goals
 are retained; a lower-priority preference may change when a higher-priority goal
 improves. If no improvement is found, the previous proposal remains available.
 Continuation does not save schedules. Review and accept the proposal when ready.
 Changed planning inputs require a fresh preparation instead of continuation.
+If continuation fails, the previous proposal remains reviewable when its context is still valid. Repeated delivery of the same continuation request does not grant another allowance. More time does not guarantee improvement or an eventual optimum.
+
+#### What the search respects
 
 When the installation uses **Standard optimiert**, a newly prepared run also
 evaluates the selected saved schedules as a possible starting arrangement. They
@@ -614,21 +698,43 @@ protected occupancy.
 
 The optimizer:
 
-- maximizes scheduled teaching units
+- seeks the greatest scheduled teaching units; incomplete search may leave this maximum unproved
 - avoids new lecturer, Raum, and Kohorte overlaps
-- respects active course dates, current Studienart windows, eligibility, availability, Raum capacity, and holidays
+- respects active course dates, recurring/dated Studienart windows, session sizes and breaks, eligibility, availability, Raum capacity, and holidays
 - treats unselected teaching sessions and active exams as fixed occupancy that it cannot move
 - ensures teaching for a selected Lehrveranstaltung ends no later than the start of its active exam
 - ignores past exams as generation occupancy while leaving those historical exams unchanged
-- may retain an improved partial schedule with understandable remaining-unit reasons
-- does not replace an existing Lehrveranstaltung result with fewer units or an otherwise worse approved comparison
+- may offer a valid partial schedule with remaining-unit reasons or an explicit statement of uncertainty
+- replaces selected saved teaching only through the required whole-selection decision
 - applies stable preference priorities when several maximum-unit arrangements are possible
 
 An approved replacement may replace manual edits in a selected Lehrveranstaltung. Cancel the confirmation to keep all current schedules unchanged.
 
-After the operation, review **Gespeichertes Optimierungsergebnis**. It separates complete, improved partial, unchanged, failed, and stale outcomes. Blocking evidence distinguishes a teaching appointment from an active exam and identifies lecturer, Raum, Kohorte, or the active-exam teaching boundary. Use **Fehlgeschlagene oder veraltete Lehrveranstaltungen erneut versuchen** to prepare affected records again from current data.
+After saving, review **Gespeichertes Optimierungsergebnis** and the Kalender. Blocking evidence distinguishes teaching from an active exam and identifies lecturer, Raum, Kohorte or the active-exam teaching boundary. A valid partial alternative can have fewer units than the current warned schedule; compare the totals and consequences before accepting.
 
 The optimality statement applies only to the prepared snapshot. If any selected input becomes stale before saving, no selected result from that preparation is saved and current drafts remain unchanged. Refresh the input and prepare the complete selection again.
+
+#### Read coverage and proof information
+
+**Harte Regeln geprüft** means the proposal satisfies the checked hard rules. It does not mean every LE is placed or the arrangement is optimal.
+
+- Compare **Erforderlich**, **Geplant** and **Verbleibend** for the whole selection and each course.
+- A coverage proof concerns this selection and its fixed occupancy, rather than independent course maxima or the whole semester. Complete coverage can be established while preferences remain improvable.
+- **Nachgewiesen**, **Unvollständig nachgewiesen**, **Nicht versucht** and **Nur bedingt nachgewiesen** describe each objective. A measured value alone is not a proof. A conditional proof holds under the listed higher-priority values.
+- An upper bound limits how many extra LE might be possible; it does not promise that those LE can be placed. **Abstand zum möglichen Maximum unbekannt** means no reliable gap is available.
+- An observed restriction is not necessarily proof that every remaining LE is impossible. Timeout or an unsuccessful heuristic search alone does not prove insufficient capacity.
+
+With marked intensive windows, priorities are total teaching LE first, intensive teaching LE second, then daily LV variety per cohort. Weekly distribution and room preferences follow those goals. Intensive LE count actual teaching time within marked windows, excluding breaks; overlaps are counted once. A single-LV day remains allowed. An intensive marker does not force placement or override a hard rule.
+
+#### Cancel or recover an optimization
+
+Use **Abbrechen** while running and wait for the confirmed outcome. Cancellation confirmed before saving preserves saved schedules; if saving already completed, the application reports the saved result. Deliberate navigation out of the generation context cancels provisional work.
+
+Keep the original page open until you decide. Reloading/closing it, losing the signed-in session or restarting the backend can make an unsaved proposal unavailable. Saved schedules remain; prepare a fresh run rather than trying to recover an old review.
+
+If **Status unbestätigt** appears, wait for the connection/status check. Save decisions are blocked until the outcome is confirmed. Check current saved state before repeating an action whose outcome is unknown.
+
+If no usable proposal exists, the run saves nothing. Review errors, correct planning data and prepare again. Ask the installation operator about the allowance or try a smaller selection. A stale proposal must be replaced by a fresh preparation.
 
 #### Select courses across cohorts safely
 
@@ -743,7 +849,7 @@ Current warnings can identify:
 - **Lehrendenkonflikt**, **Raumkonflikt**, and **Kohortenkonflikt** as separate categories, including the affected resource and related appointment context
 - insufficient Raum capacity
 - a session outside its active course date boundaries
-- **Studienart-Zeitfenster verletzt** when a session is outside the current mapped weekly windows
+- **Studienart-Zeitfenster verletzt** when a session is outside the current mapped recurring or dated windows
 - a session on an institution holiday
 - inactive, unavailable, ineligible, or missing planning resources
 - an exam that no longer satisfies a hard constraint
@@ -841,6 +947,22 @@ Before leaving an open session or changing to a filter that would hide it, the a
 
 Expired, revoked, replaced, or revision-ended links expose no schedule data. Reloading the page obtains the current assignment scope; sessions reassigned away from the lecturer are no longer shown.
 
+#### Download a lecturer calendar file
+
+This action is available to a lecturer through the private review link.
+
+1. Open the review link and check the lecturer, Semester and revision.
+2. Select **Kalender herunterladen**.
+3. Read the complete event count and the privacy/static-snapshot notice. The export includes all personal teaching and exam assignments in scope, regardless of calendar filters or visible dates.
+4. Select **Download fortsetzen**, or **Abbrechen** to leave without downloading.
+5. Save the `.ics` file privately. If your organization has verified its Outlook import procedure, use that procedure and check event dates, times and counts after import.
+
+**Expected result:** The browser offers one static calendar file after access and current assignment scope are checked again. Its event count may differ from the opened preview if assignments changed. An empty scope can produce an empty calendar.
+
+The file does not contain planner warnings, lecturer feedback or another lecturer's private schedule. It is a snapshot, not a subscription: later edits, link revocation and expiry do not update or remove downloaded/imported appointments. Repeated manual imports can create duplicates; remove or replace old imported entries using the calendar program's own controls. Keep the file protected and delete it when no longer needed.
+
+The download and calendar-format validation are verified. Representative Outlook/Windows import, device-timezone observations and full manual accessibility/usability acceptance remain pending. No universal Outlook import procedure or automatic synchronization is claimed.
+
 ### Manage Versions and publication
 
 Open **Planung > Versionen** to see:
@@ -878,8 +1000,8 @@ Use **Abandon revision** to remove an unpublished revision from active work with
 - A stale edit, lifecycle action, or destructive confirmation never overwrites newer saved state. A stale unified teaching preparation saves none of its selected results.
 - Existing sessions are not moved when catalog data, holidays, availability, or capacity changes.
 - Failed or cancelled unified teaching generation preserves previous drafts and protected teaching and exams.
-- Unified teaching optimization may save useful improved partial results but never silently worsens protected schedules.
-- Saved course date boundaries and current Studienart windows apply immediately and revalidate existing sessions without moving them.
+- Unified teaching optimization may offer a valid partial alternative. Explicit acceptance replaces the whole selected teaching plan, including selected manual appointments; unselected teaching and exams remain protected.
+- Saved course date boundaries and current recurring/dated Studienart windows apply immediately and revalidate existing sessions without moving them.
 - Removing a holiday affects future generation but not saved sessions.
 - An active exam prevents creation of a second active exam for that Lehrveranstaltung and Semester, blocks overlapping teaching generation, and sets the latest teaching end for its course. Past exams do not constrain teaching generation.
 - A failed refresh keeps the last known complete view where available and presents a retry action.
@@ -901,12 +1023,17 @@ The current application does not provide:
 - automatic repair of saved sessions after a warning appears
 - multiple institutional or partial-day holiday calendars
 - student registration, grading, invigilator management, or external room booking
-- background optimization, algorithm selection, or persisted optimization-result history
+- a planner-facing algorithm or time-budget selector, automatic algorithm fallback, or a recoverable history of unsaved optimization proposals
+- calendar-capacity proposal screens, approved five-minute-break alternatives, or a general editor for fixed lecturer LE allocations
+- lecturer-submitted pre-planning unavailability; planners maintain resource availability in Stammdaten
+- live calendar subscriptions, synchronization, or automatic removal of imported appointments
 - an independently published Lehrveranstaltung; publication always covers the Semester revision
 - runtime language switching, multiple active languages, or an in-application terminology editor
 - automated delivery of lecturer review links; planners must send them manually
 
 The current limit is 20 Lehrveranstaltungen per teaching optimization and 100 Lehrveranstaltungen per exam-generation request.
+
+Verified workflows are documented here, while deployment, representative-user and some accessibility acceptance remains incomplete. This manual is not a release-acceptance declaration. The accompanying [documentation report](User_Manual_Report.md) lists the remaining evidence gaps.
 
 ### Troubleshooting
 
@@ -1001,9 +1128,25 @@ Course-list discovery currently supports one cohort at a time. Free-text course 
 
 Read every displayed reason. Check the selected course dates, current Studienart windows, session-size values, active planning data, eligible resources, availability, Raum capacity, holidays, unselected teaching, and active exams. A course with no mapped Studienart window long enough for its minimum session cannot be selected.
 
+If the algorithm or policy message reports changed settings, prepare again and review the displayed algorithm and allowance. For unreadable/invalid configuration, ask the installation operator to check the reported policy location, JSON, directory mapping and permissions. Do not repeatedly Start the old preparation.
+
 #### Optimization leaves a Lehrveranstaltung unchanged
 
-Review its outcome. The prepared solution may not have been strictly better, the Lehrveranstaltung may have become stale, or hard constraints may prevent improvement. Use the displayed reasons and retry stale or failed records after correcting the inputs.
+Check whether the proposal is still awaiting acceptance, was cancelled, or was rejected as stale. An unfinished proof or unchanged continuation does not establish that improvement is impossible. Review remaining-LE reasons and lecturer portions when shown. Continue a valid proposal with **Weiter optimieren**, or correct the inputs and prepare again. If the problem persists, give the installation operator the visible status and algorithm.
+
+#### An intensive window does not produce a session
+
+Confirm the dated window is active, mapped to the correct Studienform, inside the course's effective date boundaries and marked **Intensivwoche** when intended. Check holidays, minimum session length and available lecturer/room/cohort time. The marker is a preference after total coverage; it cannot force a hard-invalid appointment. Review intensive LE and proof status rather than assuming the window must be filled.
+
+#### A copied window cannot be saved
+
+An exact duplicate is rejected even if the existing record is archived or has a different intensive flag. Change the Studienform, weekday/date or times, or cancel the copy and edit/reactivate the existing window. The original record is unchanged by a failed copy.
+
+#### The lecturer calendar download fails or appears out of date
+
+Reopen a valid review link and retry **Kalender herunterladen**. Expired, revoked, replaced or ended access requires a new link from the planner. For a temporary creation failure, use the offered retry. Report a persistent visible error to the planner.
+
+An already downloaded/imported file never refreshes automatically. Obtain a fresh file after checking the current revision, then manage old entries in your calendar program. Filters do not narrow the exported schedule. If Outlook import fails, use your organization's verified procedure or ask its support team; representative Outlook acceptance is still pending.
 
 #### A Lehrveranstaltung cannot be selected for exam generation
 
@@ -1056,7 +1199,10 @@ The latest refresh failed. The application preserves the last complete view wher
 - **Planner session:** The one current server-side session for an account, bounded by 60 minutes of inactivity and 12 hours absolutely.
 - **Arbeitsrevision:** The single editable Semester revision in Entwurf or Bereit zur Prüfung state.
 - **Aktuelle Veröffentlichung:** The immutable published revision currently designated for the Semester.
-- **Generation constraints:** The active course-semester date boundaries plus the current read-only weekly windows derived from the Lehrveranstaltung's Studienart.
+- **Generation constraints:** The active course-semester date boundaries plus recurring and dated windows derived from the Lehrveranstaltung's Studienart.
+- **Intensive window:** A dated teaching opportunity marked to prefer intensive LE and daily LV variety after total coverage; it does not override hard rules.
+- **Proposal:** An unsaved, checked arrangement awaiting acceptance or further optimization.
+- **Continuation:** Another captured time allowance for the same operation, algorithm and retained proposal.
 - **Unified teaching optimization:** The single conflict-aware workflow used to generate or regenerate one to twenty selected Lehrveranstaltungen.
 - **Protected occupancy:** Unselected teaching sessions and active exams that teaching generation must leave unchanged and must not overlap.
 - **Eligible resource:** A lecturer or Raum permitted for a Lehrveranstaltung.

@@ -457,50 +457,50 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 1 | FS-001 | Single-Course Draft Schedule Generation | Generate a valid draft for one course | None | Implemented             |
 | 2 | FS-002 | Review Generated Schedule in Planner UI | Inspect and filter generated sessions | FS-001 | Implemented             |
 | 3 | FS-003 | Configurable Generation Constraints and Courses Overview | Control generation windows and review a semester | FS-001, FS-002 | Implemented             |
-| 4 | FS-004 | Manual Session Editing | Correct existing generated sessions | FS-003 | Implemented             |
-| 5 | FS-005 | Conflict Detection | See non-blocking schedule validation alerts | FS-003, FS-004 | Implemented             |
-| 6 | FS-006 | Multi-Course Draft Generation | Generate several course drafts in one operation | FS-003, FS-005 | Implemented             |
-| 7 | FS-007 | Academic Planning Data Administration | Maintain academic scheduling inputs in the UI | FS-006 | Implemented             |
-| 8 | FS-008 | Resource Eligibility and Availability | Maintain eligible resources and availability | FS-007 | Implemented             |
-| 9 | FS-018 | Unified Application Navigation | Move consistently between Schedule and Academic Data | FS-007, FS-008 | Implemented             |
-| 10 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Implemented             |
-| 11 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Implemented             |
-| 12 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Implemented             |
+| 4 | FS-004 | Manual Session Editing | Correct existing generated sessions | FS-003 | Implemented — manual acceptance evidence pending |
+| 5 | FS-005 | Conflict Detection | See non-blocking schedule validation alerts | FS-003, FS-004 | Implemented — manual acceptance evidence pending |
+| 6 | FS-006 | Multi-Course Draft Generation | Generate several course drafts in one operation | FS-003, FS-005 | Implemented — usability/performance acceptance evidence pending |
+| 7 | FS-007 | Academic Planning Data Administration | Maintain academic scheduling inputs in the UI | FS-006 | Implemented — usability acceptance evidence pending |
+| 8 | FS-008 | Resource Eligibility and Availability | Maintain eligible resources and availability | FS-007 | Implemented — manual/usability acceptance evidence pending |
+| 9 | FS-018 | Unified Application Navigation | Move consistently between Schedule and Academic Data | FS-007, FS-008 | Implemented — manual/usability acceptance and final audit pending |
+| 10 | FS-009 | Manual Session Creation, Deletion, and Remaining Units | Complete or clear schedules manually | FS-006 | Implemented — verification and usability acceptance follow-ups pending |
+| 11 | FS-010 | Conflict-Aware Semester Optimization | Maximize conflict-free scheduled units | FS-008, FS-009 | Implemented — usability acceptance and final audit pending |
+| 12 | FS-011 | Institution-Wide Holiday Calendar and Avoidance | Prevent generation on public holidays | FS-007, FS-010 | Implemented — manual/usability acceptance evidence pending |
 | 13 | FS-012 | Conflict-Aware Exam Scheduling | Generate exams for enabled courses | FS-008, FS-010, FS-011 | Implemented             |
-| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented             |
-| 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented             |
+| 14 | FS-013 | Versioned Review and Publication Lifecycle | Publish controlled schedule revisions | FS-006, FS-012 | Implemented — manual/usability acceptance evidence pending |
+| 15 | FS-014 | Calendar Planning Workspace and Operational Dashboard | Operate the semester from one calendar overview | FS-009 through FS-013, FS-018 | Implemented — acceptance, legacy-retirement and verification follow-ups pending |
 | 16 | FS-019 | Streamlined Schedule Workspace | Use focused Schedule destinations and in-pane session correction | FS-013, FS-014, FS-018 | Implemented — manual acceptance evidence pending |
 | 17 | I-001 | Containerized Application Distribution | Run the complete application as one versioned container image | Implemented application baseline | Implemented |
 | 18 | I-002 | Consistent Labels, European Dates, and Actionable Messages | Understand interface wording, dates, warnings, and failures consistently | FS-019 | Partially implemented — implementation, validation, and acceptance follow-ups remain open |
-| 19 | I-003 | Unified Teaching Schedule Generation | Generate one or several courses through one conflict-aware workflow | FS-010 through FS-013, FS-019 | Implemented |
+| 19 | I-003 | Unified Teaching Schedule Generation | Generate one or several courses through one conflict-aware workflow | FS-010 through FS-013, FS-019 | Implemented — validation and acceptance follow-ups pending |
 | 20 | I-004 | Planner-Controlled Schedule Regeneration Decision | Compare and atomically accept or reject a valid regenerated alternative | I-003, FS-013, FS-019, I-002 | Implemented — manual acceptance evidence pending |
 | 21 | FS-015 | Accountless Lecturer Token Review | Review all assigned sessions and provide scoped feedback through the shared calendar workspace | FS-013, FS-014, FS-019 | Implemented — manual/deployment acceptance evidence pending |
-| 22 | FS-016 | Authenticated Planner Access and Account Administration | Protect planner work with named accounts and administrator-managed access | I-001, FS-015, FS-019 | Ready for specification |
+| 22 | FS-016 | Authenticated Planner Access and Account Administration | Protect planner work with named accounts and administrator-managed access | I-001, FS-015, FS-019 | Implemented — release acceptance evidence pending |
 | 23 | FS-020 | Lecturer iCalendar Export | Import the complete assigned semester schedule into Outlook | FS-015 | Implemented — release acceptance evidence pending |
 | 24 | FS-021 | Lecturer Unavailability Submissions | Collect and approve whole-day pre-planning lecturer unavailability | FS-008, FS-015, FS-019 | Ready for specification |
 | 25 | FS-022 | Authenticated Lecturer Access | Reuse lecturer collaboration through ongoing authenticated identity | FS-015, FS-016, FS-020, FS-021 | Deferred |
 | 26 | FS-017 | Provider-Neutral Planning Data Import and Synchronization | Reduce manual catalog maintenance | FS-007, FS-008 | Proposed — later release |
 | 27 | I-005 | Filterable Course Lists for Generation and Administration | Find cohort-specific courses directly in both course-list workflows | FS-007, FS-019, I-003 | Implemented — automated verification passed; user acceptance PASS on 2026-11-03 |
-| 28 | I-006 | Configurable Optimization Time and Valid Incumbent Acceptance | Use longer optimization runs and consciously accept valid results without an optimality proof | I-003, I-004, FS-013, FS-019 | Implemented |
+| 28 | I-006 | Configurable Optimization Time and Valid Incumbent Acceptance | Use longer optimization runs and consciously accept valid results without an optimality proof | I-003, I-004, FS-013, FS-019 | Implemented — responsive/manual acceptance follow-ups pending |
 | 29 | I-007 | Calendar Capacity Diagnostics and Additional Planning Slots | Understand open LE and approve useful extra timetable opportunities | I-003, I-004, I-006, FS-003, FS-008, FS-011, FS-019 | Ready for specification — requirements confirmed 2026-11-05 |
 | 30 | I-008 | Planner-Approved Shorter Break Alternatives | Recover feasible teaching time through explicit five-minute-break approval | I-007, I-006, FS-004, FS-009, FS-013 | Ready for specification — after I-007 |
-| 31 | I-009 | Dated Windows, Copying and Intensive-Week Scheduling | Copy independent Zeitfenster and prioritize teaching with daily LV variety in marked intensive windows | FS-007, FS-005, FS-011, FS-019, I-003, I-004 | Implemented |
+| 31 | I-009 | Dated Windows, Copying and Intensive-Week Scheduling | Copy independent Zeitfenster and prioritize teaching with daily LV variety in marked intensive windows | FS-007, FS-005, FS-011, FS-019, I-003, I-004 | Implemented — regression, accessibility and usability acceptance follow-ups pending |
 | 32 | I-010 | Fixed Lecturer LE Allocations | Preserve agreed teaching portions and show per-lecturer remaining LE | FS-007, FS-008, FS-009, FS-013, FS-019, I-003, I-004, I-006 | Proposed — intent confirmed 2026-11-09; clarification gates before specification finalization |
-| 33 | I-011 | Policy-Selected Teaching Planning Strategies | Use Standard, Cohort or Lecturer planning through one safe generation workflow | I-003, I-004, I-006, FS-008, FS-011, FS-013, FS-019 | Ready for implementation — scope confirmed 2026-11-09 |
+| 33 | I-011 | Policy-Selected Teaching Planning Strategies | Use Standard, Cohort or Lecturer planning through one safe generation workflow | I-003, I-004, I-006, FS-008, FS-011, FS-013, FS-019 | Implemented — deployment acceptance and final reconciliation pending |
+| 34 | I-012 | Standard Optimized Extension | Distribute teaching across feasible weeks through a separate Standard-derived strategy | I-011, I-006, I-004 | Implemented — automated verification and scoped review passed |
+| 35 | I-013 | Continue Optimization from the Current Proposal | Improve the retained proposal with another captured allowance | I-006, I-011, I-012 | Implemented — automated verification and scoped review passed; live workflow acceptance not recorded |
 
 **Improvement sequence:** `I-001` through `I-004`, with detailed artifacts in their matching `specs/I-.../` directories.
 
-**New improvement backlog:** `I-005` is specified in
-`specs/I-005 - filter-course-plan-list/`; `I-006` is specified in
-`specs/I-006-optimization-incumbent-acceptance/` following explicit authorization
-on 04.11.2026. Its numeric directory follows the active Spec Kit numbering policy
-and does not change its product identifier, I-006.
-Their delivery priority relative to other open slices is not yet assigned.
-They are independent improvements on the implemented baseline: course-list
-filtering and optimization time/result handling respectively.
+**Improvement delivery status (11.11.2026):** I-005 is implemented with recorded
+user acceptance. I-006, I-009 and I-011 are implemented with the verification or
+acceptance follow-ups shown above. I-012 and I-013 are also implemented; their
+artifacts and evidence are linked below. I-007/I-008 and I-010 remain future scope.
 
-**Recommended next slice:** `FS-016 – Authenticated Planner Access and Account Administration`.
-
+**Earlier roadmap recommendation:** FS-016 has now been implemented; its release
+acceptance remains pending. No replacement global priority has been confirmed.
+FS-021 remains ready for specification; I-007 precedes I-008 within the capacity
+initiative. This status reconciliation does not assign a new delivery priority.
 **Confirmed 05.11.2026 capacity initiative:** first specify I-007, then I-008.
 This local dependency order does not silently reconcile or reprioritize the
 older release roadmap or waive pending acceptance of existing slices. The new
@@ -854,7 +854,9 @@ None for the implemented boundary.
 
 #### Specification status
 
-Implemented.
+Implemented — manual acceptance evidence pending.
+
+See [tasks](../../specs/004-manual-session-editing/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -937,7 +939,9 @@ None for the implemented boundary.
 
 #### Specification status
 
-Implemented.
+Implemented — manual acceptance evidence pending.
+
+See [tasks](../../specs/005-conflict-detection/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1022,7 +1026,9 @@ None for the implemented boundary.
 
 #### Specification status
 
-Implemented.
+Implemented — usability/performance acceptance evidence pending.
+
+See [tasks](../../specs/006-multi-course-draft-generation/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1112,7 +1118,9 @@ A planner can prepare and maintain the academic input catalog for scheduling ent
 
 #### Specification status
 
-Implemented.
+Implemented — usability acceptance evidence pending.
+
+See [tasks](../../specs/007-academic-data-administration/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1247,7 +1255,9 @@ The planner can express who and what may be scheduled for a course and when thos
 
 #### Specification status
 
-Implemented.
+Implemented — manual/usability acceptance evidence pending.
+
+See [tasks](../../specs/008-resource-eligibility-availability/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1344,7 +1354,9 @@ The planner can manually complete, reduce, or clear one course draft without los
 
 #### Specification status
 
-Implemented.
+Implemented — verification and usability acceptance follow-ups pending.
+
+See [tasks](../../specs/009-manual-session-management/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1470,7 +1482,9 @@ work additionally requires the planner's explicit post-generation acceptance.
 
 #### Specification status
 
-Implemented.
+Implemented — usability acceptance and final audit pending.
+
+See [tasks](../../specs/010-conflict-aware-semester-optimization/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1564,7 +1578,9 @@ New generated teaching sessions do not land on maintained public holidays, and e
 
 #### Specification status
 
-Implemented.
+Implemented — manual/usability acceptance evidence pending.
+
+See [tasks](../../specs/011-institution-holiday-calendar/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1757,7 +1773,9 @@ The planner can publish a stable schedule, revise it safely, and replace it only
 
 #### Specification status
 
-Implemented.
+Implemented — manual/usability acceptance evidence pending.
+
+See [tasks](../../specs/013-versioned-review-publication-lifecycle/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -1854,7 +1872,9 @@ The planner can understand and act on the complete semester planning state from 
 
 #### Specification status
 
-Implemented.
+Implemented — acceptance, legacy-retirement and verification follow-ups pending.
+
+See [tasks](../../specs/014-calendar-planning-workspace/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -2193,6 +2213,8 @@ accountless lecturer access remains unchanged.
 
 Implemented — release acceptance evidence pending.
 
+See [tasks](../../specs/016-authenticated-planner-access/tasks.md): production-image memory, deployment/security and manual/usability acceptance remain open.
+
 #### Ready-to-copy Spec Kit prompt
 
 ```text
@@ -2485,7 +2507,9 @@ The planner can reach Schedule and every Academic Data category from one consist
 
 #### Specification status
 
-Implemented.
+Implemented — manual/usability acceptance and final audit pending.
+
+See [tasks](../../specs/018-unified-app-navigation/tasks.md) for the outstanding verification and acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -2753,7 +2777,9 @@ calendar-provider connection.
 
 #### Specification status
 
-Ready for specification.
+Implemented — release acceptance evidence pending.
+
+See [tasks](../../specs/020-lecturer-calendar-export/tasks.md): representative Outlook import and accessibility/usability acceptance remain open.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -3433,8 +3459,9 @@ teaching workflow that protects unselected teaching sessions and active exams.
 
 #### Specification status
 
-Implemented with validation and acceptance follow-ups open. Detailed artifacts
-are in `specs/I-003-unified-schedule-generation/`.
+Implemented — validation and acceptance follow-ups pending.
+
+See [tasks](../../specs/I-003-unified-schedule-generation/tasks.md): List layout/accessibility, workflow and usability acceptance remain open.
 
 ### I-004: Planner-Controlled Schedule Regeneration Decision
 
@@ -3946,10 +3973,9 @@ without claiming that any course count guarantees timely completion.
 
 #### Specification status
 
-Specified — ready for planning; not implemented. Detailed specification and
-quality checklist are in `specs/I-006-optimization-incumbent-acceptance/`.
-The ready-to-copy prompt below retains the historical requirements-only input;
-the decisions above and the detailed specification resolve its open topics.
+Implemented — responsive/manual acceptance follow-ups pending.
+
+Implementation and convergence work are recorded in [tasks](../../specs/I-006-optimization-incumbent-acceptance/tasks.md); responsive/manual and representative-reviewer acceptance remain open. I-013 supersedes the original fresh-retry behavior with continuation.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -4399,12 +4425,9 @@ and Assumptions section; they do not expand the confirmed product scope.
 
 #### Specification status
 
-Specified on 06.11.2026 in
-[`specs/I-009-dated-intensive-windows/spec.md`](../../specs/I-009-dated-intensive-windows/spec.md),
-with its requirements-quality checklist validated and ready for planning.
-The slice identifier is I-009; its artifact directory is named
-`I-009-dated-intensive-windows` to match that slice identifier. No plan, tasks or production implementation has
-been started. I-007 and I-008 retain their existing IDs and scope.
+Implemented — regression, accessibility and usability acceptance follow-ups pending.
+
+Specification, plan and implementation tasks exist in specs/I-009-dated-intensive-windows/. See [tasks](../../specs/I-009-dated-intensive-windows/tasks.md) and [validation](../../specs/I-009-dated-intensive-windows/validation.md) for outstanding regression verification, final reconciliation, real accessibility observations and representative-reviewer acceptance. I-007 and I-008 retain their IDs and scope.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -5033,12 +5056,9 @@ No unresolved scope decision is delegated to implementation.
 
 #### Specification status
 
-Specification created and clarified on 09.11.2026:
-[I-011 specification](../../specs/I-011-policy-teaching-strategies/spec.md) and
-[quality checklist](../../specs/I-011-policy-teaching-strategies/checklists/requirements.md).
-One slice, ready for planning after specification-quality validation; no plan,
-tasks or production implementation created. The earlier architecture analysis
-remains historical context; the specification contains the clarified behavior.
+Implemented — deployment acceptance and final reconciliation pending.
+
+Specification, plan and implementation tasks exist in specs/I-011-policy-teaching-strategies/. [Validation](../../specs/I-011-policy-teaching-strategies/validation.md) records passing automated verification, including supported Node 24 tests/lint/build, and human-confirmed screen-reader/200%-zoom acceptance on 10.11.2026. Actual container deployment checks (T053/T057/T060) and final acceptance reconciliation (T054/T059/T062) remain open in [tasks](../../specs/I-011-policy-teaching-strategies/tasks.md). Implementation completion does not close those acceptance conditions.
 
 #### Ready-to-copy Spec Kit prompt
 
@@ -5182,6 +5202,10 @@ implement, change live policy/database, create a plan/tasks or expand scope.
 
 ## I-012 — Standard Optimized extension
 
+**Status:** Implemented — automated verification and scoped review passed. See
+[validation](../../specs/I-012-standard-optimized/validation.md); all five
+implementation tasks are checked. Live policy activation is a separate operator action.
+
 **Intent:** Keep the working Standard search unchanged while adding the separate
 `standard_optimized` strategy through I-011's existing registry and workflow.
 Reuse Standard's candidates, hard-constraint/resource helpers, types, independent
@@ -5196,6 +5220,23 @@ whole-selection acceptance. No new configuration UI or live-policy activation.
 [tasks](../../specs/I-012-standard-optimized/tasks.md),
 [activation](../../specs/I-012-standard-optimized/quickstart.md).
 
+## I-013 — Continue optimization from the current proposal
+
+**Status:** Implemented — automated verification and scoped review passed;
+live deployment/browser workflow acceptance was not performed in the recorded review.
+
+**Intent:** Continue the same operation, captured policy and algorithm from the
+retained proposal with another bounded allowance. Preserve lexicographic quality,
+proven objective prefixes, freshness, replay protection and explicit acceptance.
+This supersedes I-006's fresh-retry/discard behavior; continuation alone saves nothing.
+
+**Depends on:** I-006 operation lifecycle and I-011/I-012 strategies.
+**Artifacts:** [Specification](../../specs/I-013-continue-optimization/spec.md),
+[plan](../../specs/I-013-continue-optimization/plan.md),
+[verification and scoped review](../../specs/I-013-continue-optimization/verification.md).
+The recorded review reports 342 distinct backend cases, 190 frontend tests,
+build and lint passing, with no material scoped findings. No `tasks.md` exists
+for this increment; status is grounded in implementation and verification evidence.
 ## Product-level open assumptions
 
 - The historical planner-only MVP was implemented without authentication;
@@ -5215,6 +5256,7 @@ whole-selection acceptance. No new configuration UI or live-policy activation.
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-11-11 | Status reconciliation | FS-004–FS-011, FS-013, FS-014, FS-016, FS-018, FS-020, I-003, I-006, I-009, I-011–I-013 | Aligned map and detailed statuses with task/validation evidence; recorded implemented I-011 and its remaining deployment gates; added missing I-012/I-013 map coverage and I-013 evidence; retired the stale recommendation to implement FS-016. | User reported completed I-011 still marked ready for implementation. Preserve open acceptance obligations and existing scope/priority decisions. |
 | 2026-11-09 | New slice and teaching-algorithm selection extension | I-011, I-003, I-004, I-006 | Added Standard/Cohort/Lecturer strategies using the requested Strategy pattern, per-run filesystem policy selection and frozen identity, common validation, weekly cohort/lecturer balance, and explicit early unproven-result acceptance. Recorded architecture alternatives and specification prompt; no implementation or live configuration changes. | User supplied the cohort-first idea and requested a slice; confirmed lecturer weekly balance, all teaching with exams unchanged, and preparation/Start selection lifetime. |
 | 2026-11-09 | New slice and lecturer-assignment constraint change | I-010, FS-008, FS-009, FS-010, I-003, I-004, I-006 | Added documentation-only fixed lecturer LE allocations, sum-to-total validation, per-lecturer remaining work and hard no-transfer generation boundaries. Rooms remain eligible alternatives. Legacy migration, saved-work/edit policy and numeric/session-remainder details remain clarification gates; no specification or implementation started. | The optimized plan proposed unwanted lecturer changes; the user confirmed fixed teaching portions and explicitly requested a future slice without implementing the lecturer change. |
 | 2026-11-06 | Specification created and validated | I-009 | Created `specs/I-009-dated-intensive-windows/spec.md` and its requirements-quality checklist. Specified dated administration, independent copying, strict total/intensive/variety priorities, exact overlap accounting, daily-variety score and ties, freshness, accessibility and acceptance criteria. No plan, tasks or production changes. | The user requested the specification for the confirmed I-009 slice, including measurable detail defaults within its existing scope. |

@@ -1,3 +1,4 @@
+from datetime import date
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier, Event
@@ -31,8 +32,8 @@ def test_competing_first_draft_creation_retains_one_working_revision(tmp_path: P
             Semester(
                 id=1,
                 name="Fall",
-                start_date=__import__("datetime").date(2026, 9, 1),
-                end_date=__import__("datetime").date(2026, 12, 20),
+                start_date=date(2026, 9, 1),
+                end_date=date(2026, 12, 20),
             )
         )
         db.commit()

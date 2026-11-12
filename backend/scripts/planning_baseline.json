@@ -105,72 +105,6 @@
       "revision": 2
     }
   ],
-  "study_types": [
-    {
-      "name": "Full-time",
-      "revision": 1
-    },
-    {
-      "name": "Part-time",
-      "revision": 1
-    }
-  ],
-  "study_type_time_windows": [
-    {
-      "study_type": "Full-time",
-      "weekday": 1,
-      "start_time": "08:00",
-      "end_time": "13:00",
-      "sort_order": 1,
-      "is_active": true,
-      "revision": 3
-    },
-    {
-      "study_type": "Full-time",
-      "weekday": 2,
-      "start_time": "09:00",
-      "end_time": "13:00",
-      "sort_order": 2,
-      "is_active": true,
-      "revision": 1
-    },
-    {
-      "study_type": "Part-time",
-      "weekday": 4,
-      "start_time": "16:00",
-      "end_time": "20:00",
-      "sort_order": 7740,
-      "is_active": false,
-      "revision": 2
-    },
-    {
-      "study_type": "Part-time",
-      "weekday": 5,
-      "start_time": "09:00",
-      "end_time": "15:00",
-      "sort_order": 7740,
-      "is_active": true,
-      "revision": 2
-    },
-    {
-      "study_type": "Full-time",
-      "weekday": 0,
-      "start_time": "08:15",
-      "end_time": "13:45",
-      "sort_order": 0,
-      "is_active": true,
-      "revision": 1
-    },
-    {
-      "study_type": "Part-time",
-      "weekday": 4,
-      "start_time": "18:00",
-      "end_time": "22:00",
-      "sort_order": 0,
-      "is_active": true,
-      "revision": 1
-    }
-  ],
   "courses": [
     {
       "name": "Operations Planning",
@@ -178,7 +112,6 @@
       "min_session_units": 2,
       "max_session_units": 4,
       "cohort": "AI and Business Analitics 2026",
-      "study_type": "Full-time",
       "current_semester": "Fall 2026",
       "revision": 1,
       "eligible_lecturers": [
@@ -194,7 +127,6 @@
       "min_session_units": 3,
       "max_session_units": 5,
       "cohort": "Business SW Dev 2026",
-      "study_type": "Part-time",
       "current_semester": "Fall 2026",
       "revision": 3,
       "eligible_lecturers": [
@@ -211,7 +143,6 @@
       "min_session_units": 3,
       "max_session_units": 4,
       "cohort": "Business Informatics 2026",
-      "study_type": "Full-time",
       "current_semester": "Fall 2026",
       "revision": 3,
       "eligible_lecturers": [
@@ -227,7 +158,6 @@
       "min_session_units": 3,
       "max_session_units": 5,
       "cohort": "Business SW Dev 2026",
-      "study_type": "Full-time",
       "current_semester": "Fall 2026",
       "revision": 1,
       "eligible_lecturers": [
@@ -243,7 +173,6 @@
       "min_session_units": 3,
       "max_session_units": 5,
       "cohort": "Business Informatics 2026",
-      "study_type": "Part-time",
       "current_semester": "Fall 2026",
       "revision": 1,
       "eligible_lecturers": [
@@ -259,7 +188,6 @@
       "min_session_units": 2,
       "max_session_units": 4,
       "cohort": "AI and Business Analitics 2026",
-      "study_type": "Full-time",
       "current_semester": "Fall 2026",
       "revision": 1,
       "eligible_lecturers": [
@@ -275,7 +203,6 @@
       "min_session_units": 3,
       "max_session_units": 6,
       "cohort": "AI and Business Analitics 2026",
-      "study_type": "Full-time",
       "current_semester": "Fall 2026",
       "revision": 1,
       "eligible_lecturers": [
@@ -354,5 +281,111 @@
     }
   ],
   "resource_unavailability_periods": [],
-  "course_exam_configurations": []
+  "course_exam_configurations": [],
+  "cohort_calendars": [
+    {
+      "name": "AI and Business Analitics 2026 / Fall 2026",
+      "cohort": "AI and Business Analitics 2026",
+      "semester": "Fall 2026",
+      "start_date": "2026-09-07",
+      "end_date": "2027-02-12"
+    },
+    {
+      "name": "Business SW Dev 2026 / Fall 2026",
+      "cohort": "Business SW Dev 2026",
+      "semester": "Fall 2026",
+      "start_date": "2026-09-07",
+      "end_date": "2027-02-12"
+    },
+    {
+      "name": "Business Informatics 2026 / Fall 2026",
+      "cohort": "Business Informatics 2026",
+      "semester": "Fall 2026",
+      "start_date": "2026-09-07",
+      "end_date": "2027-02-12"
+    }
+  ],
+  "cohort_calendar_time_windows": [
+    {
+      "weekday": 1,
+      "start_time": "08:00",
+      "end_time": "13:00",
+      "sort_order": 1,
+      "is_active": true,
+      "revision": 3,
+      "cohort_calendar": "AI and Business Analitics 2026 / Fall 2026"
+    },
+    {
+      "weekday": 2,
+      "start_time": "09:00",
+      "end_time": "13:00",
+      "sort_order": 2,
+      "is_active": true,
+      "revision": 1,
+      "cohort_calendar": "AI and Business Analitics 2026 / Fall 2026"
+    },
+    {
+      "weekday": 0,
+      "start_time": "08:15",
+      "end_time": "13:45",
+      "sort_order": 0,
+      "is_active": true,
+      "revision": 1,
+      "cohort_calendar": "AI and Business Analitics 2026 / Fall 2026"
+    },
+    {
+      "weekday": 4,
+      "start_time": "16:00",
+      "end_time": "20:00",
+      "sort_order": 7740,
+      "is_active": false,
+      "revision": 2,
+      "cohort_calendar": "Business SW Dev 2026 / Fall 2026"
+    },
+    {
+      "weekday": 5,
+      "start_time": "09:00",
+      "end_time": "15:00",
+      "sort_order": 7740,
+      "is_active": true,
+      "revision": 2,
+      "cohort_calendar": "Business SW Dev 2026 / Fall 2026"
+    },
+    {
+      "weekday": 4,
+      "start_time": "18:00",
+      "end_time": "22:00",
+      "sort_order": 0,
+      "is_active": true,
+      "revision": 1,
+      "cohort_calendar": "Business SW Dev 2026 / Fall 2026"
+    },
+    {
+      "weekday": 1,
+      "start_time": "08:00",
+      "end_time": "13:00",
+      "sort_order": 1,
+      "is_active": true,
+      "revision": 3,
+      "cohort_calendar": "Business Informatics 2026 / Fall 2026"
+    },
+    {
+      "weekday": 2,
+      "start_time": "09:00",
+      "end_time": "13:00",
+      "sort_order": 2,
+      "is_active": true,
+      "revision": 1,
+      "cohort_calendar": "Business Informatics 2026 / Fall 2026"
+    },
+    {
+      "weekday": 0,
+      "start_time": "08:15",
+      "end_time": "13:45",
+      "sort_order": 0,
+      "is_active": true,
+      "revision": 1,
+      "cohort_calendar": "Business Informatics 2026 / Fall 2026"
+    }
+  ]
 }

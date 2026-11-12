@@ -292,7 +292,7 @@ def test_public_projection_is_complete_and_minimum_scope(client_and_db):
         "courses",
         "cohorts",
         "rooms",
-        "studyTypes",
+        "cohortCalendars",
         "sessionTypes",
         "lifecycleContexts",
         "validationCategories",
@@ -304,7 +304,7 @@ def test_public_projection_is_complete_and_minimum_scope(client_and_db):
             "code",
             "title",
             "cohortName",
-            "studyType",
+            "cohortCalendar",
             "sessions",
         }
         for session in course["sessions"]:
@@ -897,7 +897,7 @@ def test_planner_overview_groups_retained_feedback_with_exact_flag_counts(
         "timeZone": "Europe/Vienna",
         "roomName": "Room 101",
         "cohortName": "Cohort 1",
-        "studyType": "Full-time",
+        "cohortCalendar": "Full-time",
         "teachingUnits": 2,
         "examDurationMinutes": None,
     }

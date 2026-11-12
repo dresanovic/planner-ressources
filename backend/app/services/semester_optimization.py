@@ -31,7 +31,7 @@ REASON_MESSAGES = {
     "ROOM_OCCUPIED": "Zulässige Räume sind durch feste Termine belegt.",
     "COHORT_OCCUPIED": "Die Kohorte ist durch feste Termine belegt.",
     "ACTIVE_EXAM_BOUNDARY": "Lehrtermine müssen vor Beginn der aktiven Prüfung enden.",
-    "STUDY_TYPE_WINDOW_UNAVAILABLE": "Kein aktives Studienzeitfenster ist lang genug für die minimale Termingröße.",
+    "COHORT_CALENDAR_WINDOW_UNAVAILABLE": "Kein aktives Kohortenzeitfenster ist lang genug für die minimale Termingröße.",
     "LECTURER_UNAVAILABLE": "Zulässige Lehrpersonen sind in sonst erlaubten Zeitfenstern nicht verfügbar.",
     "ROOM_UNAVAILABLE": "Zulässige Räume sind in sonst erlaubten Zeitfenstern nicht verfügbar.",
     "NO_ELIGIBLE_LECTURER": "Keine aktive zulässige Lehrperson ist zugeordnet.",
@@ -99,7 +99,7 @@ class FixedSession:
     source_kind: str = field(default="teaching_session", kw_only=True)
     source_id: int | None = field(default=None, kw_only=True)
     units: int = field(default=0, kw_only=True)
-    study_type_id: int | None = field(default=None, kw_only=True)
+    cohort_calendar_id: int | None = field(default=None, kw_only=True)
     marked_windows: tuple[TimeWindowPlan, ...] = field(default=(), kw_only=True)
 
 
@@ -262,7 +262,7 @@ def _candidate_start_times(courses, fixed_sessions, day, control=None) -> tuple[
         if control is not None: control.check()
         if not course.planning_period.start_date <= day <= course.planning_period.end_date:
             continue
-        matching = [w for w in course.windows if window_applies(w, day)]
+        matching = [w for w in course.windows if window_applies(w, day, course.windows)]
         windows.extend(matching)
         seeds.update(_time_ticks(w.start_time) for w in matching)
         for units in range(max(1, course.min_session_units), course.max_session_units + 1):
@@ -366,11 +366,11 @@ def generate_candidates(
         >= timedelta(minutes=session_duration_minutes(course.min_session_units))
         for window in course.windows
     ):
-        counts["STUDY_TYPE_WINDOW_UNAVAILABLE"] += 1
+        counts["COHORT_CALENDAR_WINDOW_UNAVAILABLE"] += 1
 
     if (
         counts.get("INVALID_PLANNING_INPUT")
-        or counts.get("STUDY_TYPE_WINDOW_UNAVAILABLE")
+        or counts.get("COHORT_CALENDAR_WINDOW_UNAVAILABLE")
         or not active_lecturers
         or not capacity_rooms
     ):
@@ -386,7 +386,7 @@ def generate_candidates(
     while cursor <= course.planning_period.end_date:
         if control is not None:
             control.check()
-        matching = [window for window in ordered_windows if window_applies(window, cursor)]
+        matching = [window for window in ordered_windows if window_applies(window, cursor, ordered_windows)]
         starts = (start_times_for_date(cursor) if start_times_for_date else
             _candidate_start_times((course,), fixed_sessions, cursor, control)) if matching else ()
         if cursor in holidays:
@@ -618,7 +618,7 @@ def _current_sessions_respect_hard_constraints(
         if session.cohort_id != course.cohort_id:
             return False
         if not any(
-            window_applies(window, session.date)
+            window_applies(window, session.date, course.windows)
             and window.start_time <= session.start_time
             and session.end_time <= window.end_time
             for window in course.windows

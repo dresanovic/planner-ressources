@@ -6,13 +6,13 @@ import { EuropeanDateField } from './EuropeanDateField'
 import { ActionableProblemList, problemDescriptionIds } from './ActionableProblemList'
 import { fieldProblem, operationProblem, type UserProblem } from '../utils/userProblems'
 
-export type AcademicCategory = 'semesters' | 'cohorts' | 'courses' | 'study-types' | 'time-windows'
+export type AcademicCategory = 'semesters' | 'cohorts' | 'courses' | 'cohort-calendars' | 'time-windows'
 type Option = { id: number; name: string }
-type EditorOptions = { semesters?: Option[]; cohorts?: Option[]; studyTypes?: Option[]; lecturers?: Option[]; rooms?: Option[] }
+type EditorOptions = { semesters?: Option[]; cohorts?: Option[]; cohortCalendars?: Option[]; lecturers?: Option[]; rooms?: Option[] }
 
 export type AcademicEditorValues = Record<string, string | number | boolean | null>
 
-const defaults = { kind: 'weekly', date: '', isIntensive: 'false', name: '', startDate: '', endDate: '', studentCount: '', totalUnits: '', overallUnits: '', minSessionUnits: '', maxSessionUnits: '', preferredSessionUnits: '', semesterId: '', cohortId: '', studyTypeId: '', lecturerId: '', roomId: '', weekday: '0', startTime: '', endTime: '' }
+const defaults = { kind: 'weekly', date: '', isIntensive: 'false', name: '', startDate: '', endDate: '', studentCount: '', totalUnits: '', overallUnits: '', minSessionUnits: '', maxSessionUnits: '', preferredSessionUnits: '', semesterId: '', cohortId: '', cohortCalendarId: '', lecturerId: '', roomId: '', weekday: '0', startTime: '', endTime: '' }
 
 export function AcademicRecordEditor({ category, options = {}, initialValues = {}, submitLabel = 'Speichern', includeCourseResources = true, lockKind = false, onSubmit }: { category: AcademicCategory; options?: EditorOptions; initialValues?: AcademicEditorValues; submitLabel?: string; includeCourseResources?: boolean; lockKind?: boolean; onSubmit: (value: AcademicEditorValues) => Promise<unknown> }) {
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...defaults, ...Object.fromEntries(Object.entries(initialValues).map(([key, value]) => [key, value == null ? '' : String(value)])) }))
@@ -20,7 +20,7 @@ export function AcademicRecordEditor({ category, options = {}, initialValues = {
   const submittingRef = useRef(false)
   const [submitting, setSubmitting] = useState(false)
   useEffect(() => {
-    if (category === 'time-windows') formRef.current?.querySelector<HTMLElement>(lockKind ? '[name=studyTypeId]' : '[name=kind]')?.focus()
+    if (category === 'time-windows') formRef.current?.querySelector<HTMLElement>(lockKind ? '[name=cohortCalendarId]' : '[name=kind]')?.focus()
   }, [category, lockKind])
   const [problems, setProblems] = useState<UserProblem[]>([])
   const fieldDefinitions: Record<string, { id: string; label: string; expectation: string }> = {
@@ -35,7 +35,7 @@ export function AcademicRecordEditor({ category, options = {}, initialValues = {
     maxSessionUnits: { id: 'academic-maxSessionUnits', label: 'Maximale Einheiten je Termin', expectation: 'eine positive ganze Zahl innerhalb des Gesamtumfangs' },
     semesterId: { id: 'academic-semesterId', label: 'Semester', expectation: 'ein vorhandenes Semester' },
     cohortId: { id: 'academic-cohortId', label: term('cohort.fieldLabel'), expectation: 'eine vorhandene Auswahl' },
-    studyTypeId: { id: 'academic-studyTypeId', label: 'Studienform', expectation: 'eine vorhandene Studienform' },
+    cohortCalendarId: { id: 'academic-cohortCalendarId', label: 'Kohortenkalender', expectation: 'eine vorhandene Kohortenkalender' },
     lecturerId: { id: 'academic-lecturerId', label: term('lecturer.fieldLabel'), expectation: 'eine vorhandene Auswahl' },
     roomId: { id: 'academic-roomId', label: term('room.fieldLabel'), expectation: 'eine vorhandene Auswahl' },
     kind: { id: 'academic-kind', label: 'Art', expectation: 'Wöchentlich oder Einmaliges Datum' },
@@ -45,7 +45,7 @@ export function AcademicRecordEditor({ category, options = {}, initialValues = {
     startTime: { id: 'academic-startTime', label: 'Beginn', expectation: 'eine gültige Beginnzeit' },
     endTime: { id: 'academic-endTime', label: 'Ende', expectation: 'eine gültige Endzeit nach dem Beginn' },
   }
-  const aliases: Record<string, string> = { start_date: 'startDate', end_date: 'endDate', student_count: 'studentCount', total_units: 'totalUnits', overall_units: 'overallUnits', min_session_units: 'minSessionUnits', preferred_session_units: 'preferredSessionUnits', max_session_units: 'maxSessionUnits', semester_id: 'semesterId', cohort_id: 'cohortId', study_type_id: 'studyTypeId', lecturer_id: 'lecturerId', room_id: 'roomId', start_time: 'startTime', end_time: 'endTime' }
+  const aliases: Record<string, string> = { start_date: 'startDate', end_date: 'endDate', student_count: 'studentCount', total_units: 'totalUnits', overall_units: 'overallUnits', min_session_units: 'minSessionUnits', preferred_session_units: 'preferredSessionUnits', max_session_units: 'maxSessionUnits', semester_id: 'semesterId', cohort_id: 'cohortId', cohort_calendar_id: 'cohortCalendarId', lecturer_id: 'lecturerId', room_id: 'roomId', start_time: 'startTime', end_time: 'endTime' }
   const set = (name: string, value: string) => { setProblems([]); setValues((current) => ({ ...current, [name]: value })) }
   const fieldState = (name: string) => {
     const id = fieldDefinitions[name]?.id ?? `academic-${name}`
@@ -68,11 +68,11 @@ export function AcademicRecordEditor({ category, options = {}, initialValues = {
     if (submittingRef.current) return
     submittingRef.current = true
     setSubmitting(true)
-    const numeric = new Set(['studentCount', 'totalUnits', 'overallUnits', 'minSessionUnits', 'maxSessionUnits', 'preferredSessionUnits', 'semesterId', 'cohortId', 'studyTypeId', 'lecturerId', 'roomId', 'weekday', 'sortOrder'])
+    const numeric = new Set(['studentCount', 'totalUnits', 'overallUnits', 'minSessionUnits', 'maxSessionUnits', 'preferredSessionUnits', 'semesterId', 'cohortId', 'cohortCalendarId', 'lecturerId', 'roomId', 'weekday', 'sortOrder'])
     const submittedValues = category === 'time-windows'
       ? { ...values, sortOrder: values.sortOrder || String(values.kind === 'dated' ? 0 : weeklySortOrder(Number(values.weekday), values.startTime)) }
       : values
-    const payload: AcademicEditorValues = Object.fromEntries(Object.entries(submittedValues).filter(([, value]) => value !== '').map(([key, value]) => [key, numeric.has(key) ? Number(value) : value]))
+    const payload: AcademicEditorValues = Object.fromEntries(Object.entries(submittedValues).filter(([key, value]) => value !== '' && (category !== 'courses' || key !== 'cohortCalendarId') && (category !== 'cohort-calendars' || ['cohortId','semesterId','startDate','endDate'].includes(key))).map(([key, value]) => [key, numeric.has(key) ? Number(value) : value]))
     if (category === 'time-windows') {
       Object.assign(payload, values.kind === 'dated'
         ? { kind: 'dated', date: values.date, weekday: null, isIntensive: values.isIntensive === 'true' }
@@ -84,10 +84,10 @@ export function AcademicRecordEditor({ category, options = {}, initialValues = {
       if (reason instanceof AcademicCatalogApiError) {
         if (reason.errors.some(item=>item.code === 'DUPLICATE_TIME_WINDOW')) {
           setProblems([{key:'duplicate-time-window',tone:'blocking',title:'Zeitfenster bereits vorhanden',details:[
-            'Ein Zeitfenster derselben Art mit gleicher Studienform, gleichem Datum beziehungsweise Wochentag und gleichen Zeiten besteht bereits.',
+            'Ein Zeitfenster derselben Art mit gleicher Kohortenkalender, gleichem Datum beziehungsweise Wochentag und gleichen Zeiten besteht bereits.',
             'Das gilt auch für archivierte Einträge. Eine andere Intensivwoche-Markierung hebt den Konflikt nicht auf.',
-            'Ihre Eingaben bleiben erhalten. Ändern Sie Studienform, Datum beziehungsweise Wochentag oder Zeiten; alternativ können Sie abbrechen und den bestehenden Eintrag bearbeiten.',
-          ],action:{label:'Eingaben anpassen',onClick:()=>formRef.current?.querySelector<HTMLElement>('[name=studyTypeId]')?.focus()}}])
+            'Ihre Eingaben bleiben erhalten. Ändern Sie Kohortenkalender, Datum beziehungsweise Wochentag oder Zeiten; alternativ können Sie abbrechen und den bestehenden Eintrag bearbeiten.',
+          ],action:{label:'Eingaben anpassen',onClick:()=>formRef.current?.querySelector<HTMLElement>('[name=cohortCalendarId]')?.focus()}}])
           return
         }
         const fieldProblems = reason.errors.flatMap((item, index) => {
@@ -116,11 +116,12 @@ export function AcademicRecordEditor({ category, options = {}, initialValues = {
   const missingLecturers = category === 'courses' && includeCourseResources && (options.lecturers?.length ?? 0) === 0
   const missingRooms = category === 'courses' && includeCourseResources && (options.rooms?.length ?? 0) === 0
   return <form ref={formRef} className="catalog-editor" onSubmit={submit}>
-    {category !== 'time-windows' && input('name', 'Name')}
+    {category !== 'time-windows' && category !== 'cohort-calendars' && input('name', 'Name')}
+    {category === 'cohort-calendars' && <>{select('cohortId', term('cohort.fieldLabel'), options.cohorts ?? [])}{select('semesterId', 'Semester', options.semesters ?? [])}{input('startDate', 'Unterrichtsbeginn', 'date')}{input('endDate', 'Unterrichtsende', 'date')}</>}
     {category === 'semesters' && <>{input('startDate', 'Beginn', 'date')}{input('endDate', 'Ende', 'date')}</>}
     {category === 'cohorts' && input('studentCount', 'Anzahl Studierende', 'number')}
-    {category === 'courses' && <>{input('totalUnits', 'Lehreinheiten', 'number')}{input('overallUnits', 'Total Einheiten', 'number')}<p>Lehreinheiten werden geplant. Total Einheiten umfassen auch Online- und Selbstlerneinheiten; beim Anlegen wird ein leeres Feld mit den Lehreinheiten vorbelegt.</p>{input('minSessionUnits', 'Minimale Einheiten je Termin', 'number')}{input('maxSessionUnits', 'Maximale Einheiten je Termin', 'number')}{input('preferredSessionUnits', 'Bevorzugte LE pro Termin (optional)', 'number')}<p>Leer: Mittelwert aus Minimum und Maximum. Halbe Werte bevorzugen die beiden benachbarten ganzen LE gleich; Termine bleiben ganzzahlig.</p>{select('semesterId', 'Semester', options.semesters ?? [])}{select('cohortId', term('cohort.fieldLabel'), options.cohorts ?? [])}{select('studyTypeId', 'Studienform', options.studyTypes ?? [])}{includeCourseResources && <>{select('lecturerId', term('lecturer.fieldLabel'), options.lecturers ?? [])}{select('roomId', term('room.fieldLabel'), options.rooms ?? [])}</>}</>}
-    {category === 'time-windows' && <><label className="catalog-field" htmlFor="academic-kind"><span>Art</span><select id="academic-kind" name="kind" value={values.kind} disabled={lockKind} onChange={(event) => set('kind', event.target.value)}><option value="weekly">Wöchentlich</option><option value="dated">Einmaliges Datum</option></select></label>{select('studyTypeId', 'Studienform', options.studyTypes ?? [])}{values.kind === 'dated' ? <>{input('date', 'Datum', 'date')}<label htmlFor="academic-isIntensive"><input id="academic-isIntensive" name="isIntensive" type="checkbox" aria-invalid={fieldState('isIntensive').invalid || undefined} aria-describedby={fieldState('isIntensive').describedBy} checked={values.isIntensive === 'true'} onChange={(event) => set('isIntensive', String(event.target.checked))} />Intensivwoche</label></> : <label className="catalog-field" htmlFor={fieldState('weekday').id}><span>Wochentag</span><select id={fieldState('weekday').id} name="weekday" value={values.weekday} aria-invalid={fieldState('weekday').invalid || undefined} aria-describedby={fieldState('weekday').describedBy} onChange={(event) => set('weekday', event.target.value)} required>{WEEKDAY_NAMES.map((name, weekday) => <option key={name} value={weekday}>{name}</option>)}</select></label>}{input('startTime', 'Beginn', 'time')}{input('endTime', 'Ende', 'time')}</>}
+    {category === 'courses' && <>{input('totalUnits', 'Lehreinheiten', 'number')}{input('overallUnits', 'Total Einheiten', 'number')}<p>Lehreinheiten werden geplant. Total Einheiten umfassen auch Online- und Selbstlerneinheiten; beim Anlegen wird ein leeres Feld mit den Lehreinheiten vorbelegt.</p>{input('minSessionUnits', 'Minimale Einheiten je Termin', 'number')}{input('maxSessionUnits', 'Maximale Einheiten je Termin', 'number')}{input('preferredSessionUnits', 'Bevorzugte LE pro Termin (optional)', 'number')}<p>Leer: Mittelwert aus Minimum und Maximum. Halbe Werte bevorzugen die beiden benachbarten ganzen LE gleich; Termine bleiben ganzzahlig.</p>{select('semesterId', 'Semester', options.semesters ?? [])}{select('cohortId', term('cohort.fieldLabel'), options.cohorts ?? [])}<p>Der Unterrichtskalender wird aus Kohorte und Semester übernommen.</p>{includeCourseResources && <>{select('lecturerId', term('lecturer.fieldLabel'), options.lecturers ?? [])}{select('roomId', term('room.fieldLabel'), options.rooms ?? [])}</>}</>}
+    {category === 'time-windows' && <><label className="catalog-field" htmlFor="academic-kind"><span>Art</span><select id="academic-kind" name="kind" value={values.kind} disabled={lockKind} onChange={(event) => set('kind', event.target.value)}><option value="weekly">Wöchentlich</option><option value="dated">Einmaliges Datum</option></select></label>{select('cohortCalendarId', 'Kohortenkalender', options.cohortCalendars ?? [])}{values.kind === 'dated' ? <>{input('date', 'Datum', 'date')}<label htmlFor="academic-isIntensive"><input id="academic-isIntensive" name="isIntensive" type="checkbox" aria-invalid={fieldState('isIntensive').invalid || undefined} aria-describedby={fieldState('isIntensive').describedBy} checked={values.isIntensive === 'true'} onChange={(event) => set('isIntensive', String(event.target.checked))} />Intensivwoche</label><p>Intensive Stunden ersetzen an diesem Datum die wöchentlichen Zeitfenster.</p></> : <label className="catalog-field" htmlFor={fieldState('weekday').id}><span>Wochentag</span><select id={fieldState('weekday').id} name="weekday" value={values.weekday} aria-invalid={fieldState('weekday').invalid || undefined} aria-describedby={fieldState('weekday').describedBy} onChange={(event) => set('weekday', event.target.value)} required>{WEEKDAY_NAMES.map((name, weekday) => <option key={name} value={weekday}>{name}</option>)}</select></label>}{input('startTime', 'Beginn', 'time')}{input('endTime', 'Ende', 'time')}</>}
     {missingLecturers && <p role="alert" className="inline-error">Es ist keine {term('lecturer.singular')} verfügbar. Legen Sie die benötigte Ressource an, bevor Sie eine {term('course.singular')} erstellen.</p>}
     {missingRooms && <p role="alert" className="inline-error">Es ist kein {term('room.singular')} verfügbar. Legen Sie die benötigte Ressource an, bevor Sie eine {term('course.singular')} erstellen.</p>}
     <ActionableProblemList problems={problems} className="catalog-editor-problems" />

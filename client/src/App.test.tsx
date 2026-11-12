@@ -112,7 +112,7 @@ describe('App unified navigation', () => {
     act(() => button('Stammdaten').click())
     const destinations: Array<[string, AcademicDataCategory]> = [
       ['Semester', 'semesters'], ['Kohorten', 'cohorts'], ['Lehrveranstaltungen', 'courses'],
-      ['Studienformen', 'study-types'], ['Zeitfenster', 'time-windows'],
+      ['Kohortenkalender', 'cohort-calendars'], ['Zeitfenster', 'time-windows'],
       ['Lehrende', 'lecturers'], ['Räume', 'rooms'],
     ]
     for (const [label, id] of destinations) {

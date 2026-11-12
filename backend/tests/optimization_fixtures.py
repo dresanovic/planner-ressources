@@ -12,8 +12,8 @@ from app.models.planning import (
     Room,
     ScheduleRevision,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
 )
 from app.services.schedule_generation import PlanningPeriodPlan, ResourceCandidatePlan, TimeWindowPlan
 from app.services.semester_optimization import CurrentSession, FixedSession, OptimizationCourse
@@ -229,9 +229,6 @@ def seed_optimization_planner(db, *, course_count: int = 3, total_units: int = 8
         Semester(id=2, name="Spring 2027", start_date=date(2027, 2, 15), end_date=date(2027, 6, 20)),
         ScheduleRevision(id=1, semester_id=1, revision_number=1, row_version=1, state="draft"),
         ScheduleRevision(id=2, semester_id=2, revision_number=1, row_version=1, state="draft"),
-        StudyType(id=1, name="Full-time"),
-        StudyTypeTimeWindow(id=1, study_type_id=1, weekday=0, start_time=time(8), end_time=time(12), sort_order=1),
-        StudyTypeTimeWindow(id=2, study_type_id=1, weekday=2, start_time=time(8), end_time=time(12), sort_order=2),
     ])
     for course_id in range(1, course_count + 1):
         db.add_all([
@@ -245,12 +242,16 @@ def seed_optimization_planner(db, *, course_count: int = 3, total_units: int = 8
                 min_session_units=2,
                 max_session_units=4,
                 cohort_id=course_id,
-                study_type_id=1,
+
                 current_semester_id=1,
                 eligible_lecturers=[CourseEligibleLecturer(lecturer_id=course_id)],
                 eligible_rooms=[CourseEligibleRoom(room_id=course_id)],
             ),
         ])
+    db.flush()
+    for course_id in range(1,course_count+1):
+        db.add(CohortCalendar(id=course_id,name="Full-time" if course_id==1 else f"Calendar {course_id}",cohort_id=course_id,semester_id=1,start_date=SEMESTER_START,end_date=SEMESTER_END))
+        db.add_all([CohortCalendarTimeWindow(id=2*course_id-1,cohort_calendar_id=course_id,weekday=0,start_time=time(8),end_time=time(12),sort_order=1),CohortCalendarTimeWindow(id=2*course_id,cohort_calendar_id=course_id,weekday=2,start_time=time(8),end_time=time(12),sort_order=2)])
     db.commit()
 
 

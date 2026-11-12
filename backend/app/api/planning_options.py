@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db.session import get_db
-from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, GenerationConstraintSet, Lecturer, Room, Semester, StudyTypeTimeWindow
+from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, GenerationConstraintSet, Lecturer, Room, Semester, CohortCalendarTimeWindow
 from app.schemas.academic_catalog import AvailabilityResponse
 from app.schemas.draft_schedule import PlanningEntityResponse
 from app.schemas.planning_options import (
@@ -50,7 +50,7 @@ def read_planning_options(
                 selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
                 selectinload(Course.cohort),
                 selectinload(Course.eligible_rooms).selectinload(CourseEligibleRoom.room),
-                selectinload(Course.study_type),
+                selectinload(Course.cohort_calendar),
                 selectinload(Course.current_semester),
             )
             .where(Course.is_active.is_(True))
@@ -66,7 +66,7 @@ def read_planning_options(
         and (semester_id is None or course.current_semester_id == semester_id)
         and course.current_semester.is_active
         and course.cohort.is_active
-        and course.study_type.is_active
+        and course.cohort_calendar is not None and course.cohort_calendar.is_active
     ]
     semesters = db.execute(select(Semester).where(Semester.is_active.is_(True)).order_by(Semester.start_date, Semester.name)).scalars().all()
     cohorts = db.execute(select(Cohort).where(Cohort.is_active.is_(True)).order_by(Cohort.name)).scalars().all()
@@ -74,18 +74,18 @@ def read_planning_options(
     lecturers = db.execute(select(Lecturer).where(Lecturer.is_active.is_(True)).order_by(Lecturer.name)).scalars().all()
     time_windows = (
         db.execute(
-            select(StudyTypeTimeWindow).where(StudyTypeTimeWindow.is_active.is_(True)).order_by(
-                StudyTypeTimeWindow.study_type_id,
-                StudyTypeTimeWindow.sort_order,
-                StudyTypeTimeWindow.weekday,
+            select(CohortCalendarTimeWindow).where(CohortCalendarTimeWindow.is_active.is_(True)).order_by(
+                CohortCalendarTimeWindow.cohort_calendar_id,
+                CohortCalendarTimeWindow.sort_order,
+                CohortCalendarTimeWindow.weekday,
             )
         )
         .scalars()
         .all()
     )
-    windows_by_study_type = {}
+    windows_by_cohort_calendar = {}
     for window in time_windows:
-        windows_by_study_type.setdefault(window.study_type_id,[]).append(window)
+        windows_by_cohort_calendar.setdefault(window.cohort_calendar_id,[]).append(window)
     constraint_sets = {(row.course_id,row.semester_id):row for row in db.scalars(
         select(GenerationConstraintSet).where(GenerationConstraintSet.course_id.in_([c.id for c in courses])))} if courses else {}
 
@@ -101,7 +101,7 @@ def read_planning_options(
                 semesterId=course.current_semester_id,
                 availability=AvailabilityResponse(
                     available=not (reasons := availability_for_course(
-                        db, course, active_windows_by_study_type=windows_by_study_type,
+                        db, course, active_windows_by_cohort_calendar=windows_by_cohort_calendar,
                         constraint_sets_by_course_semester=constraint_sets
                     )),
                     reasons=reasons,
@@ -110,7 +110,7 @@ def read_planning_options(
                 cohort=PlanningEntityResponse(id=course.cohort.id, name=course.cohort.name),
                 cohortSize=course.cohort.student_count,
                 room=PlanningEntityResponse(id=course.room.id, name=course.room.name) if course.room else None,
-                studyType=PlanningEntityResponse(id=course.study_type.id, name=course.study_type.name),
+                cohortCalendar=PlanningEntityResponse(id=course.cohort_calendar.id, name=course.cohort_calendar.name) if course.cohort_calendar else None,
             )
             for course in courses
         ],
@@ -149,7 +149,7 @@ def read_planning_options(
         timeWindows=[
             TimeWindowOptionResponse(
                 id=window.id,
-                studyTypeId=window.study_type_id,
+                cohortCalendarId=window.cohort_calendar_id,
                 weekday=window.weekday,
                 kind=window.kind, date=window.date, is_intensive=window.is_intensive,
                 startTime=format_clock(window.start_time),

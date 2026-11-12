@@ -836,40 +836,48 @@ class LecturerReviewInvalidSourceState(Base):
     )
 
 
-class StudyType(Base):
-    __tablename__ = "study_types"
+class CohortCalendar(Base):
+    __tablename__ = "cohort_calendars"
     __table_args__ = (
-        UniqueConstraint("normalized_name", name="uq_study_types_normalized_name"),
-        UniqueConstraint("normalized_name_key", name="uq_study_types_normalized_name_key"),
+        UniqueConstraint("cohort_id", "semester_id", name="uq_cohort_calendar_owner"),
+        CheckConstraint("end_date >= start_date", name="ck_cohort_calendar_period"),
+        UniqueConstraint("normalized_name", name="uq_cohort_calendars_normalized_name"),
+        UniqueConstraint("normalized_name_key", name="uq_cohort_calendars_normalized_name_key"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id"), nullable=False)
+    semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date] = mapped_column(Date, nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     normalized_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     normalized_name_key: Mapped[str] = mapped_column(String(260), nullable=False, default=lambda: uuid4().hex)
     name_repair_required: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    time_windows: Mapped[list["StudyTypeTimeWindow"]] = relationship(
-        back_populates="study_type",
-        order_by="StudyTypeTimeWindow.sort_order",
+    cohort: Mapped[Cohort] = relationship()
+    semester: Mapped[Semester] = relationship()
+    time_windows: Mapped[list["CohortCalendarTimeWindow"]] = relationship(
+        back_populates="cohort_calendar",
+        order_by="CohortCalendarTimeWindow.sort_order",
     )
 
 
-class StudyTypeTimeWindow(Base):
-    __tablename__ = "study_type_time_windows"
+class CohortCalendarTimeWindow(Base):
+    __tablename__ = "cohort_calendar_time_windows"
     __table_args__ = (
         CheckConstraint("kind IN ('weekly','dated')", name="ck_time_window_kind"),
         CheckConstraint("(kind='weekly' AND weekday IS NOT NULL AND weekday BETWEEN 0 AND 6 AND date IS NULL AND is_intensive=0) OR (kind='dated' AND weekday IS NULL AND date IS NOT NULL AND length(date)=10 AND date(date,'+0 days') IS NOT NULL AND date(date,'+0 days')=date)", name="ck_time_window_shape"),
         CheckConstraint("end_time > start_time", name="ck_time_window_interval"),
         CheckConstraint("revision > 0", name="ck_time_window_revision"),
         CheckConstraint("is_intensive IN (0,1) AND is_active IN (0,1)", name="ck_time_window_flags"),
-        Index("uq_time_window_weekly", "study_type_id", "weekday", "start_time", "end_time", unique=True, sqlite_where=text("kind='weekly'")),
-        Index("uq_time_window_dated", "study_type_id", "date", "start_time", "end_time", unique=True, sqlite_where=text("kind='dated'")),
+        Index("uq_time_window_weekly", "cohort_calendar_id", "weekday", "start_time", "end_time", unique=True, sqlite_where=text("kind='weekly'")),
+        Index("uq_time_window_dated", "cohort_calendar_id", "date", "start_time", "end_time", unique=True, sqlite_where=text("kind='dated'")),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    study_type_id: Mapped[int] = mapped_column(ForeignKey("study_types.id"), nullable=False)
+    cohort_calendar_id: Mapped[int] = mapped_column(ForeignKey("cohort_calendars.id"), nullable=False)
     kind: Mapped[str] = mapped_column(String(10), nullable=False, default="weekly", server_default="weekly")
     weekday: Mapped[int | None] = mapped_column(Integer, nullable=True)
     date: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -880,7 +888,7 @@ class StudyTypeTimeWindow(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
-    study_type: Mapped[StudyType] = relationship(back_populates="time_windows")
+    cohort_calendar: Mapped[CohortCalendar] = relationship(back_populates="time_windows")
     __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
 
 
@@ -906,7 +914,6 @@ class Course(Base):
     max_session_units: Mapped[int] = mapped_column(Integer, nullable=False)
     preferred_session_units: Mapped[float | None] = mapped_column(Float, nullable=True)
     cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id"), nullable=False)
-    study_type_id: Mapped[int] = mapped_column(ForeignKey("study_types.id"), nullable=False)
     current_semester_id: Mapped[int | None] = mapped_column(
         ForeignKey("semesters.id"), nullable=True
     )
@@ -915,7 +922,15 @@ class Course(Base):
     __mapper_args__ = {"version_id_col": revision, "version_id_generator": False}
 
     cohort: Mapped[Cohort] = relationship()
-    study_type: Mapped[StudyType] = relationship()
+    cohort_calendar: Mapped[CohortCalendar | None] = relationship(
+        primaryjoin="and_(Course.cohort_id == foreign(CohortCalendar.cohort_id), Course.current_semester_id == foreign(CohortCalendar.semester_id))",
+        viewonly=True, uselist=False,
+    )
+
+    @property
+    def cohort_calendar_id(self):
+        return self.cohort_calendar.id if self.cohort_calendar else None
+
     current_semester: Mapped[Semester | None] = relationship()
     eligible_lecturers: Mapped[list["CourseEligibleLecturer"]] = relationship(
         back_populates="course",
@@ -1082,7 +1097,7 @@ class GenerationConstraintWindow(Base):
         ForeignKey("generation_constraint_sets.id"), nullable=False
     )
     source_time_window_id: Mapped[int | None] = mapped_column(
-        ForeignKey("study_type_time_windows.id"), nullable=True
+        ForeignKey("cohort_calendar_time_windows.id"), nullable=True
     )
     weekday: Mapped[int] = mapped_column(Integer, nullable=False)
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
@@ -1103,7 +1118,7 @@ class DraftSchedule(Base):
     semester_id: Mapped[int] = mapped_column(ForeignKey("semesters.id"), nullable=False)
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     selected_time_window_id: Mapped[int | None] = mapped_column(
-        ForeignKey("study_type_time_windows.id"), nullable=True
+        ForeignKey("cohort_calendar_time_windows.id"), nullable=True
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="generated")
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
@@ -1114,8 +1129,8 @@ class DraftSchedule(Base):
     cohort_id_snapshot: Mapped[int] = mapped_column(Integer, nullable=False)
     cohort_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
     cohort_size_snapshot: Mapped[int] = mapped_column(Integer, nullable=False)
-    study_type_id_snapshot: Mapped[int] = mapped_column(Integer, nullable=False)
-    study_type_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
+    cohort_calendar_id_snapshot: Mapped[int] = mapped_column(Integer, nullable=False)
+    cohort_calendar_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
     semester_name_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
     semester_start_date_snapshot: Mapped[date] = mapped_column(Date, nullable=False)
     semester_end_date_snapshot: Mapped[date] = mapped_column(Date, nullable=False)
@@ -1146,7 +1161,7 @@ class DraftSession(Base):
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     units: Mapped[int] = mapped_column(Integer, nullable=False)
     time_window_id: Mapped[int | None] = mapped_column(
-        ForeignKey("study_type_time_windows.id"), nullable=True
+        ForeignKey("cohort_calendar_time_windows.id"), nullable=True
     )
     constraint_window_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 

@@ -133,7 +133,7 @@ def validate_exact_candidate(courses, fixed_sessions, unavailable_dates, holiday
             if course.latest_teaching_end is not None and end > course.latest_teaching_end:
                 raise InvalidExactCandidate("Teaching extends beyond active same-course exam")
             if not any(
-                window_applies(window, session.date)
+                window_applies(window, session.date, course.windows)
                 and window.start_time <= session.start_time < session.end_time <= window.end_time
                 and window.id == session.time_window_id
                 and window.constraint_window_index == session.constraint_window_index
@@ -232,8 +232,8 @@ def prepare_optimization(
             available=_course_available(db, item.course, semester_id) and not window_unavailable,
             unavailableReasons=(
                 [BlockingReason(
-                    code=BlockingReasonCode.STUDY_TYPE_WINDOW_UNAVAILABLE,
-                    message="The current study type has no active teaching window long enough for the minimum session.",
+                    code=BlockingReasonCode.COHORT_CALENDAR_WINDOW_UNAVAILABLE,
+                    message="The current cohort calendar has no active teaching window long enough for the minimum session.",
                     relatedCount=1,
                 )]
                 if window_unavailable
@@ -323,8 +323,8 @@ def load_operation(
             source_kind="teaching_session",
             source_id=session.id,
             units=session.units,
-            study_type_id=db.get(Course,draft.course_id).study_type_id,
-            marked_windows=tuple(load_time_windows(db,db.get(Course,draft.course_id).study_type_id)),
+            cohort_calendar_id=db.get(Course,draft.course_id).cohort_calendar_id,
+            marked_windows=tuple(load_time_windows(db,db.get(Course,draft.course_id).cohort_calendar_id)),
         )
         for draft in drafts if draft.course_id not in selected_ids
         for session in draft.sessions
@@ -614,9 +614,9 @@ def _current_warning_counts(
     constraints_by_course_id = {
         item.course.id: item.constraints for item in loaded.courses
     }
-    study_windows_by_study_type_id = {
-        draft.study_type_id_snapshot: load_time_windows(
-            db, draft.study_type_id_snapshot
+    study_windows_by_cohort_calendar_id = {
+        draft.cohort_calendar_id_snapshot: load_time_windows(
+            db, draft.cohort_calendar_id_snapshot
         )
         for draft in drafts
     }
@@ -625,7 +625,7 @@ def _current_warning_counts(
         rooms_by_id=rooms_by_id,
         lecturers_by_id=lecturers_by_id,
         constraints_by_course_id=constraints_by_course_id,
-        study_windows_by_study_type_id=study_windows_by_study_type_id,
+        study_windows_by_cohort_calendar_id=study_windows_by_cohort_calendar_id,
         unavailability_by_resource=unavailability_by_resource,
         eligible_lecturer_ids_by_course={
             draft.course_id: {
@@ -708,8 +708,8 @@ def _unavailable_selection_error(
         )
     if not _windows_host_minimum_session(item):
         return InvalidOptimizationSelection(
-            "STUDY_TYPE_WINDOW_UNAVAILABLE",
-            f"Course {item.course.id}'s current study type has no active teaching window long enough for the minimum session.",
+            "COHORT_CALENDAR_WINDOW_UNAVAILABLE",
+            f"Course {item.course.id}'s current cohort calendar has no active teaching window long enough for the minimum session.",
         )
     return None
 
@@ -729,7 +729,7 @@ def _constraints_response(constraints: GenerationConstraints):
         AllowedTeachingWindowResponse,
         GenerationConstraintsResponse,
         PlanningPeriodResponse,
-        StudyTypeSummaryResponse,
+        CohortCalendarSummaryResponse,
     )
 
     return GenerationConstraintsResponse(
@@ -741,9 +741,9 @@ def _constraints_response(constraints: GenerationConstraints):
             startDate=constraints.planning_period.start_date,
             endDate=constraints.planning_period.end_date,
         ),
-        studyType=StudyTypeSummaryResponse(
-            id=constraints.study_type_id,
-            name=constraints.study_type_name,
+        cohortCalendar=CohortCalendarSummaryResponse(
+            id=constraints.cohort_calendar_id,
+            name=constraints.cohort_calendar_name,
         ),
         allowedTeachingWindows=[
             AllowedTeachingWindowResponse(
@@ -939,7 +939,7 @@ def _course_payload(course, plan, constraints):
         "semester": course.current_semester_id,
         "units": [course.total_units, course.min_session_units, course.max_session_units, course.preferred_session_units],
         "cohort": [course.cohort_id, plan.cohort_size, course.cohort.is_active],
-        "studyType": [course.study_type_id, course.study_type.is_active],
+        "cohortCalendar": [course.cohort_calendar_id, bool(course.cohort_calendar and course.cohort_calendar.is_active)],
         "lecturers": [[item.id, item.normalized_code, item.active, _period_payload(item.unavailable_periods)] for item in plan.lecturer_candidates],
         "rooms": [[item.id, item.normalized_code, item.active, item.capacity, _period_payload(item.unavailable_periods)] for item in plan.room_candidates],
         "constraints": {
@@ -969,7 +969,7 @@ def _draft_payload(draft):
 
 
 def _fixed_payload(item):
-    return [item.source_kind, item.source_id, item.course_id, item.cohort_id, item.lecturer_id, item.room_id, item.date.isoformat(), item.start_time.isoformat(), item.end_time.isoformat(),item.units,item.study_type_id,
+    return [item.source_kind, item.source_id, item.course_id, item.cohort_id, item.lecturer_id, item.room_id, item.date.isoformat(), item.start_time.isoformat(), item.end_time.isoformat(),item.units,item.cohort_calendar_id,
         [[w.id,w.kind,w.weekday,w.date.isoformat() if w.date else None,w.start_time.isoformat(),w.end_time.isoformat(),w.is_intensive,w.revision] for w in item.marked_windows]]
 
 

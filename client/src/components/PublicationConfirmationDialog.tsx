@@ -24,7 +24,7 @@ function teachingAlertReason(code: string | null, holidayName: string | null): s
     COHORT_OVERLAP: 'Die Kohorte hat zeitgleich einen anderen Termin.',
     ROOM_CAPACITY: 'Die Raumkapazität ist kleiner als die Kohortengröße.',
     GENERATION_CONSTRAINT_VIOLATION: 'Der Termin liegt außerhalb der aktuell gespeicherten Erzeugungsregeln.',
-    STUDY_TYPE_WINDOW_VIOLATION: 'Der Termin liegt außerhalb des Zeitfensters der Studienart.',
+    COHORT_CALENDAR_WINDOW_VIOLATION: 'Der Termin liegt außerhalb des Zeitfensters der Kohortenkalender.',
     VALIDATION_DATA_MISSING: 'Erforderliche Daten für die vollständige Prüfung des Termins fehlen.',
     LECTURER_UNAVAILABLE: 'Die Lehrperson ist für diesen Zeitraum als nicht verfügbar eingetragen.',
     ROOM_UNAVAILABLE: 'Der Raum ist für diesen Zeitraum als nicht verfügbar eingetragen.',

@@ -90,7 +90,7 @@ describe('conflict-aware generation API', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(optimizationPreparationFixture), { status: 200 }))
     const result = await prepareConflictAwareGeneration(1, 11, [1, 2], ['2026-10-26'])
     expect(result.sharedSnapshotToken).toBe('shared-snapshot')
-    expect(result.courses[0].effectiveConstraints.studyType.name).toBe('Full-time')
+    expect(result.courses[0].effectiveConstraints.cohortCalendar.name).toBe('Full-time')
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({ semesterId: 1, scheduleRevisionId: 11, courseIds: [1, 2], unavailableDates: ['2026-10-26'] })
   })
 

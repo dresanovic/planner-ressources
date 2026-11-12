@@ -26,7 +26,7 @@ from app.schemas.draft_schedule import (
     SessionEditFailureResponse,
     StaleDraftFailure,
     StaleDraftResponse,
-    StudyTypeSummaryResponse,
+    CohortCalendarSummaryResponse,
     SaveGenerationConstraintsRequest,
     CreateManualDraftSessionRequest,
     ManualSessionFailure,
@@ -501,7 +501,7 @@ def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResp
     rooms_by_id = {room.id: room for room in db.execute(select(Room)).scalars().all()}
     lecturers_by_id = {lecturer.id: lecturer for lecturer in db.execute(select(Lecturer)).scalars().all()}
     constraints_by_course_id = {}
-    study_windows_by_study_type_id = {}
+    study_windows_by_cohort_calendar_id = {}
     unavailability_by_resource = {}
     for period in db.execute(select(ResourceUnavailabilityPeriod).options(selectinload(ResourceUnavailabilityPeriod.weekdays))).scalars().all():
         key = ("lecturer", period.lecturer_id) if period.lecturer_id is not None else ("room", period.room_id)
@@ -511,9 +511,9 @@ def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResp
         for draft in drafts:
             course_plan = load_course_plan(db, draft.course_id)
             constraints_by_course_id[draft.course_id] = load_generation_constraints(db, course_plan, semester_plan)
-            study_type_id = draft.study_type_id_snapshot
-            if study_type_id not in study_windows_by_study_type_id:
-                study_windows_by_study_type_id[study_type_id] = load_time_windows(db, study_type_id)
+            cohort_calendar_id = draft.cohort_calendar_id_snapshot
+            if cohort_calendar_id not in study_windows_by_cohort_calendar_id:
+                study_windows_by_cohort_calendar_id[cohort_calendar_id] = load_time_windows(db, cohort_calendar_id)
         holidays_by_date = holiday_snapshot(
             db,
             semester_plan.start_date,
@@ -526,7 +526,7 @@ def _to_responses_with_validation(db: Session, drafts) -> list[DraftScheduleResp
         rooms_by_id=rooms_by_id,
         lecturers_by_id=lecturers_by_id,
         constraints_by_course_id=constraints_by_course_id,
-        study_windows_by_study_type_id=study_windows_by_study_type_id,
+        study_windows_by_cohort_calendar_id=study_windows_by_cohort_calendar_id,
         unavailability_by_resource=unavailability_by_resource,
         eligible_lecturer_ids_by_course={draft.course_id: {link.lecturer_id for link in draft.course.eligible_lecturers} for draft in drafts},
         eligible_room_ids_by_course={draft.course_id: {link.room_id for link in draft.course.eligible_rooms} for draft in drafts},
@@ -559,7 +559,7 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None, lecturers_by_i
             cohortSize=draft.cohort_size_snapshot,
             lecturer=PlanningEntityResponse(id=context_lecturer.id, name=context_lecturer.name),
             room=PlanningEntityResponse(id=context_room.id, name=context_room.name),
-            studyType=PlanningEntityResponse(id=draft.study_type_id_snapshot, name=draft.study_type_name_snapshot),
+            cohortCalendar=PlanningEntityResponse(id=draft.cohort_calendar_id_snapshot, name=draft.cohort_calendar_name_snapshot),
         ),
         sessions=[
             DraftSessionResponse(
@@ -576,7 +576,7 @@ def _to_response(draft, alerts_by_session=None, rooms_by_id=None, lecturers_by_i
                 roomId=session.room_id,
                 roomName=rooms_by_id.get(session.room_id).name if rooms_by_id.get(session.room_id) is not None else f"Room {session.room_id}",
                 roomReferenceCode=rooms_by_id.get(session.room_id).reference_code if rooms_by_id.get(session.room_id) is not None else "UNKNOWN",
-                studyTypeId=draft.study_type_id_snapshot,
+                cohortCalendarId=draft.cohort_calendar_id_snapshot,
                 timeWindowId=session.time_window_id,
                 constraintWindowIndex=session.constraint_window_index,
                 lecturer=_planning_resource(lecturers_by_id.get(session.lecturer_id), "Lecturer", session.lecturer_id),
@@ -672,9 +672,9 @@ def _constraints_to_response(constraints: GenerationConstraints) -> GenerationCo
             startDate=constraints.planning_period.start_date,
             endDate=constraints.planning_period.end_date,
         ),
-        studyType=StudyTypeSummaryResponse(
-            id=constraints.study_type_id,
-            name=constraints.study_type_name,
+        cohortCalendar=CohortCalendarSummaryResponse(
+            id=constraints.cohort_calendar_id,
+            name=constraints.cohort_calendar_name,
         ),
         allowedTeachingWindows=[
             AllowedTeachingWindowResponse(

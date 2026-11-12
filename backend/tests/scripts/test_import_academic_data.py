@@ -51,7 +51,7 @@ class FakeAPI:
         else:
             row = {k: payload[k] for k in ("name", "totalUnits", "minSessionUnits", "maxSessionUnits")}
             row.update({"id": self.posts, "isActive": True})
-            for response, field in (("semester", "semesterId"), ("cohort", "cohortId"), ("studyType", "studyTypeId"),
+            for response, field in (("semester", "semesterId"), ("cohort", "cohortId"),
                                     ("lecturer", "lecturerId"), ("room", "roomId")):
                 row[response] = {"id": payload[field]}
             self.eligibility[row["id"]] = {"eligibleLecturerIds": [payload["lecturerId"]],
@@ -71,13 +71,13 @@ class AcademicImportTests(unittest.TestCase):
         self.document = {"courses": [{"sourceCourseId": "1", "code": "LV1"}]}
         self.mapping = {"semesterName": "2027 S", "courses": [{
             "sourceCourseId": "1", "include": True, "name": "Test [LV1] – 2027 S",
-            "cohortName": "BSD – 2. Semester", "studyTypeName": "Vollzeit",
+            "cohortName": "BSD – 2. Semester", "cohortCalendarName": "Vollzeit",
             "lecturerReferenceCode": "campus02:AAA", "roomReferenceCode": "CC202",
             "totalUnits": 26, "minSessionUnits": 2, "maxSessionUnits": 4}]}
         self.catalogs = {
             "semesters": [{"id": 10, "name": "2027 S", "isActive": True}],
             "cohorts": [{"id": 20, "name": "BSD – 2. Semester", "studentCount": 30, "isActive": True}],
-            "study-types": [{"id": 30, "name": "Vollzeit", "isActive": True, "timeWindows": [{"isActive": True}]}],
+            "cohort-calendars": [{"id": 30,"cohortId":20,"semesterId":10, "name": "Vollzeit", "isActive": True, "timeWindows": [{"isActive": True}]}],
             "lecturers": [{"id": 40, "referenceCode": "campus02:AAA", "isActive": True}],
             "rooms": [{"id": 50, "referenceCode": "CC202", "capacity": 56, "isActive": True}], "courses": []}
 
@@ -161,7 +161,7 @@ class AcademicImportTests(unittest.TestCase):
                 elif change == "capacity":
                     catalogs["rooms"][0]["capacity"] = 10
                 else:
-                    catalogs["study-types"][0]["timeWindows"] = []
+                    catalogs["cohort-calendars"][0]["timeWindows"] = []
                 plan = importer.course_plan(self.document, self.mapping, catalogs)
                 self.assertEqual(plan[0]["status"], "blocked")
                 api = FakeAPI("courses")

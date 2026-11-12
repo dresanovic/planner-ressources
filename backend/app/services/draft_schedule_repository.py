@@ -1,6 +1,6 @@
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session, selectinload, object_session
 
 from app.models.planning import (
     Cohort,
@@ -14,8 +14,8 @@ from app.models.planning import (
     Room,
     ResourceUnavailabilityPeriod,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
 )
 from app.services.schedule_generation import (
     CoursePlan,
@@ -74,8 +74,8 @@ class GenerationConstraints:
         is_custom: bool,
         constraint_set_id: int | None = None,
         revision: int | None = None,
-        study_type_id: int | None = None,
-        study_type_name: str | None = None,
+        cohort_calendar_id: int | None = None,
+        cohort_calendar_name: str | None = None,
     ) -> None:
         self.course_id = course_id
         self.semester_id = semester_id
@@ -84,8 +84,8 @@ class GenerationConstraints:
         self.is_custom = is_custom
         self.constraint_set_id = constraint_set_id
         self.revision = revision
-        self.study_type_id = study_type_id
-        self.study_type_name = study_type_name
+        self.cohort_calendar_id = cohort_calendar_id
+        self.cohort_calendar_name = cohort_calendar_name
 
 
 def load_course_plan(db: Session, course_id: int) -> CoursePlan:
@@ -122,7 +122,7 @@ def load_course_plan(db: Session, course_id: int) -> CoursePlan:
         lecturer_id=course.lecturer_id or 0,
         cohort_id=course.cohort_id,
         room_id=course.room_id or 0,
-        study_type_id=course.study_type_id,
+        cohort_calendar_id=course.cohort_calendar_id,
         cohort_size=cohort.student_count,
         room_capacity=room.capacity if room is not None else 0,
         lecturer_candidates=tuple(
@@ -154,16 +154,16 @@ def load_semester_plan(db: Session, semester_id: int) -> SemesterPlan:
     return SemesterPlan(id=semester.id, start_date=semester.start_date, end_date=semester.end_date)
 
 
-def load_time_windows(db: Session, study_type_id: int) -> list[TimeWindowPlan]:
+def load_time_windows(db: Session, cohort_calendar_id: int) -> list[TimeWindowPlan]:
     rows = (
         db.execute(
-            select(StudyTypeTimeWindow)
+            select(CohortCalendarTimeWindow)
             .where(
-                StudyTypeTimeWindow.study_type_id == study_type_id,
-                StudyTypeTimeWindow.is_active.is_(True),
-                StudyTypeTimeWindow.study_type.has(is_active=True),
+                CohortCalendarTimeWindow.cohort_calendar_id == cohort_calendar_id,
+                CohortCalendarTimeWindow.is_active.is_(True),
+                CohortCalendarTimeWindow.cohort_calendar.has(is_active=True),
             )
-            .order_by(StudyTypeTimeWindow.kind == 'dated', StudyTypeTimeWindow.weekday, StudyTypeTimeWindow.date, StudyTypeTimeWindow.start_time, StudyTypeTimeWindow.end_time, StudyTypeTimeWindow.sort_order, StudyTypeTimeWindow.id)
+            .order_by(CohortCalendarTimeWindow.kind == 'dated', CohortCalendarTimeWindow.weekday, CohortCalendarTimeWindow.date, CohortCalendarTimeWindow.start_time, CohortCalendarTimeWindow.end_time, CohortCalendarTimeWindow.sort_order, CohortCalendarTimeWindow.id)
         )
         .scalars()
         .all()
@@ -187,10 +187,10 @@ def load_generation_constraints(
     course_plan: CoursePlan,
     semester_plan: SemesterPlan,
 ) -> GenerationConstraints:
-    study_type = db.get(StudyType, course_plan.study_type_id)
-    if study_type is None:
-        raise PlanningInputNotFoundError("Course study type not found.")
-    allowed_windows = load_time_windows(db, course_plan.study_type_id)
+    cohort_calendar = db.scalar(select(CohortCalendar).where(CohortCalendar.cohort_id == course_plan.cohort_id, CohortCalendar.semester_id == semester_plan.id))
+    if cohort_calendar is None:
+        raise PlanningInputNotFoundError("Course cohort calendar not found.")
+    allowed_windows = load_time_windows(db, cohort_calendar.id)
     saved = (
         db.execute(
             select(GenerationConstraintSet)
@@ -207,28 +207,28 @@ def load_generation_constraints(
             course_id=course_plan.id,
             semester_id=semester_plan.id,
             planning_period=PlanningPeriodPlan(
-                start_date=saved.planning_start_date,
-                end_date=saved.planning_end_date,
+                start_date=max(saved.planning_start_date, cohort_calendar.start_date),
+                end_date=min(saved.planning_end_date, cohort_calendar.end_date),
             ),
             allowed_windows=allowed_windows,
             is_custom=True,
             constraint_set_id=saved.id,
             revision=saved.revision,
-            study_type_id=study_type.id,
-            study_type_name=study_type.name,
+            cohort_calendar_id=cohort_calendar.id,
+            cohort_calendar_name=cohort_calendar.name,
         )
 
     return GenerationConstraints(
         course_id=course_plan.id,
         semester_id=semester_plan.id,
         planning_period=PlanningPeriodPlan(
-            start_date=semester_plan.start_date,
-            end_date=semester_plan.end_date,
+            start_date=max(semester_plan.start_date, cohort_calendar.start_date),
+            end_date=min(semester_plan.end_date, cohort_calendar.end_date),
         ),
         allowed_windows=allowed_windows,
         is_custom=False,
-        study_type_id=study_type.id,
-        study_type_name=study_type.name,
+        cohort_calendar_id=cohort_calendar.id,
+        cohort_calendar_name=cohort_calendar.name,
     )
 
 
@@ -249,6 +249,11 @@ def save_generation_constraints(
         or planning_period.end_date < planning_period.start_date
     ):
         raise ValueError("The planning period must be inside the Semester planning period.")
+    calendar = db.scalar(select(CohortCalendar).where(CohortCalendar.cohort_id == course_plan.cohort_id, CohortCalendar.semester_id == semester_plan.id))
+    if calendar is None:
+        raise PlanningInputNotFoundError("Course cohort calendar not found.")
+    if planning_period.start_date < calendar.start_date or planning_period.end_date > calendar.end_date:
+        raise ValueError("The planning period must be inside the cohort teaching period.")
     existing = existing_set
     if existing is _UNSET:
         existing = (
@@ -291,19 +296,19 @@ def save_generation_constraints(
     if reload:
         return load_generation_constraints(db, course_plan, semester_plan)
     active = constraint_set
-    study_type = db.get(StudyType, course_plan.study_type_id)
-    if study_type is None:
-        raise PlanningInputNotFoundError("Course study type not found.")
+    cohort_calendar = db.get(CohortCalendar, course_plan.cohort_calendar_id)
+    if cohort_calendar is None:
+        raise PlanningInputNotFoundError("Course cohort calendar not found.")
     return GenerationConstraints(
         course_id=course_plan.id,
         semester_id=semester_plan.id,
         planning_period=planning_period,
-        allowed_windows=load_time_windows(db, course_plan.study_type_id),
+        allowed_windows=load_time_windows(db, course_plan.cohort_calendar_id),
         is_custom=True,
         constraint_set_id=active.id,
         revision=active.revision,
-        study_type_id=study_type.id,
-        study_type_name=study_type.name,
+        cohort_calendar_id=cohort_calendar.id,
+        cohort_calendar_name=cohort_calendar.name,
     )
 
 
@@ -338,8 +343,8 @@ def clear_generation_constraints(
 
 def _capture_academic_snapshot(draft: DraftSchedule, course: Course, semester: Semester) -> None:
     cohort = course.cohort
-    study_type = course.study_type
-    if cohort is None or study_type is None:
+    cohort_calendar = object_session(course).scalar(select(CohortCalendar).where(CohortCalendar.cohort_id == course.cohort_id, CohortCalendar.semester_id == semester.id))
+    if cohort is None or cohort_calendar is None:
         raise PlanningInputNotFoundError("Course planning input is incomplete.")
     draft.course_name_snapshot = course.name
     draft.course_total_units_snapshot = course.total_units
@@ -348,8 +353,8 @@ def _capture_academic_snapshot(draft: DraftSchedule, course: Course, semester: S
     draft.cohort_id_snapshot = cohort.id
     draft.cohort_name_snapshot = cohort.name
     draft.cohort_size_snapshot = cohort.student_count
-    draft.study_type_id_snapshot = study_type.id
-    draft.study_type_name_snapshot = study_type.name
+    draft.cohort_calendar_id_snapshot = cohort_calendar.id
+    draft.cohort_calendar_name_snapshot = cohort_calendar.name
     draft.semester_name_snapshot = semester.name
     draft.semester_start_date_snapshot = semester.start_date
     draft.semester_end_date_snapshot = semester.end_date
@@ -422,7 +427,7 @@ def get_draft_schedule(db: Session, course_id: int, semester_id: int) -> DraftSc
                 selectinload(DraftSchedule.course).selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
                 selectinload(DraftSchedule.course).selectinload(Course.cohort),
                 selectinload(DraftSchedule.course).selectinload(Course.eligible_rooms).selectinload(CourseEligibleRoom.room),
-                selectinload(DraftSchedule.course).selectinload(Course.study_type),
+                selectinload(DraftSchedule.course).selectinload(Course.cohort_calendar),
             )
         )
         .scalars()
@@ -461,7 +466,7 @@ def create_manual_draft_session(
                 .where(Course.id == course_id)
                 .options(
                     selectinload(Course.cohort),
-                    selectinload(Course.study_type),
+                    selectinload(Course.cohort_calendar),
                     selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
                 )
             )
@@ -478,7 +483,7 @@ def create_manual_draft_session(
             raise PlanningInputNotFoundError("Course not found.")
         if semester is None:
             raise PlanningInputNotFoundError("Semester not found.")
-        if course.cohort is None or course.study_type is None:
+        if course.cohort is None or course.cohort_calendar is None:
             raise PlanningInputNotFoundError("Course planning input is incomplete.")
         if lecturer is None or not lecturer.is_active:
             raise PlanningInputNotFoundError("Selected Lecturer is unavailable.")
@@ -790,7 +795,7 @@ def list_draft_schedules_by_semester(db: Session, semester_id: int) -> list[Draf
                 selectinload(DraftSchedule.course).selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
                 selectinload(DraftSchedule.course).selectinload(Course.cohort),
                 selectinload(DraftSchedule.course).selectinload(Course.eligible_rooms).selectinload(CourseEligibleRoom.room),
-                selectinload(DraftSchedule.course).selectinload(Course.study_type),
+                selectinload(DraftSchedule.course).selectinload(Course.cohort_calendar),
             )
             .order_by(DraftSchedule.course_id)
         )

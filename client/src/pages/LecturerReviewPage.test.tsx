@@ -244,7 +244,7 @@ describe('LecturerReviewPage shared restricted workspace', () => {
       courses: [],
       cohorts: [],
       rooms: [],
-      studyTypes: [],
+      cohortCalendars: [],
       sessionTypes: [],
       lifecycleContexts: empty.filterFacets.lifecycleContexts,
       validationCategories: [],

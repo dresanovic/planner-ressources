@@ -19,8 +19,8 @@ from app.models.planning import (
     Lecturer,
     Room,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
 )
 from app.services.draft_schedule_repository import (
     DraftSessionEditValidationError,
@@ -61,28 +61,28 @@ def seed_course(db):
     room = Room(id=1, name="R1", capacity=40)
     room_2 = Room(id=2, name="R2", capacity=50)
     small_room = Room(id=3, name="Tiny", capacity=20)
-    study_type = StudyType(id=1, name="Full-time")
+    cohort_calendar = CohortCalendar(cohort_id=1, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), id=1, name="Full-time")
     semester = Semester(id=1, name="Fall", start_date=date(2026, 9, 7), end_date=date(2026, 12, 20))
-    window = StudyTypeTimeWindow(
+    window = CohortCalendarTimeWindow(
         id=1,
-        study_type_id=1,
+        cohort_calendar_id=1,
         weekday=0,
         start_time=time(8, 0),
         end_time=time(12, 0),
         sort_order=1,
     )
-    course = Course(
+    course = Course(current_semester_id=1,
         id=1,
         name="Planning 101",
         total_units=20,
         min_session_units=2,
         max_session_units=4,
         cohort_id=1,
-        study_type_id=1,
+
         eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
         eligible_rooms=[CourseEligibleRoom(room_id=1)],
     )
-    db.add_all([lecturer, cohort, room, room_2, small_room, study_type, semester, window, course])
+    db.add_all([lecturer, cohort, room, room_2, small_room, cohort_calendar, semester, window, course])
     db.flush()
     db.add_all([
         CourseEligibleRoom(course_id=1, room_id=2),
@@ -137,6 +137,7 @@ def seed_saved_constraints(db):
 
 def seed_cross_semester_draft(db):
     db.add(Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)))
+    db.add(CohortCalendar(cohort_id=1,semester_id=2,start_date=date(2027,2,1),end_date=date(2027,6,20),name="Spring calendar"))
     db.flush()
     return replace_draft_schedule(
         db,
@@ -202,20 +203,20 @@ def test_draft_academic_snapshots_survive_source_edits():
     assert draft.course_name_snapshot == "Planning 101"
     assert draft.cohort_name_snapshot == "AI 1"
     assert draft.cohort_size_snapshot == 30
-    assert draft.study_type_name_snapshot == "Full-time"
+    assert draft.cohort_calendar_name_snapshot == "Full-time"
     assert draft.semester_name_snapshot == "Fall"
 
     db.get(Course, 1).name = "Renamed course"
     db.get(Cohort, 1).name = "Renamed cohort"
     db.get(Cohort, 1).student_count = 99
-    db.get(StudyType, 1).name = "Renamed type"
+    db.get(CohortCalendar, 1).name = "Renamed type"
     db.get(Semester, 1).name = "Renamed semester"
     db.commit()
     preserved = get_draft_schedule(db, 1, 1)
     assert preserved.course_name_snapshot == "Planning 101"
     assert preserved.cohort_name_snapshot == "AI 1"
     assert preserved.cohort_size_snapshot == 30
-    assert preserved.study_type_name_snapshot == "Full-time"
+    assert preserved.cohort_calendar_name_snapshot == "Full-time"
     assert preserved.semester_name_snapshot == "Fall"
 
 
@@ -226,7 +227,7 @@ def test_regeneration_recaptures_current_academic_snapshot():
 
     course = db.get(Course, 1)
     cohort = db.get(Cohort, 1)
-    study_type = db.get(StudyType, 1)
+    cohort_calendar = db.get(CohortCalendar, 1)
     semester = db.get(Semester, 1)
     course.name = "KI Grundlagen"
     course.total_units = 22
@@ -234,7 +235,7 @@ def test_regeneration_recaptures_current_academic_snapshot():
     course.max_session_units = 5
     cohort.name = "Data Science 2026"
     cohort.student_count = 24
-    study_type.name = "Part-time"
+    cohort_calendar.name = "Part-time"
     semester.name = "Fall 2026"
     semester.start_date = date(2026, 9, 1)
     semester.end_date = date(2027, 2, 12)
@@ -255,8 +256,8 @@ def test_regeneration_recaptures_current_academic_snapshot():
     assert regenerated.cohort_id_snapshot == 1
     assert regenerated.cohort_name_snapshot == "Data Science 2026"
     assert regenerated.cohort_size_snapshot == 24
-    assert regenerated.study_type_id_snapshot == 1
-    assert regenerated.study_type_name_snapshot == "Part-time"
+    assert regenerated.cohort_calendar_id_snapshot == 1
+    assert regenerated.cohort_calendar_name_snapshot == "Part-time"
     assert regenerated.semester_name_snapshot == "Fall 2026"
     assert regenerated.semester_start_date_snapshot == date(2026, 9, 1)
     assert regenerated.semester_end_date_snapshot == date(2027, 2, 12)
@@ -273,8 +274,8 @@ def test_generation_constraints_default_save_replace_and_clear():
     assert defaults.is_custom is False
     assert defaults.planning_period.start_date == date(2026, 9, 7)
     assert defaults.planning_period.end_date == date(2026, 12, 20)
-    assert defaults.study_type_id == 1
-    assert defaults.study_type_name == "Full-time"
+    assert defaults.cohort_calendar_id == 1
+    assert defaults.cohort_calendar_name == "Full-time"
     assert [window.weekday for window in defaults.allowed_windows] == [0]
 
     saved = save_generation_constraints(
@@ -329,7 +330,7 @@ def test_saved_generation_constraint_dates_must_be_inside_the_semester(period):
         )
 
 
-def test_effective_constraints_follow_current_study_type_and_active_windows():
+def test_effective_constraints_follow_current_cohort_calendar_and_active_windows():
     db = make_session()
     seed_course(db)
     course_plan = load_course_plan(db, 1)
@@ -341,13 +342,13 @@ def test_effective_constraints_follow_current_study_type_and_active_windows():
         PlanningPeriodPlan(date(2026, 9, 14), date(2026, 10, 5)),
         [TimeWindowPlan(id=None, weekday=4, start_time=time(14), end_time=time(18))],
     )
-    db.get(StudyTypeTimeWindow, 1).is_active = False
+    db.get(CohortCalendarTimeWindow, 1).is_active = False
     db.add_all(
         [
-            StudyType(id=2, name="Part-time"),
-            StudyTypeTimeWindow(
+            CohortCalendar(cohort_id=2, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), id=2, name="Part-time"),
+            CohortCalendarTimeWindow(
                 id=2,
-                study_type_id=2,
+                cohort_calendar_id=2,
                 weekday=2,
                 start_time=time(17),
                 end_time=time(21),
@@ -355,15 +356,17 @@ def test_effective_constraints_follow_current_study_type_and_active_windows():
             ),
         ]
     )
-    db.get(Course, 1).study_type_id = 2
+    db.add(Cohort(id=2,name="Other cohort",student_count=30))
+    db.get(Course, 1).cohort_id = 2
+    db.expire(db.get(Course,1), ["cohort_calendar"])
     db.flush()
 
     current_plan = load_course_plan(db, 1)
     effective = load_generation_constraints(db, current_plan, semester_plan)
 
     assert effective.is_custom is True
-    assert effective.study_type_id == 2
-    assert effective.study_type_name == "Part-time"
+    assert effective.cohort_calendar_id == 2
+    assert effective.cohort_calendar_name == "Part-time"
     assert [(row.weekday, row.start_time, row.end_time) for row in effective.allowed_windows] == [
         (2, time(17), time(21))
     ]
@@ -539,6 +542,7 @@ def test_course_semester_identity_revisions_and_cross_semester_retention():
     db = make_session()
     seed_course(db)
     db.add(Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)))
+    db.add(CohortCalendar(cohort_id=1,semester_id=2,start_date=date(2027,2,1),end_date=date(2027,6,20),name="Spring calendar"))
     db.commit()
     plan = load_course_plan(db, 1)
     sessions = [GeneratedSession(date(2026, 9, 7), start_time=time(8), end_time=time(11, 30), units=4, time_window_id=1, constraint_window_index=0)]
@@ -584,6 +588,7 @@ def test_date_override_optimistic_create_update_idempotency_reset_and_isolation(
     db = make_session()
     seed_course(db)
     db.add(Semester(id=2, name="Spring", start_date=date(2027, 2, 1), end_date=date(2027, 6, 20)))
+    db.add(CohortCalendar(cohort_id=1,semester_id=2,start_date=date(2027,2,1),end_date=date(2027,6,20),name="Spring calendar"))
     db.flush()
     plan = load_course_plan(db, 1)
     fall = load_semester_plan(db, 1)

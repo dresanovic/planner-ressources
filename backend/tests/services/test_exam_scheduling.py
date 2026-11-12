@@ -39,14 +39,14 @@ def _input(**changes):
 
 @pytest.mark.parametrize('keep_weekly', [True, False])
 def test_dated_windows_never_supply_recurring_exam_start_proposals(db, keep_weekly):
-    from app.models.planning import StudyTypeTimeWindow, Course
+    from app.models.planning import CohortCalendarTimeWindow, Course
     from app.services.exam_scheduling import _automatic_candidates
     db.add(teaching_draft())
     save_exam_configuration(db, course_id=1, semester_id=1, enabled=True, configuration=_input(), expected_revision=None, today=date(2026,9,1))
     if not keep_weekly:
-        for row in db.query(StudyTypeTimeWindow):
+        for row in db.query(CohortCalendarTimeWindow):
             db.delete(row)
-    db.add(StudyTypeTimeWindow(study_type_id=1,kind='dated',weekday=None,date=date(2026,12,7),
+    db.add(CohortCalendarTimeWindow(cohort_calendar_id=1,kind='dated',weekday=None,date=date(2026,12,7),
         start_time=time(7,13),end_time=time(12),is_intensive=True))
     db.commit()
     overview = get_exam_planning_overview(db, 1, today=date(2026,9,1))['courses'][0]

@@ -438,7 +438,7 @@ function CalendarPlanningWorkspaceContent({
         <FacetSelect label={label('cohort.fieldLabel')} value={filters.cohort} values={workspace.filterFacets.cohorts} onChange={(value) => applyFilter('cohort', value)} />
         {!restricted && <FacetSelect label={label('lecturer.fieldLabel')} value={filters.lecturer} values={workspace.filterFacets.lecturers} onChange={(value) => applyFilter('lecturer', value)} />}
         <FacetSelect label={label('room.fieldLabel')} value={filters.room} values={workspace.filterFacets.rooms} onChange={(value) => applyFilter('room', value)} />
-        <FacetSelect label="Studienart" value={filters.studyType} values={workspace.filterFacets.studyTypes} onChange={(value) => applyFilter('studyType', value)} />
+        <FacetSelect label="Kohortenkalender" value={filters.cohortCalendar} values={workspace.filterFacets.cohortCalendars} onChange={(value) => applyFilter('cohortCalendar', value)} />
         <FacetSelect label="Terminart" value={filters.sessionType} values={workspace.filterFacets.sessionTypes} onChange={(value) => applyFilter('sessionType', value as WorkspaceFilters['sessionType'])} />
         <FacetSelect label="Revisionsstatus" value={filters.lifecycle} values={workspace.filterFacets.lifecycleContexts} onChange={(value) => applyFilter('lifecycle', value)} />
         <FacetSelect label="Prüfstatus" value={filters.validation} values={workspace.filterFacets.validationCategories} onChange={(value) => applyFilter('validation', value)} />
@@ -629,7 +629,7 @@ function OccurrenceDetail({ occurrence, workspace, headingRef, onClose, onEditTe
         <div><dt>Status</dt><dd>{stateLabel(workspace.selectedRevision.lifecycleState)}</dd></div>
         <div><dt>Revision</dt><dd>{revisionLabel(workspace.selectedRevision)} · {workspace.selectedRevision.designation === 'active_working' ? 'Arbeitsrevision' : 'Aktuelle Veröffentlichung'}</dd></div>
         <div><dt>{label('course.fieldLabel')}</dt><dd>{course?.name ?? occurrence.courseRef}</dd></div>
-        <div><dt>Studienart</dt><dd>{course?.studyType ?? 'Nicht verfügbar'}</dd></div>
+        <div><dt>Kohortenkalender</dt><dd>{course?.cohortCalendar ?? 'Nicht verfügbar'}</dd></div>
         <div><dt>Datum und Uhrzeit</dt><dd>{formatCalendarDate(occurrence.date)}, {occurrence.startTime}–{occurrence.endTime}</dd></div>
         <div><dt>{label('cohort.fieldLabel')}</dt><dd>{occurrence.cohort}</dd></div>
         <div><dt>{label('lecturer.fieldLabel')}</dt><dd>{occurrence.lecturerRefs.map((ref) => workspace.filterFacets.lecturers.find((item) => item.value === ref)?.label ?? 'Nicht verfügbar').join(', ')}</dd></div>
@@ -677,7 +677,7 @@ function reconcileFilters(
     cohort: workspace.filterFacets.cohorts,
     lecturer: workspace.filterFacets.lecturers,
     room: workspace.filterFacets.rooms,
-    studyType: workspace.filterFacets.studyTypes,
+    cohortCalendar: workspace.filterFacets.cohortCalendars,
     sessionType: workspace.filterFacets.sessionTypes,
     lifecycle: workspace.filterFacets.lifecycleContexts,
     validation: workspace.filterFacets.validationCategories,

@@ -591,7 +591,7 @@ export function LecturerReviewManagement({
                           <div><dt>Erfasstes Datum und Uhrzeit</dt><dd>{formatCalendarDate(item.sessionContext.date)}, {item.sessionContext.startTime}–{item.sessionContext.endTime} ({item.sessionContext.timeZone})</dd></div>
                           <div><dt>Erfasster {label('room.singular')}</dt><dd>{item.sessionContext.roomName}</dd></div>
                           <div><dt>Erfasste {label('cohort.singular')}</dt><dd>{item.sessionContext.cohortName}</dd></div>
-                          <div><dt>Erfasste Studienart</dt><dd>{item.sessionContext.studyType ?? 'Nicht verfügbar'}</dd></div>
+                          <div><dt>Erfasste Kohortenkalender</dt><dd>{item.sessionContext.cohortCalendar ?? 'Nicht verfügbar'}</dd></div>
                           {item.sessionContext.sessionKind === 'teaching' ? (
                             <div><dt>Lehreinheiten</dt><dd>{item.sessionContext.teachingUnits ?? 'Nicht verfügbar'}</dd></div>
                           ) : (

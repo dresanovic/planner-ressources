@@ -37,7 +37,7 @@ export function lecturerReviewSessionContextFixture() {
     timeZone: TIME_ZONE,
     roomName: 'Room A-101',
     cohortName: 'CS-26',
-    studyType: 'Full-time',
+    cohortCalendar: 'Full-time',
     teachingUnits: 3,
     examDurationMinutes: null,
   }
@@ -117,7 +117,7 @@ export function publicLecturerReviewFixture() {
         { value: 'room:101', label: 'Room A-101' },
         { value: 'room:202', label: 'Auditorium B' },
       ],
-      studyTypes: [{ value: 'Full-time', label: 'Full-time' }],
+      cohortCalendars: [{ value: 'Full-time', label: 'Full-time' }],
       sessionTypes: [
         { value: 'exam', label: 'Prüfungstermin' },
         { value: 'teaching', label: 'Lehrtermin' },
@@ -137,7 +137,7 @@ export function publicLecturerReviewFixture() {
         code: 'COURSE-42',
         title: 'Algorithms',
         cohortName: 'CS-26',
-        studyType: 'Full-time',
+        cohortCalendar: 'Full-time',
         sessions: [
           {
             sessionRef: 'teaching:101',
@@ -164,7 +164,7 @@ export function publicLecturerReviewFixture() {
         code: 'COURSE-43',
         title: 'Data Structures',
         cohortName: 'CS-26',
-        studyType: 'Full-time',
+        cohortCalendar: 'Full-time',
         sessions: [
           {
             sessionRef: 'exam:202',
@@ -203,7 +203,7 @@ export function emptyPublicLecturerReviewFixture() {
     courses: [],
     cohorts: [],
     rooms: [],
-    studyTypes: [],
+    cohortCalendars: [],
     sessionTypes: [],
     lifecycleContexts: value.filterFacets.lifecycleContexts,
     validationCategories: [],
@@ -357,7 +357,7 @@ export function plannerLecturerReviewOverviewFixture() {
           timeZone: TIME_ZONE,
           roomName: 'Auditorium B',
           cohortName: 'CS-26',
-          studyType: 'Full-time',
+          cohortCalendar: 'Full-time',
           teachingUnits: null,
           examDurationMinutes: 120,
         },
@@ -389,7 +389,7 @@ export function plannerLecturerReviewOverviewFixture() {
               timeZone: TIME_ZONE,
               roomName: 'Auditorium B',
               cohortName: 'CS-26',
-              studyType: 'Full-time',
+              cohortCalendar: 'Full-time',
               teachingUnits: null,
               examDurationMinutes: 120,
             },

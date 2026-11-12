@@ -23,7 +23,7 @@ from app.models.planning import (
     ResourceUnavailabilityWeekday,
     Room,
     Semester,
-    StudyTypeTimeWindow,
+    CohortCalendarTimeWindow,
 )
 from scripts import create_seed_data
 from scripts import seed_dummy_planning_data as seed_script
@@ -138,7 +138,7 @@ def test_seeded_baseline_excludes_generated_schedules_sessions_and_exams(
     with Session(engine) as db:
         assert db.query(Cohort).count() == 3
         assert db.query(Semester).count() == 1
-        assert db.query(StudyTypeTimeWindow).count() == 6
+        assert db.query(CohortCalendarTimeWindow).count() == 9
         assert db.query(InstitutionHoliday).count() == 13
         assert db.query(DraftSchedule).count() == 0
         assert db.query(DraftSession).count() == 0
@@ -177,10 +177,10 @@ def test_seed_accepts_custom_json_data_file(tmp_path, monkeypatch):
                         "revision": 1,
                     }
                 ],
-                "study_types": [{"name": "Custom Type", "revision": 1}],
-                "study_type_time_windows": [
+                "cohort_calendars": [{"name":"Custom Type","cohort":"Custom Cohort","semester":"Custom Semester","start_date":"2026-09-01","end_date":"2027-01-31","revision":1}],
+                "cohort_calendar_time_windows": [
                     {
-                        "study_type": "Custom Type",
+                        "cohort_calendar": "Custom Type",
                         "weekday": 2,
                         "start_time": "08:00",
                         "end_time": "12:00",
@@ -196,7 +196,7 @@ def test_seed_accepts_custom_json_data_file(tmp_path, monkeypatch):
                         "min_session_units": 2,
                         "max_session_units": 4,
                         "cohort": "Custom Cohort",
-                        "study_type": "Custom Type",
+                        "cohort_calendar": "Custom Type",
                         "current_semester": "Custom Semester",
                         "eligible_lecturers": ["Dr. Custom"],
                         "eligible_rooms": ["Room Custom"],
@@ -217,7 +217,7 @@ def test_seed_accepts_custom_json_data_file(tmp_path, monkeypatch):
         course = db.execute(select(Course)).scalar_one()
         assert course.name == "Custom Course"
         assert course.cohort.name == "Custom Cohort"
-        assert course.study_type.name == "Custom Type"
+        assert course.cohort_calendar.name == "Custom Type"
         assert course.current_semester.name == "Custom Semester"
         assert [item.lecturer.name for item in course.eligible_lecturers] == ["Dr. Custom"]
         assert [item.room.name for item in course.eligible_rooms] == ["Room Custom"]

@@ -9,7 +9,7 @@ export const ACADEMIC_DATA_CATEGORIES = [
   { id: 'holidays', label: 'Feiertage', singular: 'Feiertag' },
   { id: 'cohorts', label: label('cohort.navigation'), singular: label('cohort.singular') },
   { id: 'courses', label: label('course.navigation'), singular: label('course.singular') },
-  { id: 'study-types', label: 'Studienformen', singular: 'Studienform' },
+  { id: 'cohort-calendars', label: 'Kohortenkalender', singular: 'Kohortenkalender' },
   { id: 'time-windows', label: 'Zeitfenster', singular: 'Zeitfenster' },
   { id: 'lecturers', label: label('lecturer.navigation'), singular: label('lecturer.singular') },
   { id: 'rooms', label: label('room.navigation'), singular: label('room.singular') },

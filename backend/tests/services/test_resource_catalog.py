@@ -18,7 +18,7 @@ from app.models.planning import (
     ResourceUnavailabilityPeriod,
     Room,
     Semester,
-    StudyType,
+    CohortCalendar,
 )
 from app.services.resource_catalog import (
     ResourceCatalogError,
@@ -49,9 +49,10 @@ def db():
 def _add_course(db: Session, lecturer: Lecturer, room: Room, *, active: bool = True) -> Course:
     semester = Semester(name=f"Semester {active}", normalized_name=f"semester {active}", normalized_name_key=f"semester {active}", start_date=date(2026, 9, 1), end_date=date(2026, 12, 20))
     cohort = Cohort(name=f"Cohort {active}", normalized_name=f"cohort {active}", normalized_name_key=f"cohort {active}", student_count=30)
-    study_type = StudyType(name=f"Type {active}", normalized_name=f"type {active}", normalized_name_key=f"type {active}")
-    db.add_all([semester, cohort, study_type]); db.flush()
-    course = Course(name=f"Course {active}", normalized_name=f"course {active}", normalized_name_key=f"course {active}", total_units=4, min_session_units=2, max_session_units=4, cohort_id=cohort.id, study_type_id=study_type.id, current_semester_id=semester.id, is_active=active)
+    db.add_all([semester,cohort]); db.flush()
+    cohort_calendar = CohortCalendar(cohort_id=cohort.id, semester_id=semester.id, start_date=date(2026,1,1), end_date=date(2027,12,31), name=f"Type {active}", normalized_name=f"type {active}", normalized_name_key=f"type {active}")
+    db.add_all([semester, cohort, cohort_calendar]); db.flush()
+    course = Course(name=f"Course {active}", normalized_name=f"course {active}", normalized_name_key=f"course {active}", total_units=4, min_session_units=2, max_session_units=4, cohort_id=cohort.id,  current_semester_id=semester.id, is_active=active)
     db.add(course); db.flush()
     db.add_all([CourseEligibleLecturer(course_id=course.id, lecturer_id=lecturer.id), CourseEligibleRoom(course_id=course.id, room_id=room.id)])
     db.flush()
@@ -59,7 +60,7 @@ def _add_course(db: Session, lecturer: Lecturer, room: Room, *, active: bool = T
 
 
 def _add_saved_session(db: Session, course: Course, lecturer: Lecturer, room: Room) -> None:
-    draft = DraftSchedule(course_id=course.id, semester_id=course.current_semester_id, course_name_snapshot=course.name, course_total_units_snapshot=4, course_min_session_units_snapshot=2, course_max_session_units_snapshot=4, cohort_id_snapshot=course.cohort_id, cohort_name_snapshot=course.cohort.name, cohort_size_snapshot=course.cohort.student_count, study_type_id_snapshot=course.study_type_id, study_type_name_snapshot=course.study_type.name, semester_name_snapshot=course.current_semester.name, semester_start_date_snapshot=course.current_semester.start_date, semester_end_date_snapshot=course.current_semester.end_date)
+    draft = DraftSchedule(course_id=course.id, semester_id=course.current_semester_id, course_name_snapshot=course.name, course_total_units_snapshot=4, course_min_session_units_snapshot=2, course_max_session_units_snapshot=4, cohort_id_snapshot=course.cohort_id, cohort_name_snapshot=course.cohort.name, cohort_size_snapshot=course.cohort.student_count, cohort_calendar_id_snapshot=course.cohort_calendar_id, cohort_calendar_name_snapshot=course.cohort_calendar.name, semester_name_snapshot=course.current_semester.name, semester_start_date_snapshot=course.current_semester.start_date, semester_end_date_snapshot=course.current_semester.end_date)
     db.add(draft); db.flush()
     db.add(DraftSession(draft_schedule_id=draft.id, course_id=course.id, lecturer_id=lecturer.id, cohort_id=course.cohort_id, room_id=room.id, date=date(2026, 9, 7), start_time=time(8), end_time=time(10), units=2, constraint_window_index=0))
     db.flush()

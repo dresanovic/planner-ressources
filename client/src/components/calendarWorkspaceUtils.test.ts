@@ -213,7 +213,7 @@ describe('calendarWorkspaceUtils', () => {
       name: 'Databases',
       cohort: 'DS-26',
       lecturerRefs: ['lecturer:2'],
-      studyType: 'Part-time',
+      cohortCalendar: 'Part-time',
       occurrenceRefs: [],
       findingRefs: [],
       outcomeRefs: [],
@@ -223,7 +223,7 @@ describe('calendarWorkspaceUtils', () => {
     expect(projectWorkspace(workspace, { course: 'course:2' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
     expect(projectWorkspace(workspace, { cohort: 'DS-26' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
     expect(projectWorkspace(workspace, { lecturer: 'lecturer:2' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
-    expect(projectWorkspace(workspace, { studyType: 'Part-time' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
+    expect(projectWorkspace(workspace, { cohortCalendar: 'Part-time' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
     expect(projectWorkspace(workspace, { room: 'room:1' }).courses.map((item) => item.courseRef)).toEqual(['course:1'])
     expect(projectWorkspace(workspace, { sessionType: 'exam' }).courses.map((item) => item.courseRef)).toEqual(['course:1'])
     expect(projectWorkspace(workspace, { sessionType: 'teaching' }).courses.map((item) => item.courseRef)).toEqual(['course:1', 'course:2'])

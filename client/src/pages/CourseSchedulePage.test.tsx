@@ -116,7 +116,7 @@ const entity = (id: number, name: string) => ({ id, name })
 const options = {
   courses: [1, 2].map((id) => ({
     id, name: `Course ${id}`, totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4, cohortSize: 30,
-    lecturer: entity(id, `L${id}`), cohort: entity(id, `C${id}`), room: entity(id, `R${id}`), studyType: entity(1, 'Full-time'),
+    lecturer: entity(id, `L${id}`), cohort: entity(id, `C${id}`), room: entity(id, `R${id}`), cohortCalendar: entity(1, 'Full-time'),
   })),
   semesters: [{ id: 1, name: 'Fall 2026', startDate: '2026-09-07', endDate: '2026-12-20' }],
   timeWindows: [],

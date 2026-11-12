@@ -15,7 +15,7 @@ export function filterSessions(sessions: DraftSession[], filters: ReviewFilters)
       matchesFilter(session.cohortId, filters.cohortId) &&
       matchesFilter(session.lecturerId, filters.lecturerId) &&
       matchesFilter(session.roomId, filters.roomId) &&
-      matchesFilter(session.studyTypeId, filters.studyTypeId)
+      matchesFilter(session.cohortCalendarId, filters.cohortCalendarId)
     )
   })
 }

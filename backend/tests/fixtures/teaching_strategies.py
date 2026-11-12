@@ -27,6 +27,9 @@ def standard_cases():
 def snapshot_identity(courses, fixed):
     records = [asdict(c) for c in (*courses, *fixed)]
     for record in records:
+        # Compare solver facts to the prechange recording despite metadata rename.
+        if "cohort_calendar_id" in record:
+            record["study_type_id"] = record.pop("cohort_calendar_id")
         if record.get('explicit_lecturer_portions') is None:
             record.pop('explicit_lecturer_portions', None)
     return hashlib.sha256(json.dumps(records,

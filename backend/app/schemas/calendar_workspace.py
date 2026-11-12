@@ -67,7 +67,7 @@ class WorkspaceCourse(WorkspaceModel):
     name: str
     cohort: str
     lecturer_refs: list[str]
-    study_type: str
+    cohort_calendar: str
     planning_eligible: bool
     total_teaching_units: int = Field(ge=0)
     scheduled_teaching_units: int = Field(ge=0)
@@ -325,7 +325,7 @@ class FilterFacets(WorkspaceModel):
     cohorts: list[FacetValue]
     lecturers: list[FacetValue]
     rooms: list[FacetValue]
-    study_types: list[FacetValue]
+    cohort_calendars: list[FacetValue]
     session_types: list[FacetValue]
     lifecycle_contexts: list[FacetValue]
     validation_categories: list[FacetValue]

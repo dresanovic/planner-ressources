@@ -24,8 +24,8 @@ it('retains precise window times when editing or copying an existing window', as
   const host = document.body.appendChild(document.createElement('div'))
   const root = createRoot(host)
   await act(async () => root.render(<AcademicRecordEditor category="time-windows" lockKind
-    options={{ studyTypes: [{ id: 1, name: 'Form' }] }}
-    initialValues={{ kind: 'dated', studyTypeId: 1, date: '2026-11-09', startTime: '09:00:00.000001', endTime: '12:00:00.000001' }} onSubmit={onSubmit} />))
+    options={{ cohortCalendars: [{ id: 1, name: 'Form' }] }}
+    initialValues={{ kind: 'dated', cohortCalendarId: 1, date: '2026-11-09', startTime: '09:00:00.000001', endTime: '12:00:00.000001' }} onSubmit={onSubmit} />))
   expect(host.querySelector<HTMLInputElement>('[name=startTime]')!.value).toBe('09:00:00.000001')
   expect(host.querySelector<HTMLInputElement>('[name=endTime]')!.value).toBe('12:00:00.000001')
   expect(host.querySelector('form')!.checkValidity()).toBe(true)
@@ -38,7 +38,7 @@ it('retains precise window times when editing or copying an existing window', as
 it('explains duplicate identity separately from a stale revision while retaining copied values',async()=>{
   const onSubmit=vi.fn().mockRejectedValue(new AcademicCatalogApiError(409,[{code:'DUPLICATE_TIME_WINDOW',message:'duplicate',field:null,meta:{conflictingRecordId:12}}]))
   const root=createRoot(document.body.appendChild(document.createElement('div')))
-  await act(async()=>root.render(<AcademicRecordEditor category="time-windows" lockKind initialValues={{kind:'dated',date:'2026-11-09',isIntensive:true,studyTypeId:1,startTime:'09:00',endTime:'12:00'}} onSubmit={onSubmit}/>))
+  await act(async()=>root.render(<AcademicRecordEditor category="time-windows" lockKind initialValues={{kind:'dated',date:'2026-11-09',isIntensive:true,cohortCalendarId:1,startTime:'09:00',endTime:'12:00'}} onSubmit={onSubmit}/>))
   await act(async()=>document.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})))
   expect(document.querySelector('[role="alert"]')?.textContent).toContain('Zeitfenster bereits vorhanden')
   expect(document.body.textContent).toContain('archivierte')
@@ -81,7 +81,7 @@ it('suppresses repeated submissions in the same event batch while a write is pen
   let resolve: (value:unknown)=>void = ()=>undefined
   const onSubmit=vi.fn().mockImplementation(()=>new Promise(done=>{resolve=done}))
   const root=createRoot(document.body.appendChild(document.createElement('div')))
-  await act(async()=>root.render(<AcademicRecordEditor category="time-windows" initialValues={{studyTypeId:1,weekday:0,startTime:'09:00',endTime:'12:00'}} onSubmit={onSubmit}/>))
+  await act(async()=>root.render(<AcademicRecordEditor category="time-windows" initialValues={{cohortCalendarId:1,weekday:0,startTime:'09:00',endTime:'12:00'}} onSubmit={onSubmit}/>))
   act(()=>{
     document.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))
     document.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))
@@ -94,8 +94,8 @@ it('creates an exact German date with a default-off intensive marker and retains
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   const onSubmit = vi.fn().mockRejectedValue(new AcademicCatalogApiError(422, [{ code: 'VALIDATION_ERROR', message: 'Datum prüfen', field: 'date' }]))
   await act(async () => root.render(<AcademicRecordEditor category="time-windows"
-    options={{ studyTypes: [{ id: 1, name: 'Berufsbegleitend' }] }}
-    initialValues={{ kind: 'dated', studyTypeId: 1, date: '2026-11-09', startTime: '09:00', endTime: '12:00' }} onSubmit={onSubmit} />))
+    options={{ cohortCalendars: [{ id: 1, name: 'Berufsbegleitend' }] }}
+    initialValues={{ kind: 'dated', cohortCalendarId: 1, date: '2026-11-09', startTime: '09:00', endTime: '12:00' }} onSubmit={onSubmit} />))
   expect(document.querySelector<HTMLInputElement>('input[name="date"]')?.value).toBe('09.11.2026')
   expect(document.querySelector<HTMLInputElement>('input[name="isIntensive"]')?.checked).toBe(false)
   expect(document.querySelector('select[name="weekday"]')).toBeNull()
@@ -126,7 +126,7 @@ it('round-trips optional preferred units and allows clearing to the midpoint def
 it('retains controlled values and renders required course relationships', async () => {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   const onSubmit = vi.fn().mockRejectedValue(new Error('invalid'))
-  await act(async () => root.render(<AcademicRecordEditor category="courses" options={{ semesters: [{ id: 1, name: 'Fall' }], cohorts: [{ id: 2, name: 'AI 1' }], studyTypes: [{ id: 3, name: 'Full-time' }], lecturers: [{ id: 4, name: 'Ada' }], rooms: [{ id: 5, name: 'R1' }] }} onSubmit={onSubmit} />))
+  await act(async () => root.render(<AcademicRecordEditor category="courses" options={{ semesters: [{ id: 1, name: 'Fall' }], cohorts: [{ id: 2, name: 'AI 1' }], cohortCalendars: [{ id: 3, name: 'Full-time' }], lecturers: [{ id: 4, name: 'Ada' }], rooms: [{ id: 5, name: 'R1' }] }} onSubmit={onSubmit} />))
   const name = document.querySelector<HTMLInputElement>('input[name="name"]')!
   act(() => { name.value = 'Scheduling 101'; name.dispatchEvent(new Event('input', { bubbles: true })) })
   await act(async () => document.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
@@ -138,7 +138,7 @@ it('retains controlled values and renders required course relationships', async 
 
 it('blocks Course creation with actionable feedback when read-only resources are unavailable', async () => {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
-  await act(async () => root.render(<AcademicRecordEditor category="courses" options={{ semesters: [{ id: 1, name: 'Fall' }], cohorts: [{ id: 2, name: 'AI 1' }], studyTypes: [{ id: 3, name: 'Full-time' }], lecturers: [], rooms: [] }} onSubmit={vi.fn()} />))
+  await act(async () => root.render(<AcademicRecordEditor category="courses" options={{ semesters: [{ id: 1, name: 'Fall' }], cohorts: [{ id: 2, name: 'AI 1' }], cohortCalendars: [{ id: 3, name: 'Full-time' }], lecturers: [], rooms: [] }} onSubmit={vi.fn()} />))
   expect(document.body.textContent).toContain('Es ist keine Lehrende Person verfügbar')
   expect(document.body.textContent).toContain('Es ist kein Raum verfügbar')
   expect(document.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true)
@@ -150,7 +150,7 @@ it('shows every structured correction returned by catalog validation', async () 
     { code: 'VALIDATION_ERROR', message: 'Total units must be positive.', field: 'totalUnits' },
     { code: 'REQUIRED_RELATIONSHIP_INVALID', message: 'Semester does not exist.', field: 'semesterId' },
   ]))
-  await act(async () => root.render(<AcademicRecordEditor category="courses" options={{ semesters: [{ id: 1, name: 'Fall' }], cohorts: [{ id: 2, name: 'AI 1' }], studyTypes: [{ id: 3, name: 'Vollzeit' }], lecturers: [{ id: 4, name: 'Ada' }], rooms: [{ id: 5, name: 'R1' }] }} onSubmit={onSubmit} />))
+  await act(async () => root.render(<AcademicRecordEditor category="courses" options={{ semesters: [{ id: 1, name: 'Fall' }], cohorts: [{ id: 2, name: 'AI 1' }], cohortCalendars: [{ id: 3, name: 'Vollzeit' }], lecturers: [{ id: 4, name: 'Ada' }], rooms: [{ id: 5, name: 'R1' }] }} onSubmit={onSubmit} />))
   await act(async () => document.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
   const totalUnits = document.querySelector<HTMLInputElement>('#academic-totalUnits')!
   const semester = document.querySelector<HTMLSelectElement>('#academic-semesterId')!
@@ -170,8 +170,8 @@ it('uses weekday names and preserves supplied stable order without exposing Sort
   const onSubmit = vi.fn().mockResolvedValue(undefined)
   await act(async () => root.render(<AcademicRecordEditor
     category="time-windows"
-    options={{ studyTypes: [{ id: 3, name: 'Part-time' }] }}
-    initialValues={{ studyTypeId: 3, weekday: 4, startTime: '18:00', endTime: '22:00', sortOrder: 99 }}
+    options={{ cohortCalendars: [{ id: 3, name: 'Part-time' }] }}
+    initialValues={{ cohortCalendarId: 3, weekday: 4, startTime: '18:00', endTime: '22:00', sortOrder: 99 }}
     onSubmit={onSubmit}
   />))
 
@@ -184,4 +184,19 @@ it('uses weekday names and preserves supplied stable order without exposing Sort
 
   await act(async () => document.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ weekday: 4, sortOrder: 99 }))
+})
+it('configures a cohort semester calendar and derives the LV calendar without a selector', async () => {
+  const onSubmit = vi.fn().mockResolvedValue(undefined)
+  const host = document.body.appendChild(document.createElement('div'))
+  const root = createRoot(host)
+  await act(async () => root.render(<AcademicRecordEditor category="cohort-calendars" options={{cohorts:[{id:1,name:'AI 2'}],semesters:[{id:1,name:'2027 S'}]}} initialValues={{cohortId:1,semesterId:1,startDate:'2027-03-01',endDate:'2027-07-09'}} onSubmit={onSubmit}/>))
+  expect(host.querySelector('[name=name]')).toBeNull()
+  await act(async () => host.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})))
+  expect(onSubmit).toHaveBeenLastCalledWith({cohortId:1,semesterId:1,startDate:'2027-03-01',endDate:'2027-07-09'})
+  await act(async () => root.render(<AcademicRecordEditor key="LV" category="courses" initialValues={{name:'LV',cohortId:1,semesterId:1,cohortCalendarId:99}} includeCourseResources={false} onSubmit={onSubmit}/>))
+  expect(host.querySelector('[name=cohortCalendarId]')).toBeNull()
+  await act(async () => host.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})))
+  expect(onSubmit.mock.lastCall?.[0]).not.toHaveProperty('cohortCalendarId')
+  await act(async () => root.unmount())
+  host.remove()
 })

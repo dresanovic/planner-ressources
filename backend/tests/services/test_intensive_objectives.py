@@ -18,6 +18,12 @@ def window(day, start=time(9), end=time(12,20), marked=True, identifier=1):
     return TimeWindowPlan(identifier,None,start,end,kind='dated',date=day,is_intensive=marked)
 
 
+def unmarked_window(start,end):
+    # Independent dated availability keeps marker-accounting scenarios distinct
+    # from the weekly-window replacement rule tested in dated_intensive_windows.
+    return window(MONDAY,start,end,marked=False,identifier=1)
+
+
 def course(identifier=1, *, windows=None, total=2, minimum=1, maximum=2, cohort=1):
     windows = windows or (window(MONDAY),window(MONDAY+timedelta(days=1),identifier=2))
     return replace(optimization_course(identifier,total_units=total,min_units=minimum,max_units=maximum,
@@ -42,7 +48,7 @@ def test_intensive_optimum_immediately_before_resource_unavailability(
         resource_kind, period_kind, marker_start, marker_end, unavailable_start, expected_start, expected_minutes):
     from app.models.planning import ResourceUnavailabilityPeriod, ResourceUnavailabilityWeekday
 
-    windows = (TimeWindowPlan(1, 0, time(9), time(12)),
+    windows = (unmarked_window( time(9), time(12)),
                window(MONDAY, marker_start, marker_end, identifier=2))
     value = replace(course(windows=windows, total=1, minimum=1, maximum=1),
                     planning_period=PlanningPeriodPlan(MONDAY, MONDAY))
@@ -118,7 +124,7 @@ def test_intensive_time_outranks_weekly_shape_without_compelling_full_lv_placeme
 
 
 def test_candidate_closure_includes_instruction_boundary_alignment_inside_wider_permission():
-    windows = (TimeWindowPlan(1,0,time(8),time(13)),window(MONDAY,time(10,7),time(10,52),identifier=2))
+    windows = (unmarked_window(time(8),time(13)),window(MONDAY,time(10,7),time(10,52),identifier=2))
     value = course(windows=windows,total=2,minimum=2,maximum=2)
     result = optimize_semester([value],[],generated_only=True,deadline_seconds=10)
     # Enumerating each minute proves 09:12 is the first full 45-minute overlap.
@@ -138,7 +144,7 @@ def test_candidate_closure_includes_instruction_boundary_alignment_inside_wider_
 ])
 def test_fixed_teaching_contributes_unique_lv_presence_but_not_coverage(fixed_cohort,source_kind,expected_day,expected_variety):
     fixed = FixedSession(99,fixed_cohort,99,99,MONDAY,time(8),time(8,45),source_kind=source_kind,
-        units=1,study_type_id=2,marked_windows=(window(MONDAY,time(8),time(9)),))
+        units=1,cohort_calendar_id=2,marked_windows=(window(MONDAY,time(8),time(9)),))
     value = course(total=1,minimum=1,maximum=1)
     result = optimize_semester([value],[fixed],generated_only=True,deadline_seconds=10)
     assert result.total_units == 1
@@ -147,7 +153,7 @@ def test_fixed_teaching_contributes_unique_lv_presence_but_not_coverage(fixed_co
 
 
 def test_no_marker_preserves_the_same_arrangement_and_lower_objective_values():
-    value = course(windows=(TimeWindowPlan(1,0,time(9),time(12)),),total=2,minimum=2,maximum=2)
+    value = course(windows=(unmarked_window(time(9),time(12)),),total=2,minimum=2,maximum=2)
     result = optimize_semester([value],[],generated_only=True,deadline_seconds=10)
     assert result.courses[0].sessions[0].start_time == time(9)
     assert (result.intensive_teaching_time,result.daily_variety) == (0,0)
@@ -171,7 +177,7 @@ def test_exhaustive_microsecond_shared_packing_oracle(slack,marker_start,marker_
     optimum=max(score for score,_ in alternatives)
     origin=datetime.combine(MONDAY,time(9))
     at=lambda tick:(origin+timedelta(microseconds=tick)).time()
-    windows=(TimeWindowPlan(1,0,time(9),at(2*duration+slack)),window(MONDAY,at(duration+marker_start),at(duration+marker_end),identifier=2))
+    windows=(unmarked_window(time(9),at(2*duration+slack)),window(MONDAY,at(duration+marker_start),at(duration+marker_end),identifier=2))
     courses=[replace(course(i,windows=windows,total=1,minimum=1,maximum=1),
         lecturers=course(1).lecturers,rooms=course(1).rooms) for i in (1,2)]
     result=optimize_semester(courses,[],generated_only=True,deadline_seconds=10)

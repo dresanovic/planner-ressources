@@ -16,7 +16,7 @@ class ValidationAlertCode(StrEnum):
     COHORT_OVERLAP = "COHORT_OVERLAP"
     ROOM_CAPACITY = "ROOM_CAPACITY"
     GENERATION_CONSTRAINT_VIOLATION = "GENERATION_CONSTRAINT_VIOLATION"
-    STUDY_TYPE_WINDOW_VIOLATION = "STUDY_TYPE_WINDOW_VIOLATION"
+    COHORT_CALENDAR_WINDOW_VIOLATION = "COHORT_CALENDAR_WINDOW_VIOLATION"
     VALIDATION_DATA_MISSING = "VALIDATION_DATA_MISSING"
     LECTURER_UNAVAILABLE = "LECTURER_UNAVAILABLE"
     ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
@@ -77,7 +77,7 @@ class EvaluatedValidationFinding:
 @dataclass(frozen=True)
 class TeachingConstraintEvaluation:
     generation_reasons: tuple[str, ...]
-    study_type_issue_code: str | None
+    cohort_calendar_issue_code: str | None
 
     @property
     def issue_codes(self) -> tuple[str, ...]:
@@ -86,8 +86,8 @@ class TeachingConstraintEvaluation:
             codes.append(
                 ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION.value
             )
-        if self.study_type_issue_code is not None:
-            codes.append(self.study_type_issue_code)
+        if self.cohort_calendar_issue_code is not None:
+            codes.append(self.cohort_calendar_issue_code)
         return tuple(codes)
 
 
@@ -252,7 +252,7 @@ def collect_validation_alerts(
     rooms_by_id: dict[int, Room],
     lecturers_by_id: dict[int, Lecturer] | None = None,
     constraints_by_course_id: dict[int, GenerationConstraints],
-    study_windows_by_study_type_id: dict[int, list[TimeWindowPlan]],
+    study_windows_by_cohort_calendar_id: dict[int, list[TimeWindowPlan]],
     unavailability_by_resource: dict[tuple[str, int], list[ResourceUnavailabilityPeriod]] | None = None,
     eligible_lecturer_ids_by_course: dict[int, set[int]] | None = None,
     eligible_room_ids_by_course: dict[int, set[int]] | None = None,
@@ -449,11 +449,11 @@ def collect_validation_alerts(
 
     for draft, session in sessions:
         _add_generation_constraint_alert(alerts, draft, session, constraints_by_course_id)
-        _add_study_type_window_alert(
+        _add_cohort_calendar_window_alert(
             alerts,
             draft,
             session,
-            study_windows_by_study_type_id,
+            study_windows_by_cohort_calendar_id,
             constraints_by_course_id,
         )
 
@@ -567,20 +567,20 @@ def _add_generation_constraint_alert(
         )
 
 
-def _add_study_type_window_alert(
+def _add_cohort_calendar_window_alert(
     alerts: dict[int, list[ValidationAlert]],
     draft: DraftSchedule,
     session: DraftSession,
-    study_windows_by_study_type_id: dict[int, list[TimeWindowPlan]],
+    study_windows_by_cohort_calendar_id: dict[int, list[TimeWindowPlan]],
     constraints_by_course_id: dict[int, GenerationConstraints],
 ) -> None:
     constraints = constraints_by_course_id.get(draft.course_id)
-    active_study_type_id = (
-        constraints.study_type_id
+    active_cohort_calendar_id = (
+        constraints.cohort_calendar_id
         if constraints is not None
-        else draft.study_type_id_snapshot
+        else draft.cohort_calendar_id_snapshot
     )
-    windows = study_windows_by_study_type_id.get(active_study_type_id)
+    windows = study_windows_by_cohort_calendar_id.get(active_cohort_calendar_id)
     evaluation = evaluate_teaching_constraints(
         session_date=session.date,
         start_time=session.start_time,
@@ -600,28 +600,28 @@ def _add_study_type_window_alert(
             if constraints is not None
             else windows or []
         ),
-        study_type_windows=windows or [],
+        cohort_calendar_windows=windows or [],
     )
     if (
-        evaluation.study_type_issue_code
+        evaluation.cohort_calendar_issue_code
         == ValidationAlertCode.VALIDATION_DATA_MISSING.value
     ):
         alerts[session.id].append(
             ValidationAlert(
                 code=ValidationAlertCode.VALIDATION_DATA_MISSING,
-                message="Study Type Time Window data is missing for validation.",
+                message="Cohort Calendar Time Window data is missing for validation.",
             )
         )
         return
     if (
-        evaluation.study_type_issue_code
-        == ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION.value
+        evaluation.cohort_calendar_issue_code
+        == ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION.value
     ):
         alerts[session.id].append(
             ValidationAlert(
-                code=ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION,
+                code=ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION,
                 message=(
-                    "Study Type window mismatch: "
+                    "Cohort Calendar window mismatch: "
                     f"{_teaching_window_violation_reason(session, windows)}"
                 ),
             )
@@ -674,7 +674,7 @@ def _teaching_window_violation_reason_for_values(
     weekday = session_date.weekday()
     weekday_label = day_name[weekday]
     windows_for_day = sorted(
-        (window for window in windows if window_applies(window, session_date)),
+        (window for window in windows if window_applies(window, session_date, windows)),
         key=lambda window: (window.start_time, window.end_time),
     )
     if not windows_for_day:
@@ -716,7 +716,7 @@ def fits_any_validation_window(
 ) -> bool:
     from app.services.schedule_generation import window_applies
     return any(
-        window_applies(window, session_date)
+        window_applies(window, session_date, windows)
         and start_time >= window.start_time
         and end_time <= window.end_time
         for window in windows
@@ -731,7 +731,7 @@ def evaluate_teaching_constraints(
     planning_start_date: date,
     planning_end_date: date,
     allowed_windows: list[TimeWindowPlan],
-    study_type_windows: list[TimeWindowPlan] | None = None,
+    cohort_calendar_windows: list[TimeWindowPlan] | None = None,
 ) -> TeachingConstraintEvaluation:
     """Evaluate established teaching constraints for live or captured facts."""
     generation_reasons = _planning_period_violation_reasons_for_values(
@@ -740,11 +740,11 @@ def evaluate_teaching_constraints(
         planning_end_date=planning_end_date,
     )
     effective_study_windows = (
-        allowed_windows if study_type_windows is None else study_type_windows
+        allowed_windows if cohort_calendar_windows is None else cohort_calendar_windows
     )
-    study_type_issue_code = None
+    cohort_calendar_issue_code = None
     if not effective_study_windows:
-        study_type_issue_code = (
+        cohort_calendar_issue_code = (
             ValidationAlertCode.VALIDATION_DATA_MISSING.value
         )
     elif not fits_any_validation_window(
@@ -753,12 +753,12 @@ def evaluate_teaching_constraints(
         end_time,
         effective_study_windows,
     ):
-        study_type_issue_code = (
-            ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION.value
+        cohort_calendar_issue_code = (
+            ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION.value
         )
     return TeachingConstraintEvaluation(
         generation_reasons=generation_reasons,
-        study_type_issue_code=study_type_issue_code,
+        cohort_calendar_issue_code=cohort_calendar_issue_code,
     )
 
 

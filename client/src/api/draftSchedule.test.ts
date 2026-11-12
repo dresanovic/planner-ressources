@@ -32,7 +32,7 @@ describe('getDraftSchedule', () => {
 
 describe('generation constraint mutation contracts', () => {
   it('reads effective constraints and sends a date-only immediate save', async () => {
-    const constraints = { courseId: 2, semesterId: 3, isCustom: true, revision: 4, planningPeriod: { startDate: '2026-09-14', endDate: '2026-12-01' }, studyType: { id: 1, name: 'Full-time' }, allowedTeachingWindows: [] }
+    const constraints = { courseId: 2, semesterId: 3, isCustom: true, revision: 4, planningPeriod: { startDate: '2026-09-14', endDate: '2026-12-01' }, cohortCalendar: { id: 1, name: 'Full-time' }, allowedTeachingWindows: [] }
     const mutation = { constraints, draftSchedule: { draftScheduleId: 9, revision: 2, courseId: 2, semesterId: 3, context: {}, sessions: [{ validationAlerts: [{ code: 'GENERATION_CONSTRAINT_VIOLATION', message: 'Outside dates.', relatedSessions: [] }] }] } }
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => constraints })

@@ -23,7 +23,7 @@ class CourseOptionResponse(BaseModel):
     cohort: PlanningEntityResponse
     cohort_size: int = Field(alias="cohortSize")
     room: PlanningEntityResponse | None
-    study_type: PlanningEntityResponse = Field(alias="studyType")
+    cohort_calendar: PlanningEntityResponse | None = Field(alias="cohortCalendar")
 
 
 class SemesterOptionResponse(BaseModel):
@@ -39,7 +39,7 @@ class TimeWindowOptionResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: int
-    study_type_id: int = Field(alias="studyTypeId")
+    cohort_calendar_id: int = Field(alias="cohortCalendarId")
     weekday: int | None
     kind: str = 'weekly'
     date: CalendarDate | None = None

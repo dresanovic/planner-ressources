@@ -1876,7 +1876,7 @@ function PlanningSummary({ course, semester, progress, progressUnavailableLabel 
     <div><dt>{label('cohort.singular')}</dt><dd>{course.cohort.name}</dd></div>
     <div><dt>{label('lecturer.singular')}</dt><dd>{course.lecturer?.name ?? `Keine geeignete ${label('lecturer.singular')} verfügbar`}</dd></div>
     <div><dt>{label('room.singular')}</dt><dd>{course.room?.name ?? `Kein geeigneter ${label('room.singular')} verfügbar`}</dd></div>
-    <div><dt>Studienart</dt><dd>{course.studyType.name}</dd></div>
+    <div><dt>Kohortenkalender</dt><dd>{course.cohortCalendar.name}</dd></div>
     <div><dt>Semesterzeitraum</dt><dd>{semester ? formatCalendarDateRange(semester.startDate, semester.endDate) : 'Kein Semester ausgewählt'}</dd></div>
   </dl>
 }

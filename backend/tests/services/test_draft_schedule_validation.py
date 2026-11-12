@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db.base import Base
-from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Lecturer, Room, Semester, CohortCalendar, CohortCalendarTimeWindow
 from app.services.draft_schedule_repository import (
     load_course_plan,
     load_generation_constraints,
@@ -89,7 +89,7 @@ def make_session():
 
 
 def seed_validation_courses(db):
-    study_type = StudyType(id=1, name="Full-time")
+    cohort_calendar = CohortCalendar(cohort_id=1, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), id=1, name="Full-time")
     db.add_all(
         [
             Lecturer(id=1, name="Ada Lovelace"),
@@ -99,59 +99,61 @@ def seed_validation_courses(db):
             Room(id=1, name="R1", capacity=40),
             Room(id=2, name="R2", capacity=50),
             Room(id=3, name="Tiny", capacity=20),
-            study_type,
+            cohort_calendar,
             Semester(id=1, name="Fall", start_date=date(2026, 9, 7), end_date=date(2026, 12, 20)),
-            StudyTypeTimeWindow(
+            CohortCalendarTimeWindow(
                 id=1,
-                study_type_id=1,
+                cohort_calendar_id=1,
                 weekday=0,
                 start_time=time(8, 0),
                 end_time=time(12, 0),
                 sort_order=1,
             ),
-            StudyTypeTimeWindow(
+            CohortCalendarTimeWindow(
                 id=2,
-                study_type_id=1,
+                cohort_calendar_id=1,
                 weekday=2,
                 start_time=time(8, 0),
                 end_time=time(12, 0),
                 sort_order=2,
             ),
-            Course(
+            Course(current_semester_id=1,
                 id=1,
                 name="Planning 101",
                 total_units=20,
                 min_session_units=2,
                 max_session_units=4,
                 cohort_id=1,
-                study_type_id=1,
+
                 eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
                 eligible_rooms=[CourseEligibleRoom(room_id=1)],
             ),
-            Course(
+            Course(current_semester_id=1,
                 id=2,
                 name="Scheduling 201",
                 total_units=16,
                 min_session_units=2,
                 max_session_units=4,
                 cohort_id=2,
-                study_type_id=1,
+
                 eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
                 eligible_rooms=[CourseEligibleRoom(room_id=2)],
             ),
-            Course(
+            Course(current_semester_id=1,
                 id=3,
                 name="Studio 301",
                 total_units=16,
                 min_session_units=2,
                 max_session_units=4,
                 cohort_id=1,
-                study_type_id=1,
+
                 eligible_lecturers=[CourseEligibleLecturer(lecturer_id=2)],
                 eligible_rooms=[CourseEligibleRoom(room_id=1)],
             ),
         ]
     )
+    from tests.calendar_fixtures import complete_fixture_calendars
+    complete_fixture_calendars(db)
     db.commit()
 
 
@@ -188,11 +190,11 @@ def validation_context(db, drafts):
         draft.course_id: load_generation_constraints(db, load_course_plan(db, draft.course_id), semester_plan)
         for draft in drafts
     }
-    windows = {1: load_time_windows(db, 1)}
+    windows = {draft.course.cohort_calendar_id: load_time_windows(db,draft.course.cohort_calendar_id) for draft in drafts}
     return {
         "rooms_by_id": rooms_by_id,
         "constraints_by_course_id": constraints,
-        "study_windows_by_study_type_id": windows,
+        "study_windows_by_cohort_calendar_id": windows,
     }
 
 
@@ -296,7 +298,7 @@ def test_room_capacity_and_missing_reference_data_create_alerts():
         [draft],
         rooms_by_id={},
         constraints_by_course_id=context["constraints_by_course_id"],
-        study_windows_by_study_type_id=context["study_windows_by_study_type_id"],
+        study_windows_by_cohort_calendar_id=context["study_windows_by_cohort_calendar_id"],
     )
     assert ValidationAlertCode.VALIDATION_DATA_MISSING in alert_codes(alerts_with_missing_room, draft.sessions[0].id)
 
@@ -335,7 +337,7 @@ def test_current_generation_constraints_and_default_fallback_create_window_alert
     assert "Monday is not an allowed teaching day" not in message
 
 
-def test_custom_date_constraints_still_use_current_study_type_windows():
+def test_custom_date_constraints_still_use_current_cohort_calendar_windows():
     db = make_session()
     seed_validation_courses(db)
     course_plan = load_course_plan(db, 1)
@@ -365,10 +367,10 @@ def test_custom_date_constraints_still_use_current_study_type_windows():
 
     codes = alert_codes(alerts, draft.sessions[0].id)
     assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION not in codes
-    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
+    assert ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION in codes
 
 
-def test_custom_date_constraints_report_study_type_violation_for_weekly_window_mismatch():
+def test_custom_date_constraints_report_cohort_calendar_violation_for_weekly_window_mismatch():
     db = make_session()
     seed_validation_courses(db)
     course_plan = load_course_plan(db, 1)
@@ -398,17 +400,17 @@ def test_custom_date_constraints_report_study_type_violation_for_weekly_window_m
 
     codes = alert_codes(alerts, draft.sessions[0].id)
     assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION not in codes
-    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
+    assert ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION in codes
     message = alert_for(
         alerts,
         draft.sessions[0].id,
-        ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION,
+        ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION,
     ).message
     assert "Friday is not an allowed teaching day" in message
     assert "Allowed teaching windows: Monday 08:00–12:00, Wednesday 08:00–12:00" in message
 
 
-def test_study_type_window_and_multiple_alerts_are_reported_together():
+def test_cohort_calendar_window_and_multiple_alerts_are_reported_together():
     db = make_session()
     seed_validation_courses(db)
     draft = replace_course_draft(
@@ -432,25 +434,25 @@ def test_study_type_window_and_multiple_alerts_are_reported_together():
         planning_start_date=constraints.planning_period.start_date,
         planning_end_date=constraints.planning_period.end_date,
         allowed_windows=constraints.allowed_windows,
-        study_type_windows=load_time_windows(db, draft.study_type_id_snapshot),
+        cohort_calendar_windows=load_time_windows(db, draft.cohort_calendar_id_snapshot),
     )
 
     codes = alert_codes(alerts, draft.sessions[0].id)
     assert ValidationAlertCode.ROOM_CAPACITY in codes
     assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION not in codes
-    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
+    assert ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION in codes
     assert set(shared_evaluation.issue_codes) <= {code.value for code in codes}
-    study_type_message = alert_for(
+    cohort_calendar_message = alert_for(
         alerts,
         draft.sessions[0].id,
-        ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION,
+        ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION,
     ).message
-    assert "Tuesday is not an allowed teaching day" in study_type_message
-    assert "Monday 08:00–12:00" in study_type_message
-    assert "Wednesday 08:00–12:00" in study_type_message
+    assert "Tuesday is not an allowed teaching day" in cohort_calendar_message
+    assert "Monday 08:00–12:00" in cohort_calendar_message
+    assert "Wednesday 08:00–12:00" in cohort_calendar_message
 
 
-def test_custom_date_and_study_type_violations_are_reported_as_distinct_alerts():
+def test_custom_date_and_cohort_calendar_violations_are_reported_as_distinct_alerts():
     db = make_session()
     seed_validation_courses(db)
     save_generation_constraints(
@@ -469,12 +471,12 @@ def test_custom_date_and_study_type_violations_are_reported_as_distinct_alerts()
     codes = alert_codes(alerts, draft.sessions[0].id)
 
     assert ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION in codes
-    assert ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION in codes
+    assert ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION in codes
     assert "before the allowed planning period" in alert_for(
         alerts, draft.sessions[0].id, ValidationAlertCode.GENERATION_CONSTRAINT_VIOLATION
     ).message
     assert "Tuesday is not an allowed teaching day" in alert_for(
-        alerts, draft.sessions[0].id, ValidationAlertCode.STUDY_TYPE_WINDOW_VIOLATION
+        alerts, draft.sessions[0].id, ValidationAlertCode.COHORT_CALENDAR_WINDOW_VIOLATION
     ).message
 
 

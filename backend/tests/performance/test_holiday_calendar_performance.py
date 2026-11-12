@@ -33,7 +33,7 @@ def test_fifty_holidays_and_five_hundred_sessions_are_validated_within_two_secon
         course_name_snapshot="Reference Course",
         cohort_name_snapshot="Reference Cohort",
         cohort_size_snapshot=30,
-        study_type_id_snapshot=1,
+        cohort_calendar_id_snapshot=1,
         sessions=sessions,
     )
     rooms = {
@@ -54,7 +54,7 @@ def test_fifty_holidays_and_five_hundred_sessions_are_validated_within_two_secon
         [draft],
         rooms_by_id=rooms,
         constraints_by_course_id={1: constraints},
-        study_windows_by_study_type_id={1: windows},
+        study_windows_by_cohort_calendar_id={1: windows},
         holidays_by_date=holidays,
     )
     elapsed = perf_counter() - started

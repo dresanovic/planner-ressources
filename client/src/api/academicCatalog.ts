@@ -11,16 +11,16 @@ export type CohortMutationResult = CohortRecord & { cohort: CohortRecord; capaci
 export type EntitySummary = { id: number; name: string }
 export type Availability = { available: boolean; reasons: string[] }
 export type TeachingWindowShape = { kind?: 'weekly'; weekday: number; date?: null; isIntensive?: false } | { kind: 'dated'; weekday: null; date: string; isIntensive: boolean }
-export type TimeWindowRecord = CatalogAudit & TeachingWindowShape & { id: number; studyTypeId: number; startTime: string; endTime: string; sortOrder: number; overlapNotice?: string | null; availability: Availability; usage: UsageSummary }
-export type StudyTypeRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; timeWindows: TimeWindowRecord[]; usage: UsageSummary }
-export type CourseRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; totalUnits: number; overallUnits?: number; minSessionUnits: number; maxSessionUnits: number; preferredSessionUnits?: number | null; semester: EntitySummary | null; cohort: EntitySummary; studyType: EntitySummary; lecturer: EntitySummary | null; room: EntitySummary | null; availability: Availability; usage: UsageSummary }
+export type TimeWindowRecord = CatalogAudit & TeachingWindowShape & { id: number; cohortCalendarId: number; startTime: string; endTime: string; sortOrder: number; overlapNotice?: string | null; availability: Availability; usage: UsageSummary }
+export type CohortCalendarRecord = CatalogAudit & CohortCalendarInput & { id: number; name: string; nameRepairRequired: boolean; timeWindows: TimeWindowRecord[]; usage: UsageSummary }
+export type CourseRecord = CatalogAudit & { id: number; name: string; nameRepairRequired: boolean; totalUnits: number; overallUnits?: number; minSessionUnits: number; maxSessionUnits: number; preferredSessionUnits?: number | null; semester: EntitySummary | null; cohort: EntitySummary; cohortCalendar: EntitySummary; lecturer: EntitySummary | null; room: EntitySummary | null; availability: Availability; usage: UsageSummary }
 export type CatalogPage<T> = { page: number; pageSize: number; total: number; items: T[] }
-export type CourseInput = { name: string; totalUnits: number; overallUnits?: number; minSessionUnits: number; maxSessionUnits: number; preferredSessionUnits?: number | null; semesterId: number; cohortId: number; studyTypeId: number; lecturerId: number; roomId: number }
+export type CourseInput = { name: string; totalUnits: number; overallUnits?: number; minSessionUnits: number; maxSessionUnits: number; preferredSessionUnits?: number | null; semesterId: number; cohortId: number; lecturerId: number; roomId: number }
 export type CourseUpdateInput = Omit<CourseInput, 'lecturerId' | 'roomId'> & { expectedRevision: number }
 export type SemesterInput = { name: string; startDate: string; endDate: string }
 export type CohortInput = { name: string; studentCount: number }
-export type StudyTypeInput = { name: string }
-export type TimeWindowInput = TeachingWindowShape & { startTime: string; endTime: string; sortOrder: number; studyTypeId?: number }
+export type CohortCalendarInput = { cohortId: number; semesterId: number; startDate: string; endDate: string }
+export type TimeWindowInput = TeachingWindowShape & { startTime: string; endTime: string; sortOrder: number; cohortCalendarId?: number }
 
 export class AcademicCatalogApiError extends Error {
   status: number
@@ -67,20 +67,20 @@ export function createCohort(input: CohortInput): Promise<CohortRecord> {
   return request('/api/academic/cohorts', json('POST', input))
 }
 
-export function listStudyTypes(status: 'all' | 'active' | 'inactive' = 'all', page = 1, pageSize = 50): Promise<CatalogPage<StudyTypeRecord>> {
-  return request(listPath('study-types', status, page, pageSize))
+export function listCohortCalendars(status: 'all' | 'active' | 'inactive' = 'all', page = 1, pageSize = 50): Promise<CatalogPage<CohortCalendarRecord>> {
+  return request(listPath('cohort-calendars', status, page, pageSize))
 }
 
-export function createStudyType(input: StudyTypeInput): Promise<StudyTypeRecord> {
-  return request('/api/academic/study-types', json('POST', input))
+export function createCohortCalendar(input: CohortCalendarInput): Promise<CohortCalendarRecord> {
+  return request('/api/academic/cohort-calendars', json('POST', input))
 }
 
-export function listTimeWindows(studyTypeId: number): Promise<TimeWindowRecord[]> {
-  return request(`/api/academic/study-types/${studyTypeId}/time-windows`)
+export function listTimeWindows(cohortCalendarId: number): Promise<TimeWindowRecord[]> {
+  return request(`/api/academic/cohort-calendars/${cohortCalendarId}/time-windows`)
 }
 
-export function createTimeWindow(studyTypeId: number, input: TimeWindowInput): Promise<TimeWindowRecord> {
-  return request(`/api/academic/study-types/${studyTypeId}/time-windows`, json('POST', input))
+export function createTimeWindow(cohortCalendarId: number, input: TimeWindowInput): Promise<TimeWindowRecord> {
+  return request(`/api/academic/cohort-calendars/${cohortCalendarId}/time-windows`, json('POST', input))
 }
 
 export function listCourses(status: 'all' | 'active' | 'inactive' = 'all', page = 1, pageSize = 50): Promise<CatalogPage<CourseRecord>> {
@@ -115,8 +115,8 @@ export function updateCohort(recordId: number, input: CohortInput & { expectedRe
   return request(`/api/academic/cohorts/${recordId}`, json('PATCH', input))
 }
 
-export function updateStudyType(recordId: number, input: StudyTypeInput & { expectedRevision: number }): Promise<StudyTypeRecord> {
-  return request(`/api/academic/study-types/${recordId}`, json('PATCH', input))
+export function updateCohortCalendar(recordId: number, input: CohortCalendarInput & { expectedRevision: number }): Promise<CohortCalendarRecord> {
+  return request(`/api/academic/cohort-calendars/${recordId}`, json('PATCH', input))
 }
 
 export function updateTimeWindow(recordId: number, input: TimeWindowInput & { expectedRevision: number }): Promise<TimeWindowRecord> {

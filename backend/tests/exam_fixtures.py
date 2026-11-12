@@ -12,8 +12,8 @@ from app.models.planning import (
     Room,
     ScheduleRevision,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
 )
 
 
@@ -22,10 +22,10 @@ def exam_catalog(*, course_id: int = 1, semester_id: int = 1):
     room = Room(id=course_id, name=f"Room {course_id}", reference_code=f"R-{course_id}", normalized_reference_code=f"r-{course_id}", capacity=80)
     cohort = Cohort(id=course_id, name=f"Cohort {course_id}", student_count=30)
     semester = Semester(id=semester_id, name="Fall 2026", start_date=date(2026, 9, 1), end_date=date(2026, 12, 31))
-    study_type = StudyType(
+    cohort_calendar = CohortCalendar(cohort_id=cohort.id, semester_id=semester.id, start_date=semester.start_date, end_date=semester.end_date,
         id=course_id,
         name="Full-time",
-        time_windows=[StudyTypeTimeWindow(weekday=weekday, start_time=time(9), end_time=time(17), sort_order=weekday) for weekday in range(5)],
+        time_windows=[CohortCalendarTimeWindow(weekday=weekday, start_time=time(9), end_time=time(17), sort_order=weekday) for weekday in range(5)],
     )
     course = Course(
         id=course_id,
@@ -34,13 +34,13 @@ def exam_catalog(*, course_id: int = 1, semester_id: int = 1):
         min_session_units=2,
         max_session_units=2,
         cohort_id=cohort.id,
-        study_type_id=study_type.id,
+
         current_semester_id=semester.id,
         eligible_lecturers=[CourseEligibleLecturer(lecturer_id=lecturer.id)],
         eligible_rooms=[CourseEligibleRoom(room_id=room.id)],
     )
     revision = ScheduleRevision(id=semester_id, semester_id=semester_id, revision_number=1, row_version=1, state="draft")
-    return lecturer, room, cohort, semester, study_type, course, revision
+    return lecturer, room, cohort, semester, cohort_calendar, course, revision
 
 
 def teaching_draft(*, course_id: int = 1, semester_id: int = 1, final_date: date = date(2026, 10, 2)):
@@ -56,8 +56,8 @@ def teaching_draft(*, course_id: int = 1, semester_id: int = 1, final_date: date
         cohort_id_snapshot=course_id,
         cohort_name_snapshot=f"Cohort {course_id}",
         cohort_size_snapshot=30,
-        study_type_id_snapshot=course_id,
-        study_type_name_snapshot="Full-time",
+        cohort_calendar_id_snapshot=course_id,
+        cohort_calendar_name_snapshot="Full-time",
         semester_name_snapshot="Fall 2026",
         semester_start_date_snapshot=date(2026, 9, 1),
         semester_end_date_snapshot=date(2026, 12, 31),

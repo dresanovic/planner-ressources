@@ -21,7 +21,7 @@ from app.models.planning import (
     ScheduleRevision,
     ScheduleRevisionEvent,
     Semester,
-    StudyType,
+    CohortCalendar,
 )
 
 
@@ -150,7 +150,7 @@ def seed_lecturer_review_fixture(db: Session) -> LecturerReviewFixture:
         Cohort(id=value, name=f"Cohort {value}", student_count=20 + value * 5)
         for value in range(1, 4)
     ]
-    study_type = StudyType(id=1, name="Full-time")
+    cohort_calendar = CohortCalendar(cohort_id=1, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), id=1, name="Full-time")
     courses = [
         _course(
             course_id=1,
@@ -230,7 +230,7 @@ def seed_lecturer_review_fixture(db: Session) -> LecturerReviewFixture:
             *lecturers,
             *rooms,
             *cohorts,
-            study_type,
+            cohort_calendar,
             *courses,
             published,
             working,
@@ -238,6 +238,8 @@ def seed_lecturer_review_fixture(db: Session) -> LecturerReviewFixture:
             *_working_exam_sessions(),
         ]
     )
+    from tests.calendar_fixtures import complete_fixture_calendars
+    complete_fixture_calendars(db)
     db.commit()
     return fixture
 
@@ -397,7 +399,7 @@ def _course(
         min_session_units=2,
         max_session_units=4,
         cohort_id=course_id,
-        study_type_id=1,
+
         current_semester_id=1,
         eligible_lecturers=[
             CourseEligibleLecturer(lecturer_id=lecturer_id)
@@ -434,8 +436,8 @@ def _working_teaching_schedules() -> list[DraftSchedule]:
                 cohort_id_snapshot=course_id,
                 cohort_name_snapshot=f"Cohort {course_id}",
                 cohort_size_snapshot=20 + course_id * 5,
-                study_type_id_snapshot=1,
-                study_type_name_snapshot="Full-time",
+                cohort_calendar_id_snapshot=1,
+                cohort_calendar_name_snapshot="Full-time",
                 semester_name_snapshot="Autumn 2026",
                 semester_start_date_snapshot=date(2026, 9, 1),
                 semester_end_date_snapshot=date(2026, 12, 20),
@@ -563,7 +565,7 @@ def _snapshot_course(
             "name": f"Cohort {cohort_id}",
             "size": 20 + cohort_id * 5,
         },
-        "studyType": {"sourceId": 1, "name": "Full-time"},
+        "cohortCalendar": {"sourceId": 1, "name": "Full-time"},
         "totalUnits": 8,
         "scheduledUnits": 2,
         "remainingUnits": 6,

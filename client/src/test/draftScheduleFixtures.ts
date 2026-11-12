@@ -10,7 +10,7 @@ export const generationConstraintsFixture: GenerationConstraints = {
     startDate: '2026-09-07',
     endDate: '2026-12-20',
   },
-  studyType: { id: 1, name: 'Full-time' },
+  cohortCalendar: { id: 1, name: 'Full-time' },
   allowedTeachingWindows: [
     {
       weekday: 0,
@@ -38,7 +38,7 @@ export const draftScheduleFixture: DraftSchedule = {
     cohortSize: 30,
     lecturer: { id: 1, name: 'Ada Lovelace' },
     room: { id: 1, name: 'R1' },
-    studyType: { id: 1, name: 'Full-time' },
+    cohortCalendar: { id: 1, name: 'Full-time' },
   },
   sessions: [
     {
@@ -55,7 +55,7 @@ export const draftScheduleFixture: DraftSchedule = {
       roomId: 1,
       roomName: 'R1',
       roomReferenceCode: 'ROOM-001',
-      studyTypeId: 1,
+      cohortCalendarId: 1,
       timeWindowId: 1,
       constraintWindowIndex: 0,
       validationAlerts: [],
@@ -76,7 +76,7 @@ export const draftScheduleFixture: DraftSchedule = {
       roomId: 1,
       roomName: 'R1',
       roomReferenceCode: 'ROOM-001',
-      studyTypeId: 1,
+      cohortCalendarId: 1,
       timeWindowId: 1,
       constraintWindowIndex: 0,
       validationAlerts: [],
@@ -103,7 +103,7 @@ export const secondDraftScheduleFixture: DraftSchedule = {
     cohortSize: 30,
     lecturer: { id: 2, name: 'Grace Hopper' },
     room: { id: 2, name: 'R2' },
-    studyType: { id: 1, name: 'Full-time' },
+    cohortCalendar: { id: 1, name: 'Full-time' },
   },
   sessions: [
     {
@@ -120,7 +120,7 @@ export const secondDraftScheduleFixture: DraftSchedule = {
       roomId: 2,
       roomName: 'R2',
       roomReferenceCode: 'ROOM-002',
-      studyTypeId: 1,
+      cohortCalendarId: 1,
       timeWindowId: 1,
       constraintWindowIndex: 0,
       validationAlerts: [],
@@ -177,8 +177,8 @@ export const alertDraftScheduleFixture: DraftSchedule = {
           relatedSessions: [],
         },
         {
-          code: 'STUDY_TYPE_WINDOW_VIOLATION',
-          message: 'Session is outside the Study Type Time Window.',
+          code: 'COHORT_CALENDAR_WINDOW_VIOLATION',
+          message: 'Session is outside the Cohort Calendar Time Window.',
           relatedSessions: [],
         },
       ],

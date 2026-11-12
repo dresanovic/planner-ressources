@@ -69,7 +69,7 @@ describe('customer terminology propagation', () => {
       />
       <AcademicRecordEditor
         category="courses"
-        options={{ semesters: [{ id: 1, name: 'Semester A' }], cohorts: [{ id: 2, name: 'Dynamische Kohorte' }], studyTypes: [{ id: 3, name: 'Dynamische Studienform' }], lecturers: [{ id: 4, name: 'Dynamische Person' }], rooms: [{ id: 5, name: 'Dynamischer Raum' }] }}
+        options={{ semesters: [{ id: 1, name: 'Semester A' }], cohorts: [{ id: 2, name: 'Dynamische Kohorte' }], cohortCalendars: [{ id: 3, name: 'Dynamische Kohortenkalender' }], lecturers: [{ id: 4, name: 'Dynamische Person' }], rooms: [{ id: 5, name: 'Dynamischer Raum' }] }}
         onSubmit={async () => undefined}
       />
       <ResourceEditor resourceType="lecturers" onSubmit={async () => undefined} onCancel={() => undefined} />

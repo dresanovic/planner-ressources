@@ -923,12 +923,12 @@ describe('CalendarPlanningWorkspace', () => {
       { value: 'course:1', label: 'Algorithms' },
       { value: 'course:2', label: 'Databases' },
     ]
-    workspace.filterFacets.studyTypes = [{ value: 'Full-time', label: 'Full-time' }]
+    workspace.filterFacets.cohortCalendars = [{ value: 'Full-time', label: 'Full-time' }]
     const host = renderWorkspace(workspace)
     const courseFilter = [...host.querySelectorAll<HTMLSelectElement>('select')]
       .find((item) => item.previousElementSibling?.textContent === 'Lehrveranstaltung')!
-    const studyTypeFilter = [...host.querySelectorAll<HTMLSelectElement>('select')]
-      .find((item) => item.previousElementSibling?.textContent === 'Studienart')!
+    const cohortCalendarFilter = [...host.querySelectorAll<HTMLSelectElement>('select')]
+      .find((item) => item.previousElementSibling?.textContent === 'Kohortenkalender')!
     const summary = (label: string) => [...host.querySelectorAll<HTMLButtonElement>('.summary-card')]
       .find((item) => item.textContent?.includes(label))!
     const select = (element: HTMLSelectElement, value: string) => act(() => {
@@ -947,7 +947,7 @@ describe('CalendarPlanningWorkspace', () => {
     expect(summary('Prüfung erforderlich').querySelector('strong')?.textContent).toBe('Nicht verfügbar')
 
     select(courseFilter, '')
-    select(studyTypeFilter, 'Full-time')
+    select(cohortCalendarFilter, 'Full-time')
     expect(summary('Kapazitätsprobleme').textContent).toContain('Bekannt unvollständig')
     expect(summary('Prüfung erforderlich').textContent).toContain('Bekannt unvollständig')
   })

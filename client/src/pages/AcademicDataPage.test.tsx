@@ -3,9 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  listSemesters: vi.fn(), listCohorts: vi.fn(), listCourses: vi.fn(), listStudyTypes: vi.fn(), listTimeWindows: vi.fn(),
-  createSemester: vi.fn(), createCohort: vi.fn(), createCourse: vi.fn(), createStudyType: vi.fn(), createTimeWindow: vi.fn(),
-  updateSemester: vi.fn(), updateCohort: vi.fn(), updateCourse: vi.fn(), updateStudyType: vi.fn(), updateTimeWindow: vi.fn(),
+  listSemesters: vi.fn(), listCohorts: vi.fn(), listCourses: vi.fn(), listCohortCalendars: vi.fn(), listTimeWindows: vi.fn(),
+  createSemester: vi.fn(), createCohort: vi.fn(), createCourse: vi.fn(), createCohortCalendar: vi.fn(), createTimeWindow: vi.fn(),
+  updateSemester: vi.fn(), updateCohort: vi.fn(), updateCourse: vi.fn(), updateCohortCalendar: vi.fn(), updateTimeWindow: vi.fn(),
   deleteAcademicRecord: vi.fn(), setAcademicLifecycle: vi.fn(), getPlanningOptions: vi.fn(),
   listLecturers: vi.fn(), listRooms: vi.fn(), createLecturer: vi.fn(), createRoom: vi.fn(),
   updateLecturer: vi.fn(), updateRoom: vi.fn(), getResourceUsage: vi.fn(), removeResource: vi.fn(), reactivateResource: vi.fn(),
@@ -45,14 +45,14 @@ beforeEach(() => {
   mocks.listSemesters.mockResolvedValue(page([]))
   mocks.listCohorts.mockResolvedValue(page([]))
   mocks.listCourses.mockResolvedValue(page([]))
-  mocks.listStudyTypes.mockResolvedValue(page([]))
+  mocks.listCohortCalendars.mockResolvedValue(page([]))
   mocks.listTimeWindows.mockResolvedValue([])
   mocks.getPlanningOptions.mockResolvedValue({ courses: [], semesters: [], timeWindows: [], lecturers: [], rooms: [] })
   mocks.listLecturers.mockResolvedValue(page([]))
   mocks.listRooms.mockResolvedValue(page([]))
   mocks.listUnavailability.mockResolvedValue([])
   mocks.getCourseResourceConfiguration.mockResolvedValue({ courseId: 1, courseRevision: 1, cohortSize: 20, eligibleLecturerIds: [], eligibleRoomIds: [], lecturerCandidates: [], roomCandidates: [], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } })
-  for (const name of ['createSemester', 'createCohort', 'createCourse', 'createStudyType', 'createTimeWindow', 'updateSemester', 'updateCohort', 'updateCourse', 'updateStudyType', 'updateTimeWindow', 'deleteAcademicRecord', 'setAcademicLifecycle'] as const) {
+  for (const name of ['createSemester', 'createCohort', 'createCourse', 'createCohortCalendar', 'createTimeWindow', 'updateSemester', 'updateCohort', 'updateCourse', 'updateCohortCalendar', 'updateTimeWindow', 'deleteAcademicRecord', 'setAcademicLifecycle'] as const) {
     mocks[name].mockResolvedValue(undefined)
   }
 })
@@ -60,8 +60,8 @@ beforeEach(() => {
 afterEach(() => { document.body.innerHTML = '' })
 
 it('keeps the unsaved copy correctable after marker-only duplicate feedback and cancels without another request',async()=>{
-  mocks.listStudyTypes.mockResolvedValue(page([{id:1,name:'Form',isActive:true,revision:1,usage}]))
-  mocks.listTimeWindows.mockResolvedValue([{id:10,studyTypeId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',sortOrder:7,isActive:false,revision:3,usage}])
+  mocks.listCohortCalendars.mockResolvedValue(page([{id:1,name:'Form',isActive:true,revision:1,usage}]))
+  mocks.listTimeWindows.mockResolvedValue([{id:10,cohortCalendarId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',sortOrder:7,isActive:false,revision:3,usage}])
   mocks.createTimeWindow.mockRejectedValueOnce(new AcademicCatalogApiError(409,[{code:'DUPLICATE_TIME_WINDOW',message:'duplicate',field:null}]))
   const root=createRoot(document.body.appendChild(document.createElement('div')))
   await act(async()=>root.render(<AcademicDataPage category="time-windows" onCatalogChanged={vi.fn()}/>))
@@ -75,15 +75,15 @@ it('keeps the unsaved copy correctable after marker-only duplicate feedback and 
 })
 
 it('opens an independent unsaved marked copy, cancels without writes and submits one ordinary create without source identity', async () => {
-  mocks.listStudyTypes.mockResolvedValue(page([{id:1,name:'Form',isActive:true,revision:1,usage}]))
-  mocks.listTimeWindows.mockResolvedValue([{id:10,studyTypeId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',sortOrder:7,isActive:true,revision:3,usage}])
+  mocks.listCohortCalendars.mockResolvedValue(page([{id:1,name:'Form',isActive:true,revision:1,usage}]))
+  mocks.listTimeWindows.mockResolvedValue([{id:10,cohortCalendarId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',sortOrder:7,isActive:true,revision:3,usage}])
   const root=createRoot(document.body.appendChild(document.createElement('div')))
   await act(async()=>root.render(<AcademicDataPage category="time-windows" onCatalogChanged={vi.fn()}/>))
   const copy=[...document.querySelectorAll('button')].find(b=>b.textContent==='Kopieren')!
   expect(copy).toBeDefined()
   await act(async()=>{ copy.focus();copy.click() })
   expect(document.body.textContent).toContain('Ungespeicherte Kopie')
-  expect(document.activeElement?.getAttribute('name')).toBe('studyTypeId')
+  expect(document.activeElement?.getAttribute('name')).toBe('cohortCalendarId')
   expect(document.querySelector<HTMLInputElement>('input[name="isIntensive"]')?.checked).toBe(true)
   expect(mocks.createTimeWindow).not.toHaveBeenCalled()
   await act(async()=>[...document.querySelectorAll('button')].find(b=>b.textContent==='Kopie verwerfen')?.click())
@@ -101,11 +101,11 @@ it('opens an independent unsaved marked copy, cancels without writes and submits
 })
 
 it('groups weekly before dated windows in chronological order and invalidates at save acknowledgement', async () => {
-  mocks.listStudyTypes.mockResolvedValue(page([{ id:1,name:'Form',isActive:true,revision:1,usage }]))
+  mocks.listCohortCalendars.mockResolvedValue(page([{ id:1,name:'Form',isActive:true,revision:1,usage }]))
   mocks.listTimeWindows.mockResolvedValue([
-    {id:1,studyTypeId:1,kind:'dated',date:'2026-11-10',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage,overlapNotice:'Überschneidung schafft keine zusätzliche Kapazität.'},
-    {id:2,studyTypeId:1,weekday:4,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage},
-    {id:3,studyTypeId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:false,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage},
+    {id:1,cohortCalendarId:1,kind:'dated',date:'2026-11-10',weekday:null,isIntensive:true,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage,overlapNotice:'Überschneidung schafft keine zusätzliche Kapazität.'},
+    {id:2,cohortCalendarId:1,weekday:4,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage},
+    {id:3,cohortCalendarId:1,kind:'dated',date:'2026-11-09',weekday:null,isIntensive:false,startTime:'09:00',endTime:'12:00',isActive:true,revision:1,usage},
   ])
   const changed = vi.fn()
   const root = createRoot(document.body.appendChild(document.createElement('div')))
@@ -115,12 +115,12 @@ it('groups weekly before dated windows in chronological order and invalidates at
   expect(text.indexOf('09.11.2026')).toBeLessThan(text.indexOf('10.11.2026'))
   expect(text).toContain('Intensivwoche')
   expect(text).toContain('Überschneidung schafft keine zusätzliche Kapazität.')
-  mocks.listStudyTypes.mockRejectedValue(new Error('reload failed'))
+  mocks.listCohortCalendars.mockRejectedValue(new Error('reload failed'))
   await act(async () => document.querySelector('form')!.dispatchEvent(new Event('submit', {bubbles:true,cancelable:true})))
   expect(changed).toHaveBeenCalledTimes(1)
 })
 
-async function renderPage(category: 'semesters' | 'cohorts' | 'courses' | 'study-types' | 'time-windows' | 'lecturers' | 'rooms' | 'holidays' = 'semesters') {
+async function renderPage(category: 'semesters' | 'cohorts' | 'courses' | 'cohort-calendars' | 'time-windows' | 'lecturers' | 'rooms' | 'holidays' = 'semesters') {
   const root = createRoot(document.body.appendChild(document.createElement('div')))
   await act(async () => { root.render(<AcademicDataPage category={category} onCatalogChanged={() => undefined} />); await new Promise((resolve) => setTimeout(resolve, 0)) })
   return root
@@ -182,12 +182,12 @@ describe('AcademicDataPage', () => {
     expect(mocks.listSemesters).toHaveBeenCalledWith('all', 2, 200)
   })
 
-  it('loads Time Windows from every Study Type', async () => {
-    const studyTypes = [1, 2].map((id) => ({ id, name: `Type ${id}`, nameRepairRequired: false, timeWindows: [], isActive: true, revision: 1, usage: { ...usage, recordId: id } }))
-    mocks.listStudyTypes.mockResolvedValue(page(studyTypes))
-    mocks.listTimeWindows.mockImplementation(async (studyTypeId) => [{
-      id: studyTypeId, studyTypeId, weekday: studyTypeId - 1, startTime: '08:00', endTime: '10:00', sortOrder: 0,
-      isActive: studyTypeId === 1, revision: 1, availability: { available: studyTypeId === 1, reasons: studyTypeId === 1 ? [] : ['RECORD_INACTIVE'] }, usage: { ...usage, recordId: studyTypeId },
+  it('loads Time Windows from every Cohort Calendar', async () => {
+    const cohortCalendars = [1, 2].map((id) => ({ id, name: `Type ${id}`, nameRepairRequired: false, timeWindows: [], isActive: true, revision: 1, usage: { ...usage, recordId: id } }))
+    mocks.listCohortCalendars.mockResolvedValue(page(cohortCalendars))
+    mocks.listTimeWindows.mockImplementation(async (cohortCalendarId) => [{
+      id: cohortCalendarId, cohortCalendarId, weekday: cohortCalendarId - 1, startTime: '08:00', endTime: '10:00', sortOrder: 0,
+      isActive: cohortCalendarId === 1, revision: 1, availability: { available: cohortCalendarId === 1, reasons: cohortCalendarId === 1 ? [] : ['RECORD_INACTIVE'] }, usage: { ...usage, recordId: cohortCalendarId },
     }])
 
     await renderPage('time-windows')
@@ -207,14 +207,14 @@ describe('AcademicDataPage', () => {
   it('keeps a migrated unassigned Course editable for Semester repair', async () => {
     const course = {
       id: 9, name: 'Legacy Course', nameRepairRequired: false, totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4,
-      semester: null, cohort: { id: 2, name: 'AI 1' }, studyType: { id: 3, name: 'Full-time' },
+      semester: null, cohort: { id: 2, name: 'AI 1' }, cohortCalendar: { id: 3, name: 'Full-time' },
       lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R1' }, isActive: true, revision: 1,
       availability: { available: false, reasons: ['SEMESTER_ASSIGNMENT_REQUIRED'] }, usage: { ...usage, recordId: 9 },
     }
     mocks.listCourses.mockResolvedValue(page([course]))
     mocks.listSemesters.mockResolvedValue(page([{ id: 1, name: 'Fall', nameRepairRequired: false, startDate: '2026-01-01', endDate: '2026-06-01', isActive: true, revision: 1, usage }]))
     mocks.listCohorts.mockResolvedValue(page([{ id: 2, name: 'AI 1' }]))
-    mocks.listStudyTypes.mockResolvedValue(page([{ id: 3, name: 'Full-time' }]))
+    mocks.listCohortCalendars.mockResolvedValue(page([{ id: 3, name: 'Full-time' }]))
     mocks.getPlanningOptions.mockResolvedValue({ courses: [], semesters: [], timeWindows: [], lecturers: [{ id: 4, name: 'Ada' }], rooms: [{ id: 5, name: 'R1' }] })
 
     await renderPage('courses')
@@ -327,7 +327,7 @@ describe('AcademicDataPage', () => {
   })
 
   it('loads and preserves Course eligibility beside Course administration', async () => {
-    const course = { id: 1, name: 'Course', nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, studyType: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision: 1, availability: { available: true, reasons: [] }, usage }
+    const course = { id: 1, name: 'Course', nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, cohortCalendar: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision: 1, availability: { available: true, reasons: [] }, usage }
     mocks.listCourses.mockResolvedValue(page([course]))
     mocks.getCourseResourceConfiguration.mockResolvedValue({ courseId: 1, courseRevision: 1, cohortSize: 20, eligibleLecturerIds: [4], eligibleRoomIds: [5], lecturerCandidates: [{ id: 4, name: 'Ada', referenceCode: 'A', kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], roomCandidates: [{ id: 5, name: 'R', referenceCode: 'R', kind: 'room', capacity: 30, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } })
     await renderPage('courses')
@@ -338,7 +338,7 @@ describe('AcademicDataPage', () => {
   })
 
   it('never renders or saves eligibility from a previously selected Course after refresh failure', async () => {
-    const course = (id: number, name: string) => ({ id, name, nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, studyType: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision: 1, availability: { available: true, reasons: [] }, usage: { ...usage, recordId: id } })
+    const course = (id: number, name: string) => ({ id, name, nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, cohortCalendar: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision: 1, availability: { available: true, reasons: [] }, usage: { ...usage, recordId: id } })
     const firstConfiguration = { courseId: 1, courseRevision: 1, cohortSize: 20, eligibleLecturerIds: [4], eligibleRoomIds: [5], lecturerCandidates: [{ id: 4, name: 'First Course Lecturer', referenceCode: 'A', kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], roomCandidates: [{ id: 5, name: 'First Course Room', referenceCode: 'R', kind: 'room', capacity: 30, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } }
     mocks.listCourses.mockResolvedValue(page([course(1, 'First Course'), course(2, 'Second Course')]))
     mocks.getCourseResourceConfiguration
@@ -359,7 +359,7 @@ describe('AcademicDataPage', () => {
   })
 
   it('does not apply a completed eligibility save to a different selected Course', async () => {
-    const course = (id: number, name: string, revision: number) => ({ id, name, nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, studyType: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision, availability: { available: true, reasons: [] }, usage: { ...usage, recordId: id } })
+    const course = (id: number, name: string, revision: number) => ({ id, name, nameRepairRequired: false, totalUnits: 4, minSessionUnits: 2, maxSessionUnits: 4, semester: { id: 1, name: 'Fall' }, cohort: { id: 2, name: 'C' }, cohortCalendar: { id: 3, name: 'Type' }, lecturer: { id: 4, name: 'Ada' }, room: { id: 5, name: 'R' }, isActive: true, revision, availability: { available: true, reasons: [] }, usage: { ...usage, recordId: id } })
     const configuration = (courseId: number, courseRevision: number, lecturerName: string) => ({ courseId, courseRevision, cohortSize: 20, eligibleLecturerIds: [courseId + 10], eligibleRoomIds: [courseId + 20], lecturerCandidates: [{ id: courseId + 10, name: lecturerName, referenceCode: `L-${courseId}`, kind: 'lecturer', capacity: null, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], roomCandidates: [{ id: courseId + 20, name: `Room ${courseId}`, referenceCode: `R-${courseId}`, kind: 'room', capacity: 30, isActive: true, isEligible: true, isUsable: true, reasons: [], unavailabilityPeriods: [], courseSessionUsage: { draftSessionCount: 0, draftScheduleCount: 0 } }], preferences: { minimizeLecturerChanges: true, minimizeRoomChanges: true } })
     const firstConfiguration = configuration(1, 1, 'First Lecturer')
     const secondConfiguration = configuration(2, 7, 'Second Lecturer')
@@ -448,7 +448,7 @@ it('I-005 intersects full paginated course catalog with semester/cohort and pres
   mocks.listCourses.mockImplementation(async (_status, pageNumber) => page(catalog.slice((pageNumber - 1) * 200, pageNumber * 200), catalog.length, pageNumber))
   mocks.listSemesters.mockResolvedValue(page([courseListSemester, { ...courseListSemester, id: 2, name: '2027 W' }]))
   mocks.listCohorts.mockResolvedValue(page([targetCohort, otherCohort, emptyCohort]))
-  mocks.listStudyTypes.mockResolvedValue(page([{ id: 1, name: 'Vollzeit' }]))
+  mocks.listCohortCalendars.mockResolvedValue(page([{ id: 1, name: 'Vollzeit' }]))
   function Harness() {
     const [filters, setFilters] = useState<{semesterId: number | null; cohortId: number | null}>({semesterId: null, cohortId: null})
     return <AcademicDataPage category="courses" onCatalogChanged={vi.fn()} courseFilters={filters} onCourseFiltersChange={setFilters} />

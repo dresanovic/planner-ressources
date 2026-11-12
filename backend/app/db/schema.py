@@ -26,7 +26,9 @@ def initialize_database(engine: Engine) -> None:
                     # Make every upgrade (including batch table creation) atomic.
                     connection.exec_driver_sql("BEGIN")
                 inspector = inspect(connection)
-                window_columns = _column_names(inspector, "study_type_time_windows")
+                if "study_types" in inspector.get_table_names():
+                    raise UnsupportedSchemaStateError("Development database uses Studienform calendars. Back up and run reset_cohort_calendar_baseline.py before starting this version.")
+                window_columns = _column_names(inspector, "cohort_calendar_time_windows")
                 if window_columns.intersection({"kind", "date", "is_intensive"}) and not _has_complete_dated_windows(inspector):
                     raise UnsupportedSchemaStateError("Incomplete dated window schema; back up and inspect migration 0013.")
                 if "optimization_operations" in inspector.get_table_names() and not _has_complete_optimization_schema(inspector):
@@ -156,7 +158,7 @@ def initialize_database(engine: Engine) -> None:
                     migration = _load_migration("0012_preferred_session_units.py")
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
-                if "kind" not in _column_names(inspect(connection), "study_type_time_windows"):
+                if "kind" not in _column_names(inspect(connection), "cohort_calendar_time_windows"):
                     migration = _load_migration("0013_dated_teaching_windows.py")
                     migration.op = Operations(MigrationContext.configure(connection))
                     migration.upgrade()
@@ -205,7 +207,7 @@ def _has_optimized_strategy_schema(inspector) -> bool:
 
 
 def _has_complete_dated_windows(inspector) -> bool:
-    table = _planning.StudyTypeTimeWindow.__table__
+    table = _planning.CohortCalendarTimeWindow.__table__
     if not set(table.columns.keys()).issubset(_column_names(inspector, table.name)):
         return False
     columns = {column['name']: column for column in inspector.get_columns(table.name)}
@@ -215,7 +217,7 @@ def _has_complete_dated_windows(inspector) -> bool:
             and all(columns[c.name]['nullable'] == c.nullable for c in table.columns)
             and {c.name for c in table.constraints if c.__class__.__name__ == 'CheckConstraint'}.issubset(checks)
             and all(name in indexes and indexes[name]['unique'] for name in ('uq_time_window_weekly', 'uq_time_window_dated'))
-            and any(fk['constrained_columns'] == ['study_type_id'] and fk['referred_table'] == 'study_types' for fk in inspector.get_foreign_keys(table.name)))
+            and any(fk['constrained_columns'] == ['cohort_calendar_id'] and fk['referred_table'] == 'cohort_calendars' for fk in inspector.get_foreign_keys(table.name)))
 
 
 def _has_complete_optimization_schema(inspector, *, require_strategy=False) -> bool:

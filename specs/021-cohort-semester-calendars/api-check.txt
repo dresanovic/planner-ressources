@@ -1,0 +1,72 @@
+........................................................................ [ 23%]
+..............F.....................F................................... [ 46%]
+........................................................................ [ 69%]
+........................................................................ [ 93%]
+.....................                                                    [100%]
+================================== FAILURES ===================================
+E   AssertionError: assert [{'id': 1, 'c...'08:00', ...}] == [{'id': 1, 'c...'08:00', ...}]
+      
+      Left contains 2 more items, first extra item: {'id': 3, 'cohortCalendarId': 2, 'weekday': 0, 'startTime': '08:00', ...}
+      Use -v to get more diff
+C:\Codex\planner-resource\backend\tests\api\test_draft_schedule.py:283: AssertionError: assert [{'id': 1, 'c...'08:00', ...}] == [{'id': 1, 'c...'08:00', ...}]
+E   app.services.draft_schedule_repository.PlanningInputNotFoundError: Course cohort calendar not found.
+C:\Codex\planner-resource\backend\app\services\draft_schedule_repository.py:192: app.services.draft_schedule_repository.PlanningInputNotFoundError: Course cohort calendar not found.
+============================== warnings summary ===============================
+backend\.venv\Lib\site-packages\fastapi\testclient.py:1
+  C:\Codex\planner-resource\backend\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/api/test_academic_catalog.py: 3 warnings
+tests/api/test_calendar_workspace.py: 1 warning
+tests/api/test_conflict_aware_generation.py: 44 warnings
+tests/api/test_dated_intensive_windows.py: 3 warnings
+tests/api/test_draft_schedule.py: 52 warnings
+tests/api/test_exam_scheduling.py: 6 warnings
+tests/api/test_lecturer_bearer_authorization.py: 18 warnings
+tests/api/test_lecturer_calendar_export.py: 69 warnings
+tests/api/test_lecturer_review.py: 96 warnings
+tests/api/test_optimization_operations.py: 4 warnings
+tests/api/test_planner_authorization.py: 3 warnings
+tests/api/test_resource_catalog.py: 1 warning
+tests/api/test_schedule_lifecycle.py: 7 warnings
+tests/api/test_teaching_strategy_acceptance.py: 252 warnings
+  C:\Codex\planner-resource\backend\.venv\Lib\site-packages\sqlalchemy\sql\schema.py:3624: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return util.wrap_callable(lambda ctx: fn(), fn)  # type: ignore
+
+tests/api/test_conflict_aware_generation.py::test_prepare_rejects_invalid_selection[course_ids0]
+tests/api/test_conflict_aware_generation.py::test_prepare_rejects_invalid_selection[course_ids1]
+tests/api/test_conflict_aware_generation.py::test_prepare_rejects_invalid_selection[course_ids2]
+tests/api/test_conflict_aware_generation.py::test_prepare_rejects_invalid_selection[course_ids3]
+tests/api/test_conflict_aware_generation.py::test_prepare_rejects_complete_selection_when_one_course_belongs_to_another_semester
+tests/api/test_conflict_aware_generation.py::test_prepare_rejects_complete_selection_when_one_course_is_unavailable
+  C:\Codex\planner-resource\backend\app\api\conflict_aware_generation.py:115: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return _request_failure(exc.code, exc.message)
+
+tests/api/test_draft_schedule.py: 10 warnings
+  C:\Codex\planner-resource\backend\app\api\draft_schedule.py:134: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return _manual_failure(exc.code, exc.message)
+
+tests/api/test_draft_schedule.py::test_create_manual_session_returns_structured_hard_validation_without_partial_write[overrides1-INVALID_SESSION_DATE]
+tests/api/test_draft_schedule.py::test_create_manual_session_returns_structured_hard_validation_without_partial_write[overrides2-INVALID_SESSION_DATE]
+  C:\Codex\planner-resource\backend\app\api\draft_schedule.py:111: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return _manual_failure("INVALID_SESSION_DATE", "Session date must use a valid YYYY-MM-DD value.")
+
+tests/api/test_draft_schedule.py::test_create_manual_session_returns_structured_hard_validation_without_partial_write[overrides4-INVALID_SESSION_TIME_RANGE]
+tests/api/test_draft_schedule.py::test_create_manual_session_returns_structured_hard_validation_without_partial_write[overrides5-INVALID_SESSION_TIME_RANGE]
+tests/api/test_draft_schedule.py::test_create_manual_session_returns_structured_hard_validation_without_partial_write[overrides6-INVALID_SESSION_TIME_RANGE]
+  C:\Codex\planner-resource\backend\app\api\draft_schedule.py:116: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    return _manual_failure("INVALID_SESSION_TIME_RANGE", "Session start and end times must use HH:MM values.")
+
+tests/api/test_draft_schedule.py::test_generation_constraint_save_rejects_cross_semester_pair_without_persisting
+  C:\Codex\planner-resource\backend\.venv\Lib\site-packages\anyio\_backends\_asyncio.py:1029: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    result = context.run(func, *args)
+
+tests/api/test_lecturer_bearer_authorization.py::test_public_operations_are_the_only_stored_secret_allowlist
+  C:\Codex\planner-resource\backend\.venv\Lib\site-packages\starlette\testclient.py:454: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return super().request(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED backend\tests\api\test_draft_schedule.py::test_read_planning_options_returns_database_courses_and_windows
+FAILED backend\tests\api\test_draft_schedule.py::test_clear_one_course_semester_draft_preserves_constraints_and_other_drafts
+2 failed, 307 passed, 583 warnings in 110.38s (0:01:50)

@@ -59,14 +59,14 @@ def test_window_loader_preserves_form_activity_kind_date_marker():
     with Session(engine) as db:
         seed_forms(db)
         db.add_all([weekly_window(), weekly_window(id=11, kind='dated', weekday=None, date=MONDAY, is_intensive=True),
-                    weekly_window(id=12, study_type_id=2), weekly_window(id=13, weekday=5,is_active=False)])
+                    weekly_window(id=12, cohort_calendar_id=2), weekly_window(id=13, weekday=5,is_active=False)])
         db.commit()
         windows = load_time_windows(db, 1)
         assert {w.id for w in windows} == {10,11}
         specific = next(w for w in windows if w.id == 11)
         assert (specific.kind,specific.date,specific.weekday,specific.is_intensive) == ('dated',MONDAY,None,True)
-        from app.models.planning import StudyType
-        db.get(StudyType,1).is_active = False
+        from app.models.planning import CohortCalendar
+        db.get(CohortCalendar,1).is_active = False
         db.commit()
         assert load_time_windows(db,1) == []
 
@@ -75,12 +75,12 @@ def test_calendar_and_lifecycle_capture_keep_dated_facts_without_mutating_saved_
     from app.services.calendar_workspace import get_calendar_workspace
     from app.services.schedule_lifecycle import get_lifecycle_overview, create_working_revision, get_revision_content
     from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
-    from app.models.planning import StudyTypeTimeWindow, DraftSession
+    from app.models.planning import CohortCalendarTimeWindow, DraftSession
     engine = create_engine('sqlite://')
     initialize_database(engine)
     with Session(engine) as db:
         seed_lifecycle_semester(db)
-        db.add(StudyTypeTimeWindow(study_type_id=1,kind='dated',date=date(2026,10,5),weekday=None,
+        db.add(CohortCalendarTimeWindow(cohort_calendar_id=1,kind='dated',date=date(2026,10,5),weekday=None,
             start_time=time(8),end_time=time(12),is_intensive=True))
         db.commit()
         before = [(s.id,s.date,s.start_time,s.end_time,s.units) for s in db.query(DraftSession)]
@@ -90,20 +90,20 @@ def test_calendar_and_lifecycle_capture_keep_dated_facts_without_mutating_saved_
         snapshot = get_revision_content(db, created['activeWorkingRevision']['revisionId'])['snapshot']
         window = snapshot['courses'][0]['constraintProfile']['allowedTeachingWindows'][0]
         assert (window['kind'],window['date'],window['isIntensive']) == ('dated','2026-10-05',True)
-        assert not any(f['category'] == 'study_type_window' for f in workspace['validationFindings'])
+        assert not any(f['category'] == 'cohort_calendar_window' for f in workspace['validationFindings'])
         assert [(s.id,s.date,s.start_time,s.end_time,s.units) for s in db.query(DraftSession)] == before
 
 
 def test_published_dated_capture_remains_immutable_after_source_marker_and_date_changes():
     from copy import deepcopy
     from tests.schedule_lifecycle_fixtures import seed_lifecycle_semester
-    from app.models.planning import StudyTypeTimeWindow, ScheduleRevision
+    from app.models.planning import CohortCalendarTimeWindow, ScheduleRevision
     from app.services.schedule_lifecycle import get_lifecycle_overview,create_working_revision,prepare_publication,transition_revision,get_revision_content
     engine=create_engine('sqlite://')
     initialize_database(engine)
     with Session(engine) as db:
         seed_lifecycle_semester(db)
-        window_row=StudyTypeTimeWindow(study_type_id=1,kind='dated',weekday=None,date=date(2026,10,5),is_intensive=True,start_time=time(8),end_time=time(12))
+        window_row=CohortCalendarTimeWindow(cohort_calendar_id=1,kind='dated',weekday=None,date=date(2026,10,5),is_intensive=True,start_time=time(8),end_time=time(12))
         db.add(window_row);db.commit()
         created=create_working_revision(db,1,get_lifecycle_overview(db,1)['stateToken'])
         revision=created['activeWorkingRevision']
@@ -117,3 +117,14 @@ def test_published_dated_capture_remains_immutable_after_source_marker_and_date_
         assert get_revision_content(db,revision['revisionId'])['snapshot'] == captured
         saved_window=captured['courses'][0]['constraintProfile']['allowedTeachingWindows'][0]
         assert (saved_window['date'],saved_window['isIntensive']) == ('2026-10-05',True)
+
+
+def test_intensive_date_replaces_weekly_evening_but_other_weeks_retain_it():
+    windows = [TimeWindowPlan(2, 0, time(13,45), time(21,30)), dated(start=time(8,15),end=time(17),is_intensive=True)]
+    assert fits_any_validation_window(MONDAY,time(9),time(10),windows)
+    assert not fits_any_validation_window(MONDAY,time(18),time(19),windows)
+    assert fits_any_validation_window(MONDAY+timedelta(days=7),time(18),time(19),windows)
+    course=replace(optimization_course(1,total_units=2,min_units=2,max_units=2), planning_period=PlanningPeriodPlan(MONDAY,MONDAY),windows=tuple(windows))
+    candidates=generate_candidates(course,[],frozenset()).candidates
+    assert candidates
+    assert all(c.start_time>=time(8,15) and c.end_time<=time(17) for c in candidates)

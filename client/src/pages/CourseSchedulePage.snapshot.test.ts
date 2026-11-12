@@ -27,7 +27,7 @@ function contentFixture(): ScheduleRevisionContent {
         sourceCourseId: 1,
         name: 'Captured course',
         cohort: { sourceId: 2, name: 'Captured cohort', size: 20 },
-        studyType: { sourceId: 3, name: 'Full-time' },
+        cohortCalendar: { sourceId: 3, name: 'Full-time' },
         totalUnits: 2,
         scheduledUnits: 2,
         remainingUnits: 0,

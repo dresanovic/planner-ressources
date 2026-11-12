@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, object_session, selectinload
 from sqlalchemy.orm.exc import StaleDataError
 
 from app.db.session import get_db
-from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Semester, StudyType, StudyTypeTimeWindow
+from app.models.planning import Cohort, Course, CourseEligibleLecturer, CourseEligibleRoom, Semester, CohortCalendar, CohortCalendarTimeWindow
 from app.schemas.academic_catalog import (
     AvailabilityResponse,
     CatalogErrorEnvelope,
@@ -23,9 +23,9 @@ from app.schemas.academic_catalog import (
     SemesterInput,
     SemesterUpdate,
     SemesterResponse,
-    StudyTypeInput,
-    StudyTypeUpdate,
-    StudyTypeResponse,
+    CohortCalendarInput,
+    CohortCalendarUpdate,
+    CohortCalendarResponse,
     TimeWindowInput,
     TimeWindowUpdate,
     TimeWindowResponse,
@@ -38,7 +38,7 @@ from app.services.academic_catalog import (
     create_cohort,
     create_course,
     create_semester,
-    create_study_type,
+    create_cohort_calendar,
     create_time_window,
     delete_record,
     list_records,
@@ -48,7 +48,7 @@ from app.services.academic_catalog import (
     update_cohort_with_capacity_impact,
     update_course,
     update_semester,
-    update_study_type,
+    update_cohort_calendar,
     update_time_window,
     usage_for,
     window_overlap_notice,
@@ -60,7 +60,7 @@ router = APIRouter(prefix="/api/academic", tags=["academic catalog"])
 COURSE_OPTIONS = (
     selectinload(Course.current_semester),
     selectinload(Course.cohort),
-    selectinload(Course.study_type),
+    selectinload(Course.cohort_calendar),
     selectinload(Course.eligible_lecturers).selectinload(CourseEligibleLecturer.lecturer),
     selectinload(Course.eligible_rooms).selectinload(CourseEligibleRoom.room),
 )
@@ -87,10 +87,10 @@ def _cohort(row: Cohort) -> CohortResponse:
     return CohortResponse(id=row.id, name=row.name, nameRepairRequired=row.name_repair_required, studentCount=row.student_count, isActive=row.is_active, revision=row.revision, usage=_usage(row, "cohort"))
 
 
-def _time_window(row: StudyTypeTimeWindow) -> TimeWindowResponse:
-    reasons = [] if row.is_active and row.study_type.is_active else ["RECORD_INACTIVE" if not row.is_active else "STUDY_TYPE_INACTIVE"]
+def _time_window(row: CohortCalendarTimeWindow) -> TimeWindowResponse:
+    reasons = [] if row.is_active and row.cohort_calendar.is_active else ["RECORD_INACTIVE" if not row.is_active else "COHORT_CALENDAR_INACTIVE"]
     return TimeWindowResponse(
-        id=row.id, studyTypeId=row.study_type_id, weekday=row.weekday,
+        id=row.id, cohortCalendarId=row.cohort_calendar_id, weekday=row.weekday,
         kind=row.kind, date=row.date, isIntensive=row.is_intensive,
         overlapNotice=window_overlap_notice(object_session(row), row),
         startTime=format_clock(row.start_time), endTime=format_clock(row.end_time),
@@ -99,11 +99,11 @@ def _time_window(row: StudyTypeTimeWindow) -> TimeWindowResponse:
     )
 
 
-def _study_type(row: StudyType) -> StudyTypeResponse:
-    return StudyTypeResponse(
-        id=row.id, name=row.name, nameRepairRequired=row.name_repair_required,
+def _cohort_calendar(row: CohortCalendar) -> CohortCalendarResponse:
+    return CohortCalendarResponse(
+        id=row.id, name=row.name, nameRepairRequired=row.name_repair_required, cohortId=row.cohort_id, semesterId=row.semester_id, startDate=row.start_date, endDate=row.end_date,
         timeWindows=[_time_window(window) for window in row.time_windows],
-        isActive=row.is_active, revision=row.revision, usage=_usage(row, "study_type"),
+        isActive=row.is_active, revision=row.revision, usage=_usage(row, "cohort_calendar"),
     )
 
 
@@ -114,7 +114,7 @@ def _course(db: Session, row: Course) -> CourseResponse:
         id=row.id, name=row.name, nameRepairRequired=row.name_repair_required,
         totalUnits=row.total_units, overallUnits=row.overall_units, minSessionUnits=row.min_session_units, maxSessionUnits=row.max_session_units, preferredSessionUnits=row.preferred_session_units,
         semester=summary(row.current_semester) if row.current_semester else None,
-        cohort=summary(row.cohort), studyType=summary(row.study_type), lecturer=summary(row.lecturer) if row.lecturer else None, room=summary(row.room) if row.room else None,
+        cohort=summary(row.cohort), cohortCalendar=summary(row.cohort_calendar) if row.cohort_calendar else None, lecturer=summary(row.lecturer) if row.lecturer else None, room=summary(row.room) if row.room else None,
         isActive=row.is_active, revision=row.revision,
         availability=AvailabilityResponse(available=not reasons, reasons=reasons), usage=_usage(row, "course"),
     )
@@ -170,48 +170,48 @@ def get_cohort(record_id: int, db: Session = Depends(get_db)):
     return _cohort(row)
 
 
-@router.get("/study-types", response_model=PageResponse)
-def list_study_types(page: int = Query(1, ge=1), pageSize: int = Query(50, ge=1, le=200), status_filter: str = Query("all", alias="status"), query: str | None = None, db: Session = Depends(get_db)):
-    rows, total = list_records(db, StudyType, page=page, page_size=pageSize, status=status_filter, query=query, options=(selectinload(StudyType.time_windows).selectinload(StudyTypeTimeWindow.study_type),))
-    return _page(rows, total, page, pageSize, _study_type)
+@router.get("/cohort-calendars", response_model=PageResponse)
+def list_cohort_calendars(page: int = Query(1, ge=1), pageSize: int = Query(50, ge=1, le=200), status_filter: str = Query("all", alias="status"), query: str | None = None, db: Session = Depends(get_db)):
+    rows, total = list_records(db, CohortCalendar, page=page, page_size=pageSize, status=status_filter, query=query, options=(selectinload(CohortCalendar.time_windows).selectinload(CohortCalendarTimeWindow.cohort_calendar),))
+    return _page(rows, total, page, pageSize, _cohort_calendar)
 
 
-@router.post("/study-types", response_model=StudyTypeResponse, status_code=status.HTTP_201_CREATED)
-def post_study_type(payload: StudyTypeInput, db: Session = Depends(get_db)):
+@router.post("/cohort-calendars", response_model=CohortCalendarResponse, status_code=status.HTTP_201_CREATED)
+def post_cohort_calendar(payload: CohortCalendarInput, db: Session = Depends(get_db)):
     try:
-        row = create_study_type(db, name=payload.name)
+        row = create_cohort_calendar(db, **payload.model_dump())
         db.commit()
-        row = db.get(StudyType, row.id, options=[selectinload(StudyType.time_windows)])
-        return _study_type(row)
+        row = db.get(CohortCalendar, row.id, options=[selectinload(CohortCalendar.time_windows)])
+        return _cohort_calendar(row)
     except AcademicCatalogError as exc:
         db.rollback(); return _error_response(exc)
 
 
-@router.get("/study-types/{record_id}", response_model=StudyTypeResponse)
-def get_study_type(record_id: int, db: Session = Depends(get_db)):
-    row = db.get(StudyType, record_id, options=[selectinload(StudyType.time_windows).selectinload(StudyTypeTimeWindow.study_type)])
-    if row is None: return _not_found("Study Type")
-    return _study_type(row)
+@router.get("/cohort-calendars/{record_id}", response_model=CohortCalendarResponse)
+def get_cohort_calendar(record_id: int, db: Session = Depends(get_db)):
+    row = db.get(CohortCalendar, record_id, options=[selectinload(CohortCalendar.time_windows).selectinload(CohortCalendarTimeWindow.cohort_calendar)])
+    if row is None: return _not_found("Cohort Calendar")
+    return _cohort_calendar(row)
 
 
-@router.get("/study-types/{study_type_id}/time-windows", response_model=list[TimeWindowResponse])
-def list_time_windows(study_type_id: int, db: Session = Depends(get_db)):
-    owner = db.get(StudyType, study_type_id)
-    if owner is None: return _not_found("Study Type")
+@router.get("/cohort-calendars/{cohort_calendar_id}/time-windows", response_model=list[TimeWindowResponse])
+def list_time_windows(cohort_calendar_id: int, db: Session = Depends(get_db)):
+    owner = db.get(CohortCalendar, cohort_calendar_id)
+    if owner is None: return _not_found("Cohort Calendar")
     rows = db.execute(
-        select(StudyTypeTimeWindow)
-        .where(StudyTypeTimeWindow.study_type_id == study_type_id)
-        .options(selectinload(StudyTypeTimeWindow.study_type))
-        .order_by(StudyTypeTimeWindow.kind == 'dated', StudyTypeTimeWindow.weekday, StudyTypeTimeWindow.date, StudyTypeTimeWindow.start_time, StudyTypeTimeWindow.end_time, StudyTypeTimeWindow.sort_order, StudyTypeTimeWindow.id)
+        select(CohortCalendarTimeWindow)
+        .where(CohortCalendarTimeWindow.cohort_calendar_id == cohort_calendar_id)
+        .options(selectinload(CohortCalendarTimeWindow.cohort_calendar))
+        .order_by(CohortCalendarTimeWindow.kind == 'dated', CohortCalendarTimeWindow.weekday, CohortCalendarTimeWindow.date, CohortCalendarTimeWindow.start_time, CohortCalendarTimeWindow.end_time, CohortCalendarTimeWindow.sort_order, CohortCalendarTimeWindow.id)
     ).scalars().all()
     return [_time_window(row) for row in rows]
 
 
-@router.post("/study-types/{study_type_id}/time-windows", response_model=TimeWindowResponse, status_code=status.HTTP_201_CREATED)
-def post_time_window(study_type_id: int, payload: TimeWindowInput, db: Session = Depends(get_db)):
+@router.post("/cohort-calendars/{cohort_calendar_id}/time-windows", response_model=TimeWindowResponse, status_code=status.HTTP_201_CREATED)
+def post_time_window(cohort_calendar_id: int, payload: TimeWindowInput, db: Session = Depends(get_db)):
     try:
-        row = create_time_window(db, study_type_id, **payload.model_dump())
-        db.commit(); row = db.get(StudyTypeTimeWindow, row.id, options=[selectinload(StudyTypeTimeWindow.study_type)])
+        row = create_time_window(db, cohort_calendar_id, **payload.model_dump())
+        db.commit(); row = db.get(CohortCalendarTimeWindow, row.id, options=[selectinload(CohortCalendarTimeWindow.cohort_calendar)])
         return _time_window(row)
     except AcademicCatalogError as exc:
         db.rollback(); return _error_response(exc)
@@ -228,7 +228,7 @@ def list_courses(page: int = Query(1, ge=1), pageSize: int = Query(50, ge=1, le=
 @router.post("/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
 def post_course(payload: CourseInput, db: Session = Depends(get_db)):
     try:
-        row = create_course(db, name=payload.name, total_units=payload.total_units, overall_units=payload.overall_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, lecturer_id=payload.lecturer_id, room_id=payload.room_id)
+        row = create_course(db, name=payload.name, total_units=payload.total_units, overall_units=payload.overall_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, lecturer_id=payload.lecturer_id, room_id=payload.room_id)
         db.commit()
         row = db.get(Course, row.id, options=COURSE_OPTIONS)
         return _course(db, row)
@@ -275,35 +275,35 @@ def patch_cohort(record_id: int, payload: CohortUpdate, db: Session = Depends(ge
     return _commit_or_error(db, action, convert)
 
 
-@router.patch("/study-types/{record_id}", response_model=StudyTypeResponse)
-def patch_study_type(record_id: int, payload: StudyTypeUpdate, db: Session = Depends(get_db)):
-    return _commit_or_error(db, lambda: update_study_type(db, require_record(db, StudyType, record_id), name=payload.name, expected_revision=payload.expected_revision), _study_type)
+@router.patch("/cohort-calendars/{record_id}", response_model=CohortCalendarResponse)
+def patch_cohort_calendar(record_id: int, payload: CohortCalendarUpdate, db: Session = Depends(get_db)):
+    return _commit_or_error(db, lambda: update_cohort_calendar(db, require_record(db, CohortCalendar, record_id), **payload.model_dump()), _cohort_calendar)
 
 
 @router.get("/time-windows/{record_id}", response_model=TimeWindowResponse)
 def get_time_window(record_id: int, db: Session = Depends(get_db)):
     try:
-        return _time_window(require_record(db, StudyTypeTimeWindow, record_id))
+        return _time_window(require_record(db, CohortCalendarTimeWindow, record_id))
     except AcademicCatalogError as exc:
         return _error_response(exc)
 
 
 @router.patch("/time-windows/{record_id}", response_model=TimeWindowResponse)
 def patch_time_window(record_id: int, payload: TimeWindowUpdate, db: Session = Depends(get_db)):
-    return _commit_or_error(db, lambda: update_time_window(db, require_record(db, StudyTypeTimeWindow, record_id), **payload.model_dump()), _time_window)
+    return _commit_or_error(db, lambda: update_time_window(db, require_record(db, CohortCalendarTimeWindow, record_id), **payload.model_dump()), _time_window)
 
 
 @router.patch("/courses/{record_id}", response_model=CourseResponse)
 def patch_course(record_id: int, payload: CourseUpdate, db: Session = Depends(get_db)):
-    return _commit_or_error(db, lambda: update_course(db, require_record(db, Course, record_id), name=payload.name, total_units=payload.total_units, overall_units=payload.overall_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, study_type_id=payload.study_type_id, expected_revision=payload.expected_revision), lambda row: _course(db, row))
+    return _commit_or_error(db, lambda: update_course(db, require_record(db, Course, record_id), name=payload.name, total_units=payload.total_units, overall_units=payload.overall_units, min_session_units=payload.min_session_units, max_session_units=payload.max_session_units, preferred_session_units=payload.preferred_session_units, semester_id=payload.semester_id, cohort_id=payload.cohort_id, expected_revision=payload.expected_revision), lambda row: _course(db, row))
 
 
 RESOURCE_MODELS = {
     "semesters": Semester,
     "cohorts": Cohort,
     "courses": Course,
-    "study-types": StudyType,
-    "time-windows": StudyTypeTimeWindow,
+    "cohort-calendars": CohortCalendar,
+    "time-windows": CohortCalendarTimeWindow,
 }
 
 
@@ -311,7 +311,7 @@ def _converter(resource: str, db: Session, row):
     if resource == "semesters": return _semester(row)
     if resource == "cohorts": return _cohort(row)
     if resource == "courses": return _course(db, row)
-    if resource == "study-types": return _study_type(row)
+    if resource == "cohort-calendars": return _cohort_calendar(row)
     return _time_window(row)
 
 

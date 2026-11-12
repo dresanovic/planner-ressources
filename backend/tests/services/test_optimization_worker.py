@@ -146,7 +146,7 @@ def test_intensive_detached_input_preserves_exact_windows_and_fixed_teaching_wit
     from app.services.semester_optimization import FixedSession
     from app.services.optimization_worker import DetachedOptimizationInput
     marker = TimeWindowPlan(1,None,time(9),time(12),kind='dated',date=date(2026,9,7),is_intensive=True)
-    fixed = FixedSession(99,1,99,99,date(2026,9,7),time(9),time(9,45),units=1,study_type_id=2,marked_windows=(marker,))
+    fixed = FixedSession(99,1,99,99,date(2026,9,7),time(9),time(9,45),units=1,cohort_calendar_id=2,marked_windows=(marker,))
     problem = DetachedOptimizationInput((),(fixed,),(),{},123.0)
     copied = pickle.loads(pickle.dumps(problem))
     assert copied == problem

@@ -208,7 +208,7 @@ function CoverageBlock({ heading, facts }: { heading: string; facts: CoverageFac
 function warningLabel(code: string) {
   const labels: Record<string, string> = {
     GENERATION_CONSTRAINT_VIOLATION: 'Termin liegt außerhalb der aktiven Datums- oder Zeitgrenzen',
-    STUDY_TYPE_WINDOW_VIOLATION: 'Termin liegt außerhalb des aktiven Studienzeitfensters',
+    COHORT_CALENDAR_WINDOW_VIOLATION: 'Termin liegt außerhalb des aktiven Kohortenzeitfensters',
     LECTURER_OVERLAP: 'Lehrendenüberschneidung',
     ROOM_OVERLAP: 'Raumüberschneidung',
     COHORT_OVERLAP: 'Kohortenüberschneidung',

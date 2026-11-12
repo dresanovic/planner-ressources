@@ -41,7 +41,7 @@ class CoursePlan:
     lecturer_id: int
     cohort_id: int
     room_id: int
-    study_type_id: int
+    cohort_calendar_id: int
     cohort_size: int
     room_capacity: int
     lecturer_candidates: tuple[ResourceCandidatePlan, ...] = ()
@@ -75,7 +75,12 @@ class TimeWindowPlan:
     revision: int = 1
 
 
-def window_applies(window: TimeWindowPlan, day: date) -> bool:
+def window_applies(window: TimeWindowPlan, day: date, windows=None) -> bool:
+    # Intensive dates replace recurring hours for this calendar and date.
+    if window.kind == 'weekly' and windows is not None and any(
+        w.kind == 'dated' and w.is_intensive and w.date == day for w in windows
+    ):
+        return False
     return window.date == day if window.kind == 'dated' else window.weekday == day.weekday()
 
 

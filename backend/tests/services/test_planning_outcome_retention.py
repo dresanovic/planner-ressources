@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 from app.db.schema import initialize_database
-from app.models.planning import Cohort, Course, PlanningOutcome, ScheduleRevision, Semester, StudyType
+from app.models.planning import Cohort, Course, PlanningOutcome, ScheduleRevision, Semester, CohortCalendar
 from app.services.planning_outcomes import (
     StalePlanningOutcomeError,
     list_planning_outcomes,
@@ -26,7 +26,7 @@ def db_session():
         db.add_all(
             [
                 Cohort(id=1, name="Cohort", student_count=20),
-                StudyType(id=1, name="Full-time"),
+                CohortCalendar(cohort_id=1, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), id=1, name="Full-time"),
                 Semester(
                     id=1,
                     name="Fall",
@@ -40,7 +40,7 @@ def db_session():
                     min_session_units=2,
                     max_session_units=2,
                     cohort_id=1,
-                    study_type_id=1,
+
                     current_semester_id=1,
                 ),
                 ScheduleRevision(

@@ -287,7 +287,7 @@ describe('lecturer review API', () => {
       Object.assign(
         context as unknown as Record<string, unknown>,
         {
-          studyType: null,
+          cohortCalendar: null,
           teachingUnits: null,
           examDurationMinutes: null,
         },

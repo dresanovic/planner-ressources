@@ -9,7 +9,7 @@ export const generationCatalog: CourseOption[] = Array.from({ length: 94 }, (_, 
   id: index + 1, name: index < 2 ? 'Gleichnamige Lehrveranstaltung' : `Lehrveranstaltung ${index + 1}`,
   semesterId: 1, cohort: index < 11 ? targetCohort : otherCohort,
   totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4, cohortSize: 30,
-  lecturer: null, room: null, studyType: { id: 1, name: 'Vollzeit' },
+  lecturer: null, room: null, cohortCalendar: { id: 1, name: 'Vollzeit' },
   availability: { available: index !== 93, reasons: index === 93 ? ['COURSE_UNAVAILABLE'] : [] },
 }))
 export const administrationCatalog: CourseRecord[] = generationCatalog.map((course) => ({

@@ -35,7 +35,7 @@ export type WorkspaceCourse = {
   name: string
   cohort: string
   lecturerRefs: string[]
-  studyType: string
+  cohortCalendar: string
   planningEligible: boolean
   totalTeachingUnits: number
   scheduledTeachingUnits: number
@@ -151,7 +151,7 @@ export type FilterFacets = {
   cohorts: FacetValue[]
   lecturers: FacetValue[]
   rooms: FacetValue[]
-  studyTypes: FacetValue[]
+  cohortCalendars: FacetValue[]
   sessionTypes: FacetValue[]
   lifecycleContexts: FacetValue[]
   validationCategories: FacetValue[]
@@ -405,7 +405,7 @@ function validateCourse(course: Record<string, unknown>) {
   const courseRef = requireString(course.courseRef, 'A workspace course reference is invalid.')
   if (!/^course:[1-9]\d*$/.test(courseRef)) throw new CalendarWorkspaceApiError(502, 'A workspace course reference is invalid.')
   for (const field of ['courseId', 'totalTeachingUnits', 'scheduledTeachingUnits', 'remainingTeachingUnits', 'remainingInstructionalMinutes']) requireNumber(course[field], 'A workspace course numeric field is invalid.')
-  for (const field of ['code', 'name', 'cohort', 'studyType']) requireString(course[field], 'A workspace course text field is invalid.')
+  for (const field of ['code', 'name', 'cohort', 'cohortCalendar']) requireString(course[field], 'A workspace course text field is invalid.')
   if (typeof course.planningEligible !== 'boolean') throw new CalendarWorkspaceApiError(502, 'A workspace course planning-eligibility value is invalid.')
   for (const field of ['lecturerRefs', 'occurrenceRefs', 'findingRefs', 'outcomeRefs', 'needsReviewReasonRefs']) requireStringArray(course[field], 'A workspace course reference collection is invalid.')
   return courseRef
@@ -457,7 +457,7 @@ function validateHoliday(holiday: Record<string, unknown>) {
 
 function validateFacets(value: unknown) {
   if (!isRecord(value)) throw new CalendarWorkspaceApiError(502, 'The workspace facets are invalid.')
-  for (const key of ['courses', 'cohorts', 'lecturers', 'rooms', 'studyTypes', 'sessionTypes', 'lifecycleContexts', 'validationCategories']) {
+  for (const key of ['courses', 'cohorts', 'lecturers', 'rooms', 'cohortCalendars', 'sessionTypes', 'lifecycleContexts', 'validationCategories']) {
     const values = value[key]
     if (!Array.isArray(values) || values.some((facet) => !isRecord(facet) || typeof facet.value !== 'string' || typeof facet.label !== 'string')) throw new CalendarWorkspaceApiError(502, 'The workspace facets are invalid.')
   }

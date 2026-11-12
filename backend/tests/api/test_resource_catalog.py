@@ -1,3 +1,4 @@
+from tests.calendar_fixtures import create_api_calendar
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -93,8 +94,8 @@ def test_course_resource_eligibility_contract_is_atomic_and_returns_candidates(c
     room = client.post("/api/resources/rooms", json={"name": "R", "referenceCode": "R", "capacity": 40}).json()
     semester = client.post("/api/academic/semesters", json={"name": "Fall", "startDate": "2026-09-01", "endDate": "2026-12-20"}).json()
     cohort = client.post("/api/academic/cohorts", json={"name": "C", "studentCount": 30}).json()
-    study_type = client.post("/api/academic/study-types", json={"name": "Type"}).json()
-    course = client.post("/api/academic/courses", json={"name": "Course", "totalUnits": 4, "minSessionUnits": 2, "maxSessionUnits": 4, "semesterId": semester["id"], "cohortId": cohort["id"], "studyTypeId": study_type["id"], "lecturerId": lecturer["id"], "roomId": room["id"]}).json()
+    cohort_calendar = create_api_calendar(client, "Type")
+    course = client.post("/api/academic/courses", json={"name": "Course", "totalUnits": 4, "minSessionUnits": 2, "maxSessionUnits": 4, "semesterId": semester["id"], "cohortId": cohort["id"], "cohortCalendarId": cohort_calendar["id"], "lecturerId": lecturer["id"], "roomId": room["id"]}).json()
     url = f"/api/academic/courses/{course['id']}/resource-eligibility"
     changed = client.put(url, json={"expectedRevision": course["revision"], "lecturerIds": [lecturer["id"], second["id"]], "roomIds": [room["id"]]})
     assert changed.status_code == 200
@@ -114,12 +115,12 @@ def test_course_resource_configuration_includes_unavailability_and_course_sessio
     alternative_room = client.post("/api/resources/rooms", json={"name": "S", "referenceCode": "Z", "capacity": 40}).json()
     semester = client.post("/api/academic/semesters", json={"name": "Fall", "startDate": "2026-09-01", "endDate": "2026-12-20"}).json()
     cohort = client.post("/api/academic/cohorts", json={"name": "C", "studentCount": 30}).json()
-    study_type = client.post("/api/academic/study-types", json={"name": "Type"}).json()
+    cohort_calendar = create_api_calendar(client, "Type")
     window = client.post(
-        f"/api/academic/study-types/{study_type['id']}/time-windows",
+        f"/api/academic/cohort-calendars/{cohort_calendar['id']}/time-windows",
         json={"weekday": 0, "startTime": "09:00", "endTime": "12:00", "sortOrder": 0},
     ).json()
-    course = client.post("/api/academic/courses", json={"name": "Course", "totalUnits": 2, "minSessionUnits": 2, "maxSessionUnits": 2, "semesterId": semester["id"], "cohortId": cohort["id"], "studyTypeId": study_type["id"], "lecturerId": lecturer["id"], "roomId": room["id"]}).json()
+    course = client.post("/api/academic/courses", json={"name": "Course", "totalUnits": 2, "minSessionUnits": 2, "maxSessionUnits": 2, "semesterId": semester["id"], "cohortId": cohort["id"], "cohortCalendarId": cohort_calendar["id"], "lecturerId": lecturer["id"], "roomId": room["id"]}).json()
     eligibility = client.put(
         f"/api/academic/courses/{course['id']}/resource-eligibility",
         json={
@@ -174,8 +175,8 @@ def test_cohort_growth_removes_insufficient_rooms_and_reports_course_revision(cl
     room = client.post("/api/resources/rooms", json={"name": "R", "referenceCode": "R", "capacity": 30}).json()
     semester = client.post("/api/academic/semesters", json={"name": "Fall", "startDate": "2026-09-01", "endDate": "2026-12-20"}).json()
     cohort = client.post("/api/academic/cohorts", json={"name": "C", "studentCount": 20}).json()
-    study_type = client.post("/api/academic/study-types", json={"name": "Type"}).json()
-    course = client.post("/api/academic/courses", json={"name": "Course", "totalUnits": 4, "minSessionUnits": 2, "maxSessionUnits": 4, "semesterId": semester["id"], "cohortId": cohort["id"], "studyTypeId": study_type["id"], "lecturerId": lecturer["id"], "roomId": room["id"]}).json()
+    cohort_calendar = create_api_calendar(client, "Type")
+    course = client.post("/api/academic/courses", json={"name": "Course", "totalUnits": 4, "minSessionUnits": 2, "maxSessionUnits": 4, "semesterId": semester["id"], "cohortId": cohort["id"], "cohortCalendarId": cohort_calendar["id"], "lecturerId": lecturer["id"], "roomId": room["id"]}).json()
     changed = client.patch(f"/api/academic/cohorts/{cohort['id']}", json={"name": "C", "studentCount": 35, "expectedRevision": cohort["revision"]})
     assert changed.status_code == 200
     impact = changed.json()["capacityImpact"]

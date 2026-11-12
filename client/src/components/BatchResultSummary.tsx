@@ -34,8 +34,8 @@ function blockerText(reason: BlockingReason, courseName: string): string {
         return `${courseName}: Unterrichtsfreie Tage wurden als mögliche Lehrtermine ausgeschlossen. Der Hinweis bezeichnet keinen gespeicherten Termin auf einem Feiertag.`
       case 'SELECTED_COURSE_COMPETITION':
         return `${courseName}: Die ausgewählten Lehrveranstaltungen konkurrieren um gemeinsame Zeitfenster oder Ressourcen. Eine andere Verteilung kann zulasten anderer Lehrveranstaltungen gehen.`
-      case 'STUDY_TYPE_WINDOW_UNAVAILABLE':
-        return `${courseName}: Kein aktives Studienzeitfenster ist lang genug für die minimale Termingröße. Prüfen Sie die Zeitfenster des Studientyps.`
+      case 'COHORT_CALENDAR_WINDOW_UNAVAILABLE':
+        return `${courseName}: Kein aktives Kohortenzeitfenster ist lang genug für die minimale Termingröße. Prüfen Sie die Zeitfenster des Studientyps.`
       case 'LECTURER_UNAVAILABLE':
         return `${courseName}: Zulässige Lehrpersonen sind in ansonsten erlaubten Zeitfenstern nicht verfügbar. Prüfen Sie die Verfügbarkeiten und Zuordnungen.`
       case 'ROOM_UNAVAILABLE':
@@ -49,7 +49,7 @@ function blockerText(reason: BlockingReason, courseName: string): string {
       case 'UNAVAILABLE_DATE':
         return `${courseName}: Ausgeschlossene Tage schränken die möglichen Lehrtermine ein. Prüfen Sie die eingegebenen Abwesenheitstage.`
       case 'NO_ALLOWED_DATE_OR_WINDOW':
-        return `${courseName}: Es wurde kein zulässiger Tag mit passendem Zeitfenster gefunden. Prüfen Sie Planungszeitraum und Studienzeitfenster.`
+        return `${courseName}: Es wurde kein zulässiger Tag mit passendem Zeitfenster gefunden. Prüfen Sie Planungszeitraum und Kohortenzeitfenster.`
       case 'COURSE_CONSTRAINT':
         return `${courseName}: Die aktiven Datums-, Zeitfenster- oder Termingrößenvorgaben schränken die Platzierung ein. Prüfen Sie diese Planungsgrenzen.`
       case 'INVALID_PLANNING_INPUT':

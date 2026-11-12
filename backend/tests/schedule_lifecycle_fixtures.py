@@ -13,7 +13,7 @@ from app.models.planning import (
     ScheduleRevision,
     ScheduleRevisionEvent,
     Semester,
-    StudyType,
+    CohortCalendar,
 )
 
 
@@ -41,7 +41,7 @@ def seed_lifecycle_semester(db, *, semester_id: int = 1, with_schedule: bool = T
         start_date=date(2026, 9, 1),
         end_date=date(2026, 12, 20),
     )
-    study_type = StudyType(id=semester_id, name=f"Study type {semester_id}")
+    cohort_calendar = CohortCalendar(cohort_id=cohort.id, semester_id=semester.id, start_date=semester.start_date, end_date=semester.end_date, id=semester_id, name=f"Study type {semester_id}")
     course = Course(
         id=semester_id,
         name=f"Course {semester_id}",
@@ -49,12 +49,12 @@ def seed_lifecycle_semester(db, *, semester_id: int = 1, with_schedule: bool = T
         min_session_units=2,
         max_session_units=2,
         cohort_id=cohort.id,
-        study_type_id=study_type.id,
+
         current_semester_id=semester.id,
         eligible_lecturers=[CourseEligibleLecturer(lecturer_id=lecturer.id)],
         eligible_rooms=[CourseEligibleRoom(room_id=room.id)],
     )
-    db.add_all([lecturer, room, cohort, semester, study_type, course])
+    db.add_all([lecturer, room, cohort, semester, cohort_calendar, course])
     if with_schedule:
         db.add(teaching_schedule(semester_id=semester_id))
         db.add(exam_session(semester_id=semester_id))
@@ -75,8 +75,8 @@ def teaching_schedule(*, semester_id: int = 1) -> DraftSchedule:
         cohort_id_snapshot=semester_id,
         cohort_name_snapshot=f"Cohort {semester_id}",
         cohort_size_snapshot=30,
-        study_type_id_snapshot=semester_id,
-        study_type_name_snapshot=f"Study type {semester_id}",
+        cohort_calendar_id_snapshot=semester_id,
+        cohort_calendar_name_snapshot=f"Study type {semester_id}",
         semester_name_snapshot=f"Semester {semester_id}",
         semester_start_date_snapshot=date(2026, 9, 1),
         semester_end_date_snapshot=date(2026, 12, 20),

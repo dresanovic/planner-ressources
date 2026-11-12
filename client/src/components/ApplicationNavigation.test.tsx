@@ -70,7 +70,7 @@ describe('ApplicationNavigation', () => {
       { id: 'holidays', label: 'Feiertage' },
       { id: 'cohorts', label: 'Kohorten' },
       { id: 'courses', label: 'Lehrveranstaltungen' },
-      { id: 'study-types', label: 'Studienformen' },
+      { id: 'cohort-calendars', label: 'Kohortenkalender' },
       { id: 'time-windows', label: 'Zeitfenster' },
       { id: 'lecturers', label: 'Lehrende' },
       { id: 'rooms', label: 'Räume' },

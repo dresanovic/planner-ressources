@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
-  createCohort, createCourse, createSemester, createStudyType, createTimeWindow,
+  createCohort, createCourse, createSemester, createCohortCalendar, createTimeWindow,
   deleteAcademicRecord, setAcademicLifecycle,
-  listCohorts, listCourses, listSemesters, listStudyTypes, listTimeWindows,
-  updateCohort, updateCourse, updateSemester, updateStudyType, updateTimeWindow,
+  listCohorts, listCourses, listSemesters, listCohortCalendars, listTimeWindows,
+  updateCohort, updateCourse, updateSemester, updateCohortCalendar, updateTimeWindow,
   type CatalogAudit, type CatalogPage, type UsageSummary,
 } from '../api/academicCatalog'
 import { getPlanningOptions } from '../api/planningOptions'
@@ -33,8 +33,8 @@ type PageCategory = AcademicDataCategory
 const categories: ReadonlyArray<{ id: PageCategory; label: string; singular: string }> = ACADEMIC_DATA_CATEGORIES
 type DisplayRecord = CatalogAudit & { id: number; name: string; usage: UsageSummary; [key: string]: unknown }
 type Option = { id: number; name: string }
-type Options = { semesters: Option[]; cohorts: Option[]; studyTypes: Option[]; lecturers: Option[]; rooms: Option[] }
-const emptyOptions: Options = { semesters: [], cohorts: [], studyTypes: [], lecturers: [], rooms: [] }
+type Options = { semesters: Option[]; cohorts: Option[]; cohortCalendars: Option[]; lecturers: Option[]; rooms: Option[] }
+const emptyOptions: Options = { semesters: [], cohorts: [], cohortCalendars: [], lecturers: [], rooms: [] }
 export type CourseListFilters = { semesterId: number | null; cohortId: number | null }
 const unfilteredCourses: CourseListFilters = { semesterId: null, cohortId: null }
 
@@ -105,26 +105,26 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
       if (selected === 'semesters') publishRecords(await loadAllPages((page, pageSize) => listSemesters(status, page, pageSize)) as DisplayRecord[])
       if (selected === 'cohorts') publishRecords(await loadAllPages((page, pageSize) => listCohorts(status, page, pageSize)) as DisplayRecord[])
       if (selected === 'courses') publishRecords(await loadAllPages((page, pageSize) => listCourses(status, page, pageSize)) as DisplayRecord[])
-      if (selected === 'study-types') publishRecords(await loadAllPages((page, pageSize) => listStudyTypes(status, page, pageSize)) as DisplayRecord[])
+      if (selected === 'cohort-calendars') publishRecords(await loadAllPages((page, pageSize) => listCohortCalendars(status, page, pageSize)) as DisplayRecord[])
       if (selected === 'time-windows') {
-        const types = await loadAllPages((page, pageSize) => listStudyTypes('all', page, pageSize))
+        const types = await loadAllPages((page, pageSize) => listCohortCalendars('all', page, pageSize))
         const typeNames = new Map(types.map((type) => [type.id, type.name]))
         const windows = (await Promise.all(types.map((type) => listTimeWindows(type.id)))).flat()
           .filter((window) => status === 'all' || window.isActive === (status === 'active'))
-          .sort((left, right) => Number(left.kind === 'dated') - Number(right.kind === 'dated') || (left.kind === 'dated' ? left.date : String(left.weekday)).localeCompare(right.kind === 'dated' ? right.date : String(right.weekday)) || left.startTime.localeCompare(right.startTime) || left.endTime.localeCompare(right.endTime) || (typeNames.get(left.studyTypeId) ?? '').localeCompare(typeNames.get(right.studyTypeId) ?? '') || left.sortOrder - right.sortOrder || left.id - right.id)
-        publishRecords(windows.map((window) => ({ ...window, name: `${typeNames.get(window.studyTypeId) ?? 'Unbekannte Studienform'} · ${window.kind === 'dated' ? `Einmalig: ${window.date.split('-').reverse().join('.')} · ${window.isIntensive ? 'Intensivwoche' : 'Nicht intensiv'}` : `Wöchentlich: ${WEEKDAY_NAMES[window.weekday] ?? 'Unbekannter Wochentag'}`}, ${window.startTime}–${window.endTime}` })))
+          .sort((left, right) => Number(left.kind === 'dated') - Number(right.kind === 'dated') || (left.kind === 'dated' ? left.date : String(left.weekday)).localeCompare(right.kind === 'dated' ? right.date : String(right.weekday)) || left.startTime.localeCompare(right.startTime) || left.endTime.localeCompare(right.endTime) || (typeNames.get(left.cohortCalendarId) ?? '').localeCompare(typeNames.get(right.cohortCalendarId) ?? '') || left.sortOrder - right.sortOrder || left.id - right.id)
+        publishRecords(windows.map((window) => ({ ...window, name: `${typeNames.get(window.cohortCalendarId) ?? 'Unbekannte Kohortenkalender'} · ${window.kind === 'dated' ? `Einmalig: ${window.date.split('-').reverse().join('.')} · ${window.isIntensive ? 'Intensivwoche' : 'Nicht intensiv'}` : `Wöchentlich: ${WEEKDAY_NAMES[window.weekday] ?? 'Unbekannter Wochentag'}`}, ${window.startTime}–${window.endTime}` })))
       }
-      if (selected === 'courses' || selected === 'time-windows') {
-        const [semesters, cohorts, studyTypes, planning] = await Promise.all([
+      if (selected === 'courses' || selected === 'time-windows' || selected === 'cohort-calendars') {
+        const [semesters, cohorts, cohortCalendars, planning] = await Promise.all([
           loadAllPages((page, pageSize) => listSemesters('all', page, pageSize)),
           loadAllPages((page, pageSize) => listCohorts('all', page, pageSize)),
-          loadAllPages((page, pageSize) => listStudyTypes('all', page, pageSize)),
+          loadAllPages((page, pageSize) => listCohortCalendars('all', page, pageSize)),
           getPlanningOptions(),
         ])
         publishOptions({
           semesters,
           cohorts,
-          studyTypes: studyTypes.filter((type) => type.isActive),
+          cohortCalendars: cohortCalendars.filter((type) => type.isActive),
           lecturers: planning.lecturers.filter((resource) => resource.isActive),
           rooms: planning.rooms.filter((resource) => resource.isActive),
         })
@@ -163,11 +163,11 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
   async function create(value: AcademicEditorValues) {
     if (category === 'semesters') await createSemester(value as { name: string; startDate: string; endDate: string })
     if (category === 'cohorts') await createCohort(value as { name: string; studentCount: number })
-    if (category === 'study-types') await createStudyType(value as { name: string })
+    if (category === 'cohort-calendars') await createCohortCalendar(value as Parameters<typeof createCohortCalendar>[0])
     if (category === 'courses') await createCourse(value as Parameters<typeof createCourse>[0])
     if (category === 'time-windows') {
-      const { studyTypeId, ...window } = value
-      await createTimeWindow(Number(studyTypeId), window as Parameters<typeof createTimeWindow>[1])
+      const { cohortCalendarId, ...window } = value
+      await createTimeWindow(Number(cohortCalendarId), window as Parameters<typeof createTimeWindow>[1])
     }
     onCatalogChanged()
     setCopyValues(null)
@@ -191,7 +191,7 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
         outcomeMessage = `${current.singular} aktualisiert. ${removed.length} wegen zu geringer Kapazität ungültige Raumzuordnung${removed.length === 1 ? '' : 'en'} entfernt.${unavailable}`
       }
     }
-    if (category === 'study-types') await updateStudyType(selected.id, { ...(value as { name: string }), expectedRevision })
+    if (category === 'cohort-calendars') await updateCohortCalendar(selected.id, { ...(value as Parameters<typeof createCohortCalendar>[0]), expectedRevision })
     if (category === 'courses') await updateCourse(selected.id, { ...(value as Omit<Parameters<typeof createCourse>[0], 'lecturerId' | 'roomId'>), expectedRevision })
     if (category === 'time-windows') await updateTimeWindow(selected.id, { ...(value as Parameters<typeof createTimeWindow>[1]), expectedRevision })
     onCatalogChanged(); setSelected(null); await refreshAcknowledgedMutation(outcomeMessage)
@@ -392,9 +392,9 @@ export function AcademicDataPage({ category, onCatalogChanged, courseFilters = u
   function editValues(record: DisplayRecord): AcademicEditorValues {
     if (category === 'semesters') return { name: record.name, startDate: record.startDate as string, endDate: record.endDate as string }
     if (category === 'cohorts') return { name: record.name, studentCount: record.studentCount as number }
-    if (category === 'study-types') return { name: record.name }
-    if (category === 'courses') return { name: record.name, totalUnits: record.totalUnits as number, overallUnits: (record.overallUnits ?? record.totalUnits) as number, minSessionUnits: record.minSessionUnits as number, maxSessionUnits: record.maxSessionUnits as number, preferredSessionUnits: (record.preferredSessionUnits as number | null) ?? '', semesterId: (record.semester as Option | null)?.id ?? '', cohortId: (record.cohort as Option).id, studyTypeId: (record.studyType as Option).id }
-    return { kind: (record.kind as string) ?? 'weekly', date: (record.date as string) ?? '', isIntensive: Boolean(record.isIntensive), sortOrder: (record.sortOrder as number) ?? 0, studyTypeId: record.studyTypeId as number, weekday: record.weekday as number | null, startTime: record.startTime as string, endTime: record.endTime as string }
+    if (category === 'cohort-calendars') return { cohortId: record.cohortId as number, semesterId: record.semesterId as number, startDate: record.startDate as string, endDate: record.endDate as string }
+    if (category === 'courses') return { name: record.name, totalUnits: record.totalUnits as number, overallUnits: (record.overallUnits ?? record.totalUnits) as number, minSessionUnits: record.minSessionUnits as number, maxSessionUnits: record.maxSessionUnits as number, preferredSessionUnits: (record.preferredSessionUnits as number | null) ?? '', semesterId: (record.semester as Option | null)?.id ?? '', cohortId: (record.cohort as Option).id }
+    return { kind: (record.kind as string) ?? 'weekly', date: (record.date as string) ?? '', isIntensive: Boolean(record.isIntensive), sortOrder: (record.sortOrder as number) ?? 0, cohortCalendarId: record.cohortCalendarId as number, weekday: record.weekday as number | null, startTime: record.startTime as string, endTime: record.endTime as string }
   }
 
   const semesterRecords = records.filter((record) => courseFilters.semesterId == null || (record.semester as Option | null)?.id === courseFilters.semesterId)

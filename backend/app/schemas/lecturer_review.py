@@ -137,7 +137,7 @@ class SessionContext(LecturerReviewModel):
     time_zone: str = Field(min_length=1)
     room_name: str = Field(min_length=1)
     cohort_name: str = Field(min_length=1)
-    study_type: str | None = None
+    cohort_calendar: str | None = None
     teaching_units: int | None = Field(default=None, ge=1)
     exam_duration_minutes: int | None = Field(default=None, ge=1)
 
@@ -237,7 +237,7 @@ class PublicCourse(LecturerReviewModel):
     code: str = Field(min_length=1)
     title: str = Field(min_length=1)
     cohort_name: str = Field(min_length=1)
-    study_type: str = Field(min_length=1)
+    cohort_calendar: str = Field(min_length=1)
     sessions: list[PublicSession]
 
 
@@ -265,7 +265,7 @@ class PublicFilterFacets(LecturerReviewModel):
     courses: list[PublicFacetValue]
     cohorts: list[PublicFacetValue]
     rooms: list[PublicFacetValue]
-    study_types: list[PublicFacetValue]
+    cohort_calendars: list[PublicFacetValue]
     session_types: list[PublicFacetValue]
     lifecycle_contexts: list[PublicFacetValue] = Field(max_length=1)
     validation_categories: list[PublicFacetValue]

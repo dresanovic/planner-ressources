@@ -23,8 +23,8 @@ from app.models.planning import (
     Room,
     ScheduleRevision,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
     InstitutionHoliday,
 )
 from app.schemas.conflict_aware_generation import PreparedOptimizationCourseInput

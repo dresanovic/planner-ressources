@@ -184,7 +184,7 @@ def test_prepare_deduplicates_dates_and_generate_returns_proven_complete_saved_r
     prepared = response.json()
     assert prepared["unavailableDates"] == ["2026-10-26"]
     assert [item["courseId"] for item in prepared["courses"]] == [1, 2]
-    assert prepared["courses"][0]["effectiveConstraints"]["studyType"] == {
+    assert prepared["courses"][0]["effectiveConstraints"]["cohortCalendar"] == {
         "id": 1,
         "name": "Full-time",
     }

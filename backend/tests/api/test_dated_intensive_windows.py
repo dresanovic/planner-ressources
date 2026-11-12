@@ -1,3 +1,4 @@
+from tests.calendar_fixtures import create_api_calendar
 """I-009 wire contracts, through authenticated disposable HTTP sessions."""
 import json
 from pathlib import Path
@@ -30,15 +31,15 @@ def test_precise_generated_sessions_round_trip_calendar_and_unchanged_edit(clien
     _, first = seed_lifecycle_semester(db_session, with_schedule=False)
     first.total_units = first.min_session_units = first.max_session_units = 1
     db_session.add(Course(id=2, name='Second', total_units=1, min_session_units=1, max_session_units=1,
-        cohort_id=1, study_type_id=1, current_semester_id=1,
+        cohort_id=1,  current_semester_id=1,
         eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
         eligible_rooms=[CourseEligibleRoom(room_id=1)]))
     db_session.commit()
-    weekly = post_window(client, {'id': 1}, kind='weekly', weekday=0, date=None,
+    weekly = post_window(client, {'id': 1}, kind='dated', weekday=None, date=day.isoformat(), isIntensive=False,
         startTime='09:00', endTime='10:31').json()
     marked = post_window(client, {'id': 1}, date=day.isoformat(),
         startTime='09:45', endTime='09:46', isIntensive=True).json()
-    windows = (TimeWindowPlan(weekly['id'], 0, time(9), time(10, 31)),
+    windows = (TimeWindowPlan(weekly['id'], None, time(9), time(10, 31),kind='dated',date=day),
         TimeWindowPlan(marked['id'], None, time(9, 45), time(9, 46), kind='dated', date=day, is_intensive=True))
     base = optimization_course(1, total_units=1, min_units=1, max_units=1, cohort_id=1)
     courses = [replace(base, course_id=i, windows=windows, planning_period=PlanningPeriodPlan(day, day)) for i in (1, 2)]
@@ -72,8 +73,8 @@ def test_precise_generated_sessions_round_trip_calendar_and_unchanged_edit(clien
 
 @pytest.mark.parametrize("payload", CASES["windows"])
 def test_window_wire_shape_round_trip(client, payload):
-    owner = client.post("/api/academic/study-types", json={"name": "Form"}).json()
-    response = client.post(f'/api/academic/study-types/{owner["id"]}/time-windows', json=payload)
+    owner = create_api_calendar(client, "Form")
+    response = client.post(f'/api/academic/cohort-calendars/{owner["id"]}/time-windows', json=payload)
     assert response.status_code == 201, response.text
     row = response.json()
     assert {key: row.get(key) for key in payload} == payload
@@ -82,8 +83,8 @@ def test_window_wire_shape_round_trip(client, payload):
 
 
 def test_invalid_dated_fields_return_aggregate_german_envelope(client):
-    owner = client.post("/api/academic/study-types", json={"name": "Form"}).json()
-    response = client.post(f'/api/academic/study-types/{owner["id"]}/time-windows', json=CASES["invalid"])
+    owner = create_api_calendar(client, "Form")
+    response = client.post(f'/api/academic/cohort-calendars/{owner["id"]}/time-windows', json=CASES["invalid"])
     assert response.status_code == 422
     errors = response.json()["errors"]
     assert set(CASES["errorFields"]) <= {error["field"] for error in errors}
@@ -92,11 +93,11 @@ def test_invalid_dated_fields_return_aggregate_german_envelope(client):
 
 
 def create_form(client, name="Form"):
-    return client.post('/api/academic/study-types', json={"name": name}).json()
+    return create_api_calendar(client, name)
 
 
 def post_window(client, owner, **changes):
-    return client.post(f'/api/academic/study-types/{owner["id"]}/time-windows', json={**CASES['windows'][1], **changes})
+    return client.post(f'/api/academic/cohort-calendars/{owner["id"]}/time-windows', json={**CASES['windows'][1], **changes})
 
 
 def test_dated_edit_owner_kind_lock_stale_and_lifecycle(client):
@@ -104,12 +105,12 @@ def test_dated_edit_owner_kind_lock_stale_and_lifecycle(client):
     result = post_window(client, owner)
     assert result.status_code == 201, result.text
     row = result.json()
-    payload = {**CASES['windows'][1], 'studyTypeId': other['id'], 'expectedRevision': row['revision'], 'isIntensive': True}
+    payload = {**CASES['windows'][1], 'cohortCalendarId': other['id'], 'expectedRevision': row['revision'], 'isIntensive': True}
     url = f'/api/academic/time-windows/{row["id"]}'
     moved = client.patch(url, json=payload)
     assert moved.status_code == 200, moved.text
     assert moved.json()['id'] == row['id']
-    assert moved.json()['studyTypeId'] == other['id']
+    assert moved.json()['cohortCalendarId'] == other['id']
     assert moved.json()['revision'] == row['revision'] + 1
     assert client.patch(url, json=payload).status_code == 409
     payload.update(expectedRevision=moved.json()['revision'], kind='weekly', weekday=0, date=None, isIntensive=False)
@@ -140,7 +141,7 @@ def test_inactive_form_blocks_creation_and_reactivation(client):
     url = f'/api/academic/time-windows/{row["id"]}'
     archived = client.post(url + '/archive', json={'expectedRevision': row['revision']})
     assert archived.status_code == 200
-    assert client.post(f'/api/academic/study-types/{owner["id"]}/archive', json={'expectedRevision': owner['revision']}).status_code == 200
+    assert client.post(f'/api/academic/cohort-calendars/{owner["id"]}/archive', json={'expectedRevision': owner['revision']}).status_code == 200
     assert post_window(client, owner, date='2026-11-10').status_code == 422
     assert client.post(url + '/reactivate', json={'expectedRevision': archived.json()['revision']}).status_code == 409
 
@@ -160,13 +161,13 @@ def test_invalid_shapes_never_write(client, changes, fields):
     response = post_window(client, owner, **changes)
     assert response.status_code == 422, response.text
     assert fields <= {e['field'] for e in response.json()['errors']}
-    assert client.get(f'/api/academic/study-types/{owner["id"]}/time-windows').json() == []
+    assert client.get(f'/api/academic/cohort-calendars/{owner["id"]}/time-windows').json() == []
 
 
 def test_legacy_weekly_requests_remain_weekly(client):
     owner = create_form(client)
     payload = {'weekday': 4, 'startTime':'09:00', 'endTime':'12:00', 'sortOrder':5}
-    row = client.post(f'/api/academic/study-types/{owner["id"]}/time-windows', json=payload).json()
+    row = client.post(f'/api/academic/cohort-calendars/{owner["id"]}/time-windows', json=payload).json()
     assert row.get('kind') == 'weekly'
     assert row.get('date') is None and row.get('isIntensive') is False
     updated = client.patch(f'/api/academic/time-windows/{row["id"]}', json={**payload,'expectedRevision':row['revision']})
@@ -219,13 +220,13 @@ def test_dated_only_minimum_occurrence_controls_availability(client, db_session)
 @pytest.mark.parametrize('payload', [CASES['windows'][0],CASES['windows'][2]])
 def test_copy_is_an_ordinary_independent_create_even_if_source_changes_or_is_deleted(client,payload):
     owner,other=create_form(client),create_form(client,'Andere')
-    source=client.post(f'/api/academic/study-types/{owner["id"]}/time-windows',json=payload).json()
+    source=client.post(f'/api/academic/cohort-calendars/{owner["id"]}/time-windows',json=payload).json()
     captured={key:source[key] for key in payload}
     url=f'/api/academic/time-windows/{source["id"]}'
     changed=client.patch(url,json={**captured,'startTime':'09:35','expectedRevision':source['revision']}).json()
-    copy=client.post(f'/api/academic/study-types/{other["id"]}/time-windows',json=captured)
+    copy=client.post(f'/api/academic/cohort-calendars/{other["id"]}/time-windows',json=captured)
     assert copy.status_code == 201,copy.text
     assert copy.json()['id'] != source['id'] and copy.json()['startTime'] == captured['startTime']
     assert client.delete(url+f'?expectedRevision={changed["revision"]}').status_code == 204
     assert client.get(f'/api/academic/time-windows/{copy.json()["id"]}').json() == copy.json()
-    assert client.post(f'/api/academic/study-types/{owner["id"]}/time-windows',json=captured).status_code == 201
+    assert client.post(f'/api/academic/cohort-calendars/{owner["id"]}/time-windows',json=captured).status_code == 201

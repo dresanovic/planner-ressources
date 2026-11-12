@@ -170,7 +170,7 @@ class CapturedCourseSchedule(LifecycleModel):
     source_course_id: int = Field(ge=1)
     name: str = Field(min_length=1)
     cohort: CapturedCohort
-    study_type: CapturedEntity
+    cohort_calendar: CapturedEntity
     total_units: int = Field(ge=0)
     scheduled_units: int = Field(ge=0)
     remaining_units: int = Field(ge=0)

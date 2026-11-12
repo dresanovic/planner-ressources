@@ -15,7 +15,7 @@ from app.models.planning import (
     Lecturer,
     Room,
     ScheduleRevision,
-    StudyTypeTimeWindow,
+    CohortCalendarTimeWindow,
 )
 from app.services import calendar_workspace
 from app.services.calendar_workspace import (
@@ -168,12 +168,12 @@ def test_exported_validation_derivation_receives_the_complete_revision(
         }
 
 
-def test_working_default_preserves_study_type_window_validation_code():
+def test_working_default_preserves_cohort_calendar_window_validation_code():
     with _db() as db:
         seed_lifecycle_semester(db, with_schedule=True)
         db.add(
-            StudyTypeTimeWindow(
-                study_type_id=1,
+            CohortCalendarTimeWindow(
+                cohort_calendar_id=1,
                 weekday=0,
                 start_time=time(13),
                 end_time=time(14),
@@ -192,7 +192,7 @@ def test_working_default_preserves_study_type_window_validation_code():
         }
 
         assert "GENERATION_CONSTRAINT_VIOLATION" not in issue_codes
-        assert "STUDY_TYPE_WINDOW_VIOLATION" in issue_codes
+        assert "COHORT_CALENDAR_WINDOW_VIOLATION" in issue_codes
         assert "VALIDATION_DATA_MISSING" not in issue_codes
 
 
@@ -201,8 +201,8 @@ def test_calendar_revalidates_saved_teaching_against_live_windows_without_moving
         semester, _course = seed_lifecycle_semester(db, with_schedule=True)
         db.add_all(
             [
-                StudyTypeTimeWindow(
-                    study_type_id=1,
+                CohortCalendarTimeWindow(
+                    cohort_calendar_id=1,
                     weekday=1,
                     start_time=time(9),
                     end_time=time(11),
@@ -238,7 +238,7 @@ def test_calendar_revalidates_saved_teaching_against_live_windows_without_moving
             if row["category"] == "other"
         }
         assert "GENERATION_CONSTRAINT_VIOLATION" not in issue_codes
-        assert "STUDY_TYPE_WINDOW_VIOLATION" in issue_codes
+        assert "COHORT_CALENDAR_WINDOW_VIOLATION" in issue_codes
         db.refresh(source)
         assert (source.date, source.start_time, source.end_time) == original_interval
 
@@ -576,7 +576,7 @@ def test_validation_facets_reconcile_no_issue_with_course_outcomes():
             "courseRef": "course:1",
             "name": "Failed scheduled",
             "cohort": "C1",
-            "studyType": "Full-time",
+            "cohortCalendar": "Full-time",
             "occurrenceRefs": ["teaching:1"],
             "findingRefs": [],
         },
@@ -584,7 +584,7 @@ def test_validation_facets_reconcile_no_issue_with_course_outcomes():
             "courseRef": "course:2",
             "name": "Stale unscheduled",
             "cohort": "C2",
-            "studyType": "Part-time",
+            "cohortCalendar": "Part-time",
             "occurrenceRefs": [],
             "findingRefs": [],
         },
@@ -622,7 +622,7 @@ def test_validation_facets_reconcile_no_issue_with_course_outcomes():
             "courseRef": "course:3",
             "name": "Clean unscheduled",
             "cohort": "C3",
-            "studyType": "Full-time",
+            "cohortCalendar": "Full-time",
             "occurrenceRefs": [],
             "findingRefs": [],
         }

@@ -22,7 +22,7 @@ from app.models.planning import (
     ScheduleRevision,
     ScheduleRevisionEvent,
     Semester,
-    StudyTypeTimeWindow,
+    CohortCalendarTimeWindow,
 )
 from app.services.draft_schedule_repository import (
     GenerationConstraints,
@@ -390,6 +390,7 @@ def _build_snapshot(
             .options(
                 selectinload(DraftSchedule.sessions),
                 selectinload(DraftSchedule.course).selectinload(Course.cohort),
+                selectinload(DraftSchedule.course).selectinload(Course.cohort_calendar),
                 selectinload(DraftSchedule.course)
                 .selectinload(Course.eligible_lecturers)
                 .selectinload(CourseEligibleLecturer.lecturer),
@@ -412,7 +413,7 @@ def _build_snapshot(
             .where(course_filter)
             .options(
                 selectinload(Course.cohort),
-                selectinload(Course.study_type),
+                selectinload(Course.cohort_calendar),
                 selectinload(Course.eligible_lecturers),
                 selectinload(Course.eligible_rooms),
             )
@@ -426,19 +427,19 @@ def _build_snapshot(
             .where(GenerationConstraintSet.semester_id == semester_id)
         )
     }
-    study_type_ids = {course.study_type_id for course in courses}
-    default_windows: dict[int, list[StudyTypeTimeWindow]] = {}
-    if study_type_ids:
+    cohort_calendar_ids = {course.cohort_calendar_id for course in courses}
+    default_windows: dict[int, list[CohortCalendarTimeWindow]] = {}
+    if cohort_calendar_ids:
         for window in db.scalars(
-            select(StudyTypeTimeWindow)
+            select(CohortCalendarTimeWindow)
             .where(
-                StudyTypeTimeWindow.study_type_id.in_(study_type_ids),
-                StudyTypeTimeWindow.is_active.is_(True),
-                StudyTypeTimeWindow.study_type.has(is_active=True),
+                CohortCalendarTimeWindow.cohort_calendar_id.in_(cohort_calendar_ids),
+                CohortCalendarTimeWindow.is_active.is_(True),
+                CohortCalendarTimeWindow.cohort_calendar.has(is_active=True),
             )
-            .order_by(StudyTypeTimeWindow.study_type_id, StudyTypeTimeWindow.sort_order)
+            .order_by(CohortCalendarTimeWindow.cohort_calendar_id, CohortCalendarTimeWindow.sort_order)
         ):
-            default_windows.setdefault(window.study_type_id, []).append(window)
+            default_windows.setdefault(window.cohort_calendar_id, []).append(window)
     conditions: list[dict[str, Any]] = []
     captured_courses: list[dict[str, Any]] = []
     for course in courses:
@@ -447,15 +448,15 @@ def _build_snapshot(
         scheduled = sum(item.units for item in sessions)
         remaining = max(course.total_units - scheduled, 0)
         saved_constraint = saved_constraints.get(course.id)
-        constraint_windows = default_windows.get(course.study_type_id, [])
+        constraint_windows = default_windows.get(course.cohort_calendar_id, [])
         if saved_constraint is None:
-            planning_start_date = semester.start_date
-            planning_end_date = semester.end_date
+            planning_start_date = max(semester.start_date, course.cohort_calendar.start_date)
+            planning_end_date = min(semester.end_date, course.cohort_calendar.end_date)
             source_revision = None
             is_custom = False
         else:
-            planning_start_date = saved_constraint.planning_start_date
-            planning_end_date = saved_constraint.planning_end_date
+            planning_start_date = max(saved_constraint.planning_start_date, course.cohort_calendar.start_date)
+            planning_end_date = min(saved_constraint.planning_end_date, course.cohort_calendar.end_date)
             source_revision = saved_constraint.revision
             is_custom = True
         if remaining:
@@ -545,9 +546,9 @@ def _build_snapshot(
                     "name": course.cohort.name,
                     "size": course.cohort.student_count,
                 },
-                "studyType": {
-                    "sourceId": course.study_type.id,
-                    "name": course.study_type.name,
+                "cohortCalendar": {
+                    "sourceId": course.cohort_calendar.id,
+                    "name": course.cohort_calendar.name,
                 },
                 "totalUnits": course.total_units,
                 "scheduledUnits": scheduled,
@@ -720,34 +721,34 @@ def _teaching_validation_alerts(
         return {}
     rooms_by_id = {row.id: row for row in db.scalars(select(Room))}
     lecturers_by_id = {row.id: row for row in db.scalars(select(Lecturer))}
-    study_type_ids = {
-        study_type_id
+    cohort_calendar_ids = {
+        cohort_calendar_id
         for draft in drafts
-        for study_type_id in (
-            draft.study_type_id_snapshot,
-            draft.course.study_type_id,
+        for cohort_calendar_id in (
+            draft.cohort_calendar_id_snapshot,
+            draft.course.cohort_calendar_id,
         )
     }
     window_rows = list(
         db.scalars(
-            select(StudyTypeTimeWindow)
+            select(CohortCalendarTimeWindow)
             .where(
-                StudyTypeTimeWindow.study_type_id.in_(study_type_ids),
-                StudyTypeTimeWindow.is_active.is_(True),
-                StudyTypeTimeWindow.study_type.has(is_active=True),
+                CohortCalendarTimeWindow.cohort_calendar_id.in_(cohort_calendar_ids),
+                CohortCalendarTimeWindow.is_active.is_(True),
+                CohortCalendarTimeWindow.cohort_calendar.has(is_active=True),
             )
             .order_by(
-                StudyTypeTimeWindow.study_type_id,
-                StudyTypeTimeWindow.sort_order,
-                StudyTypeTimeWindow.weekday,
+                CohortCalendarTimeWindow.cohort_calendar_id,
+                CohortCalendarTimeWindow.sort_order,
+                CohortCalendarTimeWindow.weekday,
             )
         )
     )
-    study_windows_by_study_type_id: dict[int, list[TimeWindowPlan]] = {
-        study_type_id: [] for study_type_id in study_type_ids
+    study_windows_by_cohort_calendar_id: dict[int, list[TimeWindowPlan]] = {
+        cohort_calendar_id: [] for cohort_calendar_id in cohort_calendar_ids
     }
     for row in window_rows:
-        windows = study_windows_by_study_type_id[row.study_type_id]
+        windows = study_windows_by_cohort_calendar_id[row.cohort_calendar_id]
         windows.append(
             TimeWindowPlan(
                 id=row.id,
@@ -775,17 +776,17 @@ def _teaching_validation_alerts(
     constraints_by_course_id = {}
     for draft in drafts:
         saved = saved_by_course_id.get(draft.course_id)
-        allowed_windows = study_windows_by_study_type_id[
-            draft.course.study_type_id
+        allowed_windows = study_windows_by_cohort_calendar_id[
+            draft.course.cohort_calendar_id
         ]
         if saved is None:
             planning_period = PlanningPeriodPlan(
-                start_date=semester.start_date, end_date=semester.end_date
+                start_date=max(semester.start_date, draft.course.cohort_calendar.start_date), end_date=min(semester.end_date, draft.course.cohort_calendar.end_date)
             )
         else:
             planning_period = PlanningPeriodPlan(
-                start_date=saved.planning_start_date,
-                end_date=saved.planning_end_date,
+                start_date=max(saved.planning_start_date, draft.course.cohort_calendar.start_date),
+                end_date=min(saved.planning_end_date, draft.course.cohort_calendar.end_date),
             )
         constraints_by_course_id[draft.course_id] = GenerationConstraints(
             course_id=draft.course_id,
@@ -795,8 +796,8 @@ def _teaching_validation_alerts(
             is_custom=saved is not None,
             constraint_set_id=saved.id if saved is not None else None,
             revision=saved.revision if saved is not None else None,
-            study_type_id=draft.course.study_type_id,
-            study_type_name=draft.course.study_type.name,
+            cohort_calendar_id=draft.course.cohort_calendar_id,
+            cohort_calendar_name=draft.course.cohort_calendar.name,
         )
     unavailability_by_resource = {}
     periods = db.scalars(
@@ -816,7 +817,7 @@ def _teaching_validation_alerts(
         rooms_by_id=rooms_by_id,
         lecturers_by_id=lecturers_by_id,
         constraints_by_course_id=constraints_by_course_id,
-        study_windows_by_study_type_id=study_windows_by_study_type_id,
+        study_windows_by_cohort_calendar_id=study_windows_by_cohort_calendar_id,
         unavailability_by_resource=unavailability_by_resource,
         eligible_lecturer_ids_by_course={
             draft.course_id: {
@@ -1057,8 +1058,8 @@ def _materialize_snapshot(db: Session, semester_id: int, snapshot: dict[str, Any
     for captured in snapshot.get("courses", []):
         course = db.get(Course, captured["sourceCourseId"])
         cohort_id = captured["cohort"]["sourceId"]
-        study_type_id = captured["studyType"]["sourceId"]
-        if course is None or course.cohort_id != cohort_id or course.study_type_id != study_type_id:
+        cohort_calendar_id = captured["cohortCalendar"]["sourceId"]
+        if course is None or course.cohort_id != cohort_id or course.cohort_calendar_id != cohort_calendar_id:
             raise LifecycleConflict("snapshot_reference_missing", f"Course {captured['name']} can no longer be restored from its captured references.", current_overview=get_lifecycle_overview(db, semester_id))
         for session in captured.get("teachingSessions", []):
             if db.get(Lecturer, session["lecturer"]["sourceId"]) is None or db.get(Room, session["room"]["sourceId"]) is None:
@@ -1091,8 +1092,8 @@ def _materialize_snapshot(db: Session, semester_id: int, snapshot: dict[str, Any
             cohort_id_snapshot=captured["cohort"]["sourceId"],
             cohort_name_snapshot=captured["cohort"]["name"],
             cohort_size_snapshot=captured["cohort"]["size"],
-            study_type_id_snapshot=captured["studyType"]["sourceId"],
-            study_type_name_snapshot=captured["studyType"]["name"],
+            cohort_calendar_id_snapshot=captured["cohortCalendar"]["sourceId"],
+            cohort_calendar_name_snapshot=captured["cohortCalendar"]["name"],
             semester_name_snapshot=snapshot["semester"]["name"],
             semester_start_date_snapshot=date.fromisoformat(snapshot["semester"]["startDate"]),
             semester_end_date_snapshot=date.fromisoformat(snapshot["semester"]["endDate"]),

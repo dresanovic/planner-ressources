@@ -41,13 +41,15 @@ def _seed_reference_schedule(db: Session) -> None:
             min_session_units=2,
             max_session_units=2,
             cohort_id=course_id,
-            study_type_id=first_course.study_type_id,
+
             current_semester_id=semester.id,
             eligible_lecturers=[CourseEligibleLecturer(lecturer_id=course_id)],
             eligible_rooms=[CourseEligibleRoom(room_id=course_id)],
         )
         db.add_all([lecturer, room, cohort, course])
     db.flush()
+    from tests.calendar_fixtures import complete_fixture_calendars
+    complete_fixture_calendars(db)
     for course_id in range(1, 101):
         sessions = [
             DraftSession(
@@ -75,8 +77,8 @@ def _seed_reference_schedule(db: Session) -> None:
             cohort_id_snapshot=course_id,
             cohort_name_snapshot=f"Cohort {course_id}",
             cohort_size_snapshot=30,
-            study_type_id_snapshot=first_course.study_type_id,
-            study_type_name_snapshot=first_course.study_type.name,
+            cohort_calendar_id_snapshot=db.get(Course,course_id).cohort_calendar_id,
+            cohort_calendar_name_snapshot=db.get(Course,course_id).cohort_calendar.name,
             semester_name_snapshot=semester.name,
             semester_start_date_snapshot=semester.start_date,
             semester_end_date_snapshot=semester.end_date,

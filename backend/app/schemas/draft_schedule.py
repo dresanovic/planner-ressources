@@ -37,7 +37,7 @@ class ValidationAlertCode(StrEnum):
     COHORT_OVERLAP = "COHORT_OVERLAP"
     ROOM_CAPACITY = "ROOM_CAPACITY"
     GENERATION_CONSTRAINT_VIOLATION = "GENERATION_CONSTRAINT_VIOLATION"
-    STUDY_TYPE_WINDOW_VIOLATION = "STUDY_TYPE_WINDOW_VIOLATION"
+    COHORT_CALENDAR_WINDOW_VIOLATION = "COHORT_CALENDAR_WINDOW_VIOLATION"
     VALIDATION_DATA_MISSING = "VALIDATION_DATA_MISSING"
     LECTURER_UNAVAILABLE = "LECTURER_UNAVAILABLE"
     ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
@@ -105,7 +105,7 @@ class AllowedTeachingWindowResponse(BaseModel):
     source_time_window_id: int | None = Field(default=None, alias="sourceTimeWindowId")
 
 
-class StudyTypeSummaryResponse(BaseModel):
+class CohortCalendarSummaryResponse(BaseModel):
     id: int
     name: str
 
@@ -118,7 +118,7 @@ class GenerationConstraintsResponse(BaseModel):
     is_custom: bool = Field(alias="isCustom")
     revision: int | None = None
     planning_period: PlanningPeriodResponse = Field(alias="planningPeriod")
-    study_type: StudyTypeSummaryResponse = Field(alias="studyType")
+    cohort_calendar: CohortCalendarSummaryResponse = Field(alias="cohortCalendar")
     allowed_teaching_windows: list[AllowedTeachingWindowResponse] = Field(alias="allowedTeachingWindows")
 
 
@@ -172,7 +172,7 @@ class DraftSessionResponse(BaseModel):
     room_id: int = Field(alias="roomId")
     room_name: str = Field(alias="roomName")
     room_reference_code: str = Field(alias="roomReferenceCode")
-    study_type_id: int = Field(alias="studyTypeId")
+    cohort_calendar_id: int = Field(alias="cohortCalendarId")
     time_window_id: int | None = Field(alias="timeWindowId")
     constraint_window_index: int = Field(alias="constraintWindowIndex")
     validation_alerts: list[ValidationAlertResponse] = Field(
@@ -198,7 +198,7 @@ class DraftScheduleContextResponse(BaseModel):
     cohort_size: int = Field(alias="cohortSize")
     lecturer: PlanningEntityResponse
     room: PlanningEntityResponse
-    study_type: PlanningEntityResponse = Field(alias="studyType")
+    cohort_calendar: PlanningEntityResponse = Field(alias="cohortCalendar")
 
 
 class DraftScheduleResponse(BaseModel):

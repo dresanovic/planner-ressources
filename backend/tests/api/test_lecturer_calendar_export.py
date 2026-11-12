@@ -436,7 +436,7 @@ def test_exam_only_course_with_corrupt_metadata_returns_safe_retryable_no_file(
     revision = db.query(ScheduleRevision).filter_by(state="published").one()
     link.schedule_revision_id = revision.id
     snapshot = deepcopy(revision.snapshot_document)
-    snapshot["courses"][0]["studyType"] = []
+    snapshot["courses"][0]["cohortCalendar"] = []
     snapshot["courses"][0]["teachingSessions"][0]["lecturer"]["sourceId"] = 2
     revision.snapshot_document = snapshot
     db.commit()

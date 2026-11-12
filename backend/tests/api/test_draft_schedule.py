@@ -22,8 +22,8 @@ from app.models.planning import (
     Room,
     ScheduleRevision,
     Semester,
-    StudyType,
-    StudyTypeTimeWindow,
+    CohortCalendar,
+    CohortCalendarTimeWindow,
     PlanningOutcome,
     InstitutionHoliday,
 )
@@ -99,8 +99,8 @@ def seed_saved_constraint(db):
 @pytest.mark.parametrize('recovery', ['broaden', 'reset'])
 def test_date_limits_can_be_read_and_repaired_after_excluding_only_window(client, db_session, recovery):
     seed_valid_course(db_session)
-    db_session.query(StudyTypeTimeWindow).delete()
-    db_session.add(StudyTypeTimeWindow(study_type_id=1, kind='dated', weekday=None,
+    db_session.query(CohortCalendarTimeWindow).delete()
+    db_session.add(CohortCalendarTimeWindow(cohort_calendar_id=1, kind='dated', weekday=None,
         date=date(2026, 11, 9), start_time=time(9), end_time=time(12)))
     db_session.commit()
     url = '/api/courses/1/generation-constraints'
@@ -194,20 +194,20 @@ def seed_valid_course(db, *, total_units=20, room_capacity=40, cohort_size=30, m
             Room(id=1, name="R1", reference_code="ROOM-001", normalized_reference_code="room-001", capacity=room_capacity),
             Room(id=3, name="R3", reference_code="ROOM-003", normalized_reference_code="room-003", capacity=60),
             Room(id=4, name="Tiny", reference_code="ROOM-004", normalized_reference_code="room-004", capacity=20),
-            StudyType(id=1, name="Full-time"),
+            CohortCalendar(cohort_id=1, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), id=1, name="Full-time"),
             Semester(id=1, name="Fall", start_date=date(2026, 9, 7), end_date=date(2026, 12, 20)),
             ScheduleRevision(id=1, semester_id=1, revision_number=1, row_version=1, state="draft"),
-            StudyTypeTimeWindow(
+            CohortCalendarTimeWindow(
                 id=1,
-                study_type_id=1,
+                cohort_calendar_id=1,
                 weekday=0,
                 start_time=time(8, 0),
                 end_time=time(12, 0),
                 sort_order=1,
             ),
-            StudyTypeTimeWindow(
+            CohortCalendarTimeWindow(
                 id=2,
-                study_type_id=1,
+                cohort_calendar_id=1,
                 weekday=2,
                 start_time=time(8, 0),
                 end_time=time(12, 0),
@@ -220,7 +220,7 @@ def seed_valid_course(db, *, total_units=20, room_capacity=40, cohort_size=30, m
                 min_session_units=min_units,
                 max_session_units=max_units,
                 cohort_id=1,
-                study_type_id=1,
+
                 current_semester_id=1,
                 eligible_lecturers=[CourseEligibleLecturer(lecturer_id=1)],
                 eligible_rooms=[CourseEligibleRoom(room_id=1)],
@@ -243,13 +243,15 @@ def seed_second_course(db):
                 min_session_units=2,
                 max_session_units=4,
                 cohort_id=2,
-                study_type_id=1,
+
                 current_semester_id=1,
                 eligible_lecturers=[CourseEligibleLecturer(lecturer_id=2)],
                 eligible_rooms=[CourseEligibleRoom(room_id=2)],
             ),
         ]
     )
+    from tests.calendar_fixtures import complete_fixture_calendars
+    complete_fixture_calendars(db)
     db.commit()
 
 
@@ -281,15 +283,15 @@ def test_read_planning_options_returns_database_courses_and_windows(client, db_s
     assert [
         {
             "id": window["id"],
-            "studyTypeId": window["studyTypeId"],
+            "cohortCalendarId": window["cohortCalendarId"],
             "weekday": window["weekday"],
             "startTime": window["startTime"],
             "endTime": window["endTime"],
         }
-        for window in payload["timeWindows"]
+        for window in payload["timeWindows"] if window["cohortCalendarId"] == 1
     ] == [
-        {"id": 1, "studyTypeId": 1, "weekday": 0, "startTime": "08:00", "endTime": "12:00"},
-        {"id": 2, "studyTypeId": 1, "weekday": 2, "startTime": "08:00", "endTime": "12:00"},
+        {"id": 1, "cohortCalendarId": 1, "weekday": 0, "startTime": "08:00", "endTime": "12:00"},
+        {"id": 2, "cohortCalendarId": 1, "weekday": 2, "startTime": "08:00", "endTime": "12:00"},
     ]
 
 
@@ -310,14 +312,14 @@ def legacy_generate_and_read_current_draft_schedule(client, db_session):
         "cohortSize": 30,
         "lecturer": {"id": 1, "name": "Ada Lovelace"},
         "room": {"id": 1, "name": "R1"},
-        "studyType": {"id": 1, "name": "Full-time"},
+        "cohortCalendar": {"id": 1, "name": "Full-time"},
     }
     assert [session["units"] for session in payload["sessions"]] == [4, 4, 4, 4, 4]
     assert payload["sessions"][0]["startTime"] == "08:00"
     assert payload["sessions"][0]["endTime"] == "11:30"
     assert {key: payload["sessions"][0][key] for key in (
         "id", "date", "startTime", "endTime", "units", "courseId", "lecturerId",
-        "cohortId", "roomId", "studyTypeId", "timeWindowId", "constraintWindowIndex", "validationAlerts",
+        "cohortId", "roomId", "cohortCalendarId", "timeWindowId", "constraintWindowIndex", "validationAlerts",
     )} == {
         "id": payload["sessions"][0]["id"],
         "date": "2026-09-07",
@@ -328,7 +330,7 @@ def legacy_generate_and_read_current_draft_schedule(client, db_session):
         "lecturerId": 1,
         "cohortId": 1,
         "roomId": 1,
-        "studyTypeId": 1,
+        "cohortCalendarId": 1,
         "timeWindowId": 1,
         "constraintWindowIndex": 0,
         "validationAlerts": [],
@@ -568,6 +570,9 @@ def test_clear_one_course_semester_draft_preserves_constraints_and_other_drafts(
     seed_valid_course(db_session, total_units=8)
     seed_second_course(db_session)
     seed_second_semester(db_session)
+    second_semester=db_session.get(Semester,2)
+    db_session.add(CohortCalendar(cohort_id=1,semester_id=2,start_date=second_semester.start_date,end_date=second_semester.end_date,name="Second semester calendar"))
+    db_session.flush()
     seed_saved_constraint(db_session)
     target = client.post("/api/courses/1/draft-schedule/sessions", json=manual_session_payload()).json()["draftSchedule"]
     client.post("/api/courses/2/draft-schedule/sessions", json=manual_session_payload())
@@ -684,10 +689,10 @@ def legacy_validation_alerts_include_capacity_window_and_missing_data_codes(clie
     edited = next(session for session in edit_response.json()["sessions"] if session["id"] == session_id)
     codes = {alert["code"] for alert in edited["validationAlerts"]}
     assert "GENERATION_CONSTRAINT_VIOLATION" in codes
-    assert "STUDY_TYPE_WINDOW_VIOLATION" not in codes
+    assert "COHORT_CALENDAR_WINDOW_VIOLATION" not in codes
 
 
-def legacy_default_study_type_window_violation_is_reported_without_custom_constraints(client, db_session):
+def legacy_default_cohort_calendar_window_violation_is_reported_without_custom_constraints(client, db_session):
     seed_valid_course(db_session)
     generated = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload()).json()
     session_id = generated["sessions"][0]["id"]
@@ -702,10 +707,10 @@ def legacy_default_study_type_window_violation_is_reported_without_custom_constr
     assert edit_response.status_code == 200
     edited = next(session for session in edit_response.json()["sessions"] if session["id"] == session_id)
     codes = {alert["code"] for alert in edited["validationAlerts"]}
-    assert "STUDY_TYPE_WINDOW_VIOLATION" in codes
+    assert "COHORT_CALENDAR_WINDOW_VIOLATION" in codes
 
 
-def legacy_custom_friday_evening_constraint_does_not_return_study_type_window_alert(client, db_session):
+def legacy_custom_friday_evening_constraint_does_not_return_cohort_calendar_window_alert(client, db_session):
     seed_valid_course(db_session)
 
     response = client.post(
@@ -728,13 +733,13 @@ def legacy_custom_friday_evening_constraint_does_not_return_study_type_window_al
     assert overview[0]["sessions"][0]["startTime"] == "18:00"
     assert overview[0]["sessions"][0]["endTime"] == "21:30"
     assert all(
-        alert["code"] != "STUDY_TYPE_WINDOW_VIOLATION"
+        alert["code"] != "COHORT_CALENDAR_WINDOW_VIOLATION"
         for session in overview[0]["sessions"]
         for alert in session["validationAlerts"]
     )
 
 
-def legacy_custom_constraint_violation_does_not_duplicate_study_type_window_alert(client, db_session):
+def legacy_custom_constraint_violation_does_not_duplicate_cohort_calendar_window_alert(client, db_session):
     seed_valid_course(db_session)
     generated = client.post(
         "/api/courses/1/draft-schedule/generate",
@@ -760,7 +765,7 @@ def legacy_custom_constraint_violation_does_not_duplicate_study_type_window_aler
     edited = next(session for session in edit_response.json()["sessions"] if session["id"] == session_id)
     codes = {alert["code"] for alert in edited["validationAlerts"]}
     assert "GENERATION_CONSTRAINT_VIOLATION" in codes
-    assert "STUDY_TYPE_WINDOW_VIOLATION" not in codes
+    assert "COHORT_CALENDAR_WINDOW_VIOLATION" not in codes
 
 
 def legacy_second_generation_replaces_previous_draft(client, db_session):
@@ -848,7 +853,7 @@ def legacy_generation_blocks_wrong_current_semester_and_missing_active_window(cl
     assert any(error["code"] == "COURSE_SEMESTER_MISMATCH" for error in mismatch.json()["errors"])
     assert db_session.query(PlanningOutcome).count() == 0
 
-    for window in db_session.query(StudyTypeTimeWindow).all():
+    for window in db_session.query(CohortCalendarTimeWindow).all():
         window.is_active = False
     db_session.commit()
     missing = client.post("/api/courses/1/draft-schedule/generate", json=generation_payload())
@@ -896,7 +901,7 @@ def test_generation_constraints_default_load_save_reload_and_clear(client, db_se
         {"weekday": 0, "kind": "weekly", "date": None, "isIntensive": False, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 1},
         {"weekday": 2, "kind": "weekly", "date": None, "isIntensive": False, "startTime": "08:00", "endTime": "12:00", "sourceTimeWindowId": 2},
     ]
-    assert saved["studyType"] == {"id": 1, "name": "Full-time"}
+    assert saved["cohortCalendar"] == {"id": 1, "name": "Full-time"}
 
     stale = client.put(
         "/api/courses/1/generation-constraints",

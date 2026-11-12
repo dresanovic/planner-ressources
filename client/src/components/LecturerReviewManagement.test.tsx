@@ -938,7 +938,7 @@ describe('LecturerReviewManagement planner feedback filter', () => {
         date: '2026-10-04',
         roomName: 'Historical Lab',
         cohortName: 'CS-25',
-        studyType: 'Part-time',
+        cohortCalendar: 'Part-time',
         teachingUnits: 2,
       },
     }

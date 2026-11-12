@@ -16,7 +16,7 @@ from app.models.planning import (
     ResourceUnavailabilityWeekday,
     Room,
     Semester,
-    StudyType,
+    CohortCalendar,
 )
 
 
@@ -26,13 +26,13 @@ def test_reference_acceptance_dataset_is_queryable_within_two_seconds():
     with Session(engine) as db:
         semester = Semester(name="Fall", normalized_name="fall", normalized_name_key="fall", start_date=date(2026, 9, 1), end_date=date(2026, 12, 20))
         cohort = Cohort(name="Cohort", normalized_name="cohort", normalized_name_key="cohort", student_count=20)
-        study_type = StudyType(name="Full-time", normalized_name="full-time", normalized_name_key="full-time")
-        db.add_all([semester, cohort, study_type])
+        cohort_calendar = CohortCalendar(cohort_id=1, semester_id=1, start_date=date(2026,1,1), end_date=date(2027,12,31), name="Full-time", normalized_name="full-time", normalized_name_key="full-time")
+        db.add_all([semester, cohort, cohort_calendar])
         lecturers = [Lecturer(name=f"Lecturer {i}", reference_code=f"L-{i}", normalized_reference_code=f"l-{i}") for i in range(100)]
         rooms = [Room(name=f"Room {i}", reference_code=f"R-{i}", normalized_reference_code=f"r-{i}", capacity=30) for i in range(100)]
         db.add_all(lecturers + rooms)
         db.flush()
-        courses = [Course(name=f"Course {i}", normalized_name=f"course {i}", normalized_name_key=f"course {i}", total_units=4, min_session_units=2, max_session_units=4, cohort_id=cohort.id, study_type_id=study_type.id, current_semester_id=semester.id) for i in range(100)]
+        courses = [Course(name=f"Course {i}", normalized_name=f"course {i}", normalized_name_key=f"course {i}", total_units=4, min_session_units=2, max_session_units=4, cohort_id=cohort.id,  current_semester_id=semester.id) for i in range(100)]
         db.add_all(courses)
         db.flush()
         for i, course in enumerate(courses):

@@ -14,7 +14,7 @@ export type DraftSession = {
   roomId: number
   roomName: string
   roomReferenceCode: string
-  studyTypeId: number
+  cohortCalendarId: number
   timeWindowId: number | null
   constraintWindowIndex: number
   validationAlerts: ValidationAlert[]
@@ -45,7 +45,7 @@ export type ValidationAlert = {
 
 export type ValidationAlertCode =
   | 'LECTURER_OVERLAP' | 'ROOM_OVERLAP' | 'COHORT_OVERLAP' | 'ROOM_CAPACITY'
-  | 'GENERATION_CONSTRAINT_VIOLATION' | 'STUDY_TYPE_WINDOW_VIOLATION' | 'VALIDATION_DATA_MISSING'
+  | 'GENERATION_CONSTRAINT_VIOLATION' | 'COHORT_CALENDAR_WINDOW_VIOLATION' | 'VALIDATION_DATA_MISSING'
   | 'LECTURER_UNAVAILABLE' | 'ROOM_UNAVAILABLE' | 'LECTURER_INELIGIBLE' | 'ROOM_INELIGIBLE'
   | 'INSTITUTION_HOLIDAY'
 
@@ -66,7 +66,7 @@ export type GenerationConstraints = {
   isCustom: boolean
   revision?: number | null
   planningPeriod: PlanningPeriod
-  studyType: PlanningEntity
+  cohortCalendar: PlanningEntity
   allowedTeachingWindows: AllowedTeachingWindow[]
 }
 
@@ -88,7 +88,7 @@ export type DraftScheduleContext = {
   cohortSize: number
   lecturer: PlanningEntity
   room: PlanningEntity
-  studyType: PlanningEntity
+  cohortCalendar: PlanningEntity
 }
 
 export type DraftSchedule = {
@@ -105,7 +105,7 @@ export type ReviewFilters = {
   cohortId?: number
   lecturerId?: number
   roomId?: number
-  studyTypeId?: number
+  cohortCalendarId?: number
 }
 
 export type ViewMode = 'list' | 'weekly'

@@ -50,7 +50,7 @@ def make_course(**overrides: Any):
         "lecturer_id": 1,
         "cohort_id": 1,
         "room_id": 1,
-        "study_type_id": 1,
+        "cohort_calendar_id": 1,
         "current_semester_id": 1,
         "is_active": True,
         "revision": 1,

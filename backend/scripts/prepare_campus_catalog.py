@@ -86,7 +86,6 @@ def prepare(source_dir: Path, output_dir: Path, target_semester: str):
             "include": course["roundedTotalUnits"] > 0,
             "name": f"{course['title']} [{course['code']}] – {target_semester}",
             "cohortName": None,
-            "studyTypeName": "Berufsbegleitend" if "Berufsbegleitend" in course["curriculumName"] else "Vollzeit",
             "lecturerReferenceCode": course["lecturerReferenceCodes"][0] if len(course["lecturerReferenceCodes"]) == 1 else None,
             "suggestedLecturerReferenceCodes": course["lecturerReferenceCodes"],
             "roomReferenceCode": None, "totalUnits": course["roundedTotalUnits"],

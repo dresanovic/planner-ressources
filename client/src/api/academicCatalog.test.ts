@@ -19,8 +19,8 @@ it('sends dated facts unchanged for create and owner-changing revisioned update'
   const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => ({...payload,id:3}) })
   vi.stubGlobal('fetch', fetchMock)
   expect((await createTimeWindow(1, payload)).date).toBe(payload.date)
-  await updateTimeWindow(3, {...payload, studyTypeId:2, expectedRevision:4})
-  expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({...payload,studyTypeId:2,expectedRevision:4})
+  await updateTimeWindow(3, {...payload, cohortCalendarId:2, expectedRevision:4})
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({...payload,cohortCalendarId:2,expectedRevision:4})
 })
 
 describe('academic catalog API', () => {
@@ -42,7 +42,7 @@ describe('academic catalog API', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204, json: async () => ({ id: 1 }) })
     vi.stubGlobal('fetch', fetchMock)
     await createSemester({ name: 'Fall', startDate: '2026-09-01', endDate: '2026-12-20' })
-    await updateCourse(4, { name: 'C', totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4, semesterId: 1, cohortId: 2, studyTypeId: 3, expectedRevision: 6 })
+    await updateCourse(4, { name: 'C', totalUnits: 8, minSessionUnits: 2, maxSessionUnits: 4, semesterId: 1, cohortId: 2,  expectedRevision: 6 })
     await deleteAcademicRecord('courses', 4, 7)
     expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: 'PATCH' })
     expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body))).not.toHaveProperty('lecturerId')
