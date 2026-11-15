@@ -27,6 +27,27 @@ vi.mock('../api/lecturerReview', async (importOriginal) => ({
 import { LecturerReviewApiError } from '../api/lecturerReview'
 import { LecturerReviewPage } from './LecturerReviewPage'
 
+it('I-014 renders assigned sessions without fetching planner window context or exposing planner actions', async () => {
+  const fetchSpy = vi.fn(() => { throw new Error('Planner fetch is forbidden in restricted review') })
+  vi.stubGlobal('fetch', fetchSpy)
+  try {
+    await renderPage()
+    const calendarDate = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(calendarDate, '05.10.2026')
+      calendarDate.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await click(button('Monat'))
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(document.querySelector('.month-window-context')).toBeNull()
+    expect(document.querySelector('.month-cohort-label')?.textContent).toBe('CS-26')
+    expect(document.querySelector('.revision-context-switch')).toBeNull()
+    expect(document.querySelector('.workspace-summary-grid')).toBeNull()
+  } finally {
+    vi.unstubAllGlobals()
+  }
+})
+
 let root: Root | null = null
 
 async function renderPage(secret: string | null = LECTURER_REVIEW_SECRET_CANARY) {

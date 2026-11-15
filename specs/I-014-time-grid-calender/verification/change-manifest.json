@@ -1,0 +1,31 @@
+{
+  "branch": "codex/i-014-time-grid-calendar",
+  "base": "a376fe67306578d5a47b7bf0ccf48b7245e052ef",
+  "codeContentIdentity": "af696ab231f71e170ca99546fe574185cfab9dab71baca4c78436ce949312a06",
+  "files": {
+    "backend/app/schemas/calendar_workspace.py": "6bdc22db4fe95566f49cd91bbe1d0338f137e2793c639f2406fea8838f796ce7",
+    "backend/app/services/calendar_workspace.py": "7539124b73894c35308b942bf17e28de0e1e0fdbfb60ed5c754d2f47144434d8",
+    "backend/tests/api/test_calendar_workspace.py": "7380eeb01fd4a6b1b2b5c2fca3a5440b3c9c030c6c1296144104a86c88025649",
+    "backend/tests/calendar_workspace_fixtures.py": "944be67257f3ad5d747a3015408c4757e819c9886dbadd64a8e8ece3e81fa0be",
+    "backend/tests/services/test_calendar_workspace.py": "fe1286883a92e348e68ae7142f22556c12a19f2e77da3f1633755ee87a96236a",
+    "client/src/App.css": "f11a48cea7782509365eec13edb6df7d6a3a8803387514a772c1884b8b9b7fed",
+    "client/src/api/calendarWorkspace.test.ts": "9aa42ece1a596c06a2fb5d904c208f95cf24d7fed08deda0524517b98f560bb2",
+    "client/src/api/calendarWorkspace.ts": "2c7680e45da6e6855e309a91bfba41b9ce853ed8f21a20bae502fd930d631237",
+    "client/src/components/CalendarMonthGrid.test.tsx": "b34e18bdfa23d8dff4c0a40688ff708285b07f8f7195e26dd351ac8eddede38a",
+    "client/src/components/CalendarMonthGrid.tsx": "ef734ee0a0cc8ee7a7e375821cafec40a635e0424f8888d93875562e95647b5e",
+    "client/src/components/CalendarPlanningWorkspace.test.tsx": "367b5ebe8fbd33ed941c64b6d4ca3f48645d1e2c759691082950185d3ccf3dcb",
+    "client/src/components/CalendarPlanningWorkspace.tsx": "3e241587291f012f72e25c1c33203621730432890c9861a516c9f2fa7c5f3fac",
+    "client/src/components/CalendarTimeGrid.test.tsx": "0fadcc233ee7ac469ea31e37495f53ff2b7698242655595bdd12c19ceecc3f91",
+    "client/src/components/CalendarTimeGrid.tsx": "84aeebeb9090bb3af9704089de10ae530530a907a198f27fb23c925ba6d87427",
+    "client/src/components/SessionPane.test.tsx": "58cc56c745e441ec17f38fe6258c8ad9705a4812a7ce494328da38e5f8bcb712",
+    "client/src/components/SessionPane.tsx": "482730001d5ae272e6686f819429f0d972e3e2a1948d0e8fa42339967c1714d0",
+    "client/src/components/calendarTimeGridLayout.test.ts": "26a882b1a1a71d987c3a10830fd02ef69bde0fe5c6dea51700c3feaff7761935",
+    "client/src/components/calendarTimeGridLayout.ts": "91d72cd781a7308c812cda0dc51d9c38e9b28cb95ddd2f1393b0508a831ae4a8",
+    "client/src/components/calendarWorkspaceUtils.test.ts": "9f83e174ce5ce516e19b840e337ee99f402de8d6055ef1a3672751b41a36fd70",
+    "client/src/components/calendarWorkspaceUtils.ts": "b19a86370b19ecf1e7b70b3cae39900e74514ced8b1f7eb130b867aac2bb4342",
+    "client/src/pages/CourseSchedulePage.test.tsx": "075f4b4d51ca2c98907a09052be925cc96b41ef2d950e87e32b94d0c5cf86fad",
+    "client/src/pages/CourseSchedulePage.tsx": "c17b0de8e4e9c074c0a8cc01dad5b361b3e967379cca2de12a37b8c5a110511f",
+    "client/src/pages/LecturerReviewPage.test.tsx": "0653a39ff405b0ec3a398c439269d110aaa52ed594abb161f2256b7a857bd0d3",
+    "client/src/test/calendarWorkspaceFixtures.ts": "f7ccbf856f706c29dc8c4a0f76a8743c7ef39086b154dbb69487636764ed07cc"
+  }
+}

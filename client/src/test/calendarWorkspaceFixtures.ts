@@ -1,3 +1,5 @@
+import type { LoadedCalendarWorkspace } from '../api/calendarWorkspace'
+
 const emptyFacets = {
   courses: [],
   cohorts: [],
@@ -277,4 +279,75 @@ export function calendarWorkspaceFailureFixture() {
     detail: 'The calendar workspace could not be loaded.',
     retryable: true,
   }
+}
+
+export function timeGridWorkspaceFixture() {
+  const value = loadedCalendarWorkspaceFixture()
+  const window = { windowRef: 'window:1', sourceTimeWindowId: 1, kind: 'weekly' as const,
+    weekday: 5, date: null, isIntensive: false, startTime: '08:00', endTime: '16:00', sortOrder: 0 }
+  return {
+    ...value,
+    semester: { ...value.semester, name: 'June 2027', startDate: '2027-06-01', endDate: '2027-06-30' },
+    courses: value.courses.map(course => ({ ...course, occurrenceRefs: ['teaching:1'], findingRefs: ['finding:other:window'], cohortCalendar: 'Calendar A', cohortCalendarRef: 'calendar:1' })),
+    occurrences: [{ ...value.occurrences[0], kind: 'teaching' as const, teachingUnits: 6,
+      date: '2027-06-26', startTime: '12:15', endTime: '17:20', findingRefs: ['finding:other:window'] }],
+    validationFindings: [{ findingRef: 'finding:other:window', category: 'other' as const,
+      validationBasis: 'current' as const, affectedCourseRefs: ['course:1'], affectedOccurrenceRefs: ['teaching:1'],
+      details: { kind: 'other' as const, issueCode: 'COHORT_CALENDAR_WINDOW_VIOLATION', occurrenceRefs: ['teaching:1'] } }],
+    teachingWindowContexts: [{ courseRef: 'course:1', calendarRef: 'calendar:1', calendarLabel: 'Calendar A',
+      availability: 'available' as const, basis: 'current_working' as const, reason: null,
+      isCustom: false, sourceRevision: null, planningStartDate: '2027-06-01', planningEndDate: '2027-06-30',
+      windows: [window], days: Array.from({ length: 30 }, (_, i) => ({
+        date: `2027-06-${String(i + 1).padStart(2, '0')}`, periodStatus: 'within_period' as const,
+        applicableWindowRefs: [5, 12, 19, 26].includes(i + 1) ? ['window:1'] : [],
+      })) }],
+    sectionStatus: { ...value.sectionStatus, teachingWindows: { availability: 'available' as const } },
+  }
+}
+
+export function multiCalendarTimeGridFixture() {
+  const value = timeGridWorkspaceFixture()
+  value.courses.push({ ...value.courses[0], courseRef: 'course:2', courseId: 2,
+    name: 'Calendar B course', cohortCalendar: 'Calendar B', cohortCalendarRef: 'calendar:2',
+    occurrenceRefs: ['teaching:2'], findingRefs: [] })
+  value.occurrences.push({ ...value.occurrences[0], occurrenceRef: 'teaching:2', courseRef: 'course:2', findingRefs: [] })
+  value.teachingWindowContexts.push({ ...structuredClone(value.teachingWindowContexts[0]), courseRef: 'course:2',
+    calendarRef: 'calendar:2', calendarLabel: 'Calendar B', windows: [{ windowRef: 'window:1', sourceTimeWindowId: 2,
+      kind: 'weekly', weekday: 5, date: null, isIntensive: false, startTime: '10:00', endTime: '18:00', sortOrder: 0 }] })
+  return value
+}
+
+export function teachingWindowVariantFixture(variant: 'missing' | 'malformed' | 'duplicate_labels' | 'published' | 'legacy'): LoadedCalendarWorkspace {
+  const value: LoadedCalendarWorkspace = variant === 'duplicate_labels' ? multiCalendarTimeGridFixture() : timeGridWorkspaceFixture()
+  if (variant === 'missing') delete value.teachingWindowContexts
+  if (variant === 'malformed') value.teachingWindowContexts![0].days[0].applicableWindowRefs = ['missing-window']
+  if (variant === 'duplicate_labels') {
+    value.courses[1].cohortCalendar = 'Calendar A'
+    value.teachingWindowContexts![1].calendarLabel = 'Calendar A'
+  }
+  if (variant === 'published' || variant === 'legacy') {
+    const published = publishedCalendarWorkspaceFixture()
+    value.selectedRevision = { ...published.selectedRevision, snapshotSchemaVersion: 2 }
+    value.availableContexts = published.availableContexts
+    value.teachingWindowContexts![0].basis = 'captured_published'
+    if (variant === 'legacy') {
+      Object.assign(value.teachingWindowContexts![0], { availability: 'unavailable', basis: 'unavailable',
+        reason: 'No captured profile.', isCustom: null, sourceRevision: null,
+        planningStartDate: null, planningEndDate: null, windows: [], days: [] })
+      value.sectionStatus.teachingWindows = { availability: 'unavailable', reason: 'No captured profile.' }
+    }
+  }
+  return value
+}
+
+export function crowdedTimeGridWorkspaceFixture(count: 0 | 1 | 5 | 20) {
+  const value = timeGridWorkspaceFixture()
+  value.occurrences = Array.from({ length: count }, (_, index) => ({ ...value.occurrences[0], occurrenceRef: `teaching:${index + 1}` }))
+  value.courses[0].occurrenceRefs = value.occurrences.map(o => o.occurrenceRef)
+  value.validationFindings[0].affectedOccurrenceRefs = value.courses[0].occurrenceRefs
+  if (count === 0) {
+    value.validationFindings = []
+    value.courses[0].findingRefs = []
+  }
+  return value
 }

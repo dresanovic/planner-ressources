@@ -3,7 +3,7 @@ import type { PublicLecturerReview } from '../api/lecturerReview'
 
 export type WorkspaceFilters = {
   course?: string
-  cohort?: string
+  cohort?: string[]
   lecturer?: string
   room?: string
   cohortCalendar?: string
@@ -344,10 +344,10 @@ export function projectWorkspace(workspace: LoadedCalendarWorkspace, filters: Wo
   return { courses: visibleCourses, occurrences }
 }
 
-function matchesCourseContext(course: WorkspaceCourse, filters: WorkspaceFilters): boolean {
+export function matchesCourseContext(course: WorkspaceCourse, filters: WorkspaceFilters): boolean {
   return (
     (filters.course == null || course.courseRef === filters.course)
-    && (filters.cohort == null || course.cohort === filters.cohort)
+    && (!filters.cohort?.length || filters.cohort.includes(course.cohort))
     && (filters.cohortCalendar == null || course.cohortCalendar === filters.cohortCalendar)
   )
 }

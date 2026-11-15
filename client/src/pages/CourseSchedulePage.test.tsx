@@ -2733,6 +2733,30 @@ it('I-005 retains a disappeared cohort and missing selected ID without broadenin
 })
 
 
+it('I-014 guards Month date navigation and performs no save on cancel or discard', async () => {
+  mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+  await renderPage()
+  const calendarDate = document.querySelector<HTMLInputElement>('#calendar-anchor-date')!
+  await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(calendarDate, '05.10.2026'); calendarDate.dispatchEvent(new Event('change', {bubbles:true})) })
+  await act(async () => button('Monat')!.click())
+  await act(async () => document.querySelector<HTMLButtonElement>('[data-month-date="2026-10-05"] [data-occurrence-ref]')!.click())
+  await act(async () => button('Termin bearbeiten')!.click())
+  const editor = document.querySelector<HTMLInputElement>('.session-pane input[inputmode="numeric"]')!
+  act(() => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(editor, '06.10.2026'); editor.dispatchEvent(new Event('input', {bubbles:true})); editor.dispatchEvent(new Event('change', {bubbles:true})) })
+  const nextDate = () => document.querySelector<HTMLButtonElement>('[data-month-date="2026-10-06"] .month-date-button')!
+  await act(async () => nextDate().click())
+  expect(document.body.textContent).toContain('Ungespeicherte Änderungen verwerfen?')
+  await act(async () => button('Weiter bearbeiten')!.click())
+  expect(editor.value).toBe('06.10.2026')
+  expect(button('Monat')!.getAttribute('aria-pressed')).toBe('true')
+  await act(async () => nextDate().click())
+  await act(async () => document.querySelector<HTMLButtonElement>('.discard-changes-dialog .destructive-button')!.click())
+  expect(button('Tag')!.getAttribute('aria-pressed')).toBe('true')
+  expect(document.querySelector<HTMLInputElement>('#calendar-anchor-date')!.value).toBe('06.10.2026')
+  expect(mocks.updateDraftSession).not.toHaveBeenCalled()
+  expect(mocks.updateExam).not.toHaveBeenCalled()
+})
+
 it('I-005 prevents retry from stale planning options without altering selection', async () => {
   mocks.prepare.mockResolvedValue(optimizationPreparationFixture)
   mocks.generateBatch.mockResolvedValue({

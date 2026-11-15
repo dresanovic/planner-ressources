@@ -78,6 +78,9 @@ specific delivery deadline was stated.
 
 ### Product-level success
 
+- With I-014, planners can see session start/end times and duration on a time
+  grid alongside the applicable teaching windows, so gaps and window overruns
+  are understandable directly in the calendar.
 - Once I-011 is delivered, the configured Standard, Cohort or Lecturer algorithm
   produces a clearly identified, hard-valid teaching result through the existing
   workflow. Cohort and lecturer alternatives seek balanced weekly teaching in
@@ -212,6 +215,8 @@ synchronization remain later releases.
   preferences for intensive-window use and daily LV variety within the
   applicable cohort, after maximizing total teaching coverage (I-009).
 - Semester-wide list and calendar review with filters.
+- Time-grid calendar review of planned sessions in the context of applicable
+  teaching windows, including visible out-of-window portions (I-014).
 - Manual editing of existing Draft Sessions and non-blocking validation alerts.
 - Manual administration of academic records, resources, availability, holidays, and exam requirements.
 - Multiple eligible lecturers and rooms per course, with assignment preferences.
@@ -344,6 +349,13 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 
 ## UI and supporting material
 
+- I-014 uses the Outlook-style calendar screenshot supplied on 12.11.2026,
+  saved as `docs/designs/time-grid-calendar-reference-2026-11-12.png`.
+  It illustrates time-proportional session blocks and an hourly grid; it is
+  visual inspiration, not a requirement to reproduce Outlook or integrate it.
+  Additional day and month references are saved as
+  `docs/designs/day-calendar-reference-2026-11-12.png` and
+  `docs/designs/month-calendar-reference-2026-11-12.png`.
 - I-011 uses the user-provided cohort-first proposal from 09.11.2026 (grouped
   demand, semester-week placement, constrained sessions first, shared occupancy,
   bounded backtracking, weighted preferences and explicit unscheduled work).
@@ -489,6 +501,7 @@ The provider is unknown. FS-017 therefore defines a provider-neutral import or s
 | 33 | I-011 | Policy-Selected Teaching Planning Strategies | Use Standard, Cohort or Lecturer planning through one safe generation workflow | I-003, I-004, I-006, FS-008, FS-011, FS-013, FS-019 | Implemented — deployment acceptance and final reconciliation pending |
 | 34 | I-012 | Standard Optimized Extension | Distribute teaching across feasible weeks through a separate Standard-derived strategy | I-011, I-006, I-004 | Implemented — automated verification and scoped review passed |
 | 35 | I-013 | Continue Optimization from the Current Proposal | Improve the retained proposal with another captured allowance | I-006, I-011, I-012 | Implemented — automated verification and scoped review passed; live workflow acceptance not recorded |
+| 36 | I-014 | Time-Grid Calendar with Teaching Window Context | See planned hours, gaps and overruns against applicable teaching windows | FS-014, FS-019, FS-005, I-009 | Ready for specification — scope recorded 2026-11-12 |
 
 **Improvement sequence:** `I-001` through `I-004`, with detailed artifacts in their matching `specs/I-.../` directories.
 
@@ -5237,6 +5250,159 @@ This supersedes I-006's fresh-retry/discard behavior; continuation alone saves n
 The recorded review reports 342 distinct backend cases, 190 frontend tests,
 build and lint passing, with no material scoped findings. No `tasks.md` exists
 for this increment; status is grounded in implementation and verification evidence.
+## I-014 — Time-grid calendar with teaching window context
+
+**Status:** Ready for specification — requested 12.11.2026; requirements-only
+backlog addition. No specification or implementation started.
+
+### User outcome and rationale
+
+Planners need to understand when planned teaching takes place relative to the
+hours in which it is permitted. A list of session times and a generic warning
+does not make that relationship immediately visible. The user requests a
+typical calendar view, inspired by Outlook, with planned hours shown in the
+context of the possible teaching window; exact Outlook styling is optional.
+
+The immediate trigger was Höber, Angelika's session on 26.06.2027,
+12:15–17:20, against the cohort's Saturday window of 08:00–16:00. Success means
+the planner can see the session extending past 16:00 without first interpreting
+a separate warning. No delivery deadline was specified.
+
+### Scope and workflow
+
+- Adapt the visualization of the existing planner calendar in day, week and
+  month views. This slice changes presentation only; it requires no business
+  logic adaptation.
+- Day and week views use an hourly time grid showing planned sessions and
+  applicable teaching windows on the same time scale. Day view focuses on one
+  date; week view compares dates in adjacent columns.
+- Month view uses a grid of days with compact session entries showing times
+  and titles, with access to additional entries when a day is crowded. Selecting
+  a day or session leads to the existing detailed calendar/session context.
+  Month view is an overview; proportional hourly placement belongs to day/week.
+- Position and size session blocks by their actual start and end times, with
+  readable hour labels and date/day context, so duration and empty gaps are
+  visible rather than represented only by text in a list.
+- Show applicable teaching windows as a distinguishable background or equivalent
+  visual layer. Clearly distinguish permitted hours, hours outside those windows,
+  and the planned sessions themselves.
+- Available and unavailable time periods must have different colors, with a
+  clear legend. Colors visualize the existing applicable teaching-window and
+  availability information; they do not define new availability decisions.
+  Keep session blocks readable over both backgrounds and provide a non-color
+  cue or textual equivalent so the distinction is accessible.
+- Use the current cohort-calendar rules, including recurring weekly windows and
+  dated/intensive-window precedence. Viewing hours must not change their rules.
+- Keep sessions that extend outside a window visible, including the full
+  out-of-window portion, and distinguish the violation without relying on color
+  alone. Identify the affected date, actual session hours and applicable window.
+- Reuse semester/revision selection, relevant filters, date navigation, session
+  details and existing authorized correction actions. Retain the list view.
+- Make window context unambiguous when filters include several cohorts or
+  calendars: identify the relevant calendar rather than suggesting that one
+  cohort's window permits teaching for every visible session.
+
+The planner opens the calendar, chooses a date range and relevant filters,
+compares session blocks with the displayed windows, and opens an affected
+session for details or an existing correction action.
+
+### Boundaries and dependencies
+
+This is one presentation improvement to FS-014/FS-019. It consumes FS-005's
+effective course/calendar constraints and I-009's weekly and dated-window
+semantics through existing data and behavior. Business logic adaptation is
+explicitly excluded: no changes to scheduling, generation, validation,
+availability determination, teaching-window precedence, persistence or lifecycle
+rules. Display the existing facts and validation results in the adapted views.
+It does not depend on further optimization work, I-007 capacity
+diagnostics, or I-008 shorter-break alternatives. I-012 and I-013 remain separate
+implemented improvements; their identifiers and scope are unchanged.
+
+The reference requests visual context, not Outlook synchronization, a new
+scheduling algorithm, automatic rescheduling, capacity guarantees, new teaching
+permissions, or drag/drop and resize editing. Lecturer/room availability must not
+be presented as extending a cohort's permitted hours. Additional resource
+availability overlays are a possible later extension, not required by this
+request. Existing publication immutability and access rules remain authoritative.
+
+### UI reference and clarification topics
+
+Use [the supplied calendar reference](../designs/time-grid-calendar-reference-2026-11-12.png)
+for the week-style hourly grid and proportional session-block concept, plus
+[the day reference](../designs/day-calendar-reference-2026-11-12.png) and
+[the month reference](../designs/month-calendar-reference-2026-11-12.png).
+Day, week and month modes are confirmed scope. Exact colors are not prescribed,
+but available and unavailable periods must use different colors. Exact spacing,
+components and Outlook behavior are not prescribed.
+
+Clarify within specification: visible hour range and scrolling, overlapping-block layout,
+month-entry overflow and compact availability cues,
+multi-calendar window presentation, responsive behavior, keyboard access and
+equivalent textual window information. These are presentation details; they do
+not change the confirmed visual-comparison outcome. No new global delivery
+priority is assigned; I-014 is the single slice for this initiative and can be
+specified against the implemented calendar baseline.
+
+### Completion outcome
+
+A planner can compare actual session placement and duration with the applicable
+teaching windows, recognize free gaps and overruns, and open existing details
+and correction actions. The 26.06.2027 example visibly extends 1 hour 20 minutes
+past the cohort's 16:00 boundary. An in-window session appears within its window;
+dated intensive windows are shown according to the same rules used in validation.
+Viewing or filtering the calendar does not mutate saved sessions or windows.
+Day and week views show actual time placement; month view provides the compact
+dated overview. Available and unavailable periods are differentiated by color
+with an accessible equivalent. All three views reuse existing business logic.
+
+### Ready-to-copy Spec Kit prompt
+
+```text
+Use $speckit-specify for I-014: Time-Grid Calendar with Teaching Window Context.
+
+Product context: Resource Planner already provides a planner calendar/list
+workspace (FS-014/FS-019), effective course constraints (FS-005), and recurring
+plus dated/intensive cohort teaching windows (I-009). Planners need to see
+planned hours relative to the permitted teaching windows, rather than infer
+the relationship from lists and generic warnings.
+Actor and outcome: A planner sees time-proportional session blocks and applicable
+teaching windows on one readable hourly grid, recognizes gaps and overruns, and
+opens established session details/correction actions.
+In scope: Time-grid calendar presentation; actual start/end and proportional
+duration; distinguishable teaching-window context; complete visibility of
+out-of-window sessions; existing semester/revision/filter/navigation context;
+unambiguous calendar identity with multiple cohorts; preserved list view;
+accessible, responsive presentation and textual equivalents.
+Confirmed modes: Day and week hourly grids plus a month grid of days with
+compact timed session entries, additional-entry access and navigation to details.
+Use different colors for available and unavailable periods, with a legend and
+non-color/textual equivalents; keep planned session blocks distinguishable.
+Presentation only: No business logic adaptation. Reuse existing schedule,
+window, availability and validation data/behavior; do not change scheduling,
+generation, validation, availability determination, precedence or persistence.
+Rules: Reuse current effective constraints and weekly/dated/intensive precedence;
+show windows and sessions from the appropriate revision context; lecturer or
+room availability never extends cohort teaching permission; viewing and
+filtering do not modify data. Preserve existing validation and publication rules.
+Acceptance example: Höber, Angelika, 26.06.2027, session 12:15–17:20 against the
+cohort window 08:00–16:00 visibly overruns by 1 hour 20 minutes. Also cover an
+in-window session, empty gaps, dated intensive windows and multiple calendars.
+UI reference: docs/designs/time-grid-calendar-reference-2026-11-12.png, supplied
+on 12.11.2026, plus docs/designs/day-calendar-reference-2026-11-12.png and
+docs/designs/month-calendar-reference-2026-11-12.png. Outlook is inspiration;
+exact reproduction is not required.
+Out of scope: Outlook integration, new algorithms, automatic rescheduling,
+changed window permissions, capacity diagnostics, resource-availability overlays,
+and drag/drop or resize editing.
+Dependencies: FS-014, FS-019, FS-005 and I-009; no new optimization prerequisite.
+Clarify: Hour range/scrolling, overlapping blocks, month-entry overflow and
+availability cues, multiple-calendar windows, responsive and keyboard behavior.
+
+Keep the specification limited to I-014 and consistent with
+docs/planning/Feature_slices.md. Define scenarios, requirements, edge cases and
+measurable success criteria without choosing implementation technology.
+```
+
 ## Product-level open assumptions
 
 - The historical planner-only MVP was implemented without authentication;
@@ -5256,6 +5422,7 @@ for this increment; status is grounded in implementation and verification eviden
 
 | Date | Change type | Affected slices | Summary | Rationale |
 | ---- | ----------- | --------------- | ------- | --------- |
+| 2026-11-12 | New improvement slice and calendar presentation scope extension | I-014, FS-014, FS-019 | Added day/week hourly grids and a compact month grid, proportional session blocks, teaching-window context, different colors for available/unavailable periods and visible overruns. Explicitly limited to visualization with no business logic adaptation. Retained list/details workflows, saved three visual references and added a specification prompt. I-012/I-013 remain unchanged; no global reprioritization or implementation. | User wants planned hours in the context of possible windows, supplied Outlook-style week/month/day references, and confirmed visualization only with distinct availability colors. |
 | 2026-11-11 | Status reconciliation | FS-004–FS-011, FS-013, FS-014, FS-016, FS-018, FS-020, I-003, I-006, I-009, I-011–I-013 | Aligned map and detailed statuses with task/validation evidence; recorded implemented I-011 and its remaining deployment gates; added missing I-012/I-013 map coverage and I-013 evidence; retired the stale recommendation to implement FS-016. | User reported completed I-011 still marked ready for implementation. Preserve open acceptance obligations and existing scope/priority decisions. |
 | 2026-11-09 | New slice and teaching-algorithm selection extension | I-011, I-003, I-004, I-006 | Added Standard/Cohort/Lecturer strategies using the requested Strategy pattern, per-run filesystem policy selection and frozen identity, common validation, weekly cohort/lecturer balance, and explicit early unproven-result acceptance. Recorded architecture alternatives and specification prompt; no implementation or live configuration changes. | User supplied the cohort-first idea and requested a slice; confirmed lecturer weekly balance, all teaching with exams unchanged, and preparation/Start selection lifetime. |
 | 2026-11-09 | New slice and lecturer-assignment constraint change | I-010, FS-008, FS-009, FS-010, I-003, I-004, I-006 | Added documentation-only fixed lecturer LE allocations, sum-to-total validation, per-lecturer remaining work and hard no-transfer generation boundaries. Rooms remain eligible alternatives. Legacy migration, saved-work/edit policy and numeric/session-remainder details remain clarification gates; no specification or implementation started. | The optimized plan proposed unwanted lecturer changes; the user confirmed fixed teaching portions and explicitly requested a future slice without implementing the lecturer change. |

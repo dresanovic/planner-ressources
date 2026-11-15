@@ -11,11 +11,59 @@ import {
   loadedCalendarWorkspaceFixture,
   noRevisionWorkspaceFixture,
   partialCalendarWorkspaceFixture,
+  timeGridWorkspaceFixture,
+  teachingWindowVariantFixture,
 } from '../test/calendarWorkspaceFixtures'
 
 
 describe('calendar workspace API', () => {
   afterEach(() => vi.unstubAllGlobals())
+
+  it.each(['published', 'legacy'] as const)('decodes %s provenance without substituting current context', async variant => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(teachingWindowVariantFixture(variant)))))
+    const result = await getCalendarWorkspace(1)
+    expect(result.selectedRevision?.readOnly).toBe(true)
+    expect(result.teachingWindowContexts?.[0].basis).toBe(variant === 'legacy' ? 'unavailable' : 'captured_published')
+    expect(result.occurrences).toHaveLength(1)
+  })
+
+  it.each(['duplicate-course', 'duplicate-window', 'bad-date', 'bad-clock', 'bad-kind', 'bad-identity', 'bad-status', 'bad-period', 'bad-basis', 'unavailable-section'])('isolates %s context without losing sessions', async (scenario) => {
+    const fixture = timeGridWorkspaceFixture()
+    const c = fixture.teachingWindowContexts[0]
+    if (scenario === 'duplicate-course') fixture.teachingWindowContexts.push(structuredClone(c))
+    if (scenario === 'duplicate-window') c.windows.push(structuredClone(c.windows[0]))
+    if (scenario === 'bad-date') c.days[0].date = '2027-02-30'
+    if (scenario === 'bad-clock') c.windows[0].startTime = '25:00'
+    if (scenario === 'bad-kind') Object.assign(c.windows[0], { kind: 'monthly' })
+    if (scenario === 'bad-identity') c.calendarRef = 'Calendar A'
+    if (scenario === 'bad-status') Object.assign(fixture.sectionStatus.teachingWindows, { availability: 'broken' })
+    if (scenario === 'unavailable-section') Object.assign(fixture.sectionStatus.teachingWindows, { availability: 'unavailable' })
+    if (scenario === 'bad-period') Object.assign(c.days[0], { periodStatus: 'outside_period', applicableWindowRefs: ['window:1'] })
+    if (scenario === 'bad-basis') Object.assign(c, { basis: 'captured_published' })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(fixture))))
+    const result = await getCalendarWorkspace(1)
+    expect(result.occurrences).toHaveLength(1)
+    expect(result.teachingWindowContexts).toEqual([])
+    expect(result.sectionStatus.teachingWindows.availability).toBe('unavailable')
+  })
+
+  it('decodes authoritative teaching context and quarantines malformed new sections', async () => {
+    const valid = timeGridWorkspaceFixture()
+    const invalid = structuredClone(valid)
+    invalid.teachingWindowContexts[0].days[0].applicableWindowRefs = ['missing']
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(valid)))
+      .mockResolvedValueOnce(new Response(JSON.stringify(invalid)))
+      .mockResolvedValueOnce(new Response(JSON.stringify(loadedCalendarWorkspaceFixture()))))
+    expect((await getCalendarWorkspace(1)).teachingWindowContexts?.[0].windows[0].startTime).toBe('08:00')
+    const quarantined = await getCalendarWorkspace(1)
+    expect(quarantined.occurrences).toHaveLength(1)
+    expect(quarantined.teachingWindowContexts).toEqual([])
+    expect(quarantined.sectionStatus.teachingWindows.availability).toBe('unavailable')
+    const legacy = await getCalendarWorkspace(1)
+    expect(legacy.occurrences).toHaveLength(2)
+    expect(legacy.sectionStatus.teachingWindows.availability).toBe('unavailable')
+  })
 
   it('retains exact generated clock values and rejects invalid subminute clocks', async () => {
     const precise = loadedCalendarWorkspaceFixture()

@@ -36,6 +36,7 @@ export type WorkspaceCourse = {
   cohort: string
   lecturerRefs: string[]
   cohortCalendar: string
+  cohortCalendarRef?: string | null
   planningEligible: boolean
   totalTeachingUnits: number
   scheduledTeachingUnits: number
@@ -163,12 +164,38 @@ export type RevisionSelector = {
   lifecycleState: 'draft' | 'ready_for_review' | 'published'
   designation: RevisionDesignation
 }
+export type SourceWindow = {
+  windowRef: string
+  sourceTimeWindowId: number | null
+  kind: 'weekly' | 'dated'
+  weekday: number | null
+  date: string | null
+  isIntensive: boolean
+  startTime: string
+  endTime: string
+  sortOrder: number
+}
+export type TeachingWindowContext = {
+  courseRef: string
+  calendarRef: string | null
+  calendarLabel: string
+  availability: 'available' | 'unavailable' | 'not_applicable'
+  basis: 'current_working' | 'captured_published' | 'unavailable'
+  reason: string | null
+  isCustom: boolean | null
+  sourceRevision: number | null
+  planningStartDate: string | null
+  planningEndDate: string | null
+  windows: SourceWindow[]
+  days: { date: string; periodStatus: 'within_period' | 'outside_period'; applicableWindowRefs: string[] }[]
+}
 export type CalendarWorkspaceBase = {
   presentationSource?: 'planner' | 'lecturer-review'
   semester: { semesterId: number; name: string; startDate: string; endDate: string }
   availableContexts: { activeWorking: RevisionSelector | null; currentPublished: RevisionSelector | null }
   workspaceToken: string
-  sectionStatus: Record<string, { availability: 'available' | 'partial' | 'unavailable'; reason?: string; coverage?: string }>
+  sectionStatus: Record<string, { availability: WorkspaceAvailability; reason?: string | null; coverage?: string | null }>
+  teachingWindowContexts?: TeachingWindowContext[]
   courses: WorkspaceCourse[]
   occurrences: WorkspaceOccurrence[]
   holidays: { holidayRef: string; date: string; name: string }[]
@@ -214,7 +241,79 @@ export async function getCalendarWorkspace(semesterId: number, revisionId?: numb
   const payload = await response.json().catch(() => null)
   if (!response.ok) throw new CalendarWorkspaceApiError(response.status, payload?.detail ?? 'Could not load the calendar workspace.')
   validateWorkspace(payload)
+  validateTeachingWindows(payload)
   return payload
+}
+
+function validateTeachingWindows(workspace: CalendarWorkspace) {
+  const fail = () => { throw new Error('Invalid teaching-window context') }
+  const iso = (value: unknown): value is string => typeof value === 'string' && isIsoDate(value)
+    && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
+  const clockValue = (value: string) => {
+    const [h, m, s = '0'] = value.split(':')
+    return Number(h) * 3600 + Number(m) * 60 + Number(s)
+  }
+  try {
+    const contexts: unknown = workspace.teachingWindowContexts
+    const status = workspace.sectionStatus.teachingWindows
+    if (!status || !['available', 'partial', 'unavailable', 'not_applicable'].includes(status.availability)
+      || (status.reason != null && typeof status.reason !== 'string')
+      || (status.coverage != null && typeof status.coverage !== 'string') || !Array.isArray(contexts)) fail()
+    const courses = new Map(workspace.courses.map(c => [c.courseRef, c]))
+    const seen = new Set<string>()
+    for (const raw of contexts as unknown[]) {
+      if (!isRecord(raw)) fail()
+      const c = raw as TeachingWindowContext
+      const course = courses.get(c.courseRef)
+      if (!course || seen.has(c.courseRef) || !['available', 'unavailable', 'not_applicable'].includes(c.availability)
+        || !['current_working', 'captured_published', 'unavailable'].includes(c.basis)
+        || (c.calendarRef !== null && (typeof c.calendarRef !== 'string' || !/^calendar:[1-9]\d*$/.test(c.calendarRef)))
+        || typeof c.calendarLabel !== 'string' || (c.reason !== null && typeof c.reason !== 'string')
+        || !Array.isArray(c.windows) || !Array.isArray(c.days)) fail()
+      if (course?.cohortCalendarRef != null && course.cohortCalendarRef !== c.calendarRef) fail()
+      seen.add(c.courseRef)
+      if (c.availability !== 'available') {
+        if (c.basis !== 'unavailable' || !c.reason || c.isCustom !== null || c.sourceRevision !== null
+          || c.planningStartDate !== null || c.planningEndDate !== null || c.windows.length || c.days.length) fail()
+        continue
+      }
+      const expectedBasis = workspace.selectedRevision?.readOnly ? 'captured_published' : 'current_working'
+      if (c.basis !== expectedBasis || typeof c.isCustom !== 'boolean'
+        || (c.sourceRevision !== null && (!Number.isInteger(c.sourceRevision) || c.sourceRevision < 0))
+        || !iso(c.planningStartDate) || !iso(c.planningEndDate)) fail()
+      const refs = new Set<string>()
+      for (const w of c.windows) {
+        if (!isRecord(w) || typeof w.windowRef !== 'string' || !w.windowRef || refs.has(w.windowRef)
+          || (w.sourceTimeWindowId !== null && (!Number.isInteger(w.sourceTimeWindowId) || w.sourceTimeWindowId < 1))
+          || !['weekly', 'dated'].includes(w.kind) || typeof w.isIntensive !== 'boolean' || !Number.isInteger(w.sortOrder)
+          || typeof w.startTime !== 'string' || typeof w.endTime !== 'string' || !isClock(w.startTime) || !isClock(w.endTime)
+          || clockValue(w.startTime) >= clockValue(w.endTime)) fail()
+        if (w.kind === 'weekly' ? (!Number.isInteger(w.weekday) || w.weekday! < 0 || w.weekday! > 6 || w.date !== null)
+          : (!iso(w.date) || w.weekday !== null)) fail()
+        refs.add(w.windowRef)
+      }
+      const dates = new Set<string>()
+      for (const day of c.days) {
+        if (!isRecord(day) || !iso(day.date) || dates.has(day.date)
+          || !['within_period', 'outside_period'].includes(day.periodStatus) || !Array.isArray(day.applicableWindowRefs)
+          || new Set(day.applicableWindowRefs).size !== day.applicableWindowRefs.length
+          || day.applicableWindowRefs.some(ref => !refs.has(ref))
+          || (day.periodStatus === 'outside_period' && day.applicableWindowRefs.length)) fail()
+        dates.add(day.date)
+      }
+    }
+    if (seen.size !== courses.size) fail()
+    if (['unavailable', 'not_applicable'].includes(status.availability)
+      && (contexts as TeachingWindowContext[]).some(c => c.availability === 'available')) fail()
+    if (status.availability === 'available'
+      && (contexts as TeachingWindowContext[]).some(c => c.availability === 'unavailable')) fail()
+    if (workspace.workspaceState === 'no_revision' && ((contexts as unknown[]).length || status.availability !== 'not_applicable')) fail()
+  } catch {
+    workspace.teachingWindowContexts = []
+    workspace.sectionStatus.teachingWindows = {
+      availability: 'unavailable', reason: 'Lehrzeitfenster sind nicht verfügbar oder fehlerhaft. Bitte erneut laden.',
+    }
+  }
 }
 
 function validateWorkspace(value: unknown): asserts value is CalendarWorkspace {
@@ -372,7 +471,8 @@ function validateSectionStatus(value: unknown) {
   if (!isRecord(value)) throw new CalendarWorkspaceApiError(502, 'The workspace section status is invalid.')
   const requiredSections = ['courses', 'occurrences', 'holidays', 'validationFindings', 'planningOutcomes', 'summary']
   if (requiredSections.some((section) => !Object.hasOwn(value, section))) throw new CalendarWorkspaceApiError(502, 'The workspace section status is incomplete.')
-  for (const status of Object.values(value)) {
+  for (const [name, status] of Object.entries(value)) {
+    if (name === 'teachingWindows') continue // Isolated additive section is checked after core data.
     if (!isRecord(status) || !['available', 'partial', 'unavailable'].includes(String(status.availability))) throw new CalendarWorkspaceApiError(502, 'A workspace section status is invalid.')
     if (status.reason != null && typeof status.reason !== 'string') throw new CalendarWorkspaceApiError(502, 'A workspace section reason is invalid.')
     if (status.coverage != null && typeof status.coverage !== 'string') throw new CalendarWorkspaceApiError(502, 'A workspace section coverage value is invalid.')

@@ -20,6 +20,9 @@ import { EuropeanDateField } from './EuropeanDateField'
 import { formatCalendarDate, formatCalendarDateRange, institutionLocalToday } from '../utils/datePresentation'
 import { safeReasonText } from '../utils/userProblems'
 import { label } from '../config/terminology'
+import { CalendarTimeGrid, WindowDisclosure } from './CalendarTimeGrid'
+import { CalendarMonthGrid } from './CalendarMonthGrid'
+import { enumerateDates } from './calendarTimeGridLayout'
 
 type Props = {
   workspace: CalendarWorkspace | null
@@ -291,11 +294,12 @@ function CalendarPlanningWorkspaceContent({
   const range = visibleRange(mode, effectiveAnchor)
   const projection = projectWorkspace(workspace, filters)
   const visibleOccurrences = occurrencesInRange(projection.occurrences, range)
+  const contextCourses = projection.courses.filter(c => visibleOccurrences.some(o => o.courseRef === c.courseRef))
   const visibleHolidays = workspace.holidays.filter((holiday) => (
     range != null && holiday.date >= range.start && holiday.date <= range.end
   ))
   const selectedOccurrence = workspace.occurrences.find((item) => item.occurrenceRef === selectedRef) ?? null
-  const activeFilterCount = Object.values(filters).filter(Boolean).length
+  const activeFilterCount = Object.values(filters).filter(value => Array.isArray(value) ? value.length > 0 : Boolean(value)).length
   const summary = filteredSummary(workspace, projection.courses.map((item) => item.courseRef), projection.occurrences.map((item) => item.occurrenceRef), activeFilterCount > 0)
   const summaryScope = activeFilterCount > 0 ? 'Gefilterte Teilmenge' : 'Vollständige Revision'
   const drilldownMetric = drilldown == null ? null : summary[drilldown.metricKey]
@@ -319,7 +323,8 @@ function CalendarPlanningWorkspaceContent({
     window.setTimeout(() => {
       const target = [...document.querySelectorAll<HTMLButtonElement>('[data-occurrence-ref]')]
         .find((item) => item.dataset.occurrenceRef === reference)
-      target?.focus()
+      if (target) target.focus()
+      else onSelectionDisappeared('Die Termindetails wurden geschlossen. Die Kalenderergebnisse sind ausgewählt.')
     }, 0)
   }
 
@@ -360,6 +365,22 @@ function CalendarPlanningWorkspaceContent({
     } else announce('Die aktuelle Periode wird angezeigt.')
   }
 
+  function openMonthDate(date: string) {
+    const commit = () => {
+      setAnchor(date)
+      setMode('day')
+      onSelectionDisappeared(`Tagesansicht für ${formatCalendarDate(date)}. Die Kalenderergebnisse sind ausgewählt.`)
+    }
+    if (selectedOccurrence && selectedOccurrence.date !== date) {
+      if (onRequestTargetHidingFilter) {
+        onRequestTargetHidingFilter(commit)
+        return
+      }
+      updateSelection(null)
+    }
+    commit()
+  }
+
   return (
     <section className="calendar-workspace" aria-labelledby="calendar-workspace-title" aria-busy={loading}>
       <header className="calendar-context-header">
@@ -392,6 +413,7 @@ function CalendarPlanningWorkspaceContent({
               <li key={name}>{workspaceSectionLabel(name)}: {availabilityLabel(status.availability)}{status.reason ? ` · ${safeWorkspaceReason()}` : ''}</li>
             ))}
           </ul>
+          {impairedSections.some(([name]) => name === 'teachingWindows') && !restricted && <button type="button" onClick={onRetry}>Lehrzeitfenster erneut laden</button>}
         </div>
       )}
 
@@ -435,7 +457,7 @@ function CalendarPlanningWorkspaceContent({
 
       <div className="workspace-filters" aria-label="Filter des Arbeitsbereichs">
         <FacetSelect label={label('course.fieldLabel')} value={filters.course} values={workspace.filterFacets.courses} onChange={(value) => applyFilter('course', value)} />
-        <FacetSelect label={label('cohort.fieldLabel')} value={filters.cohort} values={workspace.filterFacets.cohorts} onChange={(value) => applyFilter('cohort', value)} />
+        <CohortFilter label={label('cohort.fieldLabel')} value={filters.cohort} values={workspace.filterFacets.cohorts} onChange={(value) => applyFilter('cohort', value)} />
         {!restricted && <FacetSelect label={label('lecturer.fieldLabel')} value={filters.lecturer} values={workspace.filterFacets.lecturers} onChange={(value) => applyFilter('lecturer', value)} />}
         <FacetSelect label={label('room.fieldLabel')} value={filters.room} values={workspace.filterFacets.rooms} onChange={(value) => applyFilter('room', value)} />
         <FacetSelect label="Kohortenkalender" value={filters.cohortCalendar} values={workspace.filterFacets.cohortCalendars} onChange={(value) => applyFilter('cohortCalendar', value)} />
@@ -463,16 +485,13 @@ function CalendarPlanningWorkspaceContent({
           >
             {renderListContent(listContent, listContext)}
           </div>
-          {mode !== 'list' && (
-            visibleOccurrences.length === 0 && visibleHolidays.length === 0 ? (
-              <p className="empty-state">{projection.occurrences.length === 0 && activeFilterCount > 0 ? 'Keine Datensätze entsprechen den aktiven Filtern.' : restricted && workspace.occurrences.length === 0 ? `In dieser Revision gibt es derzeit keine Lehr- oder Prüfungszuordnungen für diese ${label('lecturer.singular')}.` : 'In dieser Periode finden keine Termine statt.'}</p>
-            ) : (
-              <>
-                {visibleOccurrences.length === 0 && activeFilterCount > 0 && <p className="empty-state">Keine Datensätze entsprechen den aktiven Filtern. Feiertage bleiben zur Einordnung sichtbar.</p>}
-                <CalendarSurface mode={mode} occurrences={visibleOccurrences} holidays={visibleHolidays} courses={workspace.courses} rooms={workspace.filterFacets.rooms} selectedRef={selectedRef} onSelect={chooseOccurrence} semesterStart={workspace.semester.startDate} semesterEnd={workspace.semester.endDate} />
-              </>
-            )
-          )}
+        {selectedOccurrence && <section className="selected-window-context" aria-label="Lehrzeitfenster des ausgewählten Termins"><h3>{workspace.courses.find(c => c.courseRef === selectedOccurrence.courseRef)?.name} · {formatCalendarDate(selectedOccurrence.date)}</h3>{selectedOccurrence.kind === 'exam' ? <p>Lehrzeitfenster für Prüfung nicht anwendbar.</p> : <WindowDisclosure context={workspace.teachingWindowContexts?.find(c => c.courseRef === selectedOccurrence.courseRef)} date={selectedOccurrence.date} />}</section>}
+          {(mode === 'day' || mode === 'week') && range && <>
+            {visibleHolidays.map(h => <p className="calendar-holiday" key={h.holidayRef}>{formatCalendarDate(h.date)} · Holiday: {h.name}</p>)}
+            {visibleOccurrences.length === 0 && <p className="empty-state">{activeFilterCount > 0 ? 'Keine Datensätze entsprechen den aktiven Filtern.' : 'In dieser Periode finden keine Termine statt.'}</p>}
+            <CalendarTimeGrid dates={enumerateDates(range.start, range.end)} workspace={workspace} occurrences={visibleOccurrences} courses={contextCourses} selectedRef={selectedRef} onSelect={chooseOccurrence} />
+          </>}
+          {mode === 'month' && <CalendarMonthGrid anchor={effectiveAnchor} workspace={workspace} occurrences={visibleOccurrences} courses={contextCourses} selectedRef={selectedRef} onSelect={chooseOccurrence} onDate={openMonthDate} />}
         </div>
         {selectedOccurrence && renderSessionPane?.(selectedOccurrence, closeOccurrenceDetail)}
         {selectedOccurrence && !renderSessionPane && (
@@ -566,59 +585,6 @@ function CalendarPlanningWorkspaceContent({
   }
 }
 
-function CalendarSurface({ mode, occurrences, holidays, courses, rooms, selectedRef, onSelect, semesterStart, semesterEnd }: { mode: Exclude<CalendarMode, 'list'>; occurrences: WorkspaceOccurrence[]; holidays: LoadedCalendarWorkspace['holidays']; courses: LoadedCalendarWorkspace['courses']; rooms: LoadedCalendarWorkspace['filterFacets']['rooms']; selectedRef: string | null; onSelect: (ref: string) => void; semesterStart: string; semesterEnd: string }) {
-  const courseByRef = new Map(courses.map((item) => [item.courseRef, item]))
-  const dates = [...new Set([...occurrences.map((item) => item.date), ...holidays.map((item) => item.date)])].sort()
-  const [expandedDates, setExpandedDates] = useState<Set<string>>(() => new Set())
-  return (
-    <div className={`calendar-surface calendar-${mode}`} role="grid" aria-label={`${mode} calendar`}>
-      {dates.map((date) => (
-        <section className={`calendar-date-column ${date < semesterStart || date > semesterEnd ? 'outside-semester' : ''}`} key={date} role="row" aria-label={formatCalendarDate(date)}>
-          <h3>{new Intl.DateTimeFormat('de-AT', { weekday: 'short', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`))}, {formatCalendarDate(date)}</h3>
-          {mode === 'month' && occurrences.filter((item) => item.date === date).length > 3 && (
-            <p className="calendar-date-count">{occurrences.filter((item) => item.date === date).length} Termine</p>
-          )}
-          {holidays.filter((item) => item.date === date).map((holiday) => (
-            <p className="calendar-holiday" key={holiday.holidayRef}><span aria-hidden="true">◆</span> Holiday: {holiday.name}</p>
-          ))}
-          <div className="calendar-date-items" role="gridcell">
-            {(mode === 'month' && occurrences.filter((item) => item.date === date).length > 3 && !expandedDates.has(date)
-              ? occurrences.filter((item) => item.date === date).slice(0, 3)
-              : occurrences.filter((item) => item.date === date)
-            ).map((item) => (
-              <button type="button" key={item.occurrenceRef} data-occurrence-ref={item.occurrenceRef} className={`calendar-occurrence ${item.kind} ${item.findingRefs.length ? 'has-warning' : ''}`} aria-pressed={selectedRef === item.occurrenceRef} onClick={() => onSelect(item.occurrenceRef)}>
-                <span className="occurrence-kind">{item.kind === 'teaching' ? 'Lehrtermin' : 'Prüfungstermin'}</span>
-                <strong>{courseByRef.get(item.courseRef)?.name ?? item.courseRef}</strong>
-                <span>{item.startTime}–{item.endTime}</span>
-                <span>{item.cohort}</span>
-                <span>Raum: {rooms.find((room) => room.value === item.roomRef)?.label ?? (item.kind === 'exam' ? item.assignedRoomName : 'Nicht verfügbar')}</span>
-                {item.findingRefs.length > 0 && <span className="warning-label">⚠ {item.findingRefs.length} {item.findingRefs.length === 1 ? 'aktueller Hinweis' : 'aktuelle Hinweise'}</span>}
-              </button>
-            ))}
-            {mode === 'month' && occurrences.filter((item) => item.date === date).length > 3 && (
-              <button
-                type="button"
-                className="calendar-date-continuation"
-                aria-expanded={expandedDates.has(date)}
-                onClick={() => setExpandedDates((current) => {
-                  const next = new Set(current)
-                  if (next.has(date)) next.delete(date)
-                  else next.add(date)
-                  return next
-                })}
-              >
-                {expandedDates.has(date)
-                  ? 'Weniger Termine anzeigen'
-                  : `Alle ${occurrences.filter((item) => item.date === date).length} Termine anzeigen`}
-              </button>
-            )}
-          </div>
-        </section>
-      ))}
-    </div>
-  )
-}
-
 function OccurrenceDetail({ occurrence, workspace, headingRef, onClose, onEditTeaching, onDeleteTeaching, onEditExam, onDeleteExam }: { occurrence: WorkspaceOccurrence; workspace: LoadedCalendarWorkspace; headingRef: RefObject<HTMLHeadingElement | null>; onClose: () => void; onEditTeaching?: (ref: string) => void; onDeleteTeaching?: (ref: string) => void; onEditExam?: (ref: string) => void; onDeleteExam?: (ref: string) => void }) {
   const course = workspace.courses.find((item) => item.courseRef === occurrence.courseRef)
   const findings = workspace.validationFindings.filter((item) => occurrence.findingRefs.includes(item.findingRef))
@@ -686,12 +652,39 @@ function reconcileFilters(
   const next = { ...filters }
   for (const key of Object.keys(facets) as (keyof WorkspaceFilters)[]) {
     const value = filters[key]
-    if (value != null && !facets[key].some((facet) => facet.value === value)) {
+    if (key === 'cohort' && Array.isArray(value)) {
+      const retained = value.filter(item => facets.cohort.some(facet => facet.value === item))
+      if (retained.length !== value.length) {
+        next.cohort = retained.length ? retained : undefined
+        changed = true
+      }
+    } else if (value != null && !facets[key].some((facet) => facet.value === value)) {
       delete next[key]
       changed = true
     }
   }
   return changed ? next : filters
+}
+
+function CohortFilter({ label, value, values, onChange }: { label: string; value?: string[]; values: { value: string; label: string }[]; onChange: (value: string[] | undefined) => void }) {
+  if (values.length === 0) return null
+  const selected = value ?? []
+  return <div className="cohort-filter"><span className="cohort-filter-label">{label}</span>
+    <details onKeyDown={event => {
+      if (event.key === 'Escape') {
+        event.currentTarget.open = false
+        event.currentTarget.querySelector('summary')?.focus()
+      }
+    }}><summary aria-label={`${label}: ${selected.length ? `${selected.length} ausgewählt` : 'Alle'}`}>{selected.length ? `${selected.length} ausgewählt` : 'Alle'}</summary>
+      <div className="cohort-filter-options" role="group" aria-label={label}>
+        <label><input type="checkbox" checked={selected.length === 0} onChange={() => onChange(undefined)} /><span>Alle</span></label>
+        {values.map(item => <label key={item.value}><input type="checkbox" checked={selected.includes(item.value)} onChange={event => {
+          const next = event.target.checked ? [...selected, item.value] : selected.filter(choice => choice !== item.value)
+          onChange(next.length ? next : undefined)
+        }} /><span>{item.label}</span></label>)}
+      </div>
+    </details>
+  </div>
 }
 
 function FacetSelect({ label, value, values, onChange }: { label: string; value?: string; values: { value: string; label: string }[]; onChange: (value: string | undefined) => void }) {
@@ -880,7 +873,7 @@ function contributorProblems(workspace: LoadedCalendarWorkspace, ref: string): s
 }
 
 function workspaceSectionLabel(name: string): string {
-  return ({ occurrences: 'Termine', validationFindings: 'Prüfhinweise', planningOutcomes: 'Planungsergebnisse', summary: 'Übersicht', filterFacets: 'Filterwerte' } as Record<string, string>)[name] ?? 'Arbeitsbereichsdaten'
+  return ({ teachingWindows: 'Lehrzeitfenster', occurrences: 'Termine', validationFindings: 'Prüfhinweise', planningOutcomes: 'Planungsergebnisse', summary: 'Übersicht', filterFacets: 'Filterwerte' } as Record<string, string>)[name] ?? 'Arbeitsbereichsdaten'
 }
 
 function availabilityLabel(value: string): string {

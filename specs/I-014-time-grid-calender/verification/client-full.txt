@@ -1,0 +1,14 @@
+npm warn cli npm v11.13.0 does not support Node.js v27.0.0-alpha.0.0.0. This version of npm supports the following node versions: `^20.17.0 || >=22.9.0`. You can find the latest version at https://nodejs.org/.
+
+> client@0.0.0 test
+> vitest run
+
+
+ RUN  v4.1.10 C:/Codex/planner-resource/client
+
+
+ Test Files  74 passed (74)
+      Tests  661 passed (661)
+   Start at  08:51:21
+   Duration  20.64s (transform 13.60s, setup 3.52s, import 17.94s, tests 33.99s, environment 241.31s)
+

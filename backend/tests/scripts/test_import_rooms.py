@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from urllib.error import HTTPError
 from uuid import uuid4
 
@@ -41,6 +41,50 @@ class RoomImportTests(unittest.TestCase):
         self.root.mkdir(parents=True)
         self.addCleanup(shutil.rmtree, self.root)
         self.room = {"name": "CC202 – Campus Classic", "referenceCode": "CC202", "capacity": 56}
+
+    def test_report_retries_transient_windows_replace_errors(self):
+        for winerror in (5, 32, 33):
+            with self.subTest(winerror=winerror):
+                target = self.root / "progress.json"
+                target.write_text('{"step": "old"}', encoding="utf-8")
+                failure = PermissionError("temporarily locked")
+                failure.winerror = winerror
+                replace = Path.replace
+
+                def replace_after_lock(source, destination):
+                    self.assertEqual(json.loads(target.read_text()), {"step": "old"})
+                    return replace(source, destination)
+
+                def attempt(source, destination):
+                    if mocked_replace.call_count < 3:
+                        raise failure
+                    return replace_after_lock(source, destination)
+
+                with patch.object(Path, "replace", autospec=True, side_effect=attempt) as mocked_replace, patch("time.sleep") as sleep:
+                    module.write_report(target, {"step": "new"})
+                    self.assertEqual(mocked_replace.call_count, 3)
+                    self.assertEqual(sleep.call_count, 2)
+                self.assertEqual(json.loads(target.read_text()), {"step": "new"})
+
+    def test_report_replace_retries_are_bounded_and_preserve_previous_report(self):
+        target = self.root / "progress.json"
+        target.write_text('{"step": "old"}', encoding="utf-8")
+        failure = PermissionError("locked")
+        failure.winerror = 5
+        with patch.object(Path, "replace", side_effect=failure) as replace, patch("time.sleep") as sleep:
+            with self.assertRaises(PermissionError):
+                module.write_report(target, {"step": "new"})
+        self.assertEqual(replace.call_count, 5)
+        self.assertEqual(sleep.call_count, 4)
+        self.assertEqual(json.loads(target.read_text()), {"step": "old"})
+
+    def test_report_does_not_retry_other_permission_errors(self):
+        failure = PermissionError("permission denied")
+        with patch.object(Path, "replace", side_effect=failure) as replace, patch("time.sleep") as sleep:
+            with self.assertRaises(PermissionError):
+                module.write_report(self.root / "progress.json", {})
+        self.assertEqual(replace.call_count, 1)
+        sleep.assert_not_called()
 
     def export(self, rows):
         path = self.root / "rooms.json"
