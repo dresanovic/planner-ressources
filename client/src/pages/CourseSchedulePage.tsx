@@ -1654,6 +1654,10 @@ function CourseScheduleContent({
               onTraceCourse={requestCourseChange}
               selectedOccurrenceRef={selectedOccurrenceRef}
               onSelectedOccurrenceChange={requestOccurrenceSelection}
+              onRequestTargetHidingFilter={(commitSelection) => requestPaneIntent({
+                label: 'einer anderen Kalenderauswahl',
+                commit: () => { commitPaneSelection(null); commitSelection() },
+              })}
               renderSessionPane={renderCalendarSessionPane}
               listContent={(workspaceListContext) => <DraftSchedulePanel
                 resetKey={overviewResetKey}

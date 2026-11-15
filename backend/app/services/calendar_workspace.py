@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timezone, timedelta
 from typing import Any
 
 from sqlalchemy import or_, select
@@ -30,7 +30,7 @@ from app.services.draft_schedule_validation import (
 )
 from app.services.holiday_calendar import HolidayReference
 from app.services.resource_rules import resource_is_unavailable
-from app.services.schedule_generation import TimeWindowPlan, format_clock
+from app.services.schedule_generation import TimeWindowPlan, format_clock, window_applies
 
 
 WORKING_STATES = {"draft", "ready_for_review"}
@@ -154,9 +154,11 @@ def get_calendar_workspace(
         lecturer_labels,
         room_labels,
     )
+    teaching_contexts = _teaching_window_contexts(semester, courses, occurrences, read_only)
     for course in courses:
         course.pop("cohortSize", None)
         course.pop("constraintProfileAvailable", None)
+        course.pop("constraintProfile", None)
     for occurrence in occurrences:
         occurrence.pop("cohortSize", None)
         if occurrence["kind"] != "exam":
@@ -206,6 +208,13 @@ def get_calendar_workspace(
         "summary": summary,
         "filterFacets": facets,
     }
+    response["teachingWindowContexts"] = teaching_contexts
+    known = sum(item["availability"] == "available" for item in teaching_contexts)
+    response["sectionStatus"]["teachingWindows"] = {
+        "availability": "available" if known == len(teaching_contexts) else "partial" if known else "unavailable",
+        "reason": None if known == len(teaching_contexts) else "Some captured teaching-window profiles are unavailable.",
+        "coverage": f"{known} of {len(teaching_contexts)} course profiles available.",
+    }
     response["workspaceToken"] = _token(response)
     db.refresh(selected)
     current_context_signature = tuple(
@@ -229,6 +238,60 @@ def get_calendar_workspace(
             409, "The selected revision changed while the workspace was loading."
         )
     return response
+
+
+def _teaching_window_contexts(semester, courses, occurrences, published):
+    """Project already assembled validation profiles; never query or persist permission."""
+    dates = {date.fromisoformat(item["date"]) for item in occurrences}
+    day = semester.start_date
+    while day <= semester.end_date:
+        dates.add(day)
+        day += timedelta(days=1)
+    contexts = []
+    for course in courses:
+        profile = course.get("constraintProfile")
+        context = {
+            "courseRef": course["courseRef"],
+            "calendarRef": course.get("cohortCalendarRef"),
+            "calendarLabel": course["cohortCalendar"],
+            "availability": "available" if profile is not None else "unavailable",
+            "basis": ("captured_published" if published else "current_working") if profile is not None else "unavailable",
+            "reason": None if profile is not None else "Captured teaching-window profile is unavailable; current hours are not substituted.",
+            "isCustom": profile.get("isCustom", False) if profile is not None else None,
+            "sourceRevision": profile.get("sourceRevision") if profile is not None else None,
+            "planningStartDate": profile["planningStartDate"] if profile is not None else None,
+            "planningEndDate": profile["planningEndDate"] if profile is not None else None,
+            "windows": [], "days": [],
+        }
+        if profile is not None:
+            plans = []
+            for index, source in enumerate(profile.get("allowedTeachingWindows", [])):
+                window = {
+                    "windowRef": f"window:{index}",
+                    "sourceTimeWindowId": source.get("sourceTimeWindowId"),
+                    "kind": source.get("kind", "weekly"),
+                    "weekday": source.get("weekday"), "date": source.get("date"),
+                    "isIntensive": source.get("isIntensive", False),
+                    "startTime": _clock(source["startTime"]), "endTime": _clock(source["endTime"]),
+                    "sortOrder": source["sortOrder"],
+                }
+                context["windows"].append(window)
+                plans.append(TimeWindowPlan(
+                    id=window["sourceTimeWindowId"], weekday=window["weekday"],
+                    kind=window["kind"], date=date.fromisoformat(window["date"]) if window["date"] else None,
+                    is_intensive=window["isIntensive"], start_time=time.fromisoformat(window["startTime"]),
+                    end_time=time.fromisoformat(window["endTime"]), sort_order=window["sortOrder"],
+                    constraint_window_index=index,
+                ))
+            for day in sorted(dates):
+                within = context["planningStartDate"] <= day.isoformat() <= context["planningEndDate"]
+                context["days"].append({
+                    "date": day.isoformat(), "periodStatus": "within_period" if within else "outside_period",
+                    "applicableWindowRefs": [context["windows"][index]["windowRef"]
+                        for index, window in enumerate(plans) if within and window_applies(window, day, plans)],
+                })
+        contexts.append(context)
+    return contexts
 
 
 def _working_content(
@@ -349,6 +412,8 @@ def _working_content(
                 ],
             )
         )
+        courses[-1]["cohortCalendarRef"] = f"calendar:{course.cohort_calendar_id}"
+        courses[-1]["constraintProfile"] = constraint_profile
         for session in sessions:
             occurrences.append(
                 {
@@ -479,6 +544,9 @@ def _published_content(
         course["constraintProfileAvailable"] = (
             source.get("constraintProfile") is not None
         )
+        source_calendar_id = source["cohortCalendar"].get("sourceId")
+        course["cohortCalendarRef"] = f"calendar:{source_calendar_id}" if source_calendar_id is not None else None
+        course["constraintProfile"] = source.get("constraintProfile")
         courses.append(course)
         for session in source.get("teachingSessions", []):
             occurrences.append(
@@ -1289,6 +1357,7 @@ def _course(
         "cohortSize": cohort_size,
         "lecturerRefs": lecturer_refs,
         "cohortCalendar": cohort_calendar,
+        "cohortCalendarRef": None,
         "totalTeachingUnits": total,
         "scheduledTeachingUnits": scheduled,
         "remainingTeachingUnits": remaining,
@@ -1357,6 +1426,10 @@ def _no_revision_response(semester: Semester) -> dict[str, Any]:
             )
         },
         "filterFacets": empty_facets,
+    }
+    response["teachingWindowContexts"] = []
+    response["sectionStatus"]["teachingWindows"] = {
+        "availability": "not_applicable", "reason": "No schedule revision exists."
     }
     response["workspaceToken"] = _token(response)
     return response

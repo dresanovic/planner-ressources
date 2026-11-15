@@ -3,6 +3,7 @@ import type { LoadedCalendarWorkspace, WorkspaceOccurrence } from '../api/calend
 import { calendarFindingLabel } from './calendarFindingLabel'
 import { formatCalendarDate, formatCalendarDateRange } from '../utils/datePresentation'
 import { label } from '../config/terminology'
+import { WindowDisclosure } from './CalendarTimeGrid'
 
 type Props = {
   occurrence: WorkspaceOccurrence
@@ -137,6 +138,12 @@ export function SessionPane({
 
       {status && <p className="mutation-feedback" role="status" aria-live="polite">{status}</p>}
       {error && <div className="refresh-error" role="alert">{error}</div>}
+
+      {!restrictedReview && <section className="session-window-context" aria-label="Lehrzeitfenster des gespeicherten Termins">
+        <h3>Lehrzeitfenster · {course?.cohortCalendar ?? occurrence.cohort} · {formatCalendarDate(occurrence.date)}</h3>
+        {occurrence.kind === 'exam' ? <p>Lehrzeitfenster für Prüfung nicht anwendbar.</p>
+          : <WindowDisclosure context={workspace.teachingWindowContexts?.find(context => context.courseRef === occurrence.courseRef)} date={occurrence.date} />}
+      </section>}
 
       {restrictedReview ? (
         <>

@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
@@ -141,7 +142,16 @@ def write_report(path: Path, report: dict) -> None:
     # Replace atomically so interrupted imports retain the last completed step.
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    for attempt in range(5):
+        try:
+            temporary.replace(path)
+            return
+        except PermissionError as error:
+            # Windows readers/scanners can briefly prevent atomic replacement.
+            # Retry only the local replace, never the preceding API mutation.
+            if getattr(error, "winerror", None) not in {5, 32, 33} or attempt == 4:
+                raise
+            time.sleep(0.05 * (attempt + 1))
 
 
 def apply_plan(api: PlannerAPI, report: dict, report_path: Path) -> None:

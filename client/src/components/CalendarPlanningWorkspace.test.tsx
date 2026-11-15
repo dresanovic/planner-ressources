@@ -8,6 +8,8 @@ import {
   noRevisionWorkspaceFixture,
   partialCalendarWorkspaceFixture,
   publishedCalendarWorkspaceFixture,
+  timeGridWorkspaceFixture,
+  multiCalendarTimeGridFixture,
 } from '../test/calendarWorkspaceFixtures'
 import {
   CalendarPlanningWorkspace,
@@ -36,6 +38,184 @@ function button(label: string) {
 }
 
 describe('CalendarPlanningWorkspace', () => {
+  it.each(['none', 'selected', 'guarded'] as const)('moves focus to Day results after Month navigation with %s selection', async selection => {
+    const host = document.body.appendChild(document.createElement('div'))
+    const root = createRoot(host)
+    let pendingCommit: (() => void) | undefined
+    function Harness() {
+      const [selectedRef, setSelectedRef] = useState<string | null>(null)
+      return <CalendarPlanningWorkspace
+        workspace={timeGridWorkspaceFixture()} loading={false} listContent={<p>List</p>} onRetry={vi.fn()}
+        selectedOccurrenceRef={selectedRef} onSelectedOccurrenceChange={setSelectedRef}
+        onRequestTargetHidingFilter={selection === 'guarded' ? commit => {
+          pendingCommit = () => { setSelectedRef(null); commit() }
+        } : undefined}
+      />
+    }
+    act(() => root.render(<Harness />))
+    try {
+      act(() => [...host.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent === 'Monat')!.click())
+      if (selection !== 'none') act(() => host.querySelector<HTMLButtonElement>('[data-occurrence-ref]')!.click())
+      const dateButton = host.querySelector<HTMLButtonElement>('[data-month-date="2027-06-25"] .month-date-button')!
+      dateButton.focus()
+      act(() => dateButton.click())
+      if (selection === 'guarded') {
+        expect(pendingCommit).toBeDefined()
+        expect(document.activeElement).toBe(dateButton)
+        expect(host.querySelector('.month-calendar')).not.toBeNull()
+        act(() => pendingCommit!())
+      }
+      await act(async () => { await new Promise(resolve => window.setTimeout(resolve, 0)) })
+      expect(host.querySelector('.month-calendar')).toBeNull()
+      expect(host.querySelector('.hourly-calendar')).not.toBeNull()
+      expect(host.querySelector<HTMLInputElement>('#calendar-anchor-date')?.value).toBe('25.06.2027')
+      expect(document.activeElement).toBe(host.querySelector('[data-workspace-results-heading]'))
+      expect(host.querySelector('[data-workspace-recovery-announcement]')?.textContent).toContain('25.06.2027')
+    } finally {
+      act(() => root.unmount())
+      host.remove()
+    }
+  })
+  it('compares a checkbox cohort subset with a lecturer across modes and reconciles refresh/reset', () => {
+    const workspace: LoadedCalendarWorkspace = multiCalendarTimeGridFixture()
+    workspace.courses[0].cohort = workspace.occurrences[0].cohort = 'BA Business Analytics & AI'
+    workspace.courses[1].cohort = workspace.occurrences[1].cohort = 'MA IT & Wirtschaftsinformatik'
+    workspace.courses.push({ ...workspace.courses[0], courseRef: 'course:3', courseId: 3, cohort: 'Other' })
+    workspace.occurrences.push({ ...workspace.occurrences[0], occurrenceRef: 'teaching:3', courseRef: 'course:3', cohort: 'Other' })
+    workspace.filterFacets.cohorts = workspace.courses.map(c => ({ value: c.cohort, label: c.cohort }))
+    workspace.filterFacets.lecturers = [{ value: 'lecturer:1', label: 'Shared lecturer' }]
+    workspace.occurrences.forEach(o => { o.lecturerRefs = ['lecturer:1'] })
+    const host = document.body.appendChild(document.createElement('div')), root = createRoot(host)
+    const listContent = vi.fn((context: WorkspaceListContext | null) => <p>List {context?.teachingSessionIds.length}</p>)
+    const render = () => act(() => root.render(<CalendarPlanningWorkspace workspace={workspace} loading={false} listContent={listContent} onRetry={vi.fn()} />))
+    render()
+    const date = host.querySelector<HTMLInputElement>('#calendar-anchor-date')!
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(date, '26.06.2027')
+      date.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    const checkbox = (name: string) => [...host.querySelectorAll<HTMLInputElement>('.cohort-filter input')].find(i => i.parentElement?.textContent === name)!
+    act(() => host.querySelector<HTMLElement>('.cohort-filter summary')!.click())
+    act(() => checkbox('BA Business Analytics & AI').click())
+    expect(host.querySelectorAll('[data-occurrence-ref]')).toHaveLength(1)
+    act(() => checkbox('MA IT & Wirtschaftsinformatik').click())
+    const lecturer = [...host.querySelectorAll('select')].find(i => i.previousElementSibling?.textContent === 'Lehrende Person')!
+    act(() => { lecturer.value = 'lecturer:1'; lecturer.dispatchEvent(new Event('change', { bubbles: true })) })
+    for (const mode of ['Woche', 'Tag', 'Monat', 'Liste']) {
+      act(() => [...host.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent === mode)!.click())
+      if (mode !== 'Liste') expect([...host.querySelectorAll('[data-occurrence-ref]')].map(e => e.getAttribute('data-occurrence-ref'))).toEqual(['teaching:1', 'teaching:2'])
+      expect(listContent.mock.calls.at(-1)![0]?.teachingSessionIds).toEqual([1, 2])
+      if (mode === 'Woche') expect(host.querySelectorAll('.time-grid-column')).toHaveLength(8)
+      if (mode === 'Monat') expect([...host.querySelectorAll('.month-cohort-label')].map(e => e.textContent)).toEqual(['BA BA & AI', 'MA IT & W'])
+    }
+    expect(host.querySelector('.active-filter-status')?.textContent).toContain('2 aktive Filterbedingungen')
+    workspace.filterFacets.cohorts = workspace.filterFacets.cohorts.filter(c => c.value !== 'BA Business Analytics & AI')
+    act(() => root.render(<CalendarPlanningWorkspace workspace={{ ...workspace, workspaceToken: 'refreshed' }} loading={false} listContent={listContent} onRetry={vi.fn()} />))
+    expect(host.querySelector('.cohort-filter summary')?.textContent).toContain('1 ausgewählt')
+    act(() => checkbox('Alle').click())
+    expect(host.querySelector('.cohort-filter summary')?.textContent).toBe('Alle')
+    act(() => checkbox('Other').click())
+    act(() => checkbox('Other').click())
+    expect(host.querySelector('.cohort-filter summary')?.textContent).toBe('Alle')
+    act(() => checkbox('Other').click())
+    const details = host.querySelector<HTMLDetailsElement>('.cohort-filter details')!
+    act(() => details.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
+    expect(details.open).toBe(false)
+    expect(document.activeElement).toBe(details.querySelector('summary'))
+    act(() => [...host.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent === 'Filter zurücksetzen')!.click())
+    expect(host.querySelector('.cohort-filter summary')?.textContent).toBe('Alle')
+    expect(host.querySelector('.active-filter-status')).toBeNull()
+    act(() => root.unmount())
+    host.remove()
+  })
+  describe.each(['Tag', 'Woche', 'Monat'])('selected calendar windows in %s', mode => {
+    it.each([
+      ['Raum', 'room:2'],
+      ['Terminart', 'exam'],
+      ['Prüfstatus', 'none'],
+    ])('hides empty calendar profiles when %s filtering removes every session', (filterLabel, filterValue) => {
+      const workspace: LoadedCalendarWorkspace = multiCalendarTimeGridFixture()
+      workspace.occurrences[1].roomRef = 'room:2'
+      workspace.filterFacets.rooms = [{ value: 'room:1', label: 'Room A' }, { value: 'room:2', label: 'Room B' }]
+      workspace.filterFacets.cohortCalendars = [{ value: 'Calendar A', label: 'Calendar A' }, { value: 'Calendar B', label: 'Calendar B' }]
+      workspace.filterFacets.validationCategories = [{ value: 'none', label: 'No current issue' }]
+      workspace.courses.push({ ...workspace.courses[0], courseRef: 'course:3', courseId: 3, name: 'Empty A profile',
+        occurrenceRefs: [], findingRefs: [], remainingTeachingUnits: 0, remainingInstructionalMinutes: 0 })
+      const context = structuredClone(workspace.teachingWindowContexts![0])
+      workspace.teachingWindowContexts!.push({ ...context, courseRef: 'course:3', isCustom: true, sourceRevision: 2,
+        windows: [{ ...context.windows[0], startTime: '09:00', endTime: '15:00' }] })
+      const host = document.body.appendChild(document.createElement('div'))
+      const root = createRoot(host)
+      const listContent = vi.fn((context: WorkspaceListContext | null) => <p>Retained List · {context?.teachingSessionIds.length ?? 0} teaching sessions</p>)
+      act(() => root.render(<CalendarPlanningWorkspace workspace={workspace} loading={false} listContent={listContent} onRetry={vi.fn()} />))
+      const selectFilter = (label: string, value: string) => {
+        const select = [...host.querySelectorAll<HTMLLabelElement>('.workspace-filters label')]
+          .find(item => item.querySelector('span')?.textContent === label)!.querySelector('select')!
+        act(() => { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })) })
+      }
+      const date = host.querySelector<HTMLInputElement>('#calendar-anchor-date')!
+      act(() => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(date, '26.06.2027')
+        date.dispatchEvent(new Event('change', { bubbles: true }))
+      })
+      act(() => [...host.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === mode)!.click())
+      selectFilter('Kohortenkalender', 'Calendar A')
+      selectFilter(filterLabel, filterValue)
+
+      expect(host.querySelectorAll('[data-occurrence-ref]')).toHaveLength(0)
+      const listContext = listContent.mock.calls.at(-1)![0]!
+      expect(listContext.teachingSessionIds).toEqual([])
+      expect(listContext.examIds).toEqual([])
+      expect(listContext.courseIds).toEqual([])
+      const surface = host.querySelector(mode === 'Monat' ? '.month-calendar' : '.hourly-calendar')!
+      expect(surface.textContent).not.toContain('08:00–16:00')
+      expect(surface.querySelector('details')).toBeNull()
+      if (mode === 'Monat') expect(surface.querySelectorAll('[data-month-date]')).toHaveLength(35)
+      else expect(surface.querySelectorAll('.time-grid-column')).toHaveLength(mode === 'Woche' ? 7 : 1)
+      selectFilter('Kohortenkalender', '')
+      expect(host.querySelectorAll('[data-occurrence-ref]')).toHaveLength(filterValue === 'exam' ? 0 : 1)
+      if (mode !== 'Monat' && filterValue !== 'exam') expect(surface.textContent).toContain('10:00–18:00')
+      act(() => root.unmount())
+      host.remove()
+    })
+  })
+  it('opens a different Month date without snapping back to the selected session', () => {
+    const host = renderWorkspace(timeGridWorkspaceFixture())
+    const find = (text: string) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent === text)!
+    act(() => find('Monat').click())
+    act(() => host.querySelector<HTMLButtonElement>('[data-occurrence-ref]')!.click())
+    act(() => host.querySelector<HTMLButtonElement>('[data-month-date="2027-06-25"] .month-date-button')!.click())
+    expect(find('Tag').getAttribute('aria-pressed')).toBe('true')
+    expect(host.querySelector<HTMLInputElement>('input[inputmode="numeric"]')?.value).toBe('25.06.2027')
+    expect(host.querySelector('.occurrence-detail')).toBeNull()
+  })
+  it('opens a Month date in Day and keeps selected source facts alongside custom detail', () => {
+    const workspace = timeGridWorkspaceFixture()
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() => root.render(<CalendarPlanningWorkspace workspace={workspace} loading={false} listContent={<p>List</p>} onRetry={vi.fn()} renderSessionPane={(_, close) => <aside><h3>Custom pane</h3><button onClick={close}>Custom close</button></aside>} />))
+    const findButton = (text: string) => [...host.querySelectorAll<HTMLButtonElement>('button')].find(b => b.textContent === text)!
+    act(() => findButton('Monat').click())
+    const dateButton = host.querySelector<HTMLButtonElement>('[data-month-date="2027-06-26"] .month-date-button')!
+    act(() => dateButton.click())
+    expect(findButton('Tag').getAttribute('aria-pressed')).toBe('true')
+    act(() => host.querySelector<HTMLButtonElement>('[data-occurrence-ref]')!.click())
+    expect(host.textContent).toContain('Custom pane')
+    expect(host.querySelector('.selected-window-context')?.textContent).toContain('08:00–16:00')
+    act(() => root.unmount())
+  })
+  it('keeps empty dates without windows for an explicitly selected empty calendar', () => {
+    const workspace: LoadedCalendarWorkspace = timeGridWorkspaceFixture()
+    workspace.filterFacets.cohortCalendars = [{ value: 'Calendar A', label: 'Calendar A' }]
+    workspace.occurrences = []
+    const host = renderWorkspace(workspace)
+    const select = [...host.querySelectorAll('select')].find(s => s.parentElement?.textContent?.startsWith('Kohortenkalender'))!
+    act(() => { select.value = 'Calendar A'; select.dispatchEvent(new Event('change', { bubbles: true })) })
+    expect(host.querySelectorAll('.time-grid-column')).toHaveLength(7)
+    expect(host.textContent).not.toContain('Erlaubte Lehrstunden 08:00–16:00')
+    expect(host.querySelector('.hourly-calendar details')).toBeNull()
+  })
   it('shows lecturer names and room reference codes in occurrence details', () => {
     const workspace: LoadedCalendarWorkspace = loadedCalendarWorkspaceFixture()
     workspace.filterFacets = { ...workspace.filterFacets,

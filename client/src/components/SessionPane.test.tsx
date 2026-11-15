@@ -1,10 +1,26 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
-import { loadedCalendarWorkspaceFixture } from '../test/calendarWorkspaceFixtures'
+import { loadedCalendarWorkspaceFixture, timeGridWorkspaceFixture } from '../test/calendarWorkspaceFixtures'
 import { SessionPane } from './SessionPane'
 
 afterEach(() => { document.body.innerHTML = ''; Object.defineProperty(window, 'innerWidth', { value: 1024, configurable: true }) })
+
+it.each(['detail', 'editing'] as const)('retains selected window context inside the narrow %s modal', mode => {
+  Object.defineProperty(window, 'innerWidth', { value: 320, configurable: true })
+  const workspace = timeGridWorkspaceFixture()
+  const host = document.body.appendChild(document.createElement('div'))
+  const root = createRoot(host)
+  act(() => root.render(<><p data-background>Calendar background</p><SessionPane
+    occurrence={workspace.occurrences[0]} workspace={workspace} mode={mode}
+    editor={<input aria-label="Unsaved editor" defaultValue="Retained input" />} onRequestClose={vi.fn()} /></>))
+  const dialog = host.querySelector('[role="dialog"]')!
+  expect(host.querySelector('[data-background]')?.getAttribute('aria-hidden')).toBe('true')
+  expect(dialog.querySelector('.session-window-context')?.textContent).toContain('08:00–16:00')
+  expect(dialog.querySelector('.session-window-context')?.textContent).toContain('Aktuelle Arbeitsrevision')
+  if (mode === 'editing') expect(dialog.querySelector<HTMLInputElement>('input')?.value).toBe('Retained input')
+  act(() => root.unmount())
+})
 
 it('shows complete teaching detail and reaches editing in the second intentional action', () => {
   const workspace = loadedCalendarWorkspaceFixture()

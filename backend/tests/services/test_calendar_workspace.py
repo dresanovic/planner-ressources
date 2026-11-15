@@ -42,6 +42,162 @@ def _db():
     return Session(engine)
 
 
+def test_time_grid_projects_source_hours_every_date_and_never_writes():
+    from tests.calendar_workspace_fixtures import seed_time_grid_workspace
+    with _db() as db:
+        seed_time_grid_workspace(db)
+        before = list(db.connection().connection.iterdump())
+        workspace = get_calendar_workspace(db, 1)
+        context = workspace["teachingWindowContexts"][0]
+        assert context["calendarRef"] == "calendar:1"
+        assert workspace["courses"][0]["cohortCalendarRef"] == "calendar:1"
+        assert context["basis"] == "current_working"
+        assert len(context["days"]) == 31  # June plus the saved exam outside June
+        saturday = next(day for day in context["days"] if day["date"] == "2027-06-26")
+        assert saturday["applicableWindowRefs"] == [context["windows"][0]["windowRef"]]
+        assert context["windows"][0]["startTime"] == "08:00"
+        assert context["windows"][0]["endTime"] == "16:00"
+        assert any(f["details"].get("issueCode") == "COHORT_CALENDAR_WINDOW_VIOLATION"
+                   for f in workspace["validationFindings"])
+        assert before == list(db.connection().connection.iterdump())
+
+
+def test_time_grid_keeps_zero_session_courses_and_known_empty_hours():
+    from tests.calendar_workspace_fixtures import seed_time_grid_workspace
+    with _db() as db:
+        seed_time_grid_workspace(db)
+        for session in db.scalars(select(DraftSession)):
+            db.delete(session)
+        for window in db.scalars(select(CohortCalendarTimeWindow)):
+            db.delete(window)
+        db.commit()
+        context = get_calendar_workspace(db, 1)["teachingWindowContexts"][0]
+        assert context["availability"] == "available"
+        assert context["windows"] == []
+        assert all(day["applicableWindowRefs"] == [] for day in context["days"])
+
+
+def test_time_grid_separates_calendars_even_with_duplicate_names_and_empty_course():
+    from tests.calendar_workspace_fixtures import seed_time_grid_workspace
+    from app.models.planning import CohortCalendar
+    with _db() as db:
+        seed_time_grid_workspace(db, second_calendar=True)
+        db.get(CohortCalendar, 2).name = 'Calendar A'
+        db.commit()
+        workspace = get_calendar_workspace(db, 1)
+        a, b = workspace['teachingWindowContexts']
+        assert a['calendarLabel'] == b['calendarLabel']
+        assert a['calendarRef'] != b['calendarRef']
+        assert (a['windows'][0]['startTime'], b['windows'][0]['startTime']) == ('08:00', '10:00')
+        assert workspace['courses'][1]['occurrenceRefs'] == []
+
+
+def test_time_grid_keeps_actual_saved_intervals_and_existing_findings():
+    from tests.calendar_workspace_fixtures import seed_time_grid_workspace, time_grid_reference_intervals
+    with _db() as db:
+        seed_time_grid_workspace(db)
+        session = db.scalar(select(DraftSession))
+        for name, start, end in time_grid_reference_intervals():
+            session.start_time, session.end_time = time.fromisoformat(start), time.fromisoformat(end)
+            db.commit()
+            workspace = get_calendar_workspace(db, 1)
+            occurrence = next(o for o in workspace['occurrences'] if o['kind'] == 'teaching')
+            assert (occurrence['startTime'], occurrence['endTime']) == (start, end)
+            has_window_finding = any(f['details'].get('issueCode') == 'COHORT_CALENDAR_WINDOW_VIOLATION'
+                for f in workspace['validationFindings'])
+            assert has_window_finding == (name in {'overrun', 'outside', 'early', 'late'})
+
+
+def test_time_grid_dated_intensive_precedence_period_bounds_and_token():
+    from tests.calendar_workspace_fixtures import seed_time_grid_workspace
+    from app.models.planning import CohortCalendar
+    with _db() as db:
+        seed_time_grid_workspace(db)
+        db.add_all([
+            CohortCalendarTimeWindow(cohort_calendar_id=1, weekday=0,
+                start_time=time(8), end_time=time(16), sort_order=1),
+            CohortCalendarTimeWindow(cohort_calendar_id=1, kind="dated", weekday=None,
+                date=date(2027, 6, 7), is_intensive=True,
+                start_time=time(10), end_time=time(12), sort_order=2),
+        ])
+        db.commit()
+        first = get_calendar_workspace(db, 1)
+        ctx = first["teachingWindowContexts"][0]
+        by_ref = {w["windowRef"]: w for w in ctx["windows"]}
+        days = {d["date"]: d for d in ctx["days"]}
+        assert [by_ref[r]["kind"] for r in days['2027-06-07']['applicableWindowRefs']] == ['dated']
+        assert [by_ref[r]["kind"] for r in days['2027-06-14']['applicableWindowRefs']] == ['weekly']
+        assert days['2026-12-10']['periodStatus'] == 'outside_period'
+        assert days['2026-12-10']['applicableWindowRefs'] == []
+        window = db.scalar(select(CohortCalendarTimeWindow).where(CohortCalendarTimeWindow.kind == 'dated'))
+        window.is_intensive = False
+        db.commit()
+        second = get_calendar_workspace(db, 1)
+        assert second['workspaceToken'] != first['workspaceToken']
+        db.get(CohortCalendar, 1).start_date = date(2027, 6, 10)
+        db.commit()
+        bounded = get_calendar_workspace(db, 1)['teachingWindowContexts'][0]
+        assert next(d for d in bounded['days'] if d['date'] == '2027-06-07')['applicableWindowRefs'] == []
+
+
+def test_time_grid_retains_adjacent_source_boundaries_custom_bounds_and_hour_token():
+    from tests.calendar_workspace_fixtures import seed_time_grid_workspace
+    with _db() as db:
+        seed_time_grid_workspace(db)
+        first = db.scalar(select(CohortCalendarTimeWindow))
+        first.end_time = time(13)
+        db.add(CohortCalendarTimeWindow(cohort_calendar_id=1, weekday=5,
+            start_time=time(13), end_time=time(18), sort_order=1))
+        db.add(GenerationConstraintSet(course_id=1, semester_id=1,
+            planning_start_date=date(2027, 6, 10), planning_end_date=date(2027, 6, 30), revision=2))
+        db.commit()
+        before = get_calendar_workspace(db, 1)
+        context = before['teachingWindowContexts'][0]
+        assert context['isCustom'] is True
+        assert context['sourceRevision'] == 2
+        assert context['planningStartDate'] == '2027-06-10'
+        assert len(context['windows']) == 2
+        assert len(next(d for d in context['days'] if d['date'] == '2027-06-26')['applicableWindowRefs']) == 2
+        assert any(f['details'].get('issueCode') == 'COHORT_CALENDAR_WINDOW_VIOLATION' for f in before['validationFindings'])
+        first.start_time = time(8, 30)
+        db.commit()
+        after = get_calendar_workspace(db, 1)
+        assert before['workspaceToken'] != after['workspaceToken']
+        assert before['validationFindings'] == after['validationFindings']
+
+
+def test_time_grid_mixed_legacy_capture_has_partial_context_and_no_live_identity_fallback():
+    with _db() as db:
+        seed_lifecycle_semester(db, with_schedule=True)
+        created = create_working_revision(db, 1, get_lifecycle_overview(db, 1)['stateToken'])
+        revision = created['activeWorkingRevision']
+        prepared = prepare_publication(db, revision['revisionId'], revision['revisionVersion'], created['stateToken'])
+        transition_revision(db, revision['revisionId'], action='publish',
+            expected_revision_version=revision['revisionVersion'], expected_state_token=created['stateToken'],
+            confirmed=True, publication_token=prepared['preparationToken'])
+        row = db.get(ScheduleRevision, revision['revisionId'])
+        snapshot = deepcopy(row.snapshot_document)
+        legacy = deepcopy(snapshot['courses'][0])
+        legacy['sourceCourseId'] = 999
+        legacy.pop('constraintProfile', None)
+        legacy['cohortCalendar'].pop('sourceId', None)
+        legacy['teachingSessions'] = []
+        snapshot['courses'].append(legacy)
+        row.snapshot_document = snapshot
+        db.commit()
+        before = deepcopy(row.snapshot_document)
+        workspace = get_calendar_workspace(db, 1)
+        assert workspace['sectionStatus']['teachingWindows']['availability'] == 'partial'
+        known, unknown = workspace['teachingWindowContexts']
+        assert known['basis'] == 'captured_published'
+        assert unknown['calendarRef'] is None
+        assert unknown['basis'] == 'unavailable'
+        assert unknown['windows'] == unknown['days'] == []
+        assert workspace['courses'][1]['cohortCalendarRef'] is None
+        assert workspace['selectedRevision']['validationBasis'] == 'current'
+        assert row.snapshot_document == before
+
+
 def test_no_revision_is_explicit_and_contains_no_revision_owned_records():
     with _db() as db:
         seed_lifecycle_semester(db, with_schedule=False)
@@ -309,6 +465,8 @@ def test_published_content_stays_captured_while_current_holiday_validation_chang
 
         assert before["selectedRevision"]["designation"] == "current_published"
         assert before["selectedRevision"]["snapshotSchemaVersion"] == 2
+        assert before['teachingWindowContexts'][0]['basis'] == 'captured_published'
+        assert after['teachingWindowContexts'] == before['teachingWindowContexts']
         assert [
             {key: value for key, value in row.items() if key != "findingRefs"}
             for row in before["occurrences"]
@@ -362,6 +520,9 @@ def test_legacy_publication_marks_only_constraint_dependent_validation_incomplet
         workspace = get_calendar_workspace(db, 1)
 
         assert workspace["workspaceState"] == "loaded"
+        assert workspace['teachingWindowContexts'][0]['availability'] == 'unavailable'
+        assert workspace['teachingWindowContexts'][0]['windows'] == []
+        assert workspace['teachingWindowContexts'][0]['basis'] == 'unavailable'
         assert workspace["sectionStatus"]["validationFindings"][
             "availability"
         ] == "partial"

@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import sys
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
@@ -221,8 +222,19 @@ class AcademicImportTests(unittest.TestCase):
         api = FakeAPI("courses")
         api.fail_before_put = True
         first = {"plan": importer.course_plan(self.document, self.mapping, self.catalogs, api=api)}
-        with self.assertRaises(importer.ImportFailure):
-            importer.apply_plan(api, "courses", first, self.root / "pending.json")
+        original_replace = Path.replace
+        locked = PermissionError("Report temporarily locked after course creation")
+        locked.winerror = 5
+
+        def replace_after_lock(source, target):
+            if replace.call_count == 2:
+                raise locked
+            return original_replace(source, target)
+
+        with patch.object(Path, "replace", autospec=True, side_effect=replace_after_lock) as replace, patch("time.sleep") as sleep:
+            with self.assertRaises(importer.ImportFailure):
+                importer.apply_plan(api, "courses", first, self.root / "pending.json")
+            sleep.assert_called_once()
         self.assertEqual(first["plan"][0]["status"], "uncertain_or_failed")
         self.catalogs["courses"] = api.rows
         repeat = {"plan": importer.course_plan(self.document, self.mapping, self.catalogs, api=api)}

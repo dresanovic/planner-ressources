@@ -2446,3 +2446,54 @@ button:disabled[aria-busy='true'] {
   .regeneration-comparison-dialog .dialog-actions { flex-direction: column; align-items: stretch; }
   .regeneration-comparison-dialog .dialog-actions button { white-space: normal; max-width: 100%; }
 }
+/* I-014: true elapsed-time geometry. Readable equivalents live outside blocks. */
+.time-grid-scroll { overflow: auto; max-height: 760px; border: 1px solid #8b98a8; position: relative; }
+.time-grid-columns { display: grid; align-items: start; min-width: 100%; width: max-content; }
+.time-grid-header { box-sizing: border-box; height: 100px; margin: 0; padding: 8px; position: sticky; top: 0; background: #fff; color: #172b42; z-index: 5; font-size: .9rem; overflow: auto; }
+.time-grid-axis { position: sticky; left: 0; z-index: 6; background: white; font-size: .8rem; }
+.time-grid-axis span { padding-left: 3px; }
+.time-grid-column { min-width: 0; border-left: 1px solid #8b98a8; }
+.time-grid-canvas { position: relative; box-sizing: border-box; background-size: 100% 72px; background-image: linear-gradient(to bottom, #8793a5 1px, transparent 1px); }
+.time-grid-canvas.window-known { background-color: #f5e5e1; }
+.time-grid-canvas.window-unknown { background-color: #eee; }
+.time-grid-paint { position: absolute; inset: 0; pointer-events: none; overflow: hidden; background: repeating-linear-gradient(135deg, transparent 0 7px, #71473820 7px 8px); }
+.time-grid-window { position: absolute; left: 0; right: 0; background: #e3f2e5; border-block: 1px dashed #285536; box-sizing: border-box; }
+.calendar-occurrence.time-grid-block { position: absolute; box-sizing: border-box; min-height: 0; margin: 0; padding: 3px 6px; overflow: hidden; border: 2px solid #214d80; border-radius: 4px; background: #e1edff; color: #122e51; font-size: .85rem; display: flex; flex-direction: column; gap: 2px; }
+.time-grid-text { padding: 8px; overflow-wrap: anywhere; font-size: .85rem; }
+.time-grid-text ul { padding-left: 18px; }
+.time-grid-legend { font-size: .9rem; }
+.time-grid-scroll:focus-visible, .hourly-calendar button:focus-visible, .hourly-calendar summary:focus-visible { outline: 3px solid #9c3700; outline-offset: -3px; }
+.time-grid-columns { width: 100%; }
+.time-grid-block .time-grid-outside-segment { position: absolute; left: 0; right: 0; box-sizing: border-box; border-top: 2px dashed #7c2900; background: repeating-linear-gradient(135deg, #ffeadb 0 6px, #f7c8a6 6px 8px); color: #4d2100; pointer-events: none; overflow: hidden; }
+.hourly-calendar, .month-calendar { max-width: 100%; min-width: 0; }
+.calendar-toolbar > *, .calendar-date-controls > *, .calendar-mode-switch > *, .calendar-context-header > * { min-width: 0; }
+.calendar-workspace button, .calendar-workspace summary { overflow-wrap: anywhere; white-space: normal; }
+@media (max-width: 420px) {
+  .calendar-date-controls .calendar-anchor-field { min-width: 0; }
+  .workspace-filters { grid-template-columns: minmax(0, 1fr); }
+  .calendar-date-controls, .calendar-mode-switch { width: 100%; }
+}
+.selected-window-context { padding: 12px; border: 1px solid #8b98a8; overflow-wrap: anywhere; }
+.month-grid-scroll { overflow: auto; border: 1px solid #8b98a8; }
+.month-grid { display: grid; grid-template-columns: repeat(7, minmax(160px, 1fr)); min-width: 1120px; }
+.month-weekday { background: #edf3fb; padding: 8px; font-weight: 700; }
+.month-cell { padding: 8px; border: 1px solid #b6c1cf; min-width: 0; overflow-wrap: anywhere; }
+.month-cell.adjacent-month { background: #f1f1f1; }
+.month-date-button { font-weight: 700; text-align: left; }
+.month-entries { list-style: none; padding: 0; margin: 8px 0; }
+.month-entries .month-entry { box-sizing: border-box; display: flex; flex-direction: column; width: 100%; min-height: 0; padding: 5px; margin: 5px 0; text-align: left; white-space: normal; font-size: .85rem; }
+.month-empty, .month-window-context, .month-window-findings { font-size: .8rem; }
+.month-window-findings { color: #6e2900; font-weight: 700; }
+.month-calendar button:focus-visible, .month-calendar summary:focus-visible, .month-grid-scroll:focus-visible { outline: 3px solid #9c3700; outline-offset: -3px; }
+
+/* Cohort subsets stay compact while exposing native keyboard-accessible checkboxes. */
+.cohort-filter { min-width: 0; position: relative; font-size: .88rem; }
+.cohort-filter-label { display: block; margin-bottom: .3rem; font-weight: 700; }
+.cohort-filter summary { border: 1px solid #768391; border-radius: 3px; padding: .15rem .4rem; background: #fff; cursor: pointer; }
+.cohort-filter summary:focus-visible { outline: 2px solid #005bbb; outline-offset: 2px; }
+.cohort-filter-options { position: absolute; inset-inline-start: 0; z-index: 20; min-width: 100%; width: max-content; max-width: min(28rem, 85vw); max-height: 18rem; overflow: auto; background: #fff; border: 1px solid #768391; border-radius: 4px; padding: .5rem; box-shadow: 0 4px 12px #172b4226; }
+.workspace-filters .cohort-filter-options label { display: flex; align-items: center; gap: .5rem; padding: .3rem; font-weight: 400; }
+.cohort-filter-options input { flex: none; width: auto; margin: 0; }
+.month-cohort-label { align-self: start; border-radius: 3px; background: #e6eef8; padding: .1rem .3rem; font-weight: 700; font-size: .75rem; }
+.time-grid-canvas.window-empty { background-color: #fff; }
+.window-empty .time-grid-paint { display: none; }

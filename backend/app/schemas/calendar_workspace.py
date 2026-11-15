@@ -46,7 +46,7 @@ class AvailableContexts(WorkspaceModel):
 
 
 class SectionStatus(WorkspaceModel):
-    availability: Literal["available", "partial", "unavailable"]
+    availability: Literal["available", "partial", "unavailable", "not_applicable"]
     reason: str | None = None
     coverage: str | None = None
 
@@ -58,6 +58,7 @@ class SectionStatuses(WorkspaceModel):
     validation_findings: SectionStatus
     planning_outcomes: SectionStatus
     summary: SectionStatus
+    teaching_windows: SectionStatus
 
 
 class WorkspaceCourse(WorkspaceModel):
@@ -68,6 +69,7 @@ class WorkspaceCourse(WorkspaceModel):
     cohort: str
     lecturer_refs: list[str]
     cohort_calendar: str
+    cohort_calendar_ref: str | None = None
     planning_eligible: bool
     total_teaching_units: int = Field(ge=0)
     scheduled_teaching_units: int = Field(ge=0)
@@ -331,12 +333,46 @@ class FilterFacets(WorkspaceModel):
     validation_categories: list[FacetValue]
 
 
+class SourceWindow(WorkspaceModel):
+    window_ref: str
+    source_time_window_id: int | None
+    kind: Literal["weekly", "dated"]
+    weekday: int | None = Field(ge=0, le=6)
+    date: date | None
+    is_intensive: bool
+    start_time: str
+    end_time: str
+    sort_order: int
+
+
+class ResolvedWindowDay(WorkspaceModel):
+    date: date
+    period_status: Literal["within_period", "outside_period"]
+    applicable_window_refs: list[str]
+
+
+class TeachingWindowContext(WorkspaceModel):
+    course_ref: str
+    calendar_ref: str | None
+    calendar_label: str
+    availability: Literal["available", "unavailable", "not_applicable"]
+    basis: Literal["current_working", "captured_published", "unavailable"]
+    reason: str | None
+    is_custom: bool | None
+    source_revision: int | None
+    planning_start_date: date | None
+    planning_end_date: date | None
+    windows: list[SourceWindow]
+    days: list[ResolvedWindowDay]
+
+
 class WorkspaceResponseBase(WorkspaceModel):
     semester: SemesterReference
     available_contexts: AvailableContexts
     workspace_token: str = Field(min_length=1)
     section_status: SectionStatuses
     courses: list[WorkspaceCourse]
+    teaching_window_contexts: list[TeachingWindowContext]
     occurrences: list[TeachingOccurrence | ExamOccurrence]
     holidays: list[Holiday]
     validation_findings: list[ValidationFinding]

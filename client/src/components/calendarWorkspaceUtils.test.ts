@@ -38,6 +38,8 @@ describe('calendarWorkspaceUtils', () => {
       revisionLabel: review.revision.label,
     })
     expect(workspace.presentationSource).toBe('lecturer-review')
+    expect(workspace.teachingWindowContexts).toBeUndefined()
+    expect(workspace.courses.every(c => c.cohortCalendarRef == null)).toBe(true)
     const teaching = workspace.occurrences.find(
       (item) => item.kind === 'teaching',
     )!
@@ -103,7 +105,7 @@ describe('calendarWorkspaceUtils', () => {
     const room = projectWorkspace(workspace, { room: 'room:999' })
     expect(room.occurrences).toEqual([])
     expect(room.courses).toEqual([])
-    const course = projectWorkspace(workspace, { course: 'course:1', cohort: 'CS-26' })
+    const course = projectWorkspace(workspace, { course: 'course:1', cohort: ['CS-26'] })
     expect(course.courses.map((item) => item.courseRef)).toEqual(['course:1'])
     expect(workspace.occurrences).toHaveLength(2)
   })
@@ -221,7 +223,7 @@ describe('calendarWorkspaceUtils', () => {
     })
 
     expect(projectWorkspace(workspace, { course: 'course:2' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
-    expect(projectWorkspace(workspace, { cohort: 'DS-26' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
+    expect(projectWorkspace(workspace, { cohort: ['DS-26'] }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
     expect(projectWorkspace(workspace, { lecturer: 'lecturer:2' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
     expect(projectWorkspace(workspace, { cohortCalendar: 'Part-time' }).courses.map((item) => item.courseRef)).toEqual(['course:2'])
     expect(projectWorkspace(workspace, { room: 'room:1' }).courses.map((item) => item.courseRef)).toEqual(['course:1'])
