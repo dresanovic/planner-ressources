@@ -190,11 +190,11 @@ image and contains only the dependencies from
 `backend/requirements-runtime.txt`. Test tooling and the Python package
 installer are not included in the final image.
 
-Runtime dependencies are installed from wheels only; missing wheels fail the
-build instead of triggering compilation. CI checks the dependency stage on both
-Linux AMD64 and ARM64, and runs backend and MCP tests with Python 3.13.
+CI runs backend and MCP tests with Python 3.13 and builds the runtime image
+as part of the container smoke test.
 
-Dependabot checks Docker base images weekly. CI also rebuilds
+Dependabot checks Docker base images weekly. Python major and minor upgrades
+are handled manually; patch updates remain enabled. CI also rebuilds
 the image weekly and fails when the image exceeds 450 MiB uncompressed or
 contains a fixable critical or high vulnerability. Review and merge successful
 base-image update pull requests promptly. Validate Python version upgrades against
