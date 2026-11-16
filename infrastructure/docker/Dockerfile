@@ -11,7 +11,7 @@ COPY client/ ./
 RUN npm run build
 
 
-FROM python:3.15-slim-bookworm AS python-dependencies
+FROM python:3.13-slim-bookworm AS python-dependencies
 
 WORKDIR /build/backend
 
@@ -20,12 +20,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --disable-pip-version-check --upgrade "pip==26.2" \
     && python -m pip install \
         --disable-pip-version-check \
-        --only-binary=:all: \
         --prefix=/install \
         -r requirements-runtime.txt
 
 
-FROM python:3.15-slim-bookworm AS runtime
+FROM python:3.13-slim-bookworm AS runtime
 
 ARG VERSION=""
 ARG VCS_REF=""
