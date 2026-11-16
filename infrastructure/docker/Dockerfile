@@ -20,7 +20,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --disable-pip-version-check --upgrade "pip==26.2" \
     && python -m pip install \
         --disable-pip-version-check \
-        --only-binary=:all: \
         --prefix=/install \
         -r requirements-runtime.txt
 
