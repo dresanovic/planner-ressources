@@ -66,13 +66,37 @@ export function AcademicRecordEditor({ category, options = {}, initialValues = {
   async function submit(event: FormEvent) {
     event.preventDefault(); setProblems([])
     if (submittingRef.current) return
+    if (category === 'courses') {
+      const unitProblems: UserProblem[] = []
+      const total = Number(values.totalUnits)
+      const minimum = Number(values.minSessionUnits)
+      const maximum = Number(values.maxSessionUnits)
+      if (values.totalUnits && values.maxSessionUnits && maximum > total) {
+        unitProblems.push(fieldProblem('academic-maxSessionUnits', 'Maximale Einheiten je Termin', `höchstens ${total} LE, da diese Lehrveranstaltung insgesamt ${total} zu planende Lehreinheiten hat; „Total Einheiten“ zählt hier nicht`))
+      }
+      if (values.minSessionUnits && values.maxSessionUnits && minimum > maximum) {
+        unitProblems.push(fieldProblem('academic-minSessionUnits', 'Minimale Einheiten je Termin', `höchstens ${maximum} LE entsprechend dem Maximum je Termin`))
+      }
+      if (values.preferredSessionUnits && values.minSessionUnits && values.maxSessionUnits) {
+        const preferred = Number(values.preferredSessionUnits)
+        if (!Number.isFinite(preferred) || !Number.isInteger(preferred * 2) || preferred < minimum || preferred > maximum) {
+          unitProblems.push(fieldProblem('academic-preferredSessionUnits', 'Bevorzugte LE pro Termin', `ganze oder halbe LE zwischen ${minimum} und ${maximum}; bei einem 1-LE-Termin ist 1 LE möglich`))
+        }
+      }
+      if (unitProblems.length > 0) {
+        setProblems(unitProblems)
+        queueMicrotask(() => document.getElementById(unitProblems[0].fieldId!)?.focus())
+        return
+      }
+    }
     submittingRef.current = true
     setSubmitting(true)
     const numeric = new Set(['studentCount', 'totalUnits', 'overallUnits', 'minSessionUnits', 'maxSessionUnits', 'preferredSessionUnits', 'semesterId', 'cohortId', 'cohortCalendarId', 'lecturerId', 'roomId', 'weekday', 'sortOrder'])
     const submittedValues = category === 'time-windows'
       ? { ...values, sortOrder: values.sortOrder || String(values.kind === 'dated' ? 0 : weeklySortOrder(Number(values.weekday), values.startTime)) }
       : values
-    const payload: AcademicEditorValues = Object.fromEntries(Object.entries(submittedValues).filter(([key, value]) => value !== '' && (category !== 'courses' || key !== 'cohortCalendarId') && (category !== 'cohort-calendars' || ['cohortId','semesterId','startDate','endDate'].includes(key))).map(([key, value]) => [key, numeric.has(key) ? Number(value) : value]))
+    const courseFields = new Set(['name', 'totalUnits', 'overallUnits', 'minSessionUnits', 'maxSessionUnits', 'preferredSessionUnits', 'semesterId', 'cohortId', ...(includeCourseResources ? ['lecturerId', 'roomId'] : [])])
+    const payload: AcademicEditorValues = Object.fromEntries(Object.entries(submittedValues).filter(([key, value]) => value !== '' && (category !== 'courses' || courseFields.has(key)) && (category !== 'cohort-calendars' || ['cohortId','semesterId','startDate','endDate'].includes(key))).map(([key, value]) => [key, numeric.has(key) ? Number(value) : value]))
     if (category === 'time-windows') {
       Object.assign(payload, values.kind === 'dated'
         ? { kind: 'dated', date: values.date, weekday: null, isIntensive: values.isIntensive === 'true' }

@@ -1,0 +1,258 @@
+{
+  "status": "prepared; not activated",
+  "baseline": "C:\\Codex\\planner-resource\\artifacts\\deployment\\ss2027-conversion-local-check-20261116\\STAMMDATEN_COHORT_CALENDARS_SS2027.db",
+  "source": "C:\\Codex\\planner-resource\\backend\\backups\\STAMMDATEN_BASELINE_V3_2026-11-12\\STAMMDATEN_ONLY_V3_2026-11-12.db",
+  "before": {
+    "cohorts": {
+      "rows": 10,
+      "sha256": "5ce9b452e4f94fdcdae4a5b9ca8e3198ef127621ee6078fc9b83797e0e3763b0"
+    },
+    "course_eligible_lecturers": {
+      "rows": 140,
+      "sha256": "0d93436612a8c05a553f3becc50d7167163f390dbb40ca9c62bbaa3da8c81a89"
+    },
+    "course_eligible_rooms": {
+      "rows": 451,
+      "sha256": "97475c17cea32965b1beb9182a3de33e43fe85757e51d9b1ba2d2a0cd2e31fa4"
+    },
+    "course_exam_configurations": {
+      "rows": 94,
+      "sha256": "35daa7be4d45fb7cd6a1c955deca7ce8afc5585b03240449f2f61d5d0ef2f951"
+    },
+    "courses": {
+      "rows": 94,
+      "sha256": "48020cd5430e7a912202fbdb37e1d6add63023845986a995e5fc199dabfbf50a"
+    },
+    "draft_schedules": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "draft_sessions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "exam_sessions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generation_constraint_sets": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generation_constraint_windows": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "institution_holidays": {
+      "rows": 14,
+      "sha256": "7db00e7cc69be7ef3eb62dc1110660b6dd6e19c060c65f2ef55e84394b908406"
+    },
+    "lecturer_review_activity_events": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lecturer_review_feedback": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lecturer_review_invalid_source_states": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lecturer_review_links": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lecturers": {
+      "rows": 73,
+      "sha256": "79f05f2e46fb7f940a677d40f670f24510039b83ee20c0820359d90f1ba38386"
+    },
+    "optimization_operations": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "planner_account_access": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "planner_accounts": {
+      "rows": 2,
+      "sha256": "dfd48ef612b0f59fc3c565bb13c4ad96f39a0f8302677191b5f1813ca457ea3d"
+    },
+    "planner_sessions": {
+      "rows": 2,
+      "sha256": "347897555d846e226d8a2112656eacfdd9ed46428a23d8cc0d832557c7908329"
+    },
+    "planner_startup_credentials": {
+      "rows": 1,
+      "sha256": "d23a37db8c8fa293847792efe991e6533f25dcd6d35b4dc6a597a3329e11bc5b"
+    },
+    "planning_outcomes": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "resource_unavailability_periods": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "resource_unavailability_weekdays": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "rooms": {
+      "rows": 123,
+      "sha256": "f43f94e243ea94b1727974aef0a01f3424fe2c716045e07ca2aeae51f32fc11a"
+    },
+    "schedule_revision_events": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "schedule_revisions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "semesters": {
+      "rows": 1,
+      "sha256": "fdeabf9e601ddf6b2a7884fe3a923d042dbb525d66bc3a924e02d818f366a49e"
+    },
+    "study_type_time_windows": {
+      "rows": 433,
+      "sha256": "1643d8c4a1b50aca20f6f33a3175a1038c719cd079ab16219dfca25d117bac49"
+    },
+    "study_types": {
+      "rows": 11,
+      "sha256": "6e9785ff610b04b4990eba052da38e9178d8defe9d621cdf5fd3668a8cd3de64"
+    }
+  },
+  "after": {
+    "cohort_calendar_time_windows": {
+      "rows": 62,
+      "sha256": "3bbdfcf88ae461b78bf6af1f1f00d158e09f33b893aac8e3ec30b814cb1c32c2"
+    },
+    "cohort_calendars": {
+      "rows": 10,
+      "sha256": "c84d15a26da0364ffc31180056e83f89a1466561d04e33ef52a9af6d97b4d941"
+    },
+    "cohorts": {
+      "rows": 10,
+      "sha256": "5ce9b452e4f94fdcdae4a5b9ca8e3198ef127621ee6078fc9b83797e0e3763b0"
+    },
+    "course_eligible_lecturers": {
+      "rows": 140,
+      "sha256": "0d93436612a8c05a553f3becc50d7167163f390dbb40ca9c62bbaa3da8c81a89"
+    },
+    "course_eligible_rooms": {
+      "rows": 451,
+      "sha256": "97475c17cea32965b1beb9182a3de33e43fe85757e51d9b1ba2d2a0cd2e31fa4"
+    },
+    "course_exam_configurations": {
+      "rows": 94,
+      "sha256": "35daa7be4d45fb7cd6a1c955deca7ce8afc5585b03240449f2f61d5d0ef2f951"
+    },
+    "courses": {
+      "rows": 94,
+      "sha256": "af1301fb3079433923d856b6c68d29e2b9cf7b0f685061f8350b4a662546b645"
+    },
+    "draft_schedules": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "draft_sessions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "exam_sessions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generation_constraint_sets": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generation_constraint_windows": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "institution_holidays": {
+      "rows": 14,
+      "sha256": "7db00e7cc69be7ef3eb62dc1110660b6dd6e19c060c65f2ef55e84394b908406"
+    },
+    "lecturer_review_activity_events": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lecturer_review_feedback": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lecturer_review_invalid_source_states": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lecturer_review_links": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lecturers": {
+      "rows": 73,
+      "sha256": "79f05f2e46fb7f940a677d40f670f24510039b83ee20c0820359d90f1ba38386"
+    },
+    "optimization_operations": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "planner_account_access": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "planner_accounts": {
+      "rows": 2,
+      "sha256": "dfd48ef612b0f59fc3c565bb13c4ad96f39a0f8302677191b5f1813ca457ea3d"
+    },
+    "planner_sessions": {
+      "rows": 2,
+      "sha256": "347897555d846e226d8a2112656eacfdd9ed46428a23d8cc0d832557c7908329"
+    },
+    "planner_startup_credentials": {
+      "rows": 1,
+      "sha256": "d23a37db8c8fa293847792efe991e6533f25dcd6d35b4dc6a597a3329e11bc5b"
+    },
+    "planning_outcomes": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "resource_unavailability_periods": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "resource_unavailability_weekdays": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "rooms": {
+      "rows": 123,
+      "sha256": "f43f94e243ea94b1727974aef0a01f3424fe2c716045e07ca2aeae51f32fc11a"
+    },
+    "schedule_revision_events": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "schedule_revisions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "semesters": {
+      "rows": 1,
+      "sha256": "ef99c8a7548acf76f69e59a7d920b3a8366e69bd036d6211db36ef684e6f3d8b"
+    }
+  },
+  "windows": {
+    "dated": 37,
+    "weekly": 25
+  },
+  "cohortsPreserved": 10,
+  "courseCohortLinksAndUnitsPreserved": 94,
+  "sha256": "9d047b06dd01ead8f3d760f833b46bfd30e1bd8b60a3a98b506aebce70f0f61e",
+  "integrityCheck": "ok",
+  "foreignKeyCheck": "ok"
+}

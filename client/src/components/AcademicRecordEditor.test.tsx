@@ -5,6 +5,34 @@ import { expect, it, vi } from 'vitest'
 import { AcademicRecordEditor } from './AcademicRecordEditor'
 import { AcademicCatalogApiError } from '../api/academicCatalog'
 
+it('explains why a one-LE course cannot have a three-LE maximum and saves the corrected values', async () => {
+  const onSubmit = vi.fn().mockResolvedValue(undefined)
+  const host = document.body.appendChild(document.createElement('div'))
+  const root = createRoot(host)
+  await act(async () => root.render(<AcademicRecordEditor category="courses" includeCourseResources={false}
+    initialValues={{ name: 'Projekt', totalUnits: 1, overallUnits: 9, minSessionUnits: 1, maxSessionUnits: 3, preferredSessionUnits: 2 }} onSubmit={onSubmit} />))
+  try {
+    await act(async () => host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(host.textContent).toContain('höchstens 1 LE')
+    expect(host.textContent).toContain('„Total Einheiten“ zählt hier nicht')
+    expect(host.querySelector('[name=maxSessionUnits]')?.getAttribute('aria-invalid')).toBe('true')
+    expect(document.activeElement).toBe(host.querySelector('[name=maxSessionUnits]'))
+    for (const name of ['maxSessionUnits', 'preferredSessionUnits']) {
+      const input = host.querySelector<HTMLInputElement>(`[name=${name}]`)!
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '1')
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+      })
+    }
+    await act(async () => host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ totalUnits: 1, overallUnits: 9, minSessionUnits: 1, maxSessionUnits: 1, preferredSessionUnits: 1 }))
+  } finally {
+    await act(async () => root.unmount())
+    host.remove()
+  }
+})
+
 it('shows separate teaching and overall units and submits independent values', async () => {
   const onSubmit = vi.fn().mockResolvedValue(undefined)
   const host = document.body.appendChild(document.createElement('div'))
@@ -17,6 +45,23 @@ it('shows separate teaching and overall units and submits independent values', a
   expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ totalUnits: 8, overallUnits: 20 }))
   await act(async () => root.unmount())
   host.remove()
+})
+
+it('submits only course update fields, excluding hidden time-window defaults and resource assignments', async () => {
+  const onSubmit = vi.fn().mockResolvedValue(undefined)
+  const host = document.body.appendChild(document.createElement('div'))
+  const root = createRoot(host)
+  await act(async () => root.render(<AcademicRecordEditor category="courses" includeCourseResources={false}
+    initialValues={{ name: 'Projekt', totalUnits: 1, overallUnits: 9, minSessionUnits: 1, maxSessionUnits: 1,
+      preferredSessionUnits: 1, semesterId: 1, cohortId: 7, lecturerId: 12, roomId: 3 }} onSubmit={onSubmit} />))
+  try {
+    await act(async () => host.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(onSubmit).toHaveBeenCalledExactlyOnceWith({ name: 'Projekt', totalUnits: 1, overallUnits: 9,
+      minSessionUnits: 1, maxSessionUnits: 1, preferredSessionUnits: 1, semesterId: 1, cohortId: 7 })
+  } finally {
+    await act(async () => root.unmount())
+    host.remove()
+  }
 })
 
 it('retains precise window times when editing or copying an existing window', async () => {

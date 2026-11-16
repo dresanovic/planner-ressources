@@ -189,6 +189,7 @@ function CalendarPlanningWorkspaceContent({
   const drilldownHeading = useRef<HTMLHeadingElement>(null)
   const drilldownInitiator = useRef<HTMLButtonElement | null>(null)
   const priorTraceCourseId = useRef<number | null | undefined>(undefined)
+  const priorTraceCourseFilter = useRef<{ course: WorkspaceFilters['course'] } | null>(null)
   const workspaceIdentity = useRef<string | null>(null)
 
   useEffect(() => {
@@ -213,6 +214,7 @@ function CalendarPlanningWorkspaceContent({
       queueMicrotask(() => updateSelection(null))
       setListTraceRef(null)
       setDrilldown(null)
+      priorTraceCourseFilter.current = null
       if (hadSelection) {
         onSelectionDisappeared(
           'Der ausgewählte Termin ist in der ausgewählten Revision nicht mehr verfügbar.',
@@ -293,8 +295,6 @@ function CalendarPlanningWorkspaceContent({
   const effectiveAnchor = anchor ?? currentPeriodDate(institutionLocalToday(), workspace.semester.startDate, workspace.semester.endDate).date
   const range = visibleRange(mode, effectiveAnchor)
   const projection = projectWorkspace(workspace, filters)
-  const visibleOccurrences = occurrencesInRange(projection.occurrences, range)
-  const contextCourses = projection.courses.filter(c => visibleOccurrences.some(o => o.courseRef === c.courseRef))
   const visibleHolidays = workspace.holidays.filter((holiday) => (
     range != null && holiday.date >= range.start && holiday.date <= range.end
   ))
@@ -310,9 +310,27 @@ function CalendarPlanningWorkspaceContent({
     activeFilterCount,
     listTraceRef,
   )
+  const traceTarget = listContext.traceTarget
+  const tracedOccurrences = traceTarget == null ? projection.occurrences : projection.occurrences.filter(item => (
+    item.kind === 'teaching'
+      ? traceTarget.teachingSessionIds.includes(Number(item.occurrenceRef.split(':')[1]))
+      : traceTarget.examIds.includes(Number(item.occurrenceRef.split(':')[1]))
+  ))
+  const visibleOccurrences = occurrencesInRange(tracedOccurrences, range)
+  const contextCourses = projection.courses.filter(c => visibleOccurrences.some(o => o.courseRef === c.courseRef))
+
+  function changeMode(nextMode: CalendarMode) {
+    if (mode === 'list' && nextMode !== 'list' && traceTarget) {
+      const nextRange = visibleRange(nextMode, effectiveAnchor)
+      if (occurrencesInRange(tracedOccurrences, nextRange).length === 0) {
+        const first = [...tracedOccurrences].sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`))[0]
+        if (first) setAnchor(first.date)
+      }
+    }
+    setMode(nextMode)
+  }
 
   function chooseOccurrence(reference: string) {
-    setListTraceRef(null)
     updateSelection(reference)
     if (!renderSessionPane) window.setTimeout(() => detailHeading.current?.focus({ preventScroll: true }), 0)
   }
@@ -341,6 +359,7 @@ function CalendarPlanningWorkspaceContent({
     )
     const commitFilter = () => {
       setFilters(nextFilters)
+      if (key === 'course') setListTraceRef(null)
       if (hidesSelected) {
         onSelectionDisappeared(
           'Der ausgewählte Termin entspricht nicht mehr der aktuellen Ergebnismenge.',
@@ -441,7 +460,7 @@ function CalendarPlanningWorkspaceContent({
 
       <div className="calendar-toolbar">
         <div className="calendar-mode-switch" aria-label="Kalenderansicht">
-          {MODES.map((item) => <button type="button" key={item.value} aria-pressed={mode === item.value} onClick={() => { setMode(item.value); if (item.value !== 'list') setListTraceRef(null) }}>{item.label}</button>)}
+          {MODES.map((item) => <button type="button" key={item.value} aria-pressed={mode === item.value} onClick={() => changeMode(item.value)}>{item.label}</button>)}
         </div>
         <div className="calendar-date-controls" aria-label="Kalenderdatum">
           <button type="button" disabled={mode === 'list'} onClick={() => setAnchor(movePeriod(mode, effectiveAnchor, -1))} aria-label="Vorherige Periode">←</button>
@@ -485,6 +504,10 @@ function CalendarPlanningWorkspaceContent({
           >
             {renderListContent(listContent, listContext)}
           </div>
+          {mode !== 'list' && traceTarget && <section className="workspace-calendar-trace" aria-label="Ausgewählter Datensatz">
+            <h3>{traceTarget.label}</h3>
+            {tracedOccurrences.length === 0 && <p>Für diesen Datensatz entspricht kein geplanter Termin den aktiven Filtern.</p>}
+          </section>}
         {selectedOccurrence && <section className="selected-window-context" aria-label="Lehrzeitfenster des ausgewählten Termins"><h3>{workspace.courses.find(c => c.courseRef === selectedOccurrence.courseRef)?.name} · {formatCalendarDate(selectedOccurrence.date)}</h3>{selectedOccurrence.kind === 'exam' ? <p>Lehrzeitfenster für Prüfung nicht anwendbar.</p> : <WindowDisclosure context={workspace.teachingWindowContexts?.find(c => c.courseRef === selectedOccurrence.courseRef)} date={selectedOccurrence.date} />}</section>}
           {(mode === 'day' || mode === 'week') && range && <>
             {visibleHolidays.map(h => <p className="calendar-holiday" key={h.holidayRef}>{formatCalendarDate(h.date)} · Holiday: {h.name}</p>)}
@@ -537,6 +560,11 @@ function CalendarPlanningWorkspaceContent({
     updateSelection(null)
     setDrilldown(null)
     setListTraceRef(null)
+    if (priorTraceCourseFilter.current) {
+      const priorCourse = priorTraceCourseFilter.current.course
+      setFilters(current => ({ ...current, course: priorCourse }))
+      priorTraceCourseFilter.current = null
+    }
     if (priorTraceCourseId.current !== undefined) {
       onTraceCourse?.(priorTraceCourseId.current)
       priorTraceCourseId.current = undefined
@@ -551,11 +579,13 @@ function CalendarPlanningWorkspaceContent({
   }
 
   function clearFiltersAndDrilldown() {
-    setFilters({})
     if (drilldown) {
       clearDrilldown()
+      setFilters({})
       return
     }
+    priorTraceCourseFilter.current = null
+    setFilters({})
     setListTraceRef(null)
   }
 
@@ -563,6 +593,7 @@ function CalendarPlanningWorkspaceContent({
     if (ref.startsWith('teaching:') || ref.startsWith('exam:')) {
       const occurrence = loadedWorkspace.occurrences.find((item) => item.occurrenceRef === ref)
       if (occurrence) {
+        setListTraceRef(null)
         setMode('day')
         setAnchor(occurrence.date)
         chooseOccurrence(ref)
@@ -580,6 +611,12 @@ function CalendarPlanningWorkspaceContent({
       }
       onTraceCourse?.(traceTarget.courseIds[0])
     }
+    if (traceTarget.courseIds.length === 1) {
+      priorTraceCourseFilter.current ??= { course: filters.course }
+      const targetCourse = loadedWorkspace.courses.find(item => item.courseId === traceTarget.courseIds[0])
+      if (targetCourse) setFilters(current => ({ ...current, course: targetCourse.courseRef }))
+    }
+    updateSelection(null)
     setListTraceRef(ref)
     setMode('list')
   }

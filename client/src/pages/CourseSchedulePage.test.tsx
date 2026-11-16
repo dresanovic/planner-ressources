@@ -1156,6 +1156,31 @@ describe('CourseSchedulePage multi-course mode', () => {
     await act(async () => button('Abbrechen')?.click())
   })
 
+  it('opens the actionable appointment list from a warning and reveals course inputs on request', async () => {
+    mocks.getDraftSchedules.mockResolvedValue([draftScheduleFixture])
+    await renderPage()
+    await act(async () => button('Planungseingaben ausblenden')!.click())
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.summary-card')]
+      .find(item => item.textContent?.includes('Prüfung erforderlich'))!.click())
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.workspace-drilldown button')]
+      .find(item => item.textContent === 'Algorithms')!.click())
+    const list = document.querySelector<HTMLElement>('[aria-label="Listenansicht"]')!
+    expect(list.hidden).toBe(false)
+    expect(list.querySelector('[aria-label="Ansichtsmodus"]')).toBeNull()
+    const row = list.querySelector<HTMLElement>('.teaching-session-row:not(.session-header)')!
+    expect(row).not.toBeNull()
+    expect(row.textContent).toContain('Bearbeiten')
+    expect(row.textContent).toContain('Löschen')
+    await act(async () => [...row.querySelectorAll<HTMLButtonElement>('button')]
+      .find(item => item.textContent === 'Bearbeiten')!.click())
+    expect(list.querySelector('.session-edit-fields')).not.toBeNull()
+    await act(async () => [...list.querySelectorAll<HTMLButtonElement>('button')]
+      .find(item => item.textContent === 'Abbrechen')!.click())
+    await act(async () => button('Kursdetails öffnen')!.click())
+    expect(document.querySelector<HTMLElement>('#planning-inputs')!.hidden).toBe(false)
+    expect(document.querySelector('#planning-tab-course')?.getAttribute('aria-selected')).toBe('true')
+  })
+
   it('does not expose pane actions when editable schedule details failed to load', async () => {
     mocks.getDraftSchedules.mockRejectedValue(new Error('draft overview unavailable'))
     await renderPage()

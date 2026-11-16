@@ -1,6 +1,6 @@
 # Resource Planner User Manual
 
-Updated: 11.11.2026. Instructions use the shipped German labels; customer terminology may differ.
+Updated: 16.11.2026. Instructions reflect the current repository version and use the shipped German labels; customer terminology may differ.
 
 ## Quick Start
 
@@ -34,9 +34,9 @@ If planning data already exists, skip this section.
 
 1. Expand **Stammdaten** in the navigation.
 2. Create a **Semester** and **Kohorte**.
-3. Create a **Studienform**, then create at least one **Zeitfenster** for it.
+3. Under **Kohortenkalender**, create the calendar for that Kohorte and Semester, with **Unterrichtsbeginn** and **Unterrichtsende** inside the Semester. Create at least one **Zeitfenster** for that calendar.
 4. Create at least one coded **Lehrende Person** and one coded **Raum** with sufficient capacity.
-5. Open **Lehrveranstaltungen** and create a record with its units, session-size range, Semester, Kohorte, Studienform, initial lecturer, and initial room.
+5. Open **Lehrveranstaltungen** and create a record with its units, session-size range, Semester, Kohorte, initial lecturer, and initial room. Its calendar is inherited automatically from the Kohorte and Semester.
 6. Return to **Planung > Kalender**.
 7. If no revision exists, select **Entwurf starten**.
 
@@ -57,7 +57,7 @@ If planning data already exists, skip this section.
 
 1. Open **Planung > Kalender** and select **Planungseingaben anzeigen** if necessary.
 2. Select the Semester and a focused Lehrveranstaltung to review its details.
-3. Under **Kursdetails**, review the inherited or custom date boundaries and the read-only Studienart time windows. If you change the dates, select **Datumsgrenzen speichern** before continuing.
+3. Under **Kursdetails**, review the inherited or custom date boundaries and the read-only Kohortenkalender time windows. If you change the dates, select **Datumsgrenzen speichern** before continuing.
 4. Open **Plan erzeugen**. Under **Stundenpläne erzeugen**, choose a cohort in **Kohorte filtern** to narrow the list, or leave **Alle Kohorten** selected.
 5. Select each intended Lehrveranstaltung individually, up to 20 in total. Open **Gesamte Auswahl prüfen** to check every selected course, including courses hidden by the current filter.
 6. Optionally enter future unavailable dates as comma-separated `TT.MM.JJJJ` values, then select **Ausgewählte Lehrveranstaltungen optimieren**.
@@ -79,7 +79,7 @@ If planning data already exists, skip this section.
 
 1. In **Planung > Kalender**, choose **Woche**, **Tag**, or **Monat**.
 2. Select a teaching or exam occurrence.
-3. In the session pane, select **Im vorhandenen Editor bearbeiten**.
+3. In the session pane, select **Termin bearbeiten**.
 4. Change the available fields and select **Speichern**.
 
 **Expected result:** The occurrence and affected summaries refresh in place. The Kalender mode, date, filters, and selected revision remain unchanged.
@@ -122,6 +122,7 @@ Use the Detailed Guide for installation and account administration, dated/intens
 ### System concepts
 
 - A **Lehrveranstaltung** is assigned to one current Semester for new planning.
+- A **Kohortenkalender** belongs to one Kohorte and Semester. Courses inherit its teaching period and windows through that pair; there is no separate calendar selector on a course.
 - A teaching draft belongs to one Lehrveranstaltung and Semester and contains teaching sessions.
 - A teaching session has a date, interval, explicit unit count, Lehrende Person, Kohorte, and Raum.
 - One teaching unit is 45 minutes. Default session duration includes a 10-minute break between units.
@@ -155,7 +156,7 @@ With the shipped terminology, the primary navigation contains:
   - **Feiertage**
   - **Kohorten**
   - **Lehrveranstaltungen**
-  - **Studienformen**
+  - **Kohortenkalender**
   - **Zeitfenster**
   - **Lehrende**
   - **Räume**
@@ -450,6 +451,10 @@ The SQLite backup contains planner accounts, password hashes, consumed startup-v
 
 #### Upgrade the application image
 
+Before replacing the image, check database compatibility. This version does not automatically upgrade a database using the former Studienform calendars. The operator must first back it up and prepare and verify a separate cohort-calendar reset candidate using the [cohort-calendar transition procedure](../../specs/021-cohort-semester-calendars/quickstart.md). That reset retains master data and accounts but removes saved teaching/exam plans, schedule revisions/history, generation overrides, reviews, and optimization results. Review that loss before activating a candidate; preserve the original database and its matching image for recovery. Do not restore an old-schema backup directly into this version.
+
+For an installation with a compatible database:
+
 1. Create a verified database backup.
 2. Pull the new exact release tag through Docker Desktop's integrated terminal.
 3. Stop and remove the old application container, but do not delete the mapped host data folder.
@@ -479,7 +484,7 @@ This procedure is for the installation operator. It does not change exam generat
 
 **Expected result:** New preparations read the current policy without an application restart. A policy change between preparation and Start requires preparation again. Already-started operations and their continuations keep captured settings. Planners cannot edit the algorithm or allowance in the interface.
 
-A missing or invalid policy blocks new teaching preparation/Start with correction guidance; it does not silently select another algorithm. The health endpoint remains available. Actual container mount/permission acceptance is still pending; verify policy visibility and replacement in an isolated deployment before rollout. Follow [Standard Optimized activation](../../specs/I-012-standard-optimized/quickstart.md) for its required backend migration before selecting that algorithm.
+A missing or invalid policy blocks new teaching preparation/Start with correction guidance; it does not silently select another algorithm. The health endpoint remains available. Actual container mount/permission acceptance is still pending; verify policy visibility and replacement in an isolated deployment before rollout. Standard Optimized is included in the current backend. Check the database compatibility requirements under [Upgrade the application image](#upgrade-the-application-image) before upgrading an older installation.
 
 ### Language, terminology, and date format
 
@@ -515,34 +520,49 @@ Use **Stammdaten** to create, edit, archive, reactivate, and safely delete the r
 #### Create a complete planning chain
 
 1. Create the Semester and Kohorte.
-2. Create the Studienform.
-3. Create one or more Zeitfenster for that Studienform.
+2. Create their Kohortenkalender with teaching dates inside the Semester.
+3. Create one or more Zeitfenster for that Kohortenkalender.
 4. Create Lehrende and Räume.
 5. Create the Lehrveranstaltung last, linking the required records.
 
 Lehrveranstaltungen, Kohorten, and Räume require positive whole-number values where applicable. A Lehrveranstaltung's minimum session size cannot exceed its maximum. **Bevorzugte LE pro Termin (optional)** may use half steps: a half value gives equal preference to its two neighboring whole sizes; actual sessions still use whole LE. If left blank, the preference is the midpoint of minimum and maximum.
 
+**Lehreinheiten** are the units to schedule. **Total Einheiten** also include online and self-study units. When creating a course, leaving Total Einheiten blank copies the Lehreinheiten value into it; it does not add sessions.
+
+#### Create or maintain a cohort calendar
+
+1. Open **Stammdaten > Kohortenkalender**.
+2. Choose **Kohorte** and **Semester**.
+3. Enter **Unterrichtsbeginn** and **Unterrichtsende** within the Semester dates.
+4. Select **Erstellen**, then add its windows under **Zeitfenster**.
+
+**Expected result:** Courses with this Kohorte and Semester inherit the calendar automatically. A second calendar for the same pair is rejected, including when the existing calendar is archived. Use the existing record's **Bearbeiten** or **Reaktivieren** action instead.
+
+When editing a calendar, keep its Kohorte and Semester unchanged; its ownership cannot be reassigned. Use a separate calendar for another pair. Changing a course's Kohorte or Semester makes it inherit the calendar for the new pair. Create that calendar before saving the course. Calendar changes affect every course inheriting it; review existing session warnings afterward.
+
 #### Add recurring or dated teaching windows
 
 1. Open **Stammdaten > Zeitfenster**.
 2. Under **Erstellen: Zeitfenster**, choose **Art**: **Wöchentlich** for a recurring weekday or **Einmaliges Datum** for one calendar date.
-3. Select one **Studienform**. Enter the **Wochentag** or the full **Datum** in `TT.MM.JJJJ`.
+3. Select one **Kohortenkalender**. Enter the **Wochentag** or the full **Datum** in `TT.MM.JJJJ`.
 4. Enter **Beginn** and **Ende** within the same day. For a dated window, optionally select **Intensivwoche**.
 5. Select **Erstellen**.
 
-**Expected result:** The active window becomes an additional teaching opportunity for courses mapped to that Studienform. Dated windows appear under **Einmalige Datumsfenster**; recurring windows appear under **Wöchentliche Zeitfenster**. A dated window never repeats in a later year.
+**Expected result:** Courses inheriting that Kohortenkalender use its active windows. Dated windows appear under **Einmalige Datumsfenster**; recurring windows appear under **Wöchentliche Zeitfenster**. A dated window never repeats in a later year.
 
-The course's planning dates, holidays, resources and saved protected appointments still apply. A window outside the course's effective planning period adds no usable time. Overlapping windows contribute their combined available interval once, rather than creating duplicate capacity. The **Intensivwoche** flag expresses a preference; it does not force a session or override a holiday.
+On a date with an active dated window marked **Intensivwoche**, that calendar's weekly windows do not apply. Enter all intended intensive teaching hours as dated windows. Other active dated windows for the same date still apply. An unmarked dated window adds an opportunity without suppressing weekly hours.
+
+The course's planning dates, holidays, resources and saved protected appointments still apply. A window outside the course's effective planning period adds no usable time. A teaching session must fit in one applicable source window; adjacent or overlapping windows must not be treated as permission to span several rules. The intensive marker also affects optimization preferences, but cannot force a session or override a holiday.
 
 #### Copy a teaching window
 
 1. Find the source under **Stammdaten > Zeitfenster** and select **Kopieren**.
-2. In **Ungespeicherte Kopie**, change the Studienform, weekday/date or times as needed. The source's window type is retained.
+2. In **Ungespeicherte Kopie**, change the Kohortenkalender, weekday/date or times as needed. The source's window type is retained.
 3. Select **Kopie speichern**, or **Kopie verwerfen** to leave without creating anything.
 
 **Expected result:** Saving creates a separate record. Later edits to the copy do not affect the source, and later source edits do not affect the copy.
 
-An exact duplicate of the same type, Studienform, weekday/date and times is rejected, including duplicates of archived records. Changing only **Intensivwoche** does not make it a different window. Change the copied values or edit/reactivate the existing record. The type of an existing window or pending copy cannot be switched; create a new window to use another type.
+An exact duplicate of the same type, Kohortenkalender, weekday/date and times is rejected, including duplicates of archived records. Changing only **Intensivwoche** does not make it a different window. Change the copied values or edit/reactivate the existing record. The type of an existing window or pending copy cannot be switched; create a new window to use another type.
 
 #### Find a course before editing it
 
@@ -622,21 +642,21 @@ When both exist, Kalender lets you switch between **Arbeitsrevision R…** and *
 
 #### Use default constraints
 
-The default planning period comes from the Semester. Recurring and dated teaching windows come from the Lehrveranstaltung's current Studienart mappings and are displayed read-only in Kalender. They apply whether one or several Lehrveranstaltungen are selected.
+The default teaching period comes from the Kohortenkalender for the course's Kohorte and selected Semester and stays within the Semester dates. Recurring and dated teaching windows come from that calendar and are displayed read-only in Kalender. Each course uses its own inherited calendar whether one or several Lehrveranstaltungen are selected.
 
 #### Set custom date boundaries
 
 1. Select the focused Lehrveranstaltung and Semester.
-2. Set a planning start and end date inside the Semester.
+2. Set a planning start and end date inside both the Semester and the inherited Kohortenkalender's teaching period.
 3. Select **Datumsgrenzen speichern**.
 
 The saved dates become active immediately and existing sessions are revalidated, but they are not moved automatically. Saving constraints is separate from generation, so a later failed or cancelled generation does not undo the saved dates. Unsaved date changes must be saved or discarded before optimization can start.
 
-To change the windows, update the Lehrveranstaltung's Studienart or its mapped Zeitfenster under **Stammdaten**. The new mapping becomes active immediately, revalidates existing sessions, and invalidates any preparation made with the previous mapping. A Lehrveranstaltung is unavailable for automatic generation when no active mapped window can hold its minimum session length.
+To change the windows, edit the inherited calendar's Zeitfenster under **Stammdaten**. To use a different calendar, change the course's Kohorte or Semester to a pair with the intended calendar. These changes affect current planning and invalidate preparations made with the previous inputs. Existing sessions receive current validation warnings without being moved automatically. A Lehrveranstaltung is unavailable for automatic generation when no active applicable window can hold its minimum session length.
 
 #### Restore defaults
 
-Select **Benutzerdefinierte Regeln zurücksetzen**. The Lehrveranstaltung immediately inherits the Semester boundaries again. Existing sessions are revalidated but do not move until a planner performs a new generation or manual edit.
+Select **Benutzerdefinierte Regeln zurücksetzen**. The Lehrveranstaltung immediately inherits its Kohortenkalender's teaching period within the Semester again. Existing sessions are revalidated but do not move until a planner performs a new generation or manual edit.
 
 ### Generate or optimize teaching schedules
 
@@ -700,7 +720,7 @@ The optimizer:
 
 - seeks the greatest scheduled teaching units; incomplete search may leave this maximum unproved
 - avoids new lecturer, Raum, and Kohorte overlaps
-- respects active course dates, recurring/dated Studienart windows, session sizes and breaks, eligibility, availability, Raum capacity, and holidays
+- respects active course dates, recurring/dated Kohortenkalender windows including intensive-date replacement, session sizes and breaks, eligibility, availability, Raum capacity, and holidays
 - treats unselected teaching sessions and active exams as fixed occupancy that it cannot move
 - ensures teaching for a selected Lehrveranstaltung ends no later than the start of its active exam
 - ignores past exams as generation occupancy while leaving those historical exams unchanged
@@ -770,27 +790,52 @@ Use the labelled dropdowns and buttons with the keyboard. Result counts and tota
 
 Kalender opens in **Woche** mode. Available modes are:
 
-- **Woche** for the main operational view
-- **Tag** for one date
-- **Monat** for broad date navigation
+- **Woche** for an hourly grid across the week
+- **Tag** for an hourly grid on one date
+- **Monat** for a compact Monday-to-Sunday month grid
 - **Liste** for the dense overview and its list/weekly review controls
 
 Use the previous, **Aktuell**, and next controls or choose a calendar date. Liste mode does not use date navigation.
+
+#### Read the day and week grids
+
+1. Choose **Tag** or **Woche** and navigate to the date you need.
+2. Read each appointment's start and end time. Its position and height reflect its interval, including breaks; overlapping appointments appear beside one another.
+3. Compare teaching appointments with the permitted-hour background. The legend distinguishes **Erlaubte Lehrstunden**, **Außerhalb der Lehrzeitfenster**, and **Unbekannt**. Permitted hours do not guarantee lecturer, room, or cohort availability.
+4. Select an appointment to inspect its details and current warnings. For teaching, inspect the read-only **Lehrzeitfenster** context; expand **Alle Quellen des Profils** when you need the individual weekly or dated rules.
+
+**Expected result:** You can see appointment duration, gaps, and known window overruns without changing saved planning. A marked **Außerhalb** segment identifies the portion beyond supplied permitted hours. A warning may still apply when adjacent or overlapping background bands look continuous: the session must fit one source window.
+
+For a date with appointments, the grid shows the applicable cohort/calendar groups side by side. Cohorts remain separate even if their hours match. A date without matching appointments keeps one empty column; it does not show all calendars' possible hours. The grid covers **00:00–24:00** and initially scrolls toward the earliest displayed appointment or window. Scroll vertically for earlier or later times, and horizontally when columns exceed the screen width.
+
+The session's context distinguishes **Aktuelle Arbeitsrevision** from **Erfasste Veröffentlichung**, and inherited **Kohortenkalender** from a **Kursspezifisches Profil**. Published context uses the captured profile rather than silently substituting today's calendar. Unknown or unavailable context does not establish permission or a window violation. Exam appointments remain visible, but teaching-window permission does not apply to them.
+
+#### Read the month grid
+
+1. Choose **Monat**. Each date shows appointments in time order, with times, course, a compact cohort label, appointment type, and any warning cue. The full cohort name is available on the label.
+2. On a busy date, select **+… · Alle … Termine anzeigen** to expand beyond the first three entries. Select **Weniger Termine anzeigen** to collapse it again.
+3. Select a date heading to open **Tag** for that date, or select an appointment to open its details.
+
+**Expected result:** Every date remains visible, including empty dates and marked dates from a neighboring month. The month grid has no teaching-window shading or per-date source lists; selecting an appointment still opens its available context. A teaching-window warning count can include entries hidden by the collapsed list; expand the date or open its day view to inspect them.
+
+#### Combine calendar filters
 
 The calendar filters are combined: an appointment must match every selected value. **Alle** means that the corresponding criterion is not restricted.
 
 | Filter | Effect |
 | --- | --- |
 | **Lehrveranstaltung** | Shows appointments belonging to one selected course record. |
-| **Kohorte** | Shows appointments for one student cohort. |
+| **Kohorte** | Open the checkbox list and select one or several cohorts. Selected cohorts are combined; the result must also match the other filters. |
 | **Lehrende Person** | Shows appointments assigned to the selected lecturer. |
 | **Raum** | Shows appointments scheduled in the selected room; unscheduled items without a room are excluded. |
-| **Studienart** | Restricts courses by their study model, such as full-time or part-time. |
+| **Kohortenkalender** | Restricts appointments to courses using the selected cohort-and-semester calendar. |
 | **Terminart** | Shows teaching appointments or exam appointments. |
 | **Revisionsstatus** | Restricts the loaded planning context by working, draft, review-ready, or published status; it does not open a different revision. |
 | **Prüfstatus** | Restricts appointments by validation result, such as conflict, capacity, holiday, exam-validity, planning-failure, stale-result, or no-known-issue categories when available. It does not mean exam lifecycle status. |
 
-Select **Filter zurücksetzen** to return every dropdown to **Alle** and remove an active summary-detail selection. Filters do not change saved data.
+In the cohort list, select **Alle**, or clear the last selected cohort, to include every cohort. Press **Escape** to close the checkbox list and return focus to its heading. The subset remains selected when switching Tag, Woche, Monat, or Liste; a refresh removes choices no longer present in the loaded options.
+
+Select **Filter zurücksetzen** to return all filters to **Alle** and remove an active summary-detail selection. Filters do not change saved data.
 
 The operational summary contains:
 
@@ -808,7 +853,7 @@ Select a teaching or exam occurrence to open the session pane. It shows identify
 
 For an editable Arbeitsrevision:
 
-1. Select **Im vorhandenen Editor bearbeiten**.
+1. Select **Termin bearbeiten**.
 2. Change the available values.
 3. Select **Speichern** or **Abbrechen**.
 
@@ -849,7 +894,7 @@ Current warnings can identify:
 - **Lehrendenkonflikt**, **Raumkonflikt**, and **Kohortenkonflikt** as separate categories, including the affected resource and related appointment context
 - insufficient Raum capacity
 - a session outside its active course date boundaries
-- **Studienart-Zeitfenster verletzt** when a session is outside the current mapped recurring or dated windows
+- **Kohortenkalender-Zeitfenster verletzt** when a session does not fit an applicable recurring or dated window of its inherited calendar
 - a session on an institution holiday
 - inactive, unavailable, ineligible, or missing planning resources
 - an exam that no longer satisfies a hard constraint
@@ -903,15 +948,15 @@ Automatic generation considers all selected exams together. It requires:
 - an eligible, active, available responsible lecturer
 - an eligible, active, available Raum with sufficient capacity
 - no lecturer, Raum, or Kohorte overlap with teaching or exams
-- a start time proposed from an active Studienform time window
+- a start time proposed from an active Kohortenkalender time window
 
 The recommended date range is preferred but not required. Teaching sessions are never moved by exam generation.
 
 #### Place or correct an exam manually
 
-Select **Prüfung manuell eintragen** for an eligible unscheduled configuration, or select an exam in Kalender and choose **Im vorhandenen Editor bearbeiten**. Set the date, start time, responsible lecturer, and Raum, then save.
+Select **Prüfung manuell eintragen** for an eligible unscheduled configuration, or select an exam in Kalender and choose **Termin bearbeiten**. Set the date, start time, responsible lecturer, and Raum, then save.
 
-Manual placement may use a start time outside Studienform proposal times, but every hard constraint still applies.
+Manual placement may use a start time outside Kohortenkalender proposal times, but every hard constraint still applies.
 
 Deleting an active exam leaves its current requirement enabled and unscheduled. Deleting a past exam removes only that historical exam.
 
@@ -1001,7 +1046,7 @@ Use **Abandon revision** to remove an unpublished revision from active work with
 - Existing sessions are not moved when catalog data, holidays, availability, or capacity changes.
 - Failed or cancelled unified teaching generation preserves previous drafts and protected teaching and exams.
 - Unified teaching optimization may offer a valid partial alternative. Explicit acceptance replaces the whole selected teaching plan, including selected manual appointments; unselected teaching and exams remain protected.
-- Saved course date boundaries and current recurring/dated Studienart windows apply immediately and revalidate existing sessions without moving them.
+- Saved course date boundaries and current recurring/dated Kohortenkalender windows apply immediately and revalidate existing sessions without moving them. Intensive dates suppress that calendar's weekly windows on those dates.
 - Removing a holiday affects future generation but not saved sessions.
 - An active exam prevents creation of a second active exam for that Lehrveranstaltung and Semester, blocks overlapping teaching generation, and sets the latest teaching end for its course. Past exams do not constrain teaching generation.
 - A failed refresh keeps the last known complete view where available and presents a retry action.
@@ -1109,7 +1154,7 @@ Open **Planung > Versionen** or Kalender and select **Entwurf starten**. Publish
 
 1. Check **Kohorte filtern** and use **Kohortenfilter zurücksetzen** if necessary. In Stammdaten also check **Semester filtern** and **Anzeigen**.
 2. Confirm the selected Semester matches the Lehrveranstaltung.
-3. Confirm the Lehrveranstaltung, Semester, Kohorte, and Studienform are active.
+3. Confirm the Lehrveranstaltung, Semester, Kohorte, and inherited Kohortenkalender are active. If the calendar is missing, create it for the exact Kohorte and Semester before saving the course.
 4. Confirm an active Zeitfenster exists.
 5. Confirm the Lehrveranstaltung has an active eligible lecturer and usable eligible Raum.
 6. Correct the record in Stammdaten and return to Planung.
@@ -1126,7 +1171,7 @@ Course-list discovery currently supports one cohort at a time. Free-text course 
 
 #### Teaching generation fails
 
-Read every displayed reason. Check the selected course dates, current Studienart windows, session-size values, active planning data, eligible resources, availability, Raum capacity, holidays, unselected teaching, and active exams. A course with no mapped Studienart window long enough for its minimum session cannot be selected.
+Read every displayed reason. Check the selected course dates, inherited Kohortenkalender and current windows, session-size values, active planning data, eligible resources, availability, Raum capacity, holidays, unselected teaching, and active exams. A course with no applicable window long enough for its minimum session cannot be selected. Check that its minimum session size is compatible with its remaining teaching units.
 
 If the algorithm or policy message reports changed settings, prepare again and review the displayed algorithm and allowance. For unreadable/invalid configuration, ask the installation operator to check the reported policy location, JSON, directory mapping and permissions. Do not repeatedly Start the old preparation.
 
@@ -1136,11 +1181,15 @@ Check whether the proposal is still awaiting acceptance, was cancelled, or was r
 
 #### An intensive window does not produce a session
 
-Confirm the dated window is active, mapped to the correct Studienform, inside the course's effective date boundaries and marked **Intensivwoche** when intended. Check holidays, minimum session length and available lecturer/room/cohort time. The marker is a preference after total coverage; it cannot force a hard-invalid appointment. Review intensive LE and proof status rather than assuming the window must be filled.
+Confirm the dated window is active, belongs to the correct Kohortenkalender, lies inside the course's effective date boundaries and is marked **Intensivwoche** when intended. On that date, weekly windows are suppressed: enter all intended intensive hours as dated windows. Check holidays, minimum session length and available lecturer/room/cohort time. Intensive LE are a preference after total coverage; the marker cannot force a hard-invalid appointment. Review intensive LE and proof status rather than assuming the window must be filled.
 
 #### A copied window cannot be saved
 
-An exact duplicate is rejected even if the existing record is archived or has a different intensive flag. Change the Studienform, weekday/date or times, or cancel the copy and edit/reactivate the existing window. The original record is unchanged by a failed copy.
+An exact duplicate is rejected even if the existing record is archived or has a different intensive flag. Change the Kohortenkalender, weekday/date or times, or cancel the copy and edit/reactivate the existing window. The original record is unchanged by a failed copy.
+
+#### No teaching-window shading appears
+
+In Monat, switch to Tag or Woche to see hourly shading. In Tag/Woche, an empty date intentionally shows one empty column. Check filters and the selected revision, then select a teaching appointment to inspect its profile. If context is reported as unknown or unavailable, use the offered reload action; do not infer that the time is permitted. Exam appointments do not establish teaching-window permission.
 
 #### The lecturer calendar download fails or appears out of date
 
@@ -1199,8 +1248,9 @@ The latest refresh failed. The application preserves the last complete view wher
 - **Planner session:** The one current server-side session for an account, bounded by 60 minutes of inactivity and 12 hours absolutely.
 - **Arbeitsrevision:** The single editable Semester revision in Entwurf or Bereit zur Prüfung state.
 - **Aktuelle Veröffentlichung:** The immutable published revision currently designated for the Semester.
-- **Generation constraints:** The active course-semester date boundaries plus recurring and dated windows derived from the Lehrveranstaltung's Studienart.
-- **Intensive window:** A dated teaching opportunity marked to prefer intensive LE and daily LV variety after total coverage; it does not override hard rules.
+- **Kohortenkalender:** The teaching period and windows owned by one Kohorte and Semester, inherited automatically by their courses.
+- **Generation constraints:** The effective course-semester dates within the inherited Kohortenkalender's period, plus its applicable recurring and dated windows.
+- **Intensive window:** A dated window marked Intensivwoche. It suppresses that calendar's weekly windows on its date and gives intensive LE and daily LV variety a preference after total coverage; it does not override hard rules.
 - **Proposal:** An unsaved, checked arrangement awaiting acceptance or further optimization.
 - **Continuation:** Another captured time allowance for the same operation, algorithm and retained proposal.
 - **Unified teaching optimization:** The single conflict-aware workflow used to generate or regenerate one to twenty selected Lehrveranstaltungen.

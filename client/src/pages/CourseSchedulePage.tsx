@@ -1227,6 +1227,19 @@ function CourseScheduleContent({
     })
   }
 
+  function requestCourseDetails(courseId: number) {
+    requestPaneIntent({
+      label: `den Kursdetails der ${label('course.singular')}`,
+      commit: () => {
+        commitPaneSelection(null)
+        setSelectedCourseId(courseId)
+        setPlanningInputsVisible(true)
+        setPlanningInputTab('course')
+      },
+      focusAfterCommit: () => window.requestAnimationFrame(() => document.getElementById('planning-tab-course')?.focus()),
+    })
+  }
+
   function requestSemesterChange(semesterId: number) {
     requestPaneIntent({
       label: 'einem anderen Semester',
@@ -1666,6 +1679,7 @@ function CourseScheduleContent({
                 lecturers={planningOptions?.lecturers ?? []}
                 courseResources={planningOptions?.courseResources ?? []}
                 onUpdateSession={handleUpdateSession}
+                onOpenCourse={requestCourseDetails}
                 onDeleteSession={beginSessionDeletion}
                 isBusy={writeBusy}
                 exams={displayExams}

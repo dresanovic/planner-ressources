@@ -97,6 +97,7 @@ type DraftSchedulePanelProps = {
   courseResources?: PlanningOptions['courseResources']
   onUpdateSession?: (sessionId: number, payload: EditableDraftSessionRequest) => Promise<void>
   onDeleteSession?: (session: DraftSession, schedule: DraftSchedule) => void
+  onOpenCourse?: (courseId: number) => void
   resetKey?: number
   isBusy?: boolean
   exams?: ExamSession[]
@@ -121,6 +122,7 @@ function DraftSchedulePanelStateful({
   courseResources = EMPTY_COURSE_RESOURCES,
   onUpdateSession,
   onDeleteSession,
+  onOpenCourse,
   isBusy = false,
   exams = EMPTY_EXAMS,
   onEditExam,
@@ -220,6 +222,9 @@ function DraftSchedulePanelStateful({
         >
           <strong>Betroffener Datensatz</strong>
           <span>{workspaceListContext.traceTarget.label}</span>
+          {onOpenCourse && workspaceListContext.traceTarget.courseIds.map(courseId => (
+            <button type="button" className="secondary-button compact-button" key={courseId} disabled={isBusy} onClick={() => onOpenCourse(courseId)}>Kursdetails öffnen</button>
+          ))}
           {workspaceListContext.traceTarget.teachingCoverage?.map((coverage, _, all) => (
             <span key={coverage.courseId}>
               {all.length > 1 && `${coverage.courseName}: `}
@@ -276,7 +281,7 @@ function DraftSchedulePanelStateful({
             </button>
           </div>}
 
-          <div className="review-controls" aria-label="Ansichtsmodus">
+          {workspaceListContext == null && <div className="review-controls" aria-label="Ansichtsmodus">
             <button
               type="button"
               className={viewMode === 'list' ? 'active' : ''}
@@ -291,11 +296,11 @@ function DraftSchedulePanelStateful({
             >
               Woche
             </button>
-          </div>
+          </div>}
 
           {visibleSessions.length === 0 ? (
             visibleExams.length === 0 && <p className="empty-state">Keine Termine entsprechen den aktiven Filtern.</p>
-          ) : viewMode === 'list' ? (
+          ) : workspaceListContext != null || viewMode === 'list' ? (
             <div className="session-table" aria-label="Entwurfstermine">
               <p>1 LE = 45 Minuten Unterricht. Die Dauer von Beginn bis Ende enthält auch die Pausen zwischen den LE.</p>
               <div className="session-row teaching-session-row session-header">

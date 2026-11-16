@@ -5,6 +5,7 @@
 | Document field | Value |
 | --- | --- |
 | Prepared | 15 October 2026 |
+| Compatibility note updated | 16 November 2026; cohort-calendar database transition only |
 | Audience | Infrastructure operators, application administrators, and auditors |
 | Application baseline reviewed | Repository commit `f9593e5dce0a523758de5d28af3b81750e4d36af` |
 | VM reference | Supplied `VirtuelleMachine.docx`, sections VM configuration, network and access, storage and backup, and resource requirements |
@@ -362,6 +363,8 @@ sudo docker volume inspect planner-ressources-data
 ```
 
 The service is `planner`; its container name is `planner-ressources`. Startup initializes a new database or migrates a supported existing schema. Unsupported or partial schemas fail startup and require investigation; do not delete the volume to bypass that error.
+
+**Current cohort-calendar compatibility:** This version explicitly rejects databases using the former Studienform schema. They are not covered by the automatic migration procedure. Back up the source and follow the [cohort-calendar transition procedure](../../specs/021-cohort-semester-calendars/quickstart.md) to prepare a separate verified candidate before any offline activation. The reset retains master data and accounts but removes teaching/exam plans, revisions/history, generation overrides, reviews, and optimization results. Review this loss before activation. Preserve the original database with its matching previous image and protected key for recovery; an old-schema backup must not be restored directly into the current application. The October baseline and audit evidence elsewhere in this manual are historical, not a fresh deployment certification.
 
 **Expected result:** `/health` returns `{"status":"ok"}`, the container becomes `healthy`, and `/data` uses the volume `planner-ressources-data`. The health probe runs every 30 seconds with an initial 30-second start period. Wait for health and inspect startup logs before continuing.
 

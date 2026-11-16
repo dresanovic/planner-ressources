@@ -345,6 +345,57 @@ describe('CalendarPlanningWorkspace', () => {
     expect(host.textContent).toContain('Gefilterte Teilmenge')
   })
 
+  it.each([true, false])('keeps the warning course across calendar modes with scheduled appointments=%s', hasAppointments => {
+    const workspace: LoadedCalendarWorkspace = loadedCalendarWorkspaceFixture()
+    workspace.courses.push({
+      ...workspace.courses[0], courseId: 2, courseRef: 'course:2', name: 'Unrelated course',
+      occurrenceRefs: ['teaching:2'], needsReviewReasonRefs: [],
+    })
+    workspace.occurrences.push({
+      ...workspace.occurrences[0], occurrenceRef: 'teaching:2', courseRef: 'course:2',
+    })
+    if (!hasAppointments) {
+      workspace.occurrences = workspace.occurrences.filter(item => item.courseRef !== 'course:1')
+      workspace.courses[0].occurrenceRefs = []
+    }
+    const contexts: (WorkspaceListContext | null)[] = []
+    const host = document.body.appendChild(document.createElement('div'))
+    const root = createRoot(host)
+    act(() => root.render(<CalendarPlanningWorkspace
+      workspace={workspace} loading={false} onRetry={vi.fn()}
+      listContent={context => { contexts.push(context); return <p>List</p> }}
+    />))
+    const mode = (name: string) => [...host.querySelectorAll<HTMLButtonElement>('.calendar-mode-switch button')]
+      .find(item => item.textContent === name)!
+    try {
+      act(() => host.querySelector<HTMLButtonElement>('.summary-card:last-child')!.click())
+      act(() => [...host.querySelectorAll<HTMLButtonElement>('.workspace-drilldown button')]
+        .find(item => item.textContent === 'Algorithms')!.click())
+      const courseFilter = [...host.querySelectorAll<HTMLSelectElement>('.workspace-filters select')]
+        .find(item => item.previousElementSibling?.textContent === 'Lehrveranstaltung')!
+      expect(courseFilter.value).toBe('course:1')
+      for (const name of ['Tag', 'Woche', 'Monat']) {
+        act(() => mode(name).click())
+        expect(courseFilter.value).toBe('course:1')
+        expect(host.querySelector('[aria-label="Ausgewählter Datensatz"]')?.textContent).toContain('Algorithms')
+        const cards = [...host.querySelectorAll<HTMLElement>('[data-occurrence-ref]')]
+        expect(cards.some(item => item.dataset.occurrenceRef === 'teaching:2')).toBe(false)
+        expect(cards.some(item => item.dataset.occurrenceRef === 'teaching:1')).toBe(hasAppointments)
+        if (!hasAppointments) expect(host.textContent).toContain('Für diesen Datensatz entspricht kein geplanter Termin den aktiven Filtern.')
+        act(() => mode('Liste').click())
+        expect(contexts.at(-1)?.traceTarget?.reference).toBe('course:1')
+      }
+      act(() => [...host.querySelectorAll<HTMLButtonElement>('button')]
+        .find(item => item.textContent === 'Detailauswahl aufheben')!.click())
+      expect(contexts.at(-1)?.traceTarget).toBeNull()
+      expect(courseFilter.value).toBe('')
+      expect(host.querySelector('[aria-label="Ausgewählter Datensatz"]')).toBeNull()
+    } finally {
+      act(() => root.unmount())
+      host.remove()
+    }
+  })
+
   it('reconciles open drilldown contributors when filters change', () => {
     const workspace = loadedCalendarWorkspaceFixture() as LoadedCalendarWorkspace
     workspace.courses.push({

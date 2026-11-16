@@ -1,6 +1,75 @@
 # User Manual Update Report
 
-## Current update — 11.11.2026
+## Current update — 16.11.2026
+
+Updated the user manual against repository baseline `3941006` (16 November 2026),
+including cohort-semester calendars (`a376fe6`) and the time-grid calendar merged
+in `95b1b3a`. Reviewed the current `Feature_slices.md` scope map, the affected
+implementation and tests, and the cohort-calendar/I-014 specifications and review
+records. This is a focused documentation refresh, not a new product-wide acceptance
+or deployment audit. Application code, databases, scope statuses and task markers
+were not changed. The earlier inventories below remain historical evidence.
+
+### Changes delivered
+
+- Replaced obsolete Studienform/Studienart instructions with cohort-and-semester
+  calendar creation, automatic course inheritance, owner immutability and teaching
+  date boundaries. Added the distinction between scheduled and overall units.
+- Corrected intensive-date replacement of weekly hours and the requirement that
+  a session fit one source window. Updated copying, warnings and troubleshooting.
+- Documented hourly Day/Week layout, cohort/calendar columns, permitted/unknown
+  window context, overruns, scrolling, selected-session sources and captured
+  publication context. Retained the latest empty-date simplification.
+- Added Month overflow expansion, date-to-Day navigation, compact cohort labels
+  and the checkbox cohort subset combined with other filters.
+- Corrected the planner pane action to **Termin bearbeiten** and updated the date.
+- Added old-schema compatibility and reset data-loss guidance to the user manual
+  and a narrowly scoped compatibility note to the technical setup manual. Its
+  October audit baseline is explicitly retained as historical.
+
+### Evidence table for affected areas
+
+| Area | Documentation assessment | User / entry point | Evidence | Limitation | Manual action |
+| --- | --- | --- | --- | --- | --- |
+| Cohort-semester calendar change (specs/021; affects FS-003, FS-007 and I-009) | implemented in checked paths | Planner / Stammdaten, Kursdetails | AcademicRecordEditor, AcademicDataPage, academic_catalog, draft_schedule_repository, test_cohort_calendars; cohort-calendar review | No new live sign-in or deployment audit | include-quick-start-and-detailed |
+| Dated/intensive windows (I-009) | partially-implemented acceptance retained | Planner / Zeitfenster | schedule_generation.window_applies; dated-window tests; cohort-calendar review | Existing broader observed acceptance gaps retained | include-with-limitation |
+| Time-grid calendar (I-014; affects FS-014/FS-019) | partially-implemented acceptance | Planner / Kalender | CalendarTimeGrid, CalendarMonthGrid, layout, workspace, SessionPane; I-014 review and 15 November simplification review | Actual AT, genuine 200% text enlargement, removed-color checks, five-planner trial and full acceptance reconciliation remain open | include-with-limitation |
+| Restricted lecturer review (FS-015) | prior partial acceptance retained | Lecturer / private review link | LecturerReviewPage tests and restricted workspace composition | No planner-only profile or editing authority claimed | include-with-limitation |
+| Database transition / installation (I-001) | implemented tooling; operator activation required | Operator / offline transition | schema.py rejection of study_types; specs/021 quickstart/review | Reset removes planning/history; no target environment changed | include-detailed-only |
+
+### Verification performed for this update
+
+- Focused frontend suite: **9 files, 140 tests passed** on 16 November 2026:
+  AcademicRecordEditor, AcademicDataPage, CalendarTimeGrid, CalendarMonthGrid,
+  calendarTimeGridLayout, CalendarPlanningWorkspace, SessionPane,
+  calendarWorkspaceUtils and LecturerReviewPage.
+- Focused backend suite: **61 tests passed** across test_cohort_calendars,
+  test_dated_intensive_windows, test_calendar_workspace (services) and
+  test_academic_catalog (API).
+- The first frontend attempt could not spawn Vite's helper inside the sandbox;
+  rerunning the same suite with the required process permission passed.
+- Documentation checks cover local Markdown links, obsolete user-facing labels,
+  formatting and the final diff. No new tests were added for prose changes.
+
+### Exclusions and unresolved verification
+
+The prior excluded areas remain FS-017, FS-021, FS-022, I-007, I-008 and the general
+I-010 allocation editor. This update adds no usage claims for those planned areas.
+Other unchanged workflows retain the earlier documented evidence and limitations;
+they were not all re-exercised in a running browser. Current repository behavior
+does not prove what image an institution has deployed.
+
+I-014 is usable in the checked paths, but its observed accessibility, representative
+planner trial and complete acceptance reconciliation remain unresolved. The latest
+calendar simplification supersedes earlier empty-date profile placeholders: empty
+dates remain visible without listing all possible calendars. An empty date is not
+evidence that no teaching hours exist.
+
+Recommended verification: walk through the new planning chain and calendar views
+in the intended deployment, then complete the outstanding observed I-014 acceptance
+checks. Do not mark those tasks complete based on this documentation update.
+
+## Previous update — 11.11.2026
 
 Updated [User_Manual.md](User_Manual.md) against all 35 entries in the reconciled
 [scope map](../planning/Feature_slices.md), current source, behavioral tests and

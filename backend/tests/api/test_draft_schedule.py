@@ -380,6 +380,44 @@ def test_edit_units_persists_and_end_only_edit_keeps_units(client, db_session):
         assert client.patch(path, json={**payload, 'units': invalid}).status_code == 422
 
 
+def test_edit_teaching_units_clears_remaining_work_review_warning(client, db_session):
+    seed_valid_course(db_session, total_units=4)
+    created = client.post(
+        "/api/courses/1/draft-schedule/sessions",
+        json=manual_session_payload(units=3, endTime="10:35", roomId=1),
+    )
+    assert created.status_code == 201, created.text
+    session = created.json()["draftSchedule"]["sessions"][0]
+    workspace_path = "/api/semesters/1/calendar-workspace"
+    before = client.get(workspace_path).json()
+    assert before["summary"]["unscheduledWork"]["remainingTeachingUnits"] == 1
+    assert before["courses"][0]["needsReviewReasonRefs"] == ["remaining:course:1"]
+    assert before["summary"]["needsReview"]["distinctCourseCount"] == 1
+
+    updated = client.patch(
+        f"/api/draft-sessions/{session['id']}",
+        json={
+            "scheduleRevisionId": 1,
+            "date": session["date"],
+            "startTime": session["startTime"],
+            "endTime": "11:30",
+            "lecturerId": session["lecturerId"],
+            "roomId": session["roomId"],
+            "units": 4,
+        },
+    )
+    assert updated.status_code == 200, updated.text
+    for _ in range(2):  # Refresh immediately after saving and on a later page reload.
+        response = client.get(workspace_path)
+        assert response.status_code == 200, response.text
+        after = response.json()
+        assert after["courses"][0]["scheduledTeachingUnits"] == 4
+        assert after["courses"][0]["remainingTeachingUnits"] == 0
+        assert after["courses"][0]["needsReviewReasonRefs"] == []
+        assert after["summary"]["unscheduledWork"]["remainingTeachingUnits"] == 0
+        assert after["summary"]["needsReview"]["distinctCourseCount"] == 0
+
+
 def test_create_manual_session_from_empty_and_partial_draft_returns_authoritative_progress(client, db_session):
     seed_valid_course(db_session, total_units=8)
     first = client.post("/api/courses/1/draft-schedule/sessions", json=manual_session_payload())

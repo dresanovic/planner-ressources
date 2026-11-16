@@ -20,6 +20,7 @@ function renderPanel({
   schedules = [draftScheduleFixture],
   onUpdateSession = vi.fn(),
   onDeleteSession = vi.fn(),
+  onOpenCourse,
   courseResources = [],
   isBusy = false,
   exams = [],
@@ -33,6 +34,7 @@ function renderPanel({
   schedules?: DraftSchedule[]
   onUpdateSession?: (sessionId: number, payload: Omit<UpdateDraftSessionRequest, 'scheduleRevisionId'>) => Promise<void>
   onDeleteSession?: (session: DraftSchedule['sessions'][number], schedule: DraftSchedule) => void
+  onOpenCourse?: (courseId: number) => void
   courseResources?: PlanningOptions['courseResources']
   isBusy?: boolean
   exams?: ExamSession[]
@@ -53,6 +55,7 @@ function renderPanel({
         courseResources={courseResources}
         onUpdateSession={onUpdateSession}
         onDeleteSession={onDeleteSession}
+        onOpenCourse={onOpenCourse}
         isBusy={isBusy}
         exams={exams}
         examCourseNames={examCourseNames}
@@ -208,7 +211,9 @@ describe('DraftSchedulePanel', () => {
   })
 
   it('uses the shared workspace projection and focuses an exact trace target', async () => {
+    const onOpenCourse = vi.fn()
     renderPanel({
+      onOpenCourse,
       schedules: [draftScheduleFixture, secondDraftScheduleFixture],
       workspaceListContext: {
         courseIds: [2],
@@ -234,10 +239,32 @@ describe('DraftSchedulePanel', () => {
     expect(trace.textContent).toContain('Offen: 2 LE')
     expect(document.body.textContent).not.toContain('Planning 101')
     expect(document.querySelector('[aria-label="Draft session filters"]')).toBeNull()
+    expect(document.querySelector('[aria-label="Ansichtsmodus"]')).toBeNull()
     await act(async () => {
       await Promise.resolve()
     })
     expect(document.activeElement).toBe(document.querySelector('[data-trace-reference="course:2"]'))
+    act(() => [...document.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === 'Kursdetails öffnen')!.click())
+    expect(onOpenCourse).toHaveBeenCalledWith(2)
+  })
+
+  it('offers course details for a warning course without appointments and omits duplicate view controls', () => {
+    const onOpenCourse = vi.fn()
+    renderPanel({
+      onOpenCourse,
+      workspaceListContext: {
+        courseIds: [2], teachingSessionIds: [], examIds: [], activeFilterCount: 0,
+        traceTarget: {
+          reference: 'course:2', label: 'Projekt zum Berufspraktikum', courseIds: [2],
+          teachingSessionIds: [], examIds: [],
+          teachingCoverage: [{ courseId: 2, courseName: 'Projekt zum Berufspraktikum', requiredUnits: 1, plannedUnits: 0, remainingUnits: 1 }],
+        },
+      },
+    })
+    expect(document.querySelector('[aria-label="Ansichtsmodus"]')).toBeNull()
+    expect(document.body.textContent).toContain('Kein geplanter Termin entspricht den aktiven Filtern.')
+    act(() => [...document.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent === 'Kursdetails öffnen')!.click())
+    expect(onOpenCourse).toHaveBeenCalledWith(2)
   })
 
   it('shows teaching units beside elapsed duration including breaks', () => {
