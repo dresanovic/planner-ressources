@@ -185,16 +185,20 @@ during normal container startup.
 
 ## Image maintenance and security
 
-The final runtime image is based on the digest-pinned Python 3.12 Debian Trixie
+The final runtime image is based on the Python 3.13 Debian Bookworm slim
 image and contains only the dependencies from
 `backend/requirements-runtime.txt`. Test tooling and the Python package
 installer are not included in the final image.
 
-Dependabot checks the pinned Docker base-image digests weekly. CI also rebuilds
+Runtime dependencies are installed from wheels only; missing wheels fail the
+build instead of triggering compilation. CI checks the dependency stage on both
+Linux AMD64 and ARM64, and runs backend and MCP tests with Python 3.13.
+
+Dependabot checks Docker base images weekly. CI also rebuilds
 the image weekly and fails when the image exceeds 450 MiB uncompressed or
 contains a fixable critical or high vulnerability. Review and merge successful
-base-image update pull requests promptly; pinning provides reproducibility but
-does not apply security updates by itself.
+base-image update pull requests promptly. Validate Python version upgrades against
+the pinned dependencies on both release platforms before adopting them.
 
 ## Back up SQLite
 
